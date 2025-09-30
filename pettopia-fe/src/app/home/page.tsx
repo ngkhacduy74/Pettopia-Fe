@@ -2,10 +2,13 @@
 
 import { useState, useEffect } from 'react';
 import Link from 'next/link';
+import { motion, useInView } from 'framer-motion';
+import { useRef } from 'react';
 
 export default function Home() {
   const [scrolled, setScrolled] = useState(false);
-
+  const servicesRef = useRef(null);
+  const isInView = useInView(servicesRef, { once: true, amount: 0.3 });
   useEffect(() => {
     const handleScroll = () => {
       setScrolled(window.scrollY > 50);
@@ -28,30 +31,10 @@ export default function Home() {
         <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
           <div className="flex justify-between items-center h-16">
             <div className="flex items-center">
-              <Link href="/" className="flex items-center">
-                <svg
-                  className={`w-8 h-8 mr-3 transition-colors ${
-                    scrolled ? 'text-teal-600' : 'text-white'
-                  }`}
-                  fill="none"
-                  stroke="currentColor"
-                  viewBox="0 0 24 24"
-                >
-                  <path
-                    strokeLinecap="round"
-                    strokeLinejoin="round"
-                    strokeWidth={2}
-                    d="M12 8v13m0-13V6a2 2 0 112 2h-2zm0 0V5.5A2.5 2.5 0 109.5 8H12zm-7 4h14M5 12a2 2 0 110-4h14a2 2 0 110 4M5 12v7a2 2 0 002 2h10a2 2 0 002-2v-7"
-                  />
-                </svg>
-                <span
-                  className={`text-xl font-semibold transition-colors ${
-                    scrolled ? 'text-gray-900' : 'text-white'
-                  }`}
-                >
-                  Pettopia
-                </span>
-              </Link>
+                <Link href="/" className="flex items-center">
+                <img src="/sampleimg/logo.png" alt="Logo" className="h-12 mr-3" />
+                  <span className="text-xl font-semibold text-white">Pettopia</span>
+                </Link>
             </div>
 
             <div className="hidden md:flex items-center space-x-8">
@@ -180,151 +163,124 @@ export default function Home() {
       </section>
 
       {/* Services Section */}
-      <section className="py-20 bg-gradient-to-b from-cyan-50 to-white">
+      <section ref={servicesRef} className="py-20 bg-gray-50">
         <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
           <div className="text-center mb-16">
-            <h2 className="text-4xl font-bold text-gray-900 mb-4">
-              Our Services
-            </h2>
-            <p className="text-xl text-gray-600">
-              We offer comprehensive veterinary services to keep your pets
-              healthy from nose to tail.
-            </p>
+            <h2 className="text-4xl font-bold text-gray-900 mb-4">Our Services</h2>
+            <p className="text-xl text-gray-600">We offer comprehensive veterinary services to keep your pets healthy from nose to tail.</p>
           </div>
 
-          <div className="grid md:grid-cols-4 gap-6">
-            <div className="bg-white rounded-xl p-6 shadow-md hover:shadow-xl transition border border-cyan-100">
-              <div className="w-14 h-14 bg-gradient-to-br from-teal-100 to-cyan-100 rounded-full flex items-center justify-center mb-4">
-                <svg
-                  className="w-7 h-7 text-teal-600"
-                  fill="none"
-                  stroke="currentColor"
-                  viewBox="0 0 24 24"
-                >
-                  <path
-                    strokeLinecap="round"
-                    strokeLinejoin="round"
-                    strokeWidth={2}
-                    d="M4.318 6.318a4.5 4.5 0 000 6.364L12 20.364l7.682-7.682a4.5 4.5 0 00-6.364-6.364L12 7.636l-1.318-1.318a4.5 4.5 0 00-6.364 0z"
-                  />
-                </svg>
-              </div>
-              <h3 className="text-xl font-semibold mb-3 text-gray-900">
-                Wellness Exams
-              </h3>
-              <p className="text-gray-600 text-sm mb-4">
-                Regular check-ups to ensure your pet is healthy and to catch any
-                issues early.
-              </p>
-              <Link
-                href="/services/wellness"
-                className="text-teal-600 text-sm font-medium hover:text-teal-700 inline-flex items-center"
+          <div className="grid md:grid-cols-4 gap-6 relative">
+            {/* Service 1 - Wellness Exams */}
+            <div className="bg-white rounded-xl p-6 shadow-md hover:shadow-xl transition">
+              <motion.div 
+                initial={{ x: -600, y: -200 }}
+                animate={isInView ? { x: 0, y: 0 } : { x: -600, y: -200 }}
+                transition={{ duration: 0.8, delay: 0.1, type: "spring", stiffness: 60 }}
+                className="w-14 h-14 bg-blue-100 rounded-full flex items-center justify-center mb-4"
               >
-                Learn more →
-              </Link>
+                <svg className="w-7 h-7 text-blue-600" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                  <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M4.318 6.318a4.5 4.5 0 000 6.364L12 20.364l7.682-7.682a4.5 4.5 0 00-6.364-6.364L12 7.636l-1.318-1.318a4.5 4.5 0 00-6.364 0z" />
+                </svg>
+              </motion.div>
+              <motion.div
+                initial={{ opacity: 0 }}
+                animate={isInView ? { opacity: 1 } : { opacity: 0 }}
+                transition={{ delay: 0.9 }}
+              >
+                <h3 className="text-xl font-semibold mb-3">Wellness Exams</h3>
+                <p className="text-gray-600 text-sm mb-4">Regular check-ups to ensure your pet is healthy and to catch any issues early.</p>
+                <Link href="/services/wellness" className="text-blue-600 text-sm font-medium hover:text-blue-700 inline-flex items-center">
+                  Learn more →
+                </Link>
+              </motion.div>
             </div>
 
-            <div className="bg-white rounded-xl p-6 shadow-md hover:shadow-xl transition border border-cyan-100">
-              <div className="w-14 h-14 bg-gradient-to-br from-teal-100 to-cyan-100 rounded-full flex items-center justify-center mb-4">
-                <svg
-                  className="w-7 h-7 text-teal-600"
-                  fill="none"
-                  stroke="currentColor"
-                  viewBox="0 0 24 24"
-                >
-                  <path
-                    strokeLinecap="round"
-                    strokeLinejoin="round"
-                    strokeWidth={2}
-                    d="M9 12l2 2 4-4m5.618-4.016A11.955 11.955 0 0112 2.944a11.955 11.955 0 01-8.618 3.04A12.02 12.02 0 003 9c0 5.591 3.824 10.29 9 11.622 5.176-1.332 9-6.03 9-11.622 0-1.042-.133-2.052-.382-3.016z"
-                  />
-                </svg>
-              </div>
-              <h3 className="text-xl font-semibold mb-3 text-gray-900">
-                Vaccinations
-              </h3>
-              <p className="text-gray-600 text-sm mb-4">
-                Keep your pets protected against common and serious diseases with
-                our vaccination programs.
-              </p>
-              <Link
-                href="/services/vaccinations"
-                className="text-teal-600 text-sm font-medium hover:text-teal-700 inline-flex items-center"
+            {/* Service 2 - Vaccinations */}
+            <div className="bg-white rounded-xl p-6 shadow-md hover:shadow-xl transition">
+              <motion.div 
+                initial={{ x: -400, y: -200 }}
+                animate={isInView ? { x: 0, y: 0 } : { x: -400, y: -200 }}
+                transition={{ duration: 0.8, delay: 0.2, type: "spring", stiffness: 60 }}
+                className="w-14 h-14 bg-blue-100 rounded-full flex items-center justify-center mb-4"
               >
-                Learn more →
-              </Link>
+                <svg className="w-7 h-7 text-blue-600" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                  <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M9 12l2 2 4-4m5.618-4.016A11.955 11.955 0 0112 2.944a11.955 11.955 0 01-8.618 3.04A12.02 12.02 0 003 9c0 5.591 3.824 10.29 9 11.622 5.176-1.332 9-6.03 9-11.622 0-1.042-.133-2.052-.382-3.016z" />
+                </svg>
+              </motion.div>
+              <motion.div
+                initial={{ opacity: 0 }}
+                animate={isInView ? { opacity: 1 } : { opacity: 0 }}
+                transition={{ delay: 1.0 }}
+              >
+                <h3 className="text-xl font-semibold mb-3">Vaccinations</h3>
+                <p className="text-gray-600 text-sm mb-4">Keep your pets protected against common and serious diseases with our vaccination programs.</p>
+                <Link href="/services/vaccinations" className="text-blue-600 text-sm font-medium hover:text-blue-700 inline-flex items-center">
+                  Learn more →
+                </Link>
+              </motion.div>
             </div>
 
-            <div className="bg-white rounded-xl p-6 shadow-md hover:shadow-xl transition border border-cyan-100">
-              <div className="w-14 h-14 bg-gradient-to-br from-teal-100 to-cyan-100 rounded-full flex items-center justify-center mb-4">
-                <svg
-                  className="w-7 h-7 text-teal-600"
-                  fill="none"
-                  stroke="currentColor"
-                  viewBox="0 0 24 24"
-                >
-                  <path
-                    strokeLinecap="round"
-                    strokeLinejoin="round"
-                    strokeWidth={2}
-                    d="M9 12l2 2 4-4m6 2a9 9 0 11-18 0 9 9 0 0118 0z"
-                  />
-                </svg>
-              </div>
-              <h3 className="text-xl font-semibold mb-3 text-gray-900">
-                Surgery
-              </h3>
-              <p className="text-gray-600 text-sm mb-4">
-                From routine spay/neuter to complex procedures, our surgical team
-                provides expert care.
-              </p>
-              <Link
-                href="/services/surgery"
-                className="text-teal-600 text-sm font-medium hover:text-teal-700 inline-flex items-center"
+            {/* Service 3 - Surgery */}
+            <div className="bg-white rounded-xl p-6 shadow-md hover:shadow-xl transition">
+              <motion.div 
+                initial={{ x: 400, y: -200 }}
+                animate={isInView ? { x: 0, y: 0 } : { x: 400, y: -200 }}
+                transition={{ duration: 0.8, delay: 0.3, type: "spring", stiffness: 60 }}
+                className="w-14 h-14 bg-blue-100 rounded-full flex items-center justify-center mb-4"
               >
-                Learn more →
-              </Link>
+                <svg className="w-7 h-7 text-blue-600" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                  <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M9 12l2 2 4-4m6 2a9 9 0 11-18 0 9 9 0 0118 0z" />
+                </svg>
+              </motion.div>
+              <motion.div
+                initial={{ opacity: 0 }}
+                animate={isInView ? { opacity: 1 } : { opacity: 0 }}
+                transition={{ delay: 1.1 }}
+              >
+                <h3 className="text-xl font-semibold mb-3">Surgery</h3>
+                <p className="text-gray-600 text-sm mb-4">From routine spay/neuter to complex procedures, our surgical team provides expert care.</p>
+                <Link href="/services/surgery" className="text-blue-600 text-sm font-medium hover:text-blue-700 inline-flex items-center">
+                  Learn more →
+                </Link>
+              </motion.div>
             </div>
 
-            <div className="bg-white rounded-xl p-6 shadow-md hover:shadow-xl transition border border-cyan-100">
-              <div className="w-14 h-14 bg-gradient-to-br from-teal-100 to-cyan-100 rounded-full flex items-center justify-center mb-4">
-                <svg
-                  className="w-7 h-7 text-teal-600"
-                  fill="none"
-                  stroke="currentColor"
-                  viewBox="0 0 24 24"
-                >
-                  <path
-                    strokeLinecap="round"
-                    strokeLinejoin="round"
-                    strokeWidth={2}
-                    d="M9 5H7a2 2 0 00-2 2v12a2 2 0 002 2h10a2 2 0 002-2V7a2 2 0 00-2-2h-2M9 5a2 2 0 002 2h2a2 2 0 002-2M9 5a2 2 0 012-2h2a2 2 0 012 2"
-                  />
-                </svg>
-              </div>
-              <h3 className="text-xl font-semibold mb-3 text-gray-900">
-                Dental Care
-              </h3>
-              <p className="text-gray-600 text-sm mb-4">
-                Comprehensive dental services to maintain your pet's oral health
-                and prevent disease.
-              </p>
-              <Link
-                href="/services/dental"
-                className="text-teal-600 text-sm font-medium hover:text-teal-700 inline-flex items-center"
+            {/* Service 4 - Dental Care */}
+            <div className="bg-white rounded-xl p-6 shadow-md hover:shadow-xl transition">
+              <motion.div 
+                initial={{ x: 600, y: -200 }}
+                animate={isInView ? { x: 0, y: 0 } : { x: 600, y: -200 }}
+                transition={{ duration: 0.8, delay: 0.4, type: "spring", stiffness: 60 }}
+                className="w-14 h-14 bg-blue-100 rounded-full flex items-center justify-center mb-4"
               >
-                Learn more →
-              </Link>
+                <svg className="w-7 h-7 text-blue-600" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                  <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M9 5H7a2 2 0 00-2 2v12a2 2 0 002 2h10a2 2 0 002-2V7a2 2 0 00-2-2h-2M9 5a2 2 0 002 2h2a2 2 0 002-2M9 5a2 2 0 012-2h2a2 2 0 012 2" />
+                </svg>
+              </motion.div>
+              <motion.div
+                initial={{ opacity: 0 }}
+                animate={isInView ? { opacity: 1 } : { opacity: 0 }}
+                transition={{ delay: 1.2 }}
+              >
+                <h3 className="text-xl font-semibold mb-3">Dental Care</h3>
+                <p className="text-gray-600 text-sm mb-4">Comprehensive dental services to maintain your pet's oral health and prevent disease.</p>
+                <Link href="/services/dental" className="text-blue-600 text-sm font-medium hover:text-blue-700 inline-flex items-center">
+                  Learn more →
+                </Link>
+              </motion.div>
             </div>
           </div>
 
           <div className="text-center mt-12">
-            <button className="bg-teal-600 text-white px-8 py-3 rounded-full font-semibold hover:bg-teal-700 transition shadow-lg">
+            <button className="bg-blue-600 text-white px-8 py-3 rounded-lg font-semibold hover:bg-blue-700 transition">
               View All Services
             </button>
           </div>
         </div>
       </section>
+
+    
 
       {/* Why Choose Pettopia Section */}
       <section className="py-20 bg-white">
@@ -565,7 +521,7 @@ export default function Home() {
       <section className="bg-gradient-to-r from-teal-600 to-cyan-600 py-16">
         <div className="max-w-4xl mx-auto px-4 sm:px-6 lg:px-8 text-center">
           <h2 className="text-4xl font-bold text-white mb-4">
-            Ready to Schedule Your Pet's Visit?
+            Chốt phần kết ở đây đặt lịch, chăm sóc,....
           </h2>
           <p className="text-xl text-cyan-50 mb-8">
             Whether it's time for a check-up or your pet needs special care, our
