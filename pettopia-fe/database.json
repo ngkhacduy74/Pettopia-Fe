@@ -1,0 +1,10 @@
+{
+  "users": [
+    { "id": 1, "username": "admin", "password": "123", "name": "Administrator" },
+    { "id": 2, "username": "nam", "password": "123", "name": "Nam Anh" }
+  ],
+  "posts": [
+    { "id": 1, "title": "Hello Next.js", "content": "Bài viết đầu tiên", "authorId": 1 },
+    { "id": 2, "title": "Học React", "content": "Cùng nhau học React và Next.js", "authorId": 2 }
+  ]
+}
