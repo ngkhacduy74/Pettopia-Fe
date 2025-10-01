@@ -4,11 +4,13 @@ import { useState, useEffect } from 'react';
 import Link from 'next/link';
 import { motion, useInView } from 'framer-motion';
 import { useRef } from 'react';
+import { useRouter } from "next/navigation";
 
 export default function Home() {
   const [scrolled, setScrolled] = useState(false);
   const servicesRef = useRef(null);
   const isInView = useInView(servicesRef, { once: true, amount: 0.3 });
+  const router = useRouter();
   useEffect(() => {
     const handleScroll = () => {
       setScrolled(window.scrollY > 50);
@@ -88,6 +90,17 @@ export default function Home() {
               }`}
             >
               Find a vet
+            </button>
+            <button
+              onClick={() => router.push("/login")}
+              className={`px-6 py-2 rounded-full transition font-medium ${
+                scrolled
+                  ? 'bg-teal-600 text-white hover:bg-teal-700'
+                  : 'bg-white text-teal-600 hover:bg-white/90'
+              }`}
+              
+            >
+              Login
             </button>
           </div>
         </div>
