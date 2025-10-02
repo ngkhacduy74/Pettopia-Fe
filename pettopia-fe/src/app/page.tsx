@@ -1,8 +1,1 @@
-export default function HomePage() {
-  return (
-    <main>
-      <h1>Welcome to Pettopia!</h1>
-      <p>This is the uhh i dont know. go to /home</p>
-    </main>
-  );
-}
+export default function Home() { return (<main style={{ textAlign: "center", marginTop: "50px" }}> <h1>Loading Test</h1> <div style={{ width: "200px", height: "100px", margin: "20px auto", backgroundImage: "url(./sampleimg/cat.gif)", backgroundSize: "cover", borderRadius: "12px", }} ></div> </main>); }
