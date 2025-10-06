@@ -17,11 +17,10 @@ export default function Header() {
 
   return (
     <nav
-      className={`fixed top-0 left-0 right-0 z-50 transition-all duration-300 ${
-        scrolled
-          ? 'bg-white/95 backdrop-blur-sm shadow-sm'
-          : 'bg-gradient-to-b from-black/40 to-transparent cursor-pointer'
-      }`}
+      className={`fixed top-0 left-0 right-0 z-50 transition-all duration-300 ${scrolled
+        ? 'bg-white/95 backdrop-blur-sm shadow-sm'
+        : 'bg-gradient-to-b from-black/40 to-transparent cursor-pointer'
+        }`}
     >
       <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
         <div className="flex justify-between items-center h-16">
@@ -35,55 +34,64 @@ export default function Header() {
           <div className="hidden md:flex items-center space-x-8">
             <Link
               href="/"
-              className={`transition ${
-                scrolled
-                  ? 'text-gray-700 hover:text-teal-600'
-                  : 'text-white hover:text-white/80'
-              }`}
+              className={`transition ${scrolled
+                ? 'text-gray-700 hover:text-teal-600'
+                : 'text-white hover:text-white/80'
+                }`}
             >
               Home
             </Link>
             <Link
               href="/services"
-              className={`transition ${
-                scrolled
-                  ? 'text-gray-700 hover:text-teal-600'
-                  : 'text-white hover:text-white/80'
-              }`}
+              className={`transition ${scrolled
+                ? 'text-gray-700 hover:text-teal-600'
+                : 'text-white hover:text-white/80'
+                }`}
             >
               Services
             </Link>
             <Link
               href="/about"
-              className={`transition ${
-                scrolled
-                  ? 'text-gray-700 hover:text-teal-600'
-                  : 'text-white hover:text-white/80'
-              }`}
+              className={`transition ${scrolled
+                ? 'text-gray-700 hover:text-teal-600'
+                : 'text-white hover:text-white/80'
+                }`}
             >
               About Us
             </Link>
             <Link
               href="/contact"
-              className={`transition ${
-                scrolled
-                  ? 'text-gray-700 hover:text-teal-600'
-                  : 'text-white hover:text-white/80'
-              }`}
+              className={`transition ${scrolled
+                ? 'text-gray-700 hover:text-teal-600'
+                : 'text-white hover:text-white/80'
+                }`}
             >
               Contact
             </Link>
           </div>
 
-          <button
-            className={`px-6 py-2 rounded-full transition font-medium ${
-              scrolled
-                ? 'bg-teal-600 text-white hover:bg-teal-700'
-                : 'bg-white text-teal-600 hover:bg-white/90 cursor-pointer'
-            }`}
-          >
-            Login
-          </button>
+          <div className="flex items-center space-x-6">
+            <Link href="/login">
+              <button
+                className={`px-6 py-2 rounded-full transition font-medium ${scrolled
+                  ? 'bg-teal-600 text-white hover:bg-teal-700'
+                  : 'bg-white text-teal-600 hover:bg-white/90 cursor-pointer'
+                  }`}
+              >
+                Login
+              </button>
+            </Link>
+            <Link href="/register">
+              <button
+                className={`px-6 py-2 rounded-full transition font-medium ${scrolled
+                  ? 'bg-teal-600 text-white hover:bg-teal-700'
+                  : 'bg-white text-teal-600 hover:bg-white/90 cursor-pointer'
+                  }`}
+              >
+                Sign Up
+              </button>
+            </Link>
+          </div>
         </div>
       </div>
     </nav>
