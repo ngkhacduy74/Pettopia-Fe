@@ -2,6 +2,7 @@
 
 import { useState, useEffect } from 'react';
 import Link from 'next/link';
+import { SignedIn, SignedOut, UserButton } from '@clerk/nextjs';
 
 export default function Header() {
   const [scrolled, setScrolled] = useState(false);
@@ -71,26 +72,31 @@ export default function Header() {
           </div>
 
           <div className="flex items-center space-x-6">
-            <Link href="/login">
+            <SignedIn>
+              <UserButton/>
+            </SignedIn>
+            <SignedOut>
+              <Link href="/sign-in">
               <button
                 className={`px-6 py-2 rounded-full transition font-medium ${scrolled
                   ? 'bg-teal-600 text-white hover:bg-teal-700'
                   : 'bg-white text-teal-600 hover:bg-white/90 cursor-pointer'
                   }`}
               >
-                Login
+                Sign-in
               </button>
             </Link>
-            <Link href="/register">
+            <Link href="/sign-up">
               <button
                 className={`px-6 py-2 rounded-full transition font-medium ${scrolled
                   ? 'bg-teal-600 text-white hover:bg-teal-700'
                   : 'bg-white text-teal-600 hover:bg-white/90 cursor-pointer'
                   }`}
               >
-                Sign Up
+                Sign-up
               </button>
             </Link>
+            </SignedOut>
           </div>
         </div>
       </div>
