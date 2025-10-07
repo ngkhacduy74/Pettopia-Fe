@@ -1,10 +1,41 @@
 {
   "users": [
-    { "id": 1, "username": "admin", "password": "123", "name": "Administrator" },
-    { "id": 2, "username": "nam", "password": "123", "name": "Nam Anh" }
+    {
+      "id": "1",
+      "username": "admin",
+      "password": "123",
+      "name": "Administrator"
+    },
+    {
+      "id": "2",
+      "username": "nam",
+      "password": "123",
+      "name": "Nam Anh"
+    },
+    {
+      "id": "edaa",
+      "fullname": "Trần Nam Anh",
+      "username": "Nhimsmnm",
+      "email": "onlynanh@gmail.com",
+      "phone": "0965325903",
+      "address": "Long Biên",
+      "age": "22",
+      "gender": "male",
+      "password": "nanh25092003"
+    }
   ],
   "posts": [
-    { "id": 1, "title": "Hello Next.js", "content": "Bài viết đầu tiên", "authorId": 1 },
-    { "id": 2, "title": "Học React", "content": "Cùng nhau học React và Next.js", "authorId": 2 }
+    {
+      "id": "1",
+      "title": "Hello Next.js",
+      "content": "Bài viết đầu tiên",
+      "authorId": 1
+    },
+    {
+      "id": "2",
+      "title": "Học React",
+      "content": "Cùng nhau học React và Next.js",
+      "authorId": 2
+    }
   ]
 }
