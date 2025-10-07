@@ -19,7 +19,7 @@ export default function LoginForm() {
       const user = users.find((u: any) => u.email === email && u.password === password);
       if (user) {
         alert('Login successful!'); // Replace with real auth (e.g., JWT)
-        router.push('/'); // Redirect to home
+        router.push('/update-vet-ifnormation'); // Redirect to home
       } else {
         setError('Invalid credentials');
       }

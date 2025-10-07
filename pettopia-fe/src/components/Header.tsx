@@ -71,7 +71,7 @@ export default function Header() {
           </div>
 
           <div className="flex items-center space-x-6">
-              <Link href="/sign-in">
+              <Link href="/login">
                 <button
                   className={`px-6 py-2 rounded-full transition font-medium ${scrolled
                     ? 'bg-teal-600 text-white hover:bg-teal-700'
@@ -81,7 +81,7 @@ export default function Header() {
                   Sign-in
                 </button>
               </Link>
-              <Link href="/sign-up">
+              <Link href="/register">
                 <button
                   className={`px-6 py-2 rounded-full transition font-medium ${scrolled
                     ? 'bg-teal-600 text-white hover:bg-teal-700'
