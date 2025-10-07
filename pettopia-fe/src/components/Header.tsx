@@ -73,29 +73,29 @@ export default function Header() {
 
           <div className="flex items-center space-x-6">
             <SignedIn>
-              <UserButton/>
+              <UserButton />
             </SignedIn>
             <SignedOut>
               <Link href="/sign-in">
-              <button
-                className={`px-6 py-2 rounded-full transition font-medium ${scrolled
-                  ? 'bg-teal-600 text-white hover:bg-teal-700'
-                  : 'bg-white text-teal-600 hover:bg-white/90 cursor-pointer'
-                  }`}
-              >
-                Sign-in
-              </button>
-            </Link>
-            <Link href="/sign-up">
-              <button
-                className={`px-6 py-2 rounded-full transition font-medium ${scrolled
-                  ? 'bg-teal-600 text-white hover:bg-teal-700'
-                  : 'bg-white text-teal-600 hover:bg-white/90 cursor-pointer'
-                  }`}
-              >
-                Sign-up
-              </button>
-            </Link>
+                <button
+                  className={`px-6 py-2 rounded-full transition font-medium ${scrolled
+                    ? 'bg-teal-600 text-white hover:bg-teal-700'
+                    : 'bg-white text-teal-600 hover:bg-white/90 cursor-pointer'
+                    }`}
+                >
+                  Sign-in
+                </button>
+              </Link>
+              <Link href="/sign-up">
+                <button
+                  className={`px-6 py-2 rounded-full transition font-medium ${scrolled
+                    ? 'bg-teal-600 text-white hover:bg-teal-700'
+                    : 'bg-white text-teal-600 hover:bg-white/90 cursor-pointer'
+                    }`}
+                >
+                  Sign-up
+                </button>
+              </Link>
             </SignedOut>
           </div>
         </div>
