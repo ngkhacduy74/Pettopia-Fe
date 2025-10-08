@@ -26,16 +26,42 @@
   ],
   "posts": [
     {
-      "id": "1",
+      "id": "p1",
       "title": "Hello Next.js",
       "content": "Bài viết đầu tiên",
       "authorId": 1
     },
     {
-      "id": "2",
+      "id": "p2",
       "title": "Học React",
       "content": "Cùng nhau học React và Next.js",
       "authorId": 2
+    }
+  ],
+  "clinics": [
+    {
+      "id": "c1",
+      "name": "Thú y Hoà Lạc"
+    },
+    {
+      "id": "c2",
+      "name": "Thú y Long Biên"
+    }
+  ],
+  "requests": [
+    {
+      "id": "79ed",
+      "specialty": "Nội",
+      "subSpecialties": "Ngoại",
+      "exp": "5",
+      "language": "Tiếng Việt, Tiếng Anh, Tiếng Nhật",
+      "social_link": {
+        "facebook": "https://www.facebook.com/Nhimsmnm",
+        "other": "https://www.facebook.com/Nhimsmnm"
+      },
+      "bio": "sss",
+      "certification": "https://www.facebook.com/Nhimsmnm",
+      "clinic_id": ""
     }
   ]
 }
