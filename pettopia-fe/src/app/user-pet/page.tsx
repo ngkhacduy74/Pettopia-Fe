@@ -79,13 +79,13 @@ export default function UserPetPage() {
                         <p className="text-gray-600">Quản lý thông tin và chăm sóc thú cưng của bạn</p>
                     </div>
 
-                    {/* Section 1: Pet ID Card */}
                     <section className="mb-20">
                         <h2 className="text-3xl font-bold text-gray-900 mb-8 text-center">Thẻ căn cước thú cưng</h2>
 
                         <div className="flex justify-center items-center perspective-1000">
                             <div
-                                className="relative w-full max-w-2xl h-96 cursor-pointer"
+                                className="relative cursor-pointer"
+                               style={{ width: '600px', height: '380px' }}
                                 onClick={() => setIsFlipped(!isFlipped)}
                             >
                                 <motion.div
@@ -96,96 +96,130 @@ export default function UserPetPage() {
                                 >
                                     {/* Front of card */}
                                     <div
-                                        className="absolute w-full h-full backface-hidden"
-                                        style={{ backfaceVisibility: 'hidden' }}
+                                        className="absolute backface-hidden"
+                                        style={{ 
+                                            backfaceVisibility: 'hidden',
+                                            width: '600px',
+                                            height: '380px'
+                                        }}
                                     >
-                                        <div className="bg-gradient-to-br from-teal-500 to-cyan-600 rounded-2xl shadow-2xl p-8 h-full text-white">
-                                            <div className="flex items-start justify-between mb-6">
-                                                <div>
-                                                    <h3 className="text-2xl font-bold mb-1">PETTOPIA</h3>
-                                                    <p className="text-sm text-cyan-100">Pet Identity Card</p>
-                                                </div>
-                                                <div className="bg-white/20 rounded-lg px-3 py-1">
-                                                    <p className="text-xs">ID: {petData.pet_id}</p>
-                                                </div>
+                                        <div className="relative bg-gradient-to-br from-gray-200 to-gray-300 rounded-2xl shadow-2xl p-8 h-full text-gray-800 overflow-hidden border-2 border-gray-400">
+                                            {/* Background pattern */}
+                                            <div className="absolute inset-0 opacity-5">
+                                                <img 
+                                                    src="/sampleimg/catbg.jpg" 
+                                                    alt="Background" 
+                                                    className="w-full h-full object-cover"
+                                                />
                                             </div>
-
-                                            <div className="flex gap-6">
-                                                <div className="w-32 h-32 bg-white rounded-xl flex items-center justify-center">
-                                                    <svg className="w-20 h-20 text-teal-600" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                                                        <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M4.318 6.318a4.5 4.5 0 000 6.364L12 20.364l7.682-7.682a4.5 4.5 0 00-6.364-6.364L12 7.636l-1.318-1.318a4.5 4.5 0 00-6.364 0z" />
-                                                    </svg>
+                                            
+                                            <div className="relative z-10">
+                                                <div className="flex items-start justify-between mb-6">
+                                                    <div className="flex items-center">
+                                                        <img src="/sampleimg/logo.png" alt="Logo" className="h-8 mr-3" />
+                                                        <div>
+                                                            <h3 className="text-2xl font-bold mb-1 text-gray-900">PETTOPIA</h3>
+                                                            <p className="text-sm text-gray-700">Pet Identity Card</p>
+                                                        </div>
+                                                    </div>
+                                                    <div className="bg-white rounded-lg px-3 py-1 border border-gray-400">
+                                                        <p className="text-xs text-gray-700">ID: {petData.pet_id}</p>
+                                                    </div>
                                                 </div>
 
-                                                <div className="flex-1">
-                                                    <h4 className="text-3xl font-bold mb-4">{petData.name}</h4>
-                                                    <div className="grid grid-cols-2 gap-3 text-sm">
-                                                        <div>
-                                                            <p className="text-cyan-100">Loài:</p>
-                                                            <p className="font-semibold">{petData.species}</p>
-                                                        </div>
-                                                        <div>
-                                                            <p className="text-cyan-100">Màu lông:</p>
-                                                            <p className="font-semibold">{petData.color}</p>
-                                                        </div>
-                                                        <div>
-                                                            <p className="text-cyan-100">Giới tính:</p>
-                                                            <p className="font-semibold">{petData.gender}</p>
-                                                        </div>
-                                                        <div>
-                                                            <p className="text-cyan-100">Tuổi:</p>
-                                                            <p className="font-semibold">{petData.age} tuổi</p>
+                                                <div className="flex gap-6">
+                                                    <div className="w-24 h-24 bg-white rounded-xl flex items-center justify-center flex-shrink-0 border-2 border-gray-400">
+                                                        <svg className="w-14 h-14 text-gray-600" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                                            <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M4.318 6.318a4.5 4.5 0 000 6.364L12 20.364l7.682-7.682a4.5 4.5 0 00-6.364-6.364L12 7.636l-1.318-1.318a4.5 4.5 0 00-6.364 0z" />
+                                                        </svg>
+                                                    </div>
+
+                                                    <div className="flex-1">
+                                                        <h4 className="text-3xl font-bold mb-4 text-gray-900">{petData.name}</h4>
+                                                        <div className="grid grid-cols-2 gap-3 text-sm">
+                                                            <div>
+                                                                <p className="text-gray-700">Loài:</p>
+                                                                <p className="font-semibold text-gray-900">{petData.species}</p>
+                                                            </div>
+                                                            <div>
+                                                                <p className="text-gray-700">Màu lông:</p>
+                                                                <p className="font-semibold text-gray-900">{petData.color}</p>
+                                                            </div>
+                                                            <div>
+                                                                <p className="text-gray-700">Giới tính:</p>
+                                                                <p className="font-semibold text-gray-900">{petData.gender}</p>
+                                                            </div>
+                                                            <div>
+                                                                <p className="text-gray-700">Tuổi:</p>
+                                                                <p className="font-semibold text-gray-900">{petData.age} tuổi</p>
+                                                            </div>
                                                         </div>
                                                     </div>
                                                 </div>
-                                            </div>
 
-                                            <div className="mt-6 pt-6 border-t border-white/30">
-                                                <p className="text-xs text-cyan-100 text-center">Click để xem mặt sau</p>
+                                                <div className="mt-6 pt-6 border-t-2 border-gray-400">
+                                                    <p className="text-xs text-gray-700 text-center">Click để xem mặt sau</p>
+                                                </div>
                                             </div>
                                         </div>
                                     </div>
 
                                     {/* Back of card */}
                                     <div
-                                        className="absolute w-full h-full backface-hidden"
+                                        className="absolute backface-hidden"
                                         style={{
                                             backfaceVisibility: 'hidden',
-                                            transform: 'rotateY(180deg)'
+                                            transform: 'rotateY(180deg)',
+                                             width: '600px',
+                                            height: '380px'
                                         }}
                                     >
-                                        <div className="bg-gradient-to-br from-cyan-600 to-teal-500 rounded-2xl shadow-2xl p-8 h-full text-white">
-                                            <h3 className="text-xl font-bold mb-6">Thông tin chủ sở hữu</h3>
-
-                                            <div className="space-y-4 text-sm">
-                                                <div className="flex justify-between border-b border-white/30 pb-2">
-                                                    <span className="text-cyan-100">Cân nặng:</span>
-                                                    <span className="font-semibold">{petData.weight} kg</span>
-                                                </div>
-                                                <div className="flex justify-between border-b border-white/30 pb-2">
-                                                    <span className="text-cyan-100">Màu lông:</span>
-                                                    <span className="font-semibold">{petData.color}</span>
-                                                </div>
-                                                <div className="flex justify-between border-b border-white/30 pb-2">
-                                                    <span className="text-cyan-100">Chủ sở hữu:</span>
-                                                    <span className="font-semibold">{petData.owner.fullname}</span>
-                                                </div>
-                                                <div className="flex justify-between border-b border-white/30 pb-2">
-                                                    <span className="text-cyan-100">Số điện thoại:</span>
-                                                    <span className="font-semibold">{petData.owner.phone.phone_number}</span>
-                                                </div>
-                                                <div className="flex justify-between border-b border-white/30 pb-2">
-                                                    <span className="text-cyan-100">Email:</span>
-                                                    <span className="font-semibold text-xs">{petData.owner.email.email_address}</span>
-                                                </div>
-                                                <div className="flex justify-between">
-                                                    <span className="text-cyan-100">User ID:</span>
-                                                    <span className="font-semibold">{petData.owner.user_id}</span>
-                                                </div>
+                                        <div className="relative bg-gradient-to-br from-gray-300 to-gray-200 rounded-2xl shadow-2xl p-8 h-full text-gray-800 overflow-hidden border-2 border-gray-400">
+                                            {/* Background pattern */}
+                                            <div className="absolute inset-0 opacity-5">
+                                                <img 
+                                                    src="/sampleimg/logo.png" 
+                                                    alt="Background" 
+                                                    className="w-full h-full object-cover"
+                                                />
                                             </div>
 
-                                            <div className="mt-6 pt-6 border-t border-white/30">
-                                                <p className="text-xs text-cyan-100 text-center">Click để xem mặt trước</p>
+                                            <div className="relative z-10">
+                                                <div className="flex items-center mb-6">
+                                                    <img src="/sampleimg/logo.png" alt="Logo" className="h-8 mr-3" />
+                                                    <h3 className="text-xl font-bold text-gray-900">Thông tin chủ sở hữu</h3>
+                                                </div>
+
+                                                <div className="space-y-4 text-sm">
+                                                    <div className="flex justify-between border-b-2 border-gray-400 pb-2">
+                                                        <span className="text-gray-700">Cân nặng:</span>
+                                                        <span className="font-semibold text-gray-900">{petData.weight} kg</span>
+                                                    </div>
+                                                    <div className="flex justify-between border-b-2 border-gray-400 pb-2">
+                                                        <span className="text-gray-700">Màu lông:</span>
+                                                        <span className="font-semibold text-gray-900">{petData.color}</span>
+                                                    </div>
+                                                    <div className="flex justify-between border-b-2 border-gray-400 pb-2">
+                                                        <span className="text-gray-700">Chủ sở hữu:</span>
+                                                        <span className="font-semibold text-gray-900">{petData.owner.fullname}</span>
+                                                    </div>
+                                                    <div className="flex justify-between border-b-2 border-gray-400 pb-2">
+                                                        <span className="text-gray-700">Số điện thoại:</span>
+                                                        <span className="font-semibold text-gray-900">{petData.owner.phone.phone_number}</span>
+                                                    </div>
+                                                    <div className="flex justify-between border-b-2 border-gray-400 pb-2">
+                                                        <span className="text-gray-700">Email:</span>
+                                                        <span className="font-semibold text-xs text-gray-900">{petData.owner.email.email_address}</span>
+                                                    </div>
+                                                    <div className="flex justify-between">
+                                                        <span className="text-gray-700">User ID:</span>
+                                                        <span className="font-semibold text-gray-900">{petData.owner.user_id}</span>
+                                                    </div>
+                                                </div>
+
+                                                <div className="mt-6 pt-6 border-t-2 border-gray-400">
+                                                    <p className="text-xs text-gray-700 text-center">Click để xem mặt trước</p>
+                                                </div>
                                             </div>
                                         </div>
                                     </div>
@@ -193,7 +227,6 @@ export default function UserPetPage() {
                             </div>
                         </div>
                     </section>
-
                     {/* Section 2: Pet Features (Diary & Health Report) */}
                     <section ref={servicesRef} className="mb-20">
                         <h2 className="text-3xl font-bold text-gray-900 mb-8 text-center">Tính năng quản lý</h2>
