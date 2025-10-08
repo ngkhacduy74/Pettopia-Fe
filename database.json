@@ -62,6 +62,20 @@
       "bio": "sss",
       "certification": "https://www.facebook.com/Nhimsmnm",
       "clinic_id": ""
+    },
+    {
+      "id": "8eac",
+      "specialty": "",
+      "subSpecialties": "",
+      "exp": "",
+      "language": "",
+      "social_link": {
+        "facebook": "",
+        "other": ""
+      },
+      "bio": "",
+      "certification": "",
+      "clinic_id": "c1"
     }
   ]
 }

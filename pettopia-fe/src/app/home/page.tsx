@@ -5,6 +5,9 @@ import { motion, useInView } from 'framer-motion';
 import { useRef } from 'react';
 import Header from '@/components/Header';
 import Footer from '@/components/Footer';
+import Link from 'next/link';
+
+
 export default function Home() {
   const servicesRef = useRef(null);
   const isInView = useInView(servicesRef, { once: true, amount: 0.3 });
@@ -37,42 +40,45 @@ export default function Home() {
               and happy.
             </p>
             <div className="flex flex-col sm:flex-row gap-4">
-              <button className="bg-white text-teal-700 px-8 py-3.5 rounded-full font-medium 
+              <Link href='/user-page'>
+                <button className="bg-white text-teal-700 px-8 py-3.5 rounded-full font-medium 
                      hover:bg-teal-700 hover:text-white hover:shadow-lg hover:scale-105 
                      transition-all duration-300 inline-flex items-center cursor-pointer">
-                Our Services
-                <svg
-                  className="w-5 h-5 ml-2 transition-transform group-hover:translate-x-1"
-                  fill="none"
-                  stroke="currentColor"
-                  viewBox="0 0 24 24"
-                >
-                  <path
-                    strokeLinecap="round"
-                    strokeLinejoin="round"
-                    strokeWidth={2}
-                    d="M9 5l7 7-7 7"
-                  />
-                </svg>
-              </button>
-              <button className="border-2 border-white text-white px-8 py-3.5 rounded-full font-medium 
+                  Our Services
+                  <svg
+                    className="w-5 h-5 ml-2 transition-transform group-hover:translate-x-1"
+                    fill="none"
+                    stroke="currentColor"
+                    viewBox="0 0 24 24"
+                  >
+                    <path
+                      strokeLinecap="round"
+                      strokeLinejoin="round"
+                      strokeWidth={2}
+                      d="M9 5l7 7-7 7"
+                    />
+                  </svg>
+                </button></Link>
+              <Link href='/user-page' >
+                <button className="border-2 border-white text-white px-8 py-3.5 rounded-full font-medium 
                      hover:bg-white hover:text-teal-700 hover:shadow-lg hover:scale-105 
                      transition-all duration-300 inline-flex items-center group cursor-pointer">
-                Book an Appointment
-                <svg
-                  className="w-5 h-5 ml-2 transition-transform group-hover:translate-x-1"
-                  fill="none"
-                  stroke="currentColor"
-                  viewBox="0 0 24 24"
-                >
-                  <path
-                    strokeLinecap="round"
-                    strokeLinejoin="round"
-                    strokeWidth={2}
-                    d="M9 5l7 7-7 7"
-                  />
-                </svg>
-              </button>
+                  Book an Appointment
+                  <svg
+                    className="w-5 h-5 ml-2 transition-transform group-hover:translate-x-1"
+                    fill="none"
+                    stroke="currentColor"
+                    viewBox="0 0 24 24"
+                  >
+                    <path
+                      strokeLinecap="round"
+                      strokeLinejoin="round"
+                      strokeWidth={2}
+                      d="M9 5l7 7-7 7"
+                    />
+                  </svg>
+                </button>
+              </Link>
             </div>
           </div>
 
