@@ -3,7 +3,7 @@ import React, { useState } from 'react';
 import Chat from '@/components/Chat';
 import UserNavbar from '@/components/UserNavbar';
 import { image } from 'framer-motion/client';
-
+import Link from "next/link";
 
 export default function PetCareApp() {
     const [showSearch, setShowSearch] = useState(false);
@@ -125,6 +125,9 @@ export default function PetCareApp() {
                                     <span className="animate-bounce" style={{ animationDelay: '0.6s', animationDuration: '2s' }}>🐇</span>
                                 </div>
                             </div>
+                        </div>
+                        <div>
+                            <Link href="/user-pet">Đến trang User Pet</Link>
                         </div>
                     </section>
                     {/* Recently Visited */}
@@ -398,7 +401,7 @@ export default function PetCareApp() {
                     💬
                 </button>
             )}
-   
+
         </div>
     );
 }
