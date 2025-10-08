@@ -3,7 +3,7 @@
 import { useState, useRef } from 'react';
 import { motion, useInView } from 'framer-motion';
 import UserNavbar from '@/components/UserNavbar';
-import {ContinuousCalendar} from '@/components/ContinuousCalendar'; 
+import UpcomingMeetings from '@/components/UpcomingMeetings'; 
 // Interface có thể giữ lại nếu cần dùng ở những nơi khác
 interface UserNavbarProps {
     setShowSearch: (show: boolean) => void;
@@ -305,14 +305,9 @@ export default function UserPetPage() {
 
                         <div className="bg-white rounded-2xl p-8 shadow-lg border border-teal-100">
                             {/* Calendar View */}
-                            <div className="mb-8 h-[600px]">
-                                <ContinuousCalendar
-                                    onClick={(day, month, year) => {
-                                        console.log(`Selected: ${day}/${month + 1}/${year}`);
-                                        // Handle date selection - open booking modal or navigate
-                                    }}
-                                />
-                            </div>
+                            
+                                <UpcomingMeetings       />
+                         
 
                             {/* Upcoming Appointments List */}
                             {upcomingAppointments.length > 0 ? (
