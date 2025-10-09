@@ -5,7 +5,7 @@
   "scripts": {
     "dev": "next dev --turbopack",
     "build": "next build --turbopack",
-    "start": "next start"
+    "start": "next start --port=3636"
   },
   "dependencies": {
     "@clerk/nextjs": "^6.33.2",

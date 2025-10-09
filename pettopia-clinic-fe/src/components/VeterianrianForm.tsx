@@ -17,7 +17,6 @@ export default function VeterinarianForm() {
     specialty: '',
     subSpecialties: '',
     exp: '',
-    language: '',
     facebook: '',
     otherSocial: '',
     bio: '',
@@ -49,7 +48,6 @@ export default function VeterinarianForm() {
         specialty: formData.specialty,
         subSpecialties: formData.subSpecialties,
         exp: formData.exp,
-        language: formData.language,
         social_link: {
           facebook: formData.facebook,
           other: formData.otherSocial,
@@ -121,23 +119,6 @@ export default function VeterinarianForm() {
                   type="number"
                   className="block w-full bg-white/10 px-3 py-1.5 text-base text-black border-b border-teal-700 placeholder:text-gray-500 focus:outline-2 focus:-outline-offset-2 focus:outline-teal-700 sm:text-sm/6"
                   value={formData.exp}
-                  onChange={handleChange}
-                />
-              </div>
-            </div>
-
-            <div className="sm:col-span-4">
-              <label htmlFor="language" className="block text-sm/6 font-medium text-black">
-                Languages
-              </label>
-              <div className="mt-2">
-                <input
-                  id="language"
-                  name="language"
-                  type="text"
-                  placeholder="Ex: English, Vietnamese"
-                  className="block w-full bg-white/10 px-3 py-1.5 text-base text-black border-b border-teal-700 placeholder:text-gray-500 focus:outline-2 focus:-outline-offset-2 focus:outline-teal-700 sm:text-sm/6"
-                  value={formData.language}
                   onChange={handleChange}
                 />
               </div>
