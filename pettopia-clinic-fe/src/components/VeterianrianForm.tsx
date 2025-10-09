@@ -4,6 +4,7 @@ import { useState, useEffect } from 'react';
 import { getClinics } from '../services/clinicService';
 import { submitVeterinarianData } from '../services/veterianrianService';
 import { ChevronDownIcon } from '@heroicons/react/16/solid';
+import Link from 'next/link';
 
 
 interface Clinic {
@@ -229,12 +230,14 @@ export default function VeterinarianForm() {
             >
               Cancel
             </button>
+            <Link href='/vet/waitting'>
             <button
               type="submit"
               className="rounded-md bg-teal-600 hover:bg-teal-700 px-4 py-2 text-sm font-semibold text-white border border-teal-700 transition focus:outline-2 focus:outline-offset-2 focus:outline-teal-700"
             >
               Save
             </button>
+            </Link>
           </div>
         </div>
       </div>

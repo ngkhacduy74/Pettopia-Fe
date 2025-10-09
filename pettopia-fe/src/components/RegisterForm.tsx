@@ -37,13 +37,13 @@ export default function RegisterForm() {
       <div className="sm:mx-auto sm:w-full sm:max-w-sm">
         <Image
           alt="Your Company"
-          src="/logo.svg" // Same logo as login
+          src="/sampleimg/logo.png" // Same logo as login
           width={40}
           height={40}
-          className="mx-auto h-10 w-auto"
+          className="mx-auto h-25 w-auto"
         />
-        <h2 className="mt-10 text-center text-2xl/9 font-bold tracking-tight text-white">
-          Register for an account
+        <h2 className="mt-10 text-center text-2xl/9 font-bold tracking-tight text-gray-900">
+          Register
         </h2>
       </div>
 
@@ -53,28 +53,28 @@ export default function RegisterForm() {
           {/* Fullname and Username */}
           <div className="flex space-x-4">
             <div className="w-1/2">
-              <label htmlFor="fullname" className="block text-sm/6 font-medium text-gray-100">
+              <label htmlFor="fullname" className="block text-sm/6 font-medium text-gray-900">
                 Full Name
               </label>
               <div className="mt-2">
                 <input
                   id="fullname"
                   {...register('fullname', { required: true })}
-                  className="block w-full rounded-md bg-white/5 px-3 py-1.5 text-base text-white outline-1 -outline-offset-1 outline-white/10 placeholder:text-gray-500 focus:outline-2 focus:-outline-offset-2 focus:outline-indigo-500 sm:text-sm/6"
+                  className="block w-full bg-white px-3 py-1.5 text-base text-gray-900 border-b border-gray-300 placeholder:text-gray-500 focus:border-indigo-600 focus:outline-none sm:text-sm"
                   placeholder="Full Name"
                 />
                 {errors.fullname && <p className="text-sm text-red-400 mt-1">Full Name is required</p>}
               </div>
             </div>
             <div className="w-1/2">
-              <label htmlFor="username" className="block text-sm/6 font-medium text-gray-100">
+              <label htmlFor="username" className="block text-sm/6 font-medium text-gray-900">
                 Username
               </label>
               <div className="mt-2">
                 <input
                   id="username"
                   {...register('username', { required: true })}
-                  className="block w-full rounded-md bg-white/5 px-3 py-1.5 text-base text-white outline-1 -outline-offset-1 outline-white/10 placeholder:text-gray-500 focus:outline-2 focus:-outline-offset-2 focus:outline-indigo-500 sm:text-sm/6"
+                  className="block w-full bg-white px-3 py-1.5 text-base text-gray-900 border-b border-gray-300 placeholder:text-gray-500 focus:border-indigo-600 focus:outline-none sm:text-sm"
                   placeholder="Username"
                 />
                 {errors.username && <p className="text-sm text-red-400 mt-1">Username is required</p>}
@@ -85,7 +85,7 @@ export default function RegisterForm() {
           {/* Email and Phone */}
           <div className="flex space-x-4">
             <div className="w-1/2">
-              <label htmlFor="email" className="block text-sm/6 font-medium text-gray-100">
+              <label htmlFor="email" className="block text-sm/6 font-medium text-gray-900">
                 Email address
               </label>
               <div className="mt-2">
@@ -93,21 +93,21 @@ export default function RegisterForm() {
                   id="email"
                   {...register('email', { required: true, pattern: /^\S+@\S+$/i })}
                   type="email"
-                  className="block w-full rounded-md bg-white/5 px-3 py-1.5 text-base text-white outline-1 -outline-offset-1 outline-white/10 placeholder:text-gray-500 focus:outline-2 focus:-outline-offset-2 focus:outline-indigo-500 sm:text-sm/6"
+                  className="block w-full bg-white px-3 py-1.5 text-base text-gray-900 border-b border-gray-300 placeholder:text-gray-500 focus:border-indigo-600 focus:outline-none sm:text-sm"
                   placeholder="Email address"
                 />
                 {errors.email && <p className="text-sm text-red-400 mt-1">Valid email is required</p>}
               </div>
             </div>
             <div className="w-1/2">
-              <label htmlFor="phone" className="block text-sm/6 font-medium text-gray-100">
+              <label htmlFor="phone" className="block text-sm/6 font-medium text-gray-900">
                 Phone
               </label>
               <div className="mt-2">
                 <input
                   id="phone"
                   {...register('phone', { required: true })}
-                  className="block w-full rounded-md bg-white/5 px-3 py-1.5 text-base text-white outline-1 -outline-offset-1 outline-white/10 placeholder:text-gray-500 focus:outline-2 focus:-outline-offset-2 focus:outline-indigo-500 sm:text-sm/6"
+                  className="block w-full bg-white px-3 py-1.5 text-base text-gray-900 border-b border-gray-300 placeholder:text-gray-500 focus:border-indigo-600 focus:outline-none sm:text-sm"
                   placeholder="Phone"
                 />
                 {errors.phone && <p className="text-sm text-red-400 mt-1">Phone is required</p>}
@@ -118,21 +118,21 @@ export default function RegisterForm() {
           {/* Address and Age */}
           <div className="flex space-x-4">
             <div className="w-1/2">
-              <label htmlFor="address" className="block text-sm/6 font-medium text-gray-100">
+              <label htmlFor="address" className="block text-sm/6 font-medium text-gray-900">
                 Address
               </label>
               <div className="mt-2">
                 <input
                   id="address"
                   {...register('address', { required: true })}
-                  className="block w-full rounded-md bg-white/5 px-3 py-1.5 text-base text-white outline-1 -outline-offset-1 outline-white/10 placeholder:text-gray-500 focus:outline-2 focus:-outline-offset-2 focus:outline-indigo-500 sm:text-sm/6"
+                  className="block w-full bg-white px-3 py-1.5 text-base text-gray-900 border-b border-gray-300 placeholder:text-gray-500 focus:border-indigo-600 focus:outline-none sm:text-sm"
                   placeholder="Address"
                 />
                 {errors.address && <p className="text-sm text-red-400 mt-1">Address is required</p>}
               </div>
             </div>
             <div className="w-1/2">
-              <label htmlFor="age" className="block text-sm/6 font-medium text-gray-100">
+              <label htmlFor="age" className="block text-sm/6 font-medium text-gray-900">
                 Age
               </label>
               <div className="mt-2">
@@ -140,7 +140,7 @@ export default function RegisterForm() {
                   id="age"
                   {...register('age', { required: true, min: 18 })}
                   type="number"
-                  className="block w-full rounded-md bg-white/5 px-3 py-1.5 text-base text-white outline-1 -outline-offset-1 outline-white/10 placeholder:text-gray-500 focus:outline-2 focus:-outline-offset-2 focus:outline-indigo-500 sm:text-sm/6"
+                  className="block w-full bg-white px-3 py-1.5 text-base text-gray-900 border-b border-gray-300 placeholder:text-gray-500 focus:border-indigo-600 focus:outline-none sm:text-sm"
                   placeholder="Age"
                 />
                 {errors.age && <p className="text-sm text-red-400 mt-1">Age is required (min 18)</p>}
@@ -150,19 +150,19 @@ export default function RegisterForm() {
 
           {/* Gender */}
           <div>
-            <label htmlFor="gender" className="block text-sm/6 font-medium text-gray-100">
+            <label htmlFor="gender" className="block text-sm/6 font-medium text-gray-900">
               Gender
             </label>
             <div className="mt-2">
               <select
                 id="gender"
                 {...register('gender', { required: true })}
-                className="block w-full rounded-md bg-gray-900 px-3 py-1.5 text-base text-white outline-1 -outline-offset-1 outline-white/10 placeholder:text-gray-500 focus:outline-2 focus:-outline-offset-2 focus:outline-indigo-500 sm:text-sm/6"
+                className="block w-full rounded-md bg-white px-3 py-1.5 text-base text-gray-900 outline-1 -outline-offset-1 outline-gray-300 placeholder:text-gray-200 focus:outline-2 focus:-outline-offset-2 focus:outline-teal-300 sm:text-sm/6"
               >
-                <option value="" className="bg-gray-900">Select Gender</option>
-                <option value="male" className="bg-gray-900">Male</option>
-                <option value="female" className="bg-gray-900">Female</option>
-                <option value="other" className="bg-gray-900">Other</option>
+                <option value="" className="bg-white">Select Gender</option>
+                <option value="male" className="bg-white">Male</option>
+                <option value="female" className="bg-white">Female</option>
+                <option value="other" className="bg-white">Other</option>
               </select>
               {errors.gender && <p className="text-sm text-red-400 mt-1">Gender is required</p>}
             </div>
@@ -170,7 +170,7 @@ export default function RegisterForm() {
 
           {/* Password */}
           <div>
-            <label htmlFor="password" className="block text-sm/6 font-medium text-gray-100">
+            <label htmlFor="password" className="block text-sm/6 font-medium text-gray-900">
               Password
             </label>
             <div className="mt-2">
@@ -178,7 +178,7 @@ export default function RegisterForm() {
                 id="password"
                 {...register('password', { required: true, minLength: 6 })}
                 type="password"
-                className="block w-full rounded-md bg-white/5 px-3 py-1.5 text-base text-white outline-1 -outline-offset-1 outline-white/10 placeholder:text-gray-500 focus:outline-2 focus:-outline-offset-2 focus:outline-indigo-500 sm:text-sm/6"
+                className="block w-full bg-white px-3 py-1.5 text-base text-gray-900 border-b border-gray-300 placeholder:text-gray-500 focus:border-indigo-600 focus:outline-none sm:text-sm"
                 placeholder="Password"
               />
               {errors.password && <p className="text-sm text-red-400 mt-1">Password is required (min 6 characters)</p>}
@@ -188,7 +188,7 @@ export default function RegisterForm() {
           <div>
             <button
               type="submit"
-              className="flex w-full justify-center rounded-md bg-indigo-500 px-3 py-1.5 text-sm/6 font-semibold text-white hover:bg-indigo-400 focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-indigo-500"
+              className="flex w-full justify-center rounded-md bg-teal-500 px-3 py-1.5 text-sm/6 font-semibold text-white hover:bg-teal-400 focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-teal-500"
             >
               Register
             </button>
@@ -197,7 +197,7 @@ export default function RegisterForm() {
 
         <p className="mt-10 text-center text-sm/6 text-gray-400">
           Already have an account?{' '}
-          <a href="/login" className="font-semibold text-indigo-400 hover:text-indigo-300">
+          <a href="/login" className="font-semibold text-teal-500 hover:text-teal-300">
             Sign in
           </a>
         </p>

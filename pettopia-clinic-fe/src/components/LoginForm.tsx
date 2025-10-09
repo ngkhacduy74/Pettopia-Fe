@@ -33,13 +33,13 @@ export default function LoginForm() {
       <div className="sm:mx-auto sm:w-full sm:max-w-sm">
         <Image
           alt="Your Company"
-          src="/logo.svg" // Replace with your logo in public/
-          width={40}
-          height={40}
-          className="mx-auto h-10 w-auto"
+          src="/sampleimg/logo.png" // Replace with your logo in public/
+          width={60}
+          height={60}
+          className="mx-auto h-25 w-auto"
         />
-        <h2 className="mt-10 text-center text-2xl/9 font-bold tracking-tight text-white">
-          Sign in to your account
+        <h2 className="mt-10 text-center text-2xl/9 font-bold tracking-tight text-gray-900">
+          Sign in
         </h2>
       </div>
 
@@ -47,7 +47,7 @@ export default function LoginForm() {
         <form onSubmit={handleSubmit} className="space-y-6">
           {error && <p className="text-center text-sm text-red-400">{error}</p>}
           <div>
-            <label htmlFor="email" className="block text-sm/6 font-medium text-gray-100">
+            <label htmlFor="email" className="block text-sm/6 font-medium text-gray-900">
               Email address
             </label>
             <div className="mt-2">
@@ -56,21 +56,22 @@ export default function LoginForm() {
                 name="email"
                 type="email"
                 value={email}
+                placeholder='abc@gmail.com'
                 onChange={(e) => setEmail(e.target.value)}
                 required
                 autoComplete="email"
-                className="block w-full rounded-md bg-white/5 px-3 py-1.5 text-base text-white outline-1 -outline-offset-1 outline-white/10 placeholder:text-gray-500 focus:outline-2 focus:-outline-offset-2 focus:outline-indigo-500 sm:text-sm/6"
+                className="block w-full bg-white px-3 py-1.5 text-base text-gray-900 border-b border-gray-300 placeholder:text-gray-500 focus:border-indigo-600 focus:outline-none sm:text-sm"
               />
             </div>
           </div>
 
           <div>
             <div className="flex items-center justify-between">
-              <label htmlFor="password" className="block text-sm/6 font-medium text-gray-100">
+              <label htmlFor="password" className="block text-sm/6 font-medium text-gray-900">
                 Password
               </label>
               <div className="text-sm">
-                <a href="#" className="font-semibold text-indigo-400 hover:text-indigo-300">
+                <a href="#" className="font-semibold text-teal-500 hover:text-teal-300">
                   Forgot password?
                 </a>
               </div>
@@ -83,8 +84,9 @@ export default function LoginForm() {
                 value={password}
                 onChange={(e) => setPassword(e.target.value)}
                 required
+                placeholder='*******'
                 autoComplete="current-password"
-                className="block w-full rounded-md bg-white/5 px-3 py-1.5 text-base text-white outline-1 -outline-offset-1 outline-white/10 placeholder:text-gray-500 focus:outline-2 focus:-outline-offset-2 focus:outline-indigo-500 sm:text-sm/6"
+                className="block w-full bg-white px-3 py-1.5 text-base text-gray-900 border-b border-gray-300 placeholder:text-gray-500 focus:border-indigo-600 focus:outline-none sm:text-sm"
               />
             </div>
           </div>
@@ -92,7 +94,7 @@ export default function LoginForm() {
           <div>
             <button
               type="submit"
-              className="flex w-full justify-center rounded-md bg-indigo-500 px-3 py-1.5 text-sm/6 font-semibold text-white hover:bg-indigo-400 focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-indigo-500"
+              className="flex w-full justify-center rounded-md bg-teal-500 px-3 py-1.5 text-sm/6 font-semibold text-white hover:bg-teal-600 focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-teal-700"
             >
               Sign in
             </button>
@@ -101,7 +103,7 @@ export default function LoginForm() {
 
         <p className="mt-10 text-center text-sm/6 text-gray-400">
           Not a member?{' '}
-          <a href="/register" className="font-semibold text-indigo-400 hover:text-indigo-300">
+          <a href="/register" className="font-semibold text-teal-500 hover:text-teal-300">
             Register now
           </a>
         </p>

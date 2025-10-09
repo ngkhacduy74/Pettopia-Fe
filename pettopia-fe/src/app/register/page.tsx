@@ -7,7 +7,7 @@ export default function RegisterPage() {
       {/* Left half: Image */}
       <div className="hidden lg:block lg:w-1/2 relative">
         <Image
-          src="/login-bg.jpg" // Reuse login image or replace with /register-bg.jpg
+          src="/assets/img/cat-write.jpg" // Reuse login image or replace with /register-bg.jpg
           alt="Register background"
           fill
           style={{ objectFit: 'cover' }}
@@ -15,7 +15,7 @@ export default function RegisterPage() {
         />
       </div>
       {/* Right half: Form */}
-      <div className="w-full lg:w-1/2 flex items-center justify-center bg-gray-900">
+      <div className="w-full lg:w-1/2 flex items-center justify-center">
         <RegisterForm />
       </div>
     </div>
