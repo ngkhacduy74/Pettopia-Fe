@@ -6,7 +6,7 @@ import { getUsers } from '@/services/userService';
 import Image from 'next/image';
 
 export default function LoginForm() {
-  const [email, setEmail] = useState('');
+  const [username, setUsername] = useState('');
   const [password, setPassword] = useState('');
   const [error, setError] = useState('');
   const router = useRouter();
@@ -16,7 +16,7 @@ export default function LoginForm() {
     try {
       const users = await getUsers();
       // Assuming API uses username, not email; adjust if your API uses email
-      const user = users.find((u: any) => u.email === email && u.password === password);
+      const user = users.find((u: any) => u.username === username && u.password === password);
       if (user) {
         alert('Login successful!'); // Replace with real auth (e.g., JWT)
         router.push('/update-vet-ifnormation'); // Redirect to home
@@ -47,17 +47,17 @@ export default function LoginForm() {
         <form onSubmit={handleSubmit} className="space-y-6">
           {error && <p className="text-center text-sm text-red-400">{error}</p>}
           <div>
-            <label htmlFor="email" className="block text-sm/6 font-medium text-gray-900">
-              Email address
+            <label htmlFor="username" className="block text-sm/6 font-medium text-gray-900">
+              Username
             </label>
             <div className="mt-2">
               <input
-                id="email"
-                name="email"
-                type="email"
-                value={email}
+                id="username"
+                name="username"
+                type="username"
+                value={username}
                 placeholder='abc@gmail.com'
-                onChange={(e) => setEmail(e.target.value)}
+                onChange={(e) => setUsername(e.target.value)}
                 required
                 autoComplete="email"
                 className="block w-full bg-white px-3 py-1.5 text-base text-gray-900 border-b border-gray-300 placeholder:text-gray-500 focus:border-indigo-600 focus:outline-none sm:text-sm"
@@ -94,7 +94,7 @@ export default function LoginForm() {
           <div>
             <button
               type="submit"
-              className="flex w-full justify-center rounded-md bg-teal-500 px-3 py-1.5 text-sm/6 font-semibold text-white hover:bg-teal-300 focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-teal-00"
+              className="flex w-full justify-center rounded-md bg-teal-500 px-3 py-1.5 text-sm/6 font-semibold text-white hover:bg-teal-600 focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-teal-700"
             >
               Sign in
             </button>
