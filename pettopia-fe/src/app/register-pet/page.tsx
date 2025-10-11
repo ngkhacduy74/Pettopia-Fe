@@ -83,7 +83,8 @@ export default function RegisterPetPage() {
                 weight: petForm.weight ? Number(petForm.weight) : undefined,
                 dateOfBirth: petForm.dateOfBirth ? new Date(petForm.dateOfBirth).toISOString() : undefined,
                 avatar_url: petForm.avatar_url || undefined,
-                owner: hardCodedOwner
+                // Many backends expect user_id at top-level instead of an owner object
+                user_id: hardCodedOwner.user_id
             };
             
             const res = await createPet(payload);
