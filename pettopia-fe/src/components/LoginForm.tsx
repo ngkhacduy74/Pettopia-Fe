@@ -1,30 +1,28 @@
 'use client';
 
 import { useState } from 'react';
+import { useForm } from 'react-hook-form';
 import { useRouter } from 'next/navigation';
-import { getUsers } from '@/services/userService';
+import { loginUser } from '@/services/userService';
 import Image from 'next/image';
 
+type FormData = {
+  username: string;
+  password: string;
+};
+
 export default function LoginForm() {
-  const [username, setUsername] = useState('');
-  const [password, setPassword] = useState('');
-  const [error, setError] = useState('');
+  const { register, handleSubmit, formState: { errors } } = useForm<FormData>();
+  const [serverError, setServerError] = useState('');
   const router = useRouter();
 
-  const handleSubmit = async (e: React.FormEvent) => {
-    e.preventDefault();
+  const onSubmit = async (data: FormData) => {
     try {
-      const users = await getUsers();
-      // Assuming API uses username, not email; adjust if your API uses email
-      const user = users.find((u: any) => u.username === username && u.password === password);
-      if (user) {
-        alert('Login successful!'); // Replace with real auth (e.g., JWT)
-        router.push('/update-vet-ifnormation'); // Redirect to home
-      } else {
-        setError('Invalid credentials');
-      }
+      await loginUser(data);
+      alert('Login successful!');
+      router.push('/update-vet-information'); // Corrected typo in path
     } catch (err) {
-      setError('Error logging in');
+      setServerError('Invalid credentials or server error');
     }
   };
 
@@ -33,7 +31,7 @@ export default function LoginForm() {
       <div className="sm:mx-auto sm:w-full sm:max-w-sm">
         <Image
           alt="Your Company"
-          src="/sampleimg/logo.png" // Replace with your logo in public/
+          src="/sampleimg/logo.png"
           width={60}
           height={60}
           className="mx-auto h-25 w-auto"
@@ -44,8 +42,8 @@ export default function LoginForm() {
       </div>
 
       <div className="mt-10 sm:mx-auto sm:w-full sm:max-w-sm">
-        <form onSubmit={handleSubmit} className="space-y-6">
-          {error && <p className="text-center text-sm text-red-400">{error}</p>}
+        <form onSubmit={handleSubmit(onSubmit)} className="space-y-6">
+          {serverError && <p className="text-center text-sm text-red-400">{serverError}</p>}
           <div>
             <label htmlFor="username" className="block text-sm/6 font-medium text-gray-900">
               Username
@@ -53,15 +51,13 @@ export default function LoginForm() {
             <div className="mt-2">
               <input
                 id="username"
-                name="username"
-                type="username"
-                value={username}
-                placeholder='abc@gmail.com'
-                onChange={(e) => setUsername(e.target.value)}
-                required
-                autoComplete="email"
+                {...register('username', { required: true })}
+                type="text"
+                placeholder="Username"
+                autoComplete="username"
                 className="block w-full bg-white px-3 py-1.5 text-base text-gray-900 border-b border-gray-300 placeholder:text-gray-500 focus:border-indigo-600 focus:outline-none sm:text-sm"
               />
+              {errors.username && <p className="text-sm text-red-400 mt-1">Username is required</p>}
             </div>
           </div>
 
@@ -79,15 +75,13 @@ export default function LoginForm() {
             <div className="mt-2">
               <input
                 id="password"
-                name="password"
+                {...register('password', { required: true, minLength: 6 })}
                 type="password"
-                value={password}
-                onChange={(e) => setPassword(e.target.value)}
-                required
-                placeholder='*******'
+                placeholder="*******"
                 autoComplete="current-password"
                 className="block w-full bg-white px-3 py-1.5 text-base text-gray-900 border-b border-gray-300 placeholder:text-gray-500 focus:border-indigo-600 focus:outline-none sm:text-sm"
               />
+              {errors.password && <p className="text-sm text-red-400 mt-1">Password is required (min 6 characters)</p>}
             </div>
           </div>
 

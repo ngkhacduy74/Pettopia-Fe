@@ -1,32 +1,108 @@
 'use client';
 
-import { useState } from 'react';
+import { useState, useEffect } from 'react';
 import { useForm } from 'react-hook-form';
 import { useRouter } from 'next/navigation';
 import { createUser } from '@/services/userService';
 import Image from 'next/image';
+import axios from 'axios';
 
 type FormData = {
   fullname: string;
   username: string;
   email: string;
   phone: string;
-  address: string;
   gender: string;
-  age: number;
+  dob: string;
   password: string;
+  city: string;
+  district: string;
+  ward: string;
+  street: string;
 };
 
+type Province = { code: string; name: string };
+type District = { code: string; name: string; province_code: string };
+type Ward = { code: string; name: string; district_code: string };
+
 export default function RegisterForm() {
-  const { register, handleSubmit, formState: { errors } } = useForm<FormData>();
+  const { register, handleSubmit, formState: { errors }, watch, setValue } = useForm<FormData>();
   const [serverError, setServerError] = useState('');
+  const [provinces, setProvinces] = useState<Province[]>([]);
+  const [districts, setDistricts] = useState<District[]>([]);
+  const [wards, setWards] = useState<Ward[]>([]);
   const router = useRouter();
+
+  const selectedCity = watch('city');
+  const selectedDistrict = watch('district');
+
+  // Fetch provinces (cities)
+  useEffect(() => {
+    const fetchProvinces = async () => {
+      try {
+        const response = await axios.get('https://provinces.open-api.vn/api/p/');
+        setProvinces(response.data);
+      } catch (error) {
+        console.error('Error fetching provinces:', error);
+      }
+    };
+    fetchProvinces();
+  }, []);
+
+  // Fetch districts based on selected city
+  useEffect(() => {
+    if (selectedCity) {
+      const fetchDistricts = async () => {
+        try {
+          const response = await axios.get(`https://provinces.open-api.vn/api/p/${selectedCity}?depth=2`);
+          setDistricts(response.data.districts);
+          setValue('district', '');
+          setValue('ward', '');
+          setWards([]);
+        } catch (error) {
+          console.error('Error fetching districts:', error);
+        }
+      };
+      fetchDistricts();
+    }
+  }, [selectedCity, setValue]);
+
+  // Fetch wards based on selected district
+  useEffect(() => {
+    if (selectedDistrict) {
+      const fetchWards = async () => {
+        try {
+          const response = await axios.get(`https://provinces.open-api.vn/api/d/${selectedDistrict}?depth=2`);
+          setWards(response.data.wards);
+          setValue('ward', '');
+        } catch (error) {
+          console.error('Error fetching wards:', error);
+        }
+      };
+      fetchWards();
+    }
+  }, [selectedDistrict, setValue]);
 
   const onSubmit = async (data: FormData) => {
     try {
-      await createUser(data);
+      const formattedData = {
+        fullname: data.fullname,
+        username: data.username,
+        email_address: data.email,
+        phone_number: data.phone,
+        gender: data.gender,
+        dob: data.dob,
+        password: data.password,
+        address: {
+          city: provinces.find(p => p.code === data.city)?.name || data.city,
+          district: districts.find(d => d.code === data.district)?.name || data.district,
+          ward: wards.find(w => w.code === data.ward)?.name || data.ward,
+          street: data.street,
+        },
+      };
+      await createUser(formattedData);
       alert('Registration successful!');
-      router.push('/login'); // Redirect to login
+      router.push('/login');
     } catch (err) {
       setServerError('Error registering user');
     }
@@ -37,7 +113,7 @@ export default function RegisterForm() {
       <div className="sm:mx-auto sm:w-full sm:max-w-sm">
         <Image
           alt="Your Company"
-          src="/sampleimg/logo.png" // Same logo as login
+          src="/sampleimg/logo.png"
           width={40}
           height={40}
           className="mx-auto h-25 w-auto"
@@ -50,6 +126,7 @@ export default function RegisterForm() {
       <div className="mt-10 sm:mx-auto sm:w-full sm:max-w-sm">
         <form onSubmit={handleSubmit(onSubmit)} className="space-y-6">
           {serverError && <p className="text-center text-sm text-red-400">{serverError}</p>}
+
           {/* Fullname and Username */}
           <div className="flex space-x-4">
             <div className="w-1/2">
@@ -115,56 +192,124 @@ export default function RegisterForm() {
             </div>
           </div>
 
-          {/* Address and Age */}
+          {/* DOB and Gender */}
           <div className="flex space-x-4">
             <div className="w-1/2">
-              <label htmlFor="address" className="block text-sm/6 font-medium text-gray-900">
-                Address
+              <label htmlFor="dob" className="block text-sm/6 font-medium text-gray-900">
+                Date of Birth
               </label>
               <div className="mt-2">
                 <input
-                  id="address"
-                  {...register('address', { required: true })}
+                  id="dob"
+                  {...register('dob', { required: true })}
+                  type="date"
                   className="block w-full bg-white px-3 py-1.5 text-base text-gray-900 border-b border-gray-300 placeholder:text-gray-500 focus:border-indigo-600 focus:outline-none sm:text-sm"
-                  placeholder="Address"
+                  placeholder="Date of Birth"
                 />
-                {errors.address && <p className="text-sm text-red-400 mt-1">Address is required</p>}
+                {errors.dob && <p className="text-sm text-red-400 mt-1">Date of Birth is required</p>}
               </div>
             </div>
             <div className="w-1/2">
-              <label htmlFor="age" className="block text-sm/6 font-medium text-gray-900">
-                Age
+              <label htmlFor="gender" className="block text-sm/6 font-medium text-gray-900">
+                Gender
               </label>
               <div className="mt-2">
-                <input
-                  id="age"
-                  {...register('age', { required: true, min: 18 })}
-                  type="number"
-                  className="block w-full bg-white px-3 py-1.5 text-base text-gray-900 border-b border-gray-300 placeholder:text-gray-500 focus:border-indigo-600 focus:outline-none sm:text-sm"
-                  placeholder="Age"
-                />
-                {errors.age && <p className="text-sm text-red-400 mt-1">Age is required (min 18)</p>}
+                <select
+                  id="gender"
+                  {...register('gender', { required: true })}
+                  className="block w-full rounded-md bg-white px-3 py-1.5 text-base text-gray-900 outline-1 -outline-offset-1 outline-gray-300 placeholder:text-gray-200 focus:outline-2 focus:-outline-offset-2 focus:outline-teal-300 sm:text-sm/6"
+                >
+                  <option value="" className="bg-white">Select Gender</option>
+                  <option value="male" className="bg-white">Male</option>
+                  <option value="female" className="bg-white">Female</option>
+                  <option value="other" className="bg-white">Other</option>
+                </select>
+                {errors.gender && <p className="text-sm text-red-400 mt-1">Gender is required</p>}
               </div>
             </div>
           </div>
 
-          {/* Gender */}
-          <div>
-            <label htmlFor="gender" className="block text-sm/6 font-medium text-gray-900">
-              Gender
-            </label>
-            <div className="mt-2">
-              <select
-                id="gender"
-                {...register('gender', { required: true })}
-                className="block w-full rounded-md bg-white px-3 py-1.5 text-base text-gray-900 outline-1 -outline-offset-1 outline-gray-300 placeholder:text-gray-200 focus:outline-2 focus:-outline-offset-2 focus:outline-teal-300 sm:text-sm/6"
-              >
-                <option value="" className="bg-white">Select Gender</option>
-                <option value="male" className="bg-white">Male</option>
-                <option value="female" className="bg-white">Female</option>
-                <option value="other" className="bg-white">Other</option>
-              </select>
-              {errors.gender && <p className="text-sm text-red-400 mt-1">Gender is required</p>}
+          {/* City and District */}
+          <div className="flex space-x-4">
+            <div className="w-1/2">
+              <label htmlFor="city" className="block text-sm/6 font-medium text-gray-900">
+                City
+              </label>
+              <div className="mt-2">
+                <select
+                  id="city"
+                  {...register('city', { required: true })}
+                  className="block w-full rounded-md bg-white px-3 py-1.5 text-base text-gray-900 outline-1 -outline-offset-1 outline-gray-300 placeholder:text-gray-200 focus:outline-2 focus:-outline-offset-2 focus:outline-teal-300 sm:text-sm/6"
+                >
+                  <option value="" className="bg-white">Select City</option>
+                  {provinces.map(province => (
+                    <option key={province.code} value={province.code} className="bg-white">
+                      {province.name}
+                    </option>
+                  ))}
+                </select>
+                {errors.city && <p className="text-sm text-red-400 mt-1">City is required</p>}
+              </div>
+            </div>
+            <div className="w-1/2">
+              <label htmlFor="district" className="block text-sm/6 font-medium text-gray-900">
+                District
+              </label>
+              <div className="mt-2">
+                <select
+                  id="district"
+                  {...register('district', { required: true })}
+                  className="block w-full rounded-md bg-white px-3 py-1.5 text-base text-gray-900 outline-1 -outline-offset-1 outline-gray-300 placeholder:text-gray-200 focus:outline-2 focus:-outline-offset-2 focus:outline-teal-300 sm:text-sm/6"
+                  disabled={!selectedCity}
+                >
+                  <option value="" className="bg-white">Select District</option>
+                  {districts.map(district => (
+                    <option key={district.code} value={district.code} className="bg-white">
+                      {district.name}
+                    </option>
+                  ))}
+                </select>
+                {errors.district && <p className="text-sm text-red-400 mt-1">District is required</p>}
+              </div>
+            </div>
+          </div>
+
+          {/* Ward and Street */}
+          <div className="flex space-x-4">
+            <div className="w-1/2">
+              <label htmlFor="ward" className="block text-sm/6 font-medium text-gray-900">
+                Ward
+              </label>
+              <div className="mt-2">
+                <select
+                  id="ward"
+                  {...register('ward', { required: true })}
+                  className="block w-full rounded-md bg-white px-3 py-1.5 text-base text-gray-900 outline-1 -outline-offset-1 outline-gray-300 placeholder:text-gray-200 focus:outline-2 focus:-outline-offset-2 focus:outline-teal-300 sm:text-sm/6"
+                  disabled={!selectedDistrict}
+                >
+                  <option value="" className="bg-white">Select Ward</option>
+                  {wards.map(ward => (
+                    <option key={ward.code} value={ward.code} className="bg-white">
+                      {ward.name}
+                    </option>
+                  ))}
+                </select>
+                {errors.ward && <p className="text-sm text-red-400 mt-1">Ward is required</p>}
+              </div>
+            </div>
+            <div className="w-1/2">
+              <label htmlFor="street" className="block text-sm/6 font-medium text-gray-900">
+                Street Address
+              </label>
+              <div className="mt-2">
+                <input
+                  id="street"
+                  {...register('street', { required: true })}
+                  className="block w-full bg-white px-3 py-1.5 text-base text-gray-900 border-b border-gray-300 placeholder:text-gray-500 focus:border-indigo-600 focus:outline-none sm:text-sm"
+                  placeholder="Street Address"
+                />
+                {errors.street && <p className="text-sm text-red-400 mt-1">Street Address is required</p>}
+              </div>
             </div>
           </div>
 
