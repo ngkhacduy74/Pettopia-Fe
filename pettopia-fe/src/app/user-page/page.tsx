@@ -3,6 +3,7 @@ import React, { useState } from 'react';
 import Chat from '@/components/Chat';
 import UserNavbar from '@/components/UserNavbar';
 import Link from "next/link";
+import PetCards from '@/components/NumberofPet';
 
 export default function PetCareApp() {
     const [showSearch, setShowSearch] = useState(false);
@@ -131,7 +132,7 @@ export default function PetCareApp() {
                             </Link>
                         </div>
                     </section>
-                    
+                    <PetCards />
                     {/* Recently Visited */}
                     <div className="mb-12">
                         <div className="flex items-center gap-2 mb-6">
@@ -140,6 +141,7 @@ export default function PetCareApp() {
                             </svg>
                             <h2 className="text-2xl font-bold text-gray-900">Truy cập gần đây</h2>
                         </div>
+                        
                         <div className="grid grid-cols-5 gap-4">
                             {recentItems.map((item) => (
                                 <div
