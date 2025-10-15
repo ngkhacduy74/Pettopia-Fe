@@ -349,7 +349,7 @@ export default function RegisterForm() {
 
         <p className="mt-10 text-center text-sm/6 text-gray-400">
           Already have an account?{' '}
-          <a href="/login" className="font-semibold text-teal-500 hover:text-teal-300">
+          <a href="/auth/login" className="font-semibold text-teal-500 hover:text-teal-300">
             Sign in
           </a>
         </p>

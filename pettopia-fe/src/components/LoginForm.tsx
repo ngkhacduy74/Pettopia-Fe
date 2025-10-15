@@ -18,11 +18,29 @@ export default function LoginForm() {
 
   const onSubmit = async (data: FormData) => {
     try {
-      await loginUser(data);
-      alert('Login successful!');
-      router.push('/update-vet-information'); // Corrected typo in path
+      const response = await loginUser(data);
+      if (response.status) {
+        // Lưu token và role vào localStorage
+        localStorage.setItem('authToken', response.token);
+        localStorage.setItem('userRole', response.role);
+
+        alert('Đăng nhập thành công!');
+
+        // Chuyển hướng dựa trên role
+        if (response.role === 'Admin') {
+          router.push('/admin/dashboard');
+        } else if (response.role === 'User') {
+          router.push('/user/dashboard');
+        } else if (response.role === 'Staff') {
+          router.push('/staff/dashboard');
+        } else {
+          setServerError('Vai trò không hợp lệ');
+        }
+      } else {
+        setServerError('Đăng nhập thất bại');
+      }
     } catch (err) {
-      setServerError('Invalid credentials or server error');
+      setServerError('Thông tin đăng nhập không hợp lệ hoặc lỗi server');
     }
   };
 
@@ -37,7 +55,7 @@ export default function LoginForm() {
           className="mx-auto h-25 w-auto"
         />
         <h2 className="mt-10 text-center text-2xl/9 font-bold tracking-tight text-gray-900">
-          Sign in
+          Đăng nhập
         </h2>
       </div>
 
@@ -46,29 +64,29 @@ export default function LoginForm() {
           {serverError && <p className="text-center text-sm text-red-400">{serverError}</p>}
           <div>
             <label htmlFor="username" className="block text-sm/6 font-medium text-gray-900">
-              Username
+              Tên đăng nhập
             </label>
             <div className="mt-2">
               <input
                 id="username"
                 {...register('username', { required: true })}
                 type="text"
-                placeholder="Username"
+                placeholder="Tên đăng nhập"
                 autoComplete="username"
                 className="block w-full bg-white px-3 py-1.5 text-base text-gray-900 border-b border-gray-300 placeholder:text-gray-500 focus:border-indigo-600 focus:outline-none sm:text-sm"
               />
-              {errors.username && <p className="text-sm text-red-400 mt-1">Username is required</p>}
+              {errors.username && <p className="text-sm text-red-400 mt-1">Tên đăng nhập là bắt buộc</p>}
             </div>
           </div>
 
           <div>
             <div className="flex items-center justify-between">
               <label htmlFor="password" className="block text-sm/6 font-medium text-gray-900">
-                Password
+                Mật khẩu
               </label>
               <div className="text-sm">
                 <a href="#" className="font-semibold text-teal-500 hover:text-teal-300">
-                  Forgot password?
+                  Quên mật khẩu?
                 </a>
               </div>
             </div>
@@ -81,7 +99,7 @@ export default function LoginForm() {
                 autoComplete="current-password"
                 className="block w-full bg-white px-3 py-1.5 text-base text-gray-900 border-b border-gray-300 placeholder:text-gray-500 focus:border-indigo-600 focus:outline-none sm:text-sm"
               />
-              {errors.password && <p className="text-sm text-red-400 mt-1">Password is required (min 6 characters)</p>}
+              {errors.password && <p className="text-sm text-red-400 mt-1">Mật khẩu là bắt buộc (tối thiểu 6 ký tự)</p>}
             </div>
           </div>
 
@@ -90,15 +108,15 @@ export default function LoginForm() {
               type="submit"
               className="flex w-full justify-center rounded-md bg-teal-500 px-3 py-1.5 text-sm/6 font-semibold text-white hover:bg-teal-600 focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-teal-700"
             >
-              Sign in
+              Đăng nhập
             </button>
           </div>
         </form>
 
         <p className="mt-10 text-center text-sm/6 text-gray-400">
-          Not a member?{' '}
-          <a href="/register" className="font-semibold text-teal-500 hover:text-teal-300">
-            Register now
+          Chưa có tài khoản?{' '}
+          <a href="/auth/register" className="font-semibold text-teal-500 hover:text-teal-300">
+            Đăng ký ngay
           </a>
         </p>
       </div>
