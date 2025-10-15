@@ -1,7 +1,7 @@
 'use client';
 
 import { useState } from 'react';
-import ClinicNavbar from '@/components/ClinicNavbar';
+import ClinicNavbar from '@/components/Navbar/ClinicNavbar';
 
 export default function layout({
     children,

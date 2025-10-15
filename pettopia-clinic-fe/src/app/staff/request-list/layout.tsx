@@ -1,7 +1,7 @@
 'use client';
 
 import { useState } from 'react';
-import UserNavbar from '@/components/UserNavbar';
+import StaffNavbar from '@/components/Navbar/StaffNavbar';
 
 export default function layout({
     children,
@@ -14,7 +14,7 @@ export default function layout({
         <section>
             <div className="min-h-screen flex bg-gradient-to-b from-teal-50 to-white text-gray-900 relative">
                   {/* Navbar */}
-                  <UserNavbar
+                  <StaffNavbar
                     setShowSearch={setShowSearch}
                     showSearch={showSearch}
                     isOpen={isMenuOpen}

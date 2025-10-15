@@ -1,5 +1,5 @@
 export async function getClinics() {
-  const response = await fetch('http://localhost:9999/clinics');
+  const response = await fetch('');
   if (!response.ok) {
     throw new Error('Failed to fetch clinics');
   }

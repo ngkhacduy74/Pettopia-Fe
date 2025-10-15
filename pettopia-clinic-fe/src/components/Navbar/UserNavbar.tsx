@@ -3,19 +3,19 @@ import React from 'react';
 import { HomeIcon, DocumentCheckIcon } from '@heroicons/react/24/outline';
 import { usePathname } from 'next/navigation';
 
-interface ClinicNavbarProps {
+interface UserNavbarProps {
   setShowSearch: (v: boolean) => void;
   showSearch: boolean;
   isOpen?: boolean;
   onClose?: () => void;
 }
 
-export default function ClinicNavbar({
+export default function UserNavbar({
   setShowSearch,
   showSearch,
   isOpen,
   onClose,
-}: ClinicNavbarProps) {
+}: UserNavbarProps) {
   const pathname = usePathname();
 
   const navItems = [
@@ -25,8 +25,13 @@ export default function ClinicNavbar({
       icon: <HomeIcon className="w-4 h-4" />,
     },
     {
-      label: 'Request',
-      href: '/clinic/request-list',
+      label: 'Veterianrian Certificate',
+      href: '/user/submit-vet-certificate',
+      icon: <DocumentCheckIcon className="w-4 h-4" />,
+    },
+    {
+      label: 'Clinic Certificate',
+      href: '/user/submit-clinic-certificate',
       icon: <DocumentCheckIcon className="w-4 h-4" />,
     }
   ];
