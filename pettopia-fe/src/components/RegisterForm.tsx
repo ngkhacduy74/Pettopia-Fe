@@ -35,6 +35,7 @@ export default function RegisterForm() {
 
   const selectedCity = watch('city');
   const selectedDistrict = watch('district');
+  const selectedWard = watch('ward');
 
   // Fetch provinces (cities)
   useEffect(() => {
@@ -231,6 +232,7 @@ export default function RegisterForm() {
 
           {/* City and District */}
           <div className="flex space-x-4">
+            {/* City */}
             <div className="w-1/2">
               <label htmlFor="city" className="block text-sm/6 font-medium text-gray-900">
                 City
@@ -239,11 +241,11 @@ export default function RegisterForm() {
                 <select
                   id="city"
                   {...register('city', { required: true })}
-                  className="block w-full rounded-md bg-white px-3 py-1.5 text-base text-gray-900 outline-1 -outline-offset-1 outline-gray-300 placeholder:text-gray-200 focus:outline-2 focus:-outline-offset-2 focus:outline-teal-300 sm:text-sm/6"
+                  className="block w-full rounded-md bg-white px-3 py-1.5 text-base text-gray-900 outline-1 outline-gray-300 focus:outline-teal-300 sm:text-sm/6"
                 >
-                  <option value="" className="bg-white">Select City</option>
+                  <option value="">Select City</option>
                   {provinces.map(province => (
-                    <option key={province.code} value={province.code} className="bg-white">
+                    <option key={province.code} value={province.code}>
                       {province.name}
                     </option>
                   ))}
@@ -251,7 +253,9 @@ export default function RegisterForm() {
                 {errors.city && <p className="text-sm text-red-400 mt-1">City is required</p>}
               </div>
             </div>
-            <div className="w-1/2">
+
+            {/* District — chỉ hiện sau khi chọn City */}
+            <div className={`w-1/2 ${!selectedCity ? 'hidden' : ''}`}>
               <label htmlFor="district" className="block text-sm/6 font-medium text-gray-900">
                 District
               </label>
@@ -259,12 +263,11 @@ export default function RegisterForm() {
                 <select
                   id="district"
                   {...register('district', { required: true })}
-                  className="block w-full rounded-md bg-white px-3 py-1.5 text-base text-gray-900 outline-1 -outline-offset-1 outline-gray-300 placeholder:text-gray-200 focus:outline-2 focus:-outline-offset-2 focus:outline-teal-300 sm:text-sm/6"
-                  disabled={!selectedCity}
+                  className="block w-full rounded-md bg-white px-3 py-1.5 text-base text-gray-900 outline-1 outline-gray-300 focus:outline-teal-300 sm:text-sm/6"
                 >
-                  <option value="" className="bg-white">Select District</option>
+                  <option value="">Select District</option>
                   {districts.map(district => (
-                    <option key={district.code} value={district.code} className="bg-white">
+                    <option key={district.code} value={district.code}>
                       {district.name}
                     </option>
                   ))}
@@ -276,7 +279,8 @@ export default function RegisterForm() {
 
           {/* Ward and Street */}
           <div className="flex space-x-4">
-            <div className="w-1/2">
+            {/* Ward — chỉ hiện sau khi chọn District */}
+            <div className={`w-1/2 ${!selectedDistrict ? 'hidden' : ''}`}>
               <label htmlFor="ward" className="block text-sm/6 font-medium text-gray-900">
                 Ward
               </label>
@@ -284,12 +288,11 @@ export default function RegisterForm() {
                 <select
                   id="ward"
                   {...register('ward', { required: true })}
-                  className="block w-full rounded-md bg-white px-3 py-1.5 text-base text-gray-900 outline-1 -outline-offset-1 outline-gray-300 placeholder:text-gray-200 focus:outline-2 focus:-outline-offset-2 focus:outline-teal-300 sm:text-sm/6"
-                  disabled={!selectedDistrict}
+                  className="block w-full rounded-md bg-white px-3 py-1.5 text-base text-gray-900 outline-1 outline-gray-300 focus:outline-teal-300 sm:text-sm/6"
                 >
-                  <option value="" className="bg-white">Select Ward</option>
+                  <option value="">Select Ward</option>
                   {wards.map(ward => (
-                    <option key={ward.code} value={ward.code} className="bg-white">
+                    <option key={ward.code} value={ward.code}>
                       {ward.name}
                     </option>
                   ))}
@@ -297,7 +300,9 @@ export default function RegisterForm() {
                 {errors.ward && <p className="text-sm text-red-400 mt-1">Ward is required</p>}
               </div>
             </div>
-            <div className="w-1/2">
+
+            {/* Street — chỉ hiện sau khi chọn Ward */}
+            <div className={`w-1/2 ${!selectedWard ? 'hidden' : ''}`}>
               <label htmlFor="street" className="block text-sm/6 font-medium text-gray-900">
                 Street Address
               </label>
@@ -312,6 +317,8 @@ export default function RegisterForm() {
               </div>
             </div>
           </div>
+
+
 
           {/* Password */}
           <div>
