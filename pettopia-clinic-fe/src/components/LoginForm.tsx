@@ -1,30 +1,69 @@
 'use client';
 
-import { useState } from 'react';
+import { useState, useEffect } from 'react';
+import { useForm } from 'react-hook-form';
 import { useRouter } from 'next/navigation';
-import { getUsers } from '@/services/userService';
+import { loginUser } from '@/services/userService';
 import Image from 'next/image';
+import jwtDecode from 'jwt-decode';
+
+type FormData = {
+  username: string;
+  password: string;
+};
+
+interface JwtPayload {
+  role: string;
+  exp: number;
+}
 
 export default function LoginForm() {
-  const [username, setUsername] = useState('');
-  const [password, setPassword] = useState('');
-  const [error, setError] = useState('');
+  const { register, handleSubmit, formState: { errors } } = useForm<FormData>();
+  const [serverError, setServerError] = useState('');
   const router = useRouter();
 
-  const handleSubmit = async (e: React.FormEvent) => {
-    e.preventDefault();
+  // Kiểm tra thời hạn token khi component mount
+  useEffect(() => {
+    const token = localStorage.getItem('authToken');
+    if (token) {
+      const decoded: JwtPayload = jwtDecode(token);
+      const currentTime = Math.floor(Date.now() / 1000);
+      if (decoded.exp < currentTime) {
+        localStorage.removeItem('authToken');
+        localStorage.removeItem('userRole');
+        router.push('/login');
+      }
+    }
+  }, [router]);
+
+  const onSubmit = async (data: FormData) => {
     try {
-      const users = await getUsers();
-      // Assuming API uses username, not email; adjust if your API uses email
-      const user = users.find((u: any) => u.username === username && u.password === password);
-      if (user) {
-        alert('Login successful!'); // Replace with real auth (e.g., JWT)
-        router.push('/update-vet-ifnormation'); // Redirect to home
+      const response = await loginUser(data);
+      if (response.status) {
+        // Lưu token vào localStorage
+        localStorage.setItem('authToken', response.token);
+
+        // Giải mã token để lấy role
+        const decoded: JwtPayload = jwtDecode(response.token);
+        localStorage.setItem('userRole', decoded.role);
+
+        alert('Đăng nhập thành công!');
+
+        // Chuyển hướng dựa trên role
+        if (decoded.role === 'Admin') {
+          router.push('/admin/dashboard');
+        } else if (decoded.role === 'User') {
+          router.push('/user/dashboard');
+        } else if (decoded.role === 'Staff') {
+          router.push('/staff/dashboard');
+        } else {
+          setServerError('Vai trò không hợp lệ');
+        }
       } else {
-        setError('Invalid credentials');
+        setServerError('Đăng nhập thất bại');
       }
     } catch (err) {
-      setError('Error logging in');
+      setServerError('Thông tin đăng nhập không hợp lệ hoặc lỗi server');
     }
   };
 
@@ -33,61 +72,57 @@ export default function LoginForm() {
       <div className="sm:mx-auto sm:w-full sm:max-w-sm">
         <Image
           alt="Your Company"
-          src="/sampleimg/logo.png" // Replace with your logo in public/
+          src="/sampleimg/logo.png"
           width={60}
           height={60}
           className="mx-auto h-25 w-auto"
         />
         <h2 className="mt-10 text-center text-2xl/9 font-bold tracking-tight text-gray-900">
-          Sign in
+          Đăng nhập
         </h2>
       </div>
 
       <div className="mt-10 sm:mx-auto sm:w-full sm:max-w-sm">
-        <form onSubmit={handleSubmit} className="space-y-6">
-          {error && <p className="text-center text-sm text-red-400">{error}</p>}
+        <form onSubmit={handleSubmit(onSubmit)} className="space-y-6">
+          {serverError && <p className="text-center text-sm text-red-400">{serverError}</p>}
           <div>
             <label htmlFor="username" className="block text-sm/6 font-medium text-gray-900">
-              Username
+              Tên đăng nhập
             </label>
             <div className="mt-2">
               <input
                 id="username"
-                name="username"
-                type="username"
-                value={username}
-                placeholder='abc@gmail.com'
-                onChange={(e) => setUsername(e.target.value)}
-                required
-                autoComplete="email"
+                {...register('username', { required: true })}
+                type="text"
+                placeholder="Tên đăng nhập"
+                autoComplete="username"
                 className="block w-full bg-white px-3 py-1.5 text-base text-gray-900 border-b border-gray-300 placeholder:text-gray-500 focus:border-indigo-600 focus:outline-none sm:text-sm"
               />
+              {errors.username && <p className="text-sm text-red-400 mt-1">Tên đăng nhập là bắt buộc</p>}
             </div>
           </div>
 
           <div>
             <div className="flex items-center justify-between">
               <label htmlFor="password" className="block text-sm/6 font-medium text-gray-900">
-                Password
+                Mật khẩu
               </label>
               <div className="text-sm">
                 <a href="#" className="font-semibold text-teal-500 hover:text-teal-300">
-                  Forgot password?
+                  Quên mật khẩu?
                 </a>
               </div>
             </div>
             <div className="mt-2">
               <input
                 id="password"
-                name="password"
+                {...register('password', { required: true, minLength: 6 })}
                 type="password"
-                value={password}
-                onChange={(e) => setPassword(e.target.value)}
-                required
-                placeholder='*******'
+                placeholder="*******"
                 autoComplete="current-password"
                 className="block w-full bg-white px-3 py-1.5 text-base text-gray-900 border-b border-gray-300 placeholder:text-gray-500 focus:border-indigo-600 focus:outline-none sm:text-sm"
               />
+              {errors.password && <p className="text-sm text-red-400 mt-1">Mật khẩu là bắt buộc (tối thiểu 6 ký tự)</p>}
             </div>
           </div>
 
@@ -96,15 +131,15 @@ export default function LoginForm() {
               type="submit"
               className="flex w-full justify-center rounded-md bg-teal-500 px-3 py-1.5 text-sm/6 font-semibold text-white hover:bg-teal-600 focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-teal-700"
             >
-              Sign in
+              Đăng nhập
             </button>
           </div>
         </form>
 
         <p className="mt-10 text-center text-sm/6 text-gray-400">
-          Not a member?{' '}
-          <a href="/register" className="font-semibold text-teal-500 hover:text-teal-300">
-            Register now
+          Chưa có tài khoản?{' '}
+          <a href="/auth/register" className="font-semibold text-teal-500 hover:text-teal-300">
+            Đăng ký ngay
           </a>
         </p>
       </div>
