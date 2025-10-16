@@ -10,52 +10,17 @@ interface TeamMember {
   status: string;
 }
 
-export default function RequestTable() {
+interface RequestTableProps {
+  data: TeamMember[];
+  title: string;
+  departments: string[];
+}
+
+export default function RequestTable({ data, title, departments }: RequestTableProps) {
   const [selectedMember, setSelectedMember] = useState<TeamMember | null>(null);
   const [isModalOpen, setIsModalOpen] = useState(false);
   const [dropdownRow, setDropdownRow] = useState<number | null>(null);
-  const [teamMembers, setTeamMembers] = useState<TeamMember[]>([
-    {
-      name: 'Tom Cook',
-      email: 'tom.cook@example.com',
-      avatar: 'https://images.unsplash.com/photo-1472099645785-5658abf4ff4e?ixlib=rb-1.2.1&auto=format&fit=facearea&facepad=2&w=256&h=256&q=80',
-      role: 'Senior Developer',
-      department: 'Engineering',
-      status: 'Active'
-    },
-    {
-      name: 'Sarah Johnson',
-      email: 'sarah.johnson@example.com',
-      avatar: 'https://images.unsplash.com/photo-1494790108377-be9c29b29330?ixlib=rb-1.2.1&auto=format&fit=facearea&facepad=2&w=256&h=256&q=80',
-      role: 'Product Designer',
-      department: 'Design',
-      status: 'Active'
-    },
-    {
-      name: 'Michael Roberts',
-      email: 'michael.roberts@example.com',
-      avatar: 'https://images.unsplash.com/photo-1500648767791-00dcc994a43e?ixlib=rb-1.2.1&auto=format&fit=facearea&facepad=2&w=256&h=256&q=80',
-      role: 'Marketing Manager',
-      department: 'Marketing',
-      status: 'On Leave'
-    },
-    {
-      name: 'Lisa Wang',
-      email: 'lisa.wang@example.com',
-      avatar: 'https://images.unsplash.com/photo-1520813792240-56fc4a3765a7?ixlib=rb-1.2.1&auto=format&fit=facearea&facepad=2&w=256&h=256&q=80',
-      role: 'Sales Director',
-      department: 'Sales',
-      status: 'Active'
-    },
-    {
-      name: 'David Wilson',
-      email: 'david.wilson@example.com',
-      avatar: 'https://images.unsplash.com/photo-1507003211169-0a1dd7228f2d?ixlib=rb-1.2.1&auto=format&fit=facearea&facepad=2&w=256&h=256&q=80',
-      role: 'Frontend Developer',
-      department: 'Engineering',
-      status: 'Inactive'
-    }
-  ]);
+  const [teamMembers, setTeamMembers] = useState<TeamMember[]>(data);
 
   const openModal = (member: TeamMember) => {
     setSelectedMember(member);
@@ -101,7 +66,7 @@ export default function RequestTable() {
       <div className="p-6 border-b border-gray-200">
         <div className="flex flex-col md:flex-row md:items-center md:justify-between">
           <div>
-            <h2 className="text-xl font-bold text-gray-800">Team Members</h2>
+            <h1 className="text-3xl font-bold text-teal-500">{title}</h1>
             <p className="text-gray-500 mt-1">Manage your team members and their account permissions here.</p>
           </div>
           <div className="mt-4 md:mt-0">
@@ -124,10 +89,9 @@ export default function RequestTable() {
           <div>
             <select className="border border-gray-300 rounded-lg px-4 py-2 w-full sm:w-auto">
               <option value="">All Departments</option>
-              <option value="engineering">Engineering</option>
-              <option value="design">Design</option>
-              <option value="marketing">Marketing</option>
-              <option value="sales">Sales</option>
+              {departments.map((dept, index) => (
+                <option key={index} value={dept.toLowerCase()}>{dept}</option>
+              ))}
             </select>
           </div>
         </div>
@@ -267,7 +231,7 @@ export default function RequestTable() {
         <div className="flex items-center justify-between flex-col sm:flex-row">
           <div className="mb-4 sm:mb-0">
             <p className="text-sm text-gray-700">
-              Showing <span className="font-medium">1</span> to <span className="font-medium">5</span> of <span className="font-medium">24</span> results
+              Showing <span className="font-medium">1</span> to <span className="font-medium">{teamMembers.length}</span> of <span className="font-medium">{teamMembers.length}</span> results
             </p>
           </div>
           <div>

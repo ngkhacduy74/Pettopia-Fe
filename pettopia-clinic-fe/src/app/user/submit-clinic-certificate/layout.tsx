@@ -1,7 +1,7 @@
 'use client';
 
 import { useState } from 'react';
-import UserNavbar from '@/components/UserNavbar';
+import UserNavbar from '@/components/Navbar/UserNavbar';
 
 export default function layout({
     children,

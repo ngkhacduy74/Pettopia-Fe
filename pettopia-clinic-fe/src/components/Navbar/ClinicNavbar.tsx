@@ -3,30 +3,30 @@ import React from 'react';
 import { HomeIcon, DocumentCheckIcon } from '@heroicons/react/24/outline';
 import { usePathname } from 'next/navigation';
 
-interface StaffNavbarProps {
+interface ClinicNavbarProps {
   setShowSearch: (v: boolean) => void;
   showSearch: boolean;
   isOpen?: boolean;
   onClose?: () => void;
 }
 
-export default function StaffNavbar({
+export default function ClinicNavbar({
   setShowSearch,
   showSearch,
   isOpen,
   onClose,
-}: StaffNavbarProps) {
+}: ClinicNavbarProps) {
   const pathname = usePathname();
 
   const navItems = [
     {
-      label: 'Trang chủ',
+      label: 'Dashboard',
       href: '/dashboard',
       icon: <HomeIcon className="w-4 h-4" />,
     },
     {
-      label: 'Certificate',
-      href: '/submit-certificate',
+      label: 'Request',
+      href: '/clinic/request-list',
       icon: <DocumentCheckIcon className="w-4 h-4" />,
     }
   ];
@@ -52,7 +52,7 @@ export default function StaffNavbar({
             <div className="w-6 h-6 bg-gradient-to-br from-teal-500 to-cyan-600 rounded flex items-center justify-center text-xs font-bold text-white">
               🐾
             </div>
-            <span className="text-sm font-medium text-gray-900">Veterianrian's Dashboard</span>
+            <span className="text-sm font-medium text-gray-900">Clinic's Dashboard</span>
           </div>
 
           {/* Nút đóng trên mobile */}
