@@ -11,6 +11,7 @@ export default function PetCareApp() {
     const [showChat, setShowChat] = useState(false);
     const [chatMessage, setChatMessage] = useState('');
 
+
     const recentItems = [
         {
             id: 1,
