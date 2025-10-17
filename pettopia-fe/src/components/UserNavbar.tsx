@@ -1,4 +1,22 @@
-import { useState } from 'react';
+import { useState, useEffect } from 'react';
+
+interface UserData {
+  fullname: string;
+  gender: string;
+    email: {
+    email_address: string;
+    verified: boolean;
+  };
+  phone_number: string;
+  username: string;
+  dob: string;
+  address: {
+    city: string;
+    district: string;
+    ward: string;
+    description: string;
+  };
+}
 
 interface UserNavbarProps {
   setShowSearch: (v: boolean) => void;
@@ -8,6 +26,50 @@ interface UserNavbarProps {
 export default function UserNavbar({ setShowSearch, showSearch }: UserNavbarProps) {
   const [isDropdownOpen, setIsDropdownOpen] = useState(false);
   const [isSettingsModalOpen, setIsSettingsModalOpen] = useState(false);
+  const [userData, setUserData] = useState<UserData | null>(null);
+  const [isLoading, setIsLoading] = useState(true);
+
+  // Fetch user data khi component mount
+  useEffect(() => {
+    const fetchUserData = async () => {
+      try {
+        setIsLoading(true);
+        
+        const token = localStorage.getItem("authToken");
+        
+        if (!token) {
+          console.error('No auth token found');
+          setIsLoading(false);
+          return;
+        }
+        
+        const userId = '2f94020b-d56e-4c40-98a9-7ecb99a8184a';
+        // const userId = localStorage.getItem("userId") ;
+        
+        const response = await fetch(`http://localhost:3000/api/v1/customer/${userId}`, {
+          headers: {
+            'Authorization': `Bearer ${token}`,
+            'Content-Type': 'application/json'
+          }
+        });
+        
+        if (!response.ok) {
+          throw new Error(`HTTP error! status: ${response.status}`);
+        }
+        
+        const data = await response.json();
+        setUserData(data);
+        setIsLoading(false);
+        
+      } catch (error) {
+        console.error('Error fetching user data:', error);
+        setIsLoading(false);
+
+      }
+    };
+
+    fetchUserData();
+  }, []);
 
   const handleSettingsClick = () => {
     setIsDropdownOpen(false);
@@ -21,11 +83,20 @@ export default function UserNavbar({ setShowSearch, showSearch }: UserNavbarProp
 
   const handleLogoutClick = () => {
     setIsDropdownOpen(false);
-    alert('Logout clicked');
+    // Xóa token và redirect đến trang login
+    // localStorage.removeItem("authToken");
+    // window.location.href = '/login';
+    alert('Logout clicked - Token will be removed');
   };
 
-      const token = localStorage.getItem("authToken");
-    console.log(token);
+  // Lấy initials từ fullname
+  const getInitials = (name: string) => {
+    const words = name.trim().split(' ');
+    if (words.length >= 2) {
+      return (words[0][0] + words[words.length - 1][0]).toUpperCase();
+    }
+    return name.substring(0, 2).toUpperCase();
+  };
 
   return (
     <>
@@ -36,12 +107,31 @@ export default function UserNavbar({ setShowSearch, showSearch }: UserNavbarProp
             onClick={() => setIsDropdownOpen(!isDropdownOpen)}
             className="w-full flex items-center gap-3 p-2 rounded-lg hover:bg-teal-50 cursor-pointer transition-colors"
           >
-            <div className="w-6 h-6 bg-gradient-to-br from-teal-500 to-cyan-600 rounded flex items-center justify-center text-xs font-bold text-white">
-              🐾
-            </div>
-            <span className="text-sm font-medium flex-1 text-gray-900">My Pet Care</span>
+            {isLoading ? (
+              <>
+                <div className="w-8 h-8 bg-gray-200 rounded-full animate-pulse"></div>
+                <div className="flex-1">
+                  <div className="h-4 bg-gray-200 rounded w-28 mb-1 animate-pulse"></div>
+                  <div className="h-3 bg-gray-200 rounded w-36 animate-pulse"></div>
+                </div>
+              </>
+            ) : (
+              <>
+                <div className="w-8 h-8 bg-gradient-to-br from-teal-500 to-cyan-600 rounded-full flex items-center justify-center text-xs font-bold text-white shadow-sm">
+                  {userData ? getInitials(userData.fullname) : '🐾'}
+                </div>
+                <div className="flex-1 text-left min-w-0">
+                  <div className="text-sm font-semibold text-gray-900 truncate">
+                    {userData?.fullname || 'My Pet Care'}
+                  </div>
+                  <div className="text-xs text-gray-500 truncate">
+                    {userData?.email?.email_address || 'user@example.com'}
+                  </div>
+                </div>
+              </>
+            )}
             <svg
-              className={`w-4 h-4 text-gray-400 transition-transform ${isDropdownOpen ? 'rotate-180' : ''}`}
+              className={`w-4 h-4 text-gray-400 transition-transform flex-shrink-0 ${isDropdownOpen ? 'rotate-180' : ''}`}
               fill="none"
               stroke="currentColor"
               viewBox="0 0 24 24"
@@ -61,7 +151,7 @@ export default function UserNavbar({ setShowSearch, showSearch }: UserNavbarProp
                   <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M9.594 3.94c.09-.542.56-.94 1.11-.94h2.593c.55 0 1.02.398 1.11.94l.213 1.281c.063.374.313.686.645.87.074.04.147.083.22.127.324.196.72.257 1.075.124l1.217-.456a1.125 1.125 0 011.37.49l1.296 2.247a1.125 1.125 0 01-.26 1.431l-1.003.827c-.293.24-.438.613-.431.992a6.759 6.759 0 010 .255c-.007.378.138.75.43.99l1.005.828c.424.35.534.954.26 1.43l-1.298 2.247a1.125 1.125 0 01-1.369.491l-1.217-.456c-.355-.133-.75-.072-1.076.124a6.57 6.57 0 01-.22.128c-.331.183-.581.495-.644.869l-.213 1.28c-.09.543-.56.941-1.11.941h-2.594c-.55 0-1.02-.398-1.11-.94l-.213-1.281c-.062-.374-.312-.686-.644-.87a6.52 6.52 0 01-.22-.127c-.325-.196-.72-.257-1.076-.124l-1.217.456a1.125 1.125 0 01-1.369-.49l-1.297-2.247a1.125 1.125 0 01.26-1.431l1.004-.827c.292-.24.437-.613.43-.992a6.932 6.932 0 010-.255c.007-.378-.138-.75-.43-.99l-1.004-.828a1.125 1.125 0 01-.26-1.43l1.297-2.247a1.125 1.125 0 011.37-.491l1.216.456c.356.133.751.072 1.076-.124.072-.044.146-.087.22-.128.332-.183.582-.495.644-.869l.214-1.281z" />
                   <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M15 12a3 3 0 11-6 0 3 3 0 016 0z" />
                 </svg>
-                <span className="text-sm font-medium text-gray-900">Settings</span>
+                <span className="text-sm font-medium text-gray-900">Cài đặt</span>
               </button>
 
               <button
@@ -71,7 +161,7 @@ export default function UserNavbar({ setShowSearch, showSearch }: UserNavbarProp
                 <svg className="w-5 h-5 text-teal-600" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                   <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M15.75 6a3.75 3.75 0 11-7.5 0 3.75 3.75 0 017.5 0zM4.501 20.118a7.5 7.5 0 0114.998 0A17.933 17.933 0 0112 21.75c-2.676 0-5.216-.584-7.499-1.632z" />
                 </svg>
-                <span className="text-sm font-medium text-gray-900">Profile</span>
+                <span className="text-sm font-medium text-gray-900">Hồ sơ</span>
               </button>
 
               <div className="border-t border-gray-100 my-1"></div>
@@ -83,7 +173,7 @@ export default function UserNavbar({ setShowSearch, showSearch }: UserNavbarProp
                 <svg className="w-5 h-5 text-red-600" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                   <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M15.75 9V5.25A2.25 2.25 0 0013.5 3h-6a2.25 2.25 0 00-2.25 2.25v13.5A2.25 2.25 0 007.5 21h6a2.25 2.25 0 002.25-2.25V15M12 9l-3 3m0 0l3 3m-3-3h12.75" />
                 </svg>
-                <span className="text-sm font-medium text-red-600">Logout</span>
+                <span className="text-sm font-medium text-red-600">Đăng xuất</span>
               </button>
             </div>
           )}
@@ -100,32 +190,24 @@ export default function UserNavbar({ setShowSearch, showSearch }: UserNavbarProp
                 <path d="M6.5 9a2.5 2.5 0 1 1 5 0 2.5 2.5 0 0 1-5 0Z" />
                 <path fillRule="evenodd" d="M10 18a8 8 0 1 0 0-16 8 8 0 0 0 0 16ZM9 5a4 4 0 1 0 2.248 7.309l1.472 1.471a.75.75 0 1 0 1.06-1.06l-1.471-1.472A4 4 0 0 0 9 5Z" clipRule="evenodd" />
               </svg>
-
               <span>Tìm kiếm</span>
             </button>
             <button className="w-full flex items-center gap-3 px-3 py-2 rounded-lg bg-gradient-to-r from-teal-500 to-cyan-600 text-white text-sm shadow-sm">
               <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 20 20" fill="currentColor" className="size-5">
                 <path fillRule="evenodd" d="M9.293 2.293a1 1 0 0 1 1.414 0l7 7A1 1 0 0 1 17 11h-1v6a1 1 0 0 1-1 1h-2a1 1 0 0 1-1-1v-3a1 1 0 0 0-1-1H9a1 1 0 0 0-1 1v3a1 1 0 0 1-1 1H5a1 1 0 0 1-1-1v-6H3a1 1 0 0 1-.707-1.707l7-7Z" clipRule="evenodd" />
               </svg>
-
               <span>Trang chủ</span>
             </button>
             <button className="w-full flex items-center gap-3 px-3 py-2 rounded-lg hover:bg-teal-50 text-gray-700 text-sm transition-colors">
-              <span className="text-base">
-                <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 20 20" fill="currentColor" className="size-5">
-                  <path fillRule="evenodd" d="M18 10a8 8 0 1 1-16 0 8 8 0 0 1 16 0Zm-5.5-2.5a2.5 2.5 0 1 1-5 0 2.5 2.5 0 0 1 5 0ZM10 12a5.99 5.99 0 0 0-4.793 2.39A6.483 6.483 0 0 0 10 16.5a6.483 6.483 0 0 0 4.793-2.11A5.99 5.99 0 0 0 10 12Z" clipRule="evenodd" />
-                </svg>
-
-
-              </span>
+              <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 20 20" fill="currentColor" className="size-5">
+                <path fillRule="evenodd" d="M18 10a8 8 0 1 1-16 0 8 8 0 0 1 16 0Zm-5.5-2.5a2.5 2.5 0 1 1-5 0 2.5 2.5 0 0 1 5 0ZM10 12a5.99 5.99 0 0 0-4.793 2.39A6.483 6.483 0 0 0 10 16.5a6.483 6.483 0 0 0 4.793-2.11A5.99 5.99 0 0 0 10 12Z" clipRule="evenodd" />
+              </svg>
               <span>Hồ sơ Pet</span>
             </button>
             <button className="w-full flex items-center gap-3 px-3 py-2 rounded-lg hover:bg-teal-50 text-gray-700 text-sm transition-colors">
-              <span className="text-base">
-                <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 20 20" fill="currentColor" className="size-5">
-                  <path fillRule="evenodd" d="M18 10a8 8 0 1 1-16 0 8 8 0 0 1 16 0Zm-6.5 6.326a6.52 6.52 0 0 1-1.5.174 6.487 6.487 0 0 1-5.011-2.36l.49-.98a.423.423 0 0 1 .614-.164l.294.196a.992.992 0 0 0 1.491-1.139l-.197-.593a.252.252 0 0 1 .126-.304l1.973-.987a.938.938 0 0 0 .361-1.359.375.375 0 0 1 .239-.576l.125-.025A2.421 2.421 0 0 0 12.327 6.6l.05-.149a1 1 0 0 0-.242-1.023l-1.489-1.489a.5.5 0 0 1-.146-.353v-.067a6.5 6.5 0 0 1 5.392 9.23 1.398 1.398 0 0 0-.68-.244l-.566-.566a1.5 1.5 0 0 0-1.06-.439h-.172a1.5 1.5 0 0 0-1.06.44l-.593.592a.501.501 0 0 1-.13.093l-1.578.79a1 1 0 0 0-.553.894v.191a1 1 0 0 0 1 1h.5a.5.5 0 0 1 .5.5v.326Z" clipRule="evenodd" />
-                </svg>
-              </span>
+              <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 20 20" fill="currentColor" className="size-5">
+                <path fillRule="evenodd" d="M18 10a8 8 0 1 1-16 0 8 8 0 0 1 16 0Zm-6.5 6.326a6.52 6.52 0 0 1-1.5.174 6.487 6.487 0 0 1-5.011-2.36l.49-.98a.423.423 0 0 1 .614-.164l.294.196a.992.992 0 0 0 1.491-1.139l-.197-.593a.252.252 0 0 1 .126-.304l1.973-.987a.938.938 0 0 0 .361-1.359.375.375 0 0 1 .239-.576l.125-.025A2.421 2.421 0 0 0 12.327 6.6l.05-.149a1 1 0 0 0-.242-1.023l-1.489-1.489a.5.5 0 0 1-.146-.353v-.067a6.5 6.5 0 0 1 5.392 9.23 1.398 1.398 0 0 0-.68-.244l-.566-.566a1.5 1.5 0 0 0-1.06-.439h-.172a1.5 1.5 0 0 0-1.06.44l-.593.592a.501.501 0 0 1-.13.093l-1.578.79a1 1 0 0 0-.553.894v.191a1 1 0 0 0 1 1h.5a.5.5 0 0 1 .5.5v.326Z" clipRule="evenodd" />
+              </svg>
               <span>Community</span>
             </button>
           </div>
@@ -135,12 +217,9 @@ export default function UserNavbar({ setShowSearch, showSearch }: UserNavbarProp
             <div className="text-xs text-teal-600 font-semibold px-3 mb-2 uppercase tracking-wide">Truy cập nhanh</div>
             <div className="space-y-1">
               <button className="w-full flex items-center gap-3 px-3 py-2 rounded-lg hover:bg-teal-50 text-gray-700 text-sm transition-colors">
-                <span className="text-base">
-                  <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 20 20" fill="currentColor" className="size-5">
-                    <path d="M10.75 16.82A7.462 7.462 0 0 1 15 15.5c.71 0 1.396.098 2.046.282A.75.75 0 0 0 18 15.06v-11a.75.75 0 0 0-.546-.721A9.006 9.006 0 0 0 15 3a8.963 8.963 0 0 0-4.25 1.065V16.82ZM9.25 4.065A8.963 8.963 0 0 0 5 3c-.85 0-1.673.118-2.454.339A.75.75 0 0 0 2 4.06v11a.75.75 0 0 0 .954.721A7.506 7.506 0 0 1 5 15.5c1.579 0 3.042.487 4.25 1.32V4.065Z" />
-                  </svg>
-
-                </span>
+                <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 20 20" fill="currentColor" className="size-5">
+                  <path d="M10.75 16.82A7.462 7.462 0 0 1 15 15.5c.71 0 1.396.098 2.046.282A.75.75 0 0 0 18 15.06v-11a.75.75 0 0 0-.546-.721A9.006 9.006 0 0 0 15 3a8.963 8.963 0 0 0-4.25 1.065V16.82ZM9.25 4.065A8.963 8.963 0 0 0 5 3c-.85 0-1.673.118-2.454.339A.75.75 0 0 0 2 4.06v11a.75.75 0 0 0 .954.721A7.506 7.506 0 0 1 5 15.5c1.579 0 3.042.487 4.25 1.32V4.065Z" />
+                </svg>
                 <span>Nhật ký Pet</span>
               </button>
               <button className="w-full flex items-center gap-3 px-3 py-2 rounded-lg hover:bg-teal-50 text-gray-700 text-sm transition-colors">
@@ -151,11 +230,9 @@ export default function UserNavbar({ setShowSearch, showSearch }: UserNavbarProp
                 <span>Lịch khám</span>
               </button>
               <button className="w-full flex items-center gap-3 px-3 py-2 rounded-lg hover:bg-teal-50 text-gray-700 text-sm transition-colors">
-                <span className="text-base">
-                  <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 20 20" fill="currentColor" className="size-5">
-                    <path d="m9.653 16.915-.005-.003-.019-.01a20.759 20.759 0 0 1-1.162-.682 22.045 22.045 0 0 1-2.582-1.9C4.045 12.733 2 10.352 2 7.5a4.5 4.5 0 0 1 8-2.828A4.5 4.5 0 0 1 18 7.5c0 2.852-2.044 5.233-3.885 6.82a22.049 22.049 0 0 1-3.744 2.582l-.019.01-.005.003h-.002a.739.739 0 0 1-.69.001l-.002-.001Z" />
-                  </svg>
-                </span>
+                <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 20 20" fill="currentColor" className="size-5">
+                  <path d="m9.653 16.915-.005-.003-.019-.01a20.759 20.759 0 0 1-1.162-.682 22.045 22.045 0 0 1-2.582-1.9C4.045 12.733 2 10.352 2 7.5a4.5 4.5 0 0 1 8-2.828A4.5 4.5 0 0 1 18 7.5c0 2.852-2.044 5.233-3.885 6.82a22.049 22.049 0 0 1-3.744 2.582l-.019.01-.005.003h-.002a.739.739 0 0 1-.69.001l-.002-.001Z" />
+                </svg>
                 <span>Đơn thuốc</span>
               </button>
             </div>
