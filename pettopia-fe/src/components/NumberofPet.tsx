@@ -19,10 +19,10 @@ interface Pet {
 }
 
 interface PetCardsProps {
-    apiUrl?: string;
+    userId: string;
 }
 
-export default function PetCards({ apiUrl = '/api/v1/pet/all' }: PetCardsProps) {
+export default function PetCards({ userId }: PetCardsProps) {
     const [pets, setPets] = useState<Pet[]>([]);
     const [loading, setLoading] = useState(true);
     const [error, setError] = useState<string | null>(null);
@@ -30,11 +30,12 @@ export default function PetCards({ apiUrl = '/api/v1/pet/all' }: PetCardsProps) 
 
     useEffect(() => {
         fetchPets();
-    }, []);
+    }, [userId]);
 
     const fetchPets = async () => {
         try {
             setLoading(true);
+            const apiUrl = `http://localhost:3000/api/v1/pet/owner/${userId}`;
             const response = await fetch(apiUrl, {
                 headers: {
                     'Accept': 'application/json',
@@ -48,7 +49,7 @@ export default function PetCards({ apiUrl = '/api/v1/pet/all' }: PetCardsProps) 
                     errorDetail = contentType.includes('application/json')
                         ? JSON.stringify(await response.json())
                         : await response.text();
-                } catch {}
+                } catch { }
                 console.error('Failed to fetch pets', {
                     status: response.status,
                     statusText: response.statusText,
@@ -81,7 +82,7 @@ export default function PetCards({ apiUrl = '/api/v1/pet/all' }: PetCardsProps) 
         const birth = new Date(birthDate);
         const years = today.getFullYear() - birth.getFullYear();
         const months = today.getMonth() - birth.getMonth();
-        
+
         if (years === 0) {
             return `${months} tháng tuổi`;
         }
@@ -124,7 +125,7 @@ export default function PetCards({ apiUrl = '/api/v1/pet/all' }: PetCardsProps) 
                     </svg>
                     <h3 className="text-lg font-semibold text-red-900 mb-2">Có lỗi xảy ra</h3>
                     <p className="text-red-700 mb-4">{error}</p>
-                    <button 
+                    <button
                         onClick={fetchPets}
                         className="bg-red-600 text-white px-6 py-2 rounded-lg hover:bg-red-700 transition-colors"
                     >
@@ -151,7 +152,7 @@ export default function PetCards({ apiUrl = '/api/v1/pet/all' }: PetCardsProps) 
     }
 
     return (
-        <div className="w-full">
+        <div className="w-full pb-12">
             <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
                 {pets.map((pet) => (
                     <div
@@ -163,8 +164,8 @@ export default function PetCards({ apiUrl = '/api/v1/pet/all' }: PetCardsProps) 
                     >
                         <div className="relative h-48 bg-gradient-to-br from-teal-400 to-cyan-500 overflow-hidden">
                             {pet.image || pet.imageUrl || pet.photo || pet.avatar_url ? (
-                                <img 
-                                    src={pet.image || pet.imageUrl || pet.photo || pet.avatar_url} 
+                                <img
+                                    src={pet.image || pet.imageUrl || pet.photo || pet.avatar_url}
                                     alt={pet.name}
                                     className="w-full h-full object-cover"
                                 />
@@ -173,7 +174,7 @@ export default function PetCards({ apiUrl = '/api/v1/pet/all' }: PetCardsProps) 
                                     {getPetIcon(pet.species || pet.type)}
                                 </div>
                             )}
-                            
+
                             <div className="absolute top-4 right-4 bg-white/90 backdrop-blur-sm px-3 py-1 rounded-full">
                                 <span className="text-xs font-semibold text-teal-700">
                                     {pet.status === 'healthy' || pet.status === 'active' ? '✓ Khỏe mạnh' : 'Theo dõi'}
@@ -194,13 +195,29 @@ export default function PetCards({ apiUrl = '/api/v1/pet/all' }: PetCardsProps) 
 
                             <div className="space-y-3">
                                 <div className="flex items-center gap-2 text-sm">
-                                    <svg className="w-4 h-4 text-teal-600" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                                        <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M8 7V3m8 4V3m-9 8h10M5 21h14a2 2 0 002-2V7a2 2 0 00-2-2H5a2 2 0 00-2 2v12a2 2 0 002 2z" />
+                                    <svg
+                                        className="w-4 h-4 text-teal-600"
+                                        fill="none"
+                                        stroke="currentColor"
+                                        viewBox="0 0 24 24"
+                                    >
+                                        <path
+                                            strokeLinecap="round"
+                                            strokeLinejoin="round"
+                                            strokeWidth={2}
+                                            d="M8 7V3m8 4V3m-9 8h10M5 21h14a2 2 0 002-2V7a2 2 0 00-2-2H5a2 2 0 00-2 2v12a2 2 0 002 2z"
+                                        />
                                     </svg>
                                     <span className="text-gray-600">
-                                        Tuổi: <span className="font-semibold text-gray-900">{getAgeText(pet.birthDate || pet.dateOfBirth)}</span>
+                                        Ngày sinh:{" "}
+                                        <span className="font-semibold text-gray-900">
+                                            {pet.dateOfBirth
+                                                ? new Date(pet.dateOfBirth).toLocaleDateString("vi-VN")
+                                                : "Chưa rõ"}
+                                        </span>
                                     </span>
                                 </div>
+
 
                                 <div className="flex items-center gap-2 text-sm">
                                     <svg className="w-4 h-4 text-teal-600" fill="none" stroke="currentColor" viewBox="0 0 24 24">
@@ -217,7 +234,11 @@ export default function PetCards({ apiUrl = '/api/v1/pet/all' }: PetCardsProps) 
                                             <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M16 7a4 4 0 11-8 0 4 4 0 018 0zM12 14a7 7 0 00-7 7h14a7 7 0 00-7-7z" />
                                         </svg>
                                         <span className="text-gray-600">
-                                            Giới tính: <span className="font-semibold text-gray-900 capitalize">{pet.gender === 'male' ? 'Đực' : pet.gender === 'female' ? 'Cái' : pet.gender}</span>
+                                            Giới tính: <span className="font-semibold text-gray-900 capitalize">
+                                                {pet.gender?.toLowerCase() === 'male' ? 'Đực'
+                                                    : pet.gender?.toLowerCase() === 'female' ? 'Cái'
+                                                        : pet.gender || 'Chưa rõ'}
+                                            </span>
                                         </span>
                                     </div>
                                 )}
@@ -234,9 +255,12 @@ export default function PetCards({ apiUrl = '/api/v1/pet/all' }: PetCardsProps) 
                                 )}
                             </div>
 
-                            <button className="w-full mt-4 bg-gradient-to-r from-teal-600 to-cyan-600 text-white py-2 rounded-lg font-semibold hover:shadow-lg transition-all hover:scale-105">
-                                Xem chi tiết
-                            </button>
+                            <a href={`/user/user-pet/${pet.id}`}>
+                                <button className="w-full mt-4 bg-gradient-to-r from-teal-600 to-cyan-600 text-white py-2 rounded-lg font-semibold hover:shadow-lg transition-all hover:scale-105 cursor-pointer">
+                                    Xem chi tiết
+                                </button>
+                            </a>
+
                         </div>
                     </div>
                 ))}

@@ -112,7 +112,7 @@ export default function PetCareApp() {
                                     <p className="text-cyan-50 text-lg mb-6">
                                         Đăng ký hồ sơ để theo dõi sức khỏe và chăm sóc thú cưng của bạn tốt hơn
                                     </p>
-                                    <Link href="/register-pet">
+                                    <Link href="/user/register-pet">
                                         <button className="bg-white text-teal-700 px-1 py-4 rounded-full font-semibold hover:bg-teal-50 transition-all duration-300 shadow-md hover:shadow-lg hover:scale-105 focus:outline-none focus:ring-2 focus:ring-white focus:ring-offset-2 focus:ring-offset-teal-600">
                                             Đăng ký ngay →
                                         </button>
@@ -133,7 +133,7 @@ export default function PetCareApp() {
                             </Link>
                         </div>
                     </section>
-                    <PetCards />
+                    <PetCards userId="2f94020b-d56e-4c40-98a9-7ecb99a8184a" />
                     {/* Recently Visited */}
                     <div className="mb-12">
                         <div className="flex items-center gap-2 mb-6">
