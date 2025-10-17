@@ -1,63 +1,48 @@
 'use client';
 
-import { useState, useEffect } from 'react';
+import { useState } from 'react';
 import { useForm } from 'react-hook-form';
 import { useRouter } from 'next/navigation';
 import { loginUser } from '@/services/userService';
+import { parseJwt } from '@/utils/jwt'; // Giả sử jwt.ts nằm ở utils/jwt.ts, điều chỉnh path nếu cần
 import Image from 'next/image';
-import jwtDecode from 'jwt-decode';
 
 type FormData = {
   username: string;
   password: string;
 };
 
-interface JwtPayload {
-  role: string;
-  exp: number;
-}
-
 export default function LoginForm() {
   const { register, handleSubmit, formState: { errors } } = useForm<FormData>();
   const [serverError, setServerError] = useState('');
   const router = useRouter();
 
-  // Kiểm tra thời hạn token khi component mount
-  useEffect(() => {
-    const token = localStorage.getItem('authToken');
-    if (token) {
-      const decoded: JwtPayload = jwtDecode(token);
-      const currentTime = Math.floor(Date.now() / 1000);
-      if (decoded.exp < currentTime) {
-        localStorage.removeItem('authToken');
-        localStorage.removeItem('userRole');
-        router.push('/login');
-      }
-    }
-  }, [router]);
-
   const onSubmit = async (data: FormData) => {
     try {
       const response = await loginUser(data);
-      if (response.status) {
+      if (response.status && response.token) {
         // Lưu token vào localStorage
         localStorage.setItem('authToken', response.token);
 
-        // Giải mã token để lấy role
-        const decoded: JwtPayload = jwtDecode(response.token);
-        localStorage.setItem('userRole', decoded.role);
+        // Giải mã token để lấy userRole
+        const decoded = parseJwt(response.token);
+        if (decoded && decoded.userRole) {
+          localStorage.setItem('useruserRole', decoded.userRole);
 
-        alert('Đăng nhập thành công!');
+          alert('Đăng nhập thành công!');
 
-        // Chuyển hướng dựa trên role
-        if (decoded.role === 'Admin') {
-          router.push('/admin/dashboard');
-        } else if (decoded.role === 'User') {
-          router.push('/user/dashboard');
-        } else if (decoded.role === 'Staff') {
-          router.push('/staff/dashboard');
+          // Chuyển hướng dựa trên userRole
+          if (decoded.userRole === 'Admin') {
+            router.push('/admin/dashboard');
+          } else if (decoded.userRole === 'User') {
+            router.push('/user/submit-vet-certificate');
+          } else if (decoded.userRole === 'Staff') {
+            router.push('/staff/dashboard');
+          } else {
+            setServerError('Vai trò không hợp lệ');
+          }
         } else {
-          setServerError('Vai trò không hợp lệ');
+          setServerError('Không thể lấy thông tin vai trò từ token');
         }
       } else {
         setServerError('Đăng nhập thất bại');

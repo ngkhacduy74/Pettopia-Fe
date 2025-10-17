@@ -82,12 +82,12 @@ export default function Home() {
             </div>
           </div>
 
-          <div className="absolute bottom-8 left-8 z-10">
+          {/* <div className="absolute bottom-8 left-8 z-10">
             <div className="flex flex-col items-start">
               <span className="text-white text-xs mb-2">Cái gì đây phúc ơi? Cần để lại không?</span>
               <div className="w-px h-20 bg-white/40"></div>
             </div>
-          </div>
+          </div> */}
         </div>
       </section>
 
