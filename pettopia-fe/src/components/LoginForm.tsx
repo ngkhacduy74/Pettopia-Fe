@@ -4,6 +4,7 @@ import { useState } from 'react';
 import { useForm } from 'react-hook-form';
 import { useRouter } from 'next/navigation';
 import { loginUser } from '@/services/userService';
+import { parseJwt } from '@/utils/jwt'; // Giả sử jwt.ts nằm ở utils/jwt.ts, điều chỉnh path nếu cần
 import Image from 'next/image';
 
 type FormData = {
@@ -19,22 +20,29 @@ export default function LoginForm() {
   const onSubmit = async (data: FormData) => {
     try {
       const response = await loginUser(data);
-      if (response.status) {
-        // Lưu token và role vào localStorage
+      if (response.status && response.token) {
+        // Lưu token vào localStorage
         localStorage.setItem('authToken', response.token);
-        localStorage.setItem('userRole', response.role);
 
-        alert('Đăng nhập thành công!');
+        // Giải mã token để lấy role
+        const decoded = parseJwt(response.token);
+        if (decoded && decoded.role) {
+          localStorage.setItem('userRole', decoded.role);
 
-        // Chuyển hướng dựa trên role
-        if (response.role === 'Admin') {
-          router.push('/admin/dashboard');
-        } else if (response.role === 'User') {
-          router.push('/user/dashboard');
-        } else if (response.role === 'Staff') {
-          router.push('/staff/dashboard');
+          alert('Đăng nhập thành công!');
+
+          // Chuyển hướng dựa trên role
+          if (decoded.role === 'Admin') {
+            router.push('/admin/dashboard');
+          } else if (decoded.role === 'User') {
+            router.push('/home');
+          } else if (decoded.role === 'Staff') {
+            router.push('/staff/dashboard');
+          } else {
+            setServerError('Vai trò không hợp lệ');
+          }
         } else {
-          setServerError('Vai trò không hợp lệ');
+          setServerError('Không thể lấy thông tin vai trò từ token');
         }
       } else {
         setServerError('Đăng nhập thất bại');
