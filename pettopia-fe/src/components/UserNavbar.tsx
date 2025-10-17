@@ -24,6 +24,9 @@ export default function UserNavbar({ setShowSearch, showSearch }: UserNavbarProp
     alert('Logout clicked');
   };
 
+      const token = localStorage.getItem("authToken");
+    console.log(token);
+
   return (
     <>
       <div className="w-64 bg-white border-r border-teal-100 flex flex-col shadow-sm">
