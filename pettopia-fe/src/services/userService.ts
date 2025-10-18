@@ -1,4 +1,5 @@
 import axios from "axios";
+import { parseJwt } from "../utils/jwt"; // Import parseJwt từ jwt.ts
 
 const API_URL = "http://localhost:3000/api/v1/auth";
 
@@ -28,6 +29,27 @@ export const loginUser = async (loginData: {
 }) => {
   try {
     const response = await axiosInstance.post("/login", loginData);
+    const { token } = response.data;
+
+    // Kiểm tra dữ liệu từ API
+    console.log("API Response:", response.data); // Debug để kiểm tra dữ liệu
+
+    // Lưu token vào localStorage
+    if (token) {
+      localStorage.setItem("authToken", token);
+
+      // Giải mã token để lấy userRole
+      const decoded = parseJwt(token);
+      if (decoded && decoded.role) {
+        document.cookie = `userRole=${decoded.role}; path=/; max-age=86400;`; // Cookie hết hạn sau 1 ngày
+        console.log("Đã lưu userRole vào cookie:", decoded.role); // Debug để xác nhận
+      } else {
+        console.warn("Không tìm thấy role trong token đã giải mã");
+      }
+    } else {
+      console.warn("Không tìm thấy token trong phản hồi API");
+    }
+
     return response.data;
   } catch (error) {
     console.error("Lỗi khi đăng nhập:", error);
@@ -35,6 +57,10 @@ export const loginUser = async (loginData: {
   }
 };
 
+export const logoutUser = () => {
+  localStorage.removeItem("authToken");
+  document.cookie = "userRole=; path=/; expires=Thu, 01 Jan 1970 00:00:01 GMT;";
+};
 export const createUser = async (userData: {
   fullname: string;
   username: string;

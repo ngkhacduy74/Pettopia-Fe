@@ -147,7 +147,7 @@ export default function UserNavbar({ setShowSearch, showSearch }: UserNavbarProp
   const handleLogoutClick = () => {
     setIsDropdownOpen(false);
     localStorage.removeItem("authToken");
-    window.location.href = '/login';
+    window.location.href = '/auth/login';
   };
 
   const getInitials = (name: string) => {
