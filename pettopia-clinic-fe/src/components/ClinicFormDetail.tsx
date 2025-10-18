@@ -1,3 +1,4 @@
+
 'use client'
 import React, { useState, useEffect } from 'react'
 import { ClinicFormData, getClinicForms, updateClinicFormStatus } from '../services/clinicService';
@@ -100,192 +101,215 @@ export default function RequestTable({ title }: RequestTableProps) {
                         <span className="font-medium">Quay lại danh sách</span>
                     </button>
 
-                    {/* Action Buttons - Top */}
-                    <div className="mb-6 flex flex-wrap gap-3 print:hidden">
+                    {/* Application Form Paper */}
+                    <div className="bg-white shadow-lg rounded-sm relative overflow-hidden" style={{ minHeight: '297mm' }}>
+                        {/* Background Image */}
+                        <div className="absolute inset-0 opacity-5 pointer-events-none">
+                            <img 
+                                src="https://images.unsplash.com/photo-1576091160399-112ba8d25d1d?w=1200&h=800&fit=crop" 
+                                alt="background" 
+                                className="w-full h-full object-cover"
+                            />
+                        </div>
+                        
+                        <div className="relative z-10">
+                            {/* Header */}
+                            <div className="border-b-4 border-teal-600 px-12 py-8 bg-gradient-to-r from-teal-50 to-white">
+                                <div className="flex items-center justify-between">
+                                    <div className="flex items-center space-x-4">
+                                        <div className="w-20 h-20 bg-gradient-to-br from-teal-500 to-teal-600 rounded-full flex items-center justify-center shadow-lg">
+                                            <span className="text-white font-bold text-3xl">{selectedForm.clinic_name.charAt(0).toUpperCase()}</span>
+                                        </div>
+                                        <div>
+                                            <p className="text-sm text-gray-600 uppercase tracking-wider font-medium">Đơn đăng ký</p>
+                                            <h1 className="text-3xl font-bold text-gray-900">Phòng khám y tế</h1>
+                                        </div>
+                                    </div>
+                                    <div className="text-right">
+                                        <span className={`px-4 py-2 rounded-lg text-sm font-bold inline-block ${getStatusStyles(selectedForm.status)}`}>
+                                            {selectedForm.status === 'pending' ? 'ĐANG XỬ LÝ' : selectedForm.status === 'approved' ? 'ĐÃ DUYỆT' : 'TỪ CHỐI'}
+                                        </span>
+                                        <p className="text-xs text-gray-500 mt-2">
+                                            Ngày nộp: {new Date().toLocaleDateString('vi-VN')}
+                                        </p>
+                                    </div>
+                                </div>
+                            </div>
+
+                            {/* Form Content */}
+                            <div className="px-12 py-8 space-y-8">
+                                {/* Section 1: Thông tin phòng khám */}
+                                <div>
+                                    <div className="flex items-center mb-4 pb-2 border-b-2 border-gray-200">
+                                        <div className="w-8 h-8 bg-teal-600 text-white rounded-full flex items-center justify-center font-bold mr-3">
+                                            1
+                                        </div>
+                                        <h2 className="text-xl font-bold text-gray-900">THÔNG TIN PHÒNG KHÁM</h2>
+                                    </div>
+
+                                    <div className="grid grid-cols-2 gap-6 pl-11">
+                                        <div className="col-span-2">
+                                            <label className="block text-sm font-semibold text-gray-700 mb-1">Tên phòng khám</label>
+                                            <p className="text-base text-gray-900 border-b border-gray-300 pb-2">{selectedForm.clinic_name}</p>
+                                        </div>
+
+                                        <div>
+                                            <label className="block text-sm font-semibold text-gray-700 mb-1">Số giấy phép hoạt động</label>
+                                            <p className="text-base text-gray-900 border-b border-gray-300 pb-2">{selectedForm.license_number}</p>
+                                        </div>
+
+                                        <div>
+                                            <label className="block text-sm font-semibold text-gray-700 mb-1">Ngày cấp giấy phép</label>
+                                            <p className="text-base text-gray-900 border-b border-gray-300 pb-2">
+                                                {new Date(selectedForm.representative.license_issued_date).toLocaleDateString('vi-VN')}
+                                            </p>
+                                        </div>
+
+                                        <div>
+                                            <label className="block text-sm font-semibold text-gray-700 mb-1">Địa chỉ Email</label>
+                                            <p className="text-base text-gray-900 border-b border-gray-300 pb-2 flex items-center">
+                                                {selectedForm.email.email_address}
+                                                {selectedForm.email.verified && (
+                                                    <svg className="w-5 h-5 text-green-600 ml-2" fill="currentColor" viewBox="0 0 20 20">
+                                                        <path fillRule="evenodd" d="M10 18a8 8 0 100-16 8 8 0 000 16zm3.707-9.293a1 1 0 00-1.414-1.414L9 10.586 7.707 9.293a1 1 0 00-1.414 1.414l2 2a1 1 0 001.414 0l4-4z" clipRule="evenodd" />
+                                                    </svg>
+                                                )}
+                                            </p>
+                                        </div>
+
+                                        <div>
+                                            <label className="block text-sm font-semibold text-gray-700 mb-1">Số điện thoại</label>
+                                            <p className="text-base text-gray-900 border-b border-gray-300 pb-2 flex items-center">
+                                                {selectedForm.phone.phone_number}
+                                                {selectedForm.phone.verified && (
+                                                    <svg className="w-5 h-5 text-green-600 ml-2" fill="currentColor" viewBox="0 0 20 20">
+                                                        <path fillRule="evenodd" d="M10 18a8 8 0 100-16 8 8 0 000 16zm3.707-9.293a1 1 0 00-1.414-1.414L9 10.586 7.707 9.293a1 1 0 00-1.414 1.414l2 2a1 1 0 001.414 0l4-4z" clipRule="evenodd" />
+                                                    </svg>
+                                                )}
+                                            </p>
+                                        </div>
+
+                                        <div className="col-span-2">
+                                            <label className="block text-sm font-semibold text-gray-700 mb-1">Địa chỉ</label>
+                                            <p className="text-base text-gray-900 border-b border-gray-300 pb-2">
+                                                {selectedForm.address.detail}, {selectedForm.address.ward}, {selectedForm.address.district}, {selectedForm.address.city}
+                                            </p>
+                                        </div>
+                                    </div>
+                                </div>
+
+                                {/* Section 2: Thông tin người đại diện */}
+                                <div>
+                                    <div className="flex items-center mb-4 pb-2 border-b-2 border-gray-200">
+                                        <div className="w-8 h-8 bg-teal-600 text-white rounded-full flex items-center justify-center font-bold mr-3">
+                                            2
+                                        </div>
+                                        <h2 className="text-xl font-bold text-gray-900">THÔNG TIN NGƯỜI ĐẠI DIỆN</h2>
+                                    </div>
+
+                                    <div className="grid grid-cols-2 gap-6 pl-11">
+                                        <div>
+                                            <label className="block text-sm font-semibold text-gray-700 mb-1">Họ và tên</label>
+                                            <p className="text-base text-gray-900 border-b border-gray-300 pb-2">{selectedForm.representative.name}</p>
+                                        </div>
+
+                                        <div>
+                                            <label className="block text-sm font-semibold text-gray-700 mb-1">Số CCCD/CMND</label>
+                                            <p className="text-base text-gray-900 border-b border-gray-300 pb-2">{selectedForm.representative.identify_number}</p>
+                                        </div>
+                                    </div>
+                                </div>
+
+                                {/* Section 3: Ghi chú */}
+                                {selectedForm.note && (
+                                    <div>
+                                        <div className="flex items-center mb-4 pb-2 border-b-2 border-gray-200">
+                                            <div className="w-8 h-8 bg-teal-600 text-white rounded-full flex items-center justify-center font-bold mr-3">
+                                                3
+                                            </div>
+                                            <h2 className="text-xl font-bold text-gray-900">GHI CHÚ</h2>
+                                        </div>
+
+                                        <div className="pl-11">
+                                            <div className="bg-gray-50 border border-gray-200 rounded p-4">
+                                                <p className="text-base text-gray-800 leading-relaxed whitespace-pre-wrap">{selectedForm.note}</p>
+                                            </div>
+                                        </div>
+                                    </div>
+                                )}
+
+                                {/* Signature Section */}
+                                <div className="pt-16 pb-8">
+                                    <div className="grid grid-cols-2 gap-12">
+                                        <div>
+                                            <p className="text-center text-sm font-semibold text-gray-700 mb-24">
+                                                Người nộp đơn
+                                            </p>
+                                            <div className="border-t-2 border-gray-400 pt-2">
+                                                <p className="text-center font-semibold text-gray-900">{selectedForm.representative.name}</p>
+                                            </div>
+                                        </div>
+
+                                        <div>
+                                            <p className="text-center text-sm font-semibold text-gray-700">
+                                                Ngày {new Date().getDate()} tháng {new Date().getMonth() + 1} năm {new Date().getFullYear()}
+                                            </p>
+                                            <p className="text-center text-sm font-semibold text-gray-700 mb-20">
+                                                Người xét duyệt
+                                            </p>
+                                            <div className="border-t-2 border-gray-400 pt-2">
+                                                <p className="text-center font-semibold text-gray-900">(Ký và ghi rõ họ tên)</p>
+                                            </div>
+                                        </div>
+                                    </div>
+                                </div>
+                            </div>
+
+                            {/* Footer */}
+                            <div className="border-t border-gray-200 px-12 py-4 bg-gray-50 text-center text-xs text-gray-500">
+                                <p>Đơn này có giá trị kể từ ngày được phê duyệt • ID: {selectedForm.id}</p>
+                            </div>
+                        </div>
+                    </div>
+
+                    {/* Action Buttons - Bottom */}
+                    <div className="mt-8 flex flex-wrap gap-3 print:hidden">
                         <button
-                            className="flex-1 min-w-[140px] bg-gray-500 hover:bg-gray-600 text-white font-medium py-2.5 px-5 rounded-lg transition-all duration-200 flex items-center justify-center space-x-2"
+                            className="flex-1 min-w-[140px] bg-teal-500 hover:bg-teal-600 text-white font-medium py-3 px-6 rounded-lg transition-all duration-200 flex items-center justify-center space-x-2 shadow-md hover:shadow-lg"
                             onClick={() => updateStatus('pending')}
                         >
+                            <svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M12 8v4l3 3m6-3a9 9 0 11-18 0 9 9 0 0118 0z" />
+                            </svg>
                             <span>Đang xử lý</span>
                         </button>
                         <button
-                            className="flex-1 min-w-[140px] bg-gray-500 hover:bg-gray-600 text-white font-medium py-2.5 px-5 rounded-lg transition-all duration-200 flex items-center justify-center space-x-2"
+                            className="flex-1 min-w-[140px] bg-green-500 hover:bg-green-600 text-white font-medium py-3 px-6 rounded-lg transition-all duration-200 flex items-center justify-center space-x-2 shadow-md hover:shadow-lg"
                             onClick={() => updateStatus('approved')}
                         >
+                            <svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M5 13l4 4L19 7" />
+                            </svg>
                             <span>Phê duyệt</span>
                         </button>
                         <button
-                            className="flex-1 min-w-[140px] bg-gray-500 hover:bg-gray-600 text-white font-medium py-2.5 px-5 rounded-lg transition-all duration-200 flex items-center justify-center space-x-2"
+                            className="flex-1 min-w-[140px] bg-red-500 hover:bg-red-600 text-white font-medium py-3 px-6 rounded-lg transition-all duration-200 flex items-center justify-center space-x-2 shadow-md hover:shadow-lg"
                             onClick={() => updateStatus('rejected')}
                         >
+                            <svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M6 18L18 6M6 6l12 12" />
+                            </svg>
                             <span>Từ chối</span>
                         </button>
                         <button
-                            className="flex-1 min-w-[140px] bg-gray-700 hover:bg-gray-800 text-white font-medium py-2.5 px-5 rounded-lg transition-all duration-200 flex items-center justify-center space-x-2"
+                            className="flex-1 min-w-[140px] bg-indigo-600 hover:bg-indigo-700 text-white font-medium py-3 px-6 rounded-lg transition-all duration-200 flex items-center justify-center space-x-2 shadow-md hover:shadow-lg"
                             onClick={() => window.print()}
                         >
+                            <svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M17 17h2a2 2 0 002-2v-4a2 2 0 00-2-2H5a2 2 0 00-2 2v4a2 2 0 002 2h2m2 4h6a2 2 0 002-2v-4a2 2 0 00-2-2H9a2 2 0 00-2 2v4a2 2 0 002 2zm8-12V5a2 2 0 00-2-2H9a2 2 0 00-2 2v4h10z" />
+                            </svg>
                             <span>In đơn</span>
                         </button>
-                    </div>
-
-                    {/* Application Form Paper */}
-                    <div className="bg-white shadow-lg rounded-sm" style={{ minHeight: '297mm' }}>
-                        {/* Header */}
-                        <div className="border-b-4 border-blue-600 px-12 py-8 bg-gradient-to-r from-blue-50 to-white">
-                            <div className="flex items-center justify-between">
-                                <div className="flex items-center space-x-4">
-                                    <div className="w-20 h-20 bg-gradient-to-br from-blue-500 to-blue-600 rounded-full flex items-center justify-center shadow-lg">
-                                        <span className="text-white font-bold text-3xl">{selectedForm.clinic_name.charAt(0).toUpperCase()}</span>
-                                    </div>
-                                    <div>
-                                        <p className="text-sm text-gray-600 uppercase tracking-wider font-medium">Đơn đăng ký</p>
-                                        <h1 className="text-3xl font-bold text-gray-900">Phòng khám y tế</h1>
-                                    </div>
-                                </div>
-                                <div className="text-right">
-                                    <span className={`px-4 py-2 rounded-lg text-sm font-bold inline-block ${getStatusStyles(selectedForm.status)}`}>
-                                        {selectedForm.status === 'pending' ? 'ĐANG XỬ LÝ' : selectedForm.status === 'approved' ? 'ĐÃ DUYỆT' : 'TỪ CHỐI'}
-                                    </span>
-                                    <p className="text-xs text-gray-500 mt-2">
-                                        Ngày nộp: {new Date().toLocaleDateString('vi-VN')}
-                                    </p>
-                                </div>
-                            </div>
-                        </div>
-
-                        {/* Form Content */}
-                        <div className="px-12 py-8 space-y-8">
-                            {/* Section 1: Thông tin phòng khám */}
-                            <div>
-                                <div className="flex items-center mb-4 pb-2 border-b-2 border-gray-200">
-                                    <div className="w-8 h-8 bg-blue-600 text-white rounded-full flex items-center justify-center font-bold mr-3">
-                                        1
-                                    </div>
-                                    <h2 className="text-xl font-bold text-gray-900">THÔNG TIN PHÒNG KHÁM</h2>
-                                </div>
-
-                                <div className="grid grid-cols-2 gap-6 pl-11">
-                                    <div className="col-span-2">
-                                        <label className="block text-sm font-semibold text-gray-700 mb-1">Tên phòng khám</label>
-                                        <p className="text-base text-gray-900 border-b border-gray-300 pb-2">{selectedForm.clinic_name}</p>
-                                    </div>
-
-                                    <div>
-                                        <label className="block text-sm font-semibold text-gray-700 mb-1">Số giấy phép hoạt động</label>
-                                        <p className="text-base text-gray-900 border-b border-gray-300 pb-2">{selectedForm.license_number}</p>
-                                    </div>
-
-                                    <div>
-                                        <label className="block text-sm font-semibold text-gray-700 mb-1">Ngày cấp giấy phép</label>
-                                        <p className="text-base text-gray-900 border-b border-gray-300 pb-2">
-                                            {new Date(selectedForm.representative.license_issued_date).toLocaleDateString('vi-VN')}
-                                        </p>
-                                    </div>
-
-                                    <div>
-                                        <label className="block text-sm font-semibold text-gray-700 mb-1">Địa chỉ Email</label>
-                                        <p className="text-base text-gray-900 border-b border-gray-300 pb-2 flex items-center">
-                                            {selectedForm.email.email_address}
-                                            {selectedForm.email.verified && (
-                                                <svg className="w-5 h-5 text-green-600 ml-2" fill="currentColor" viewBox="0 0 20 20">
-                                                    <path fillRule="evenodd" d="M10 18a8 8 0 100-16 8 8 0 000 16zm3.707-9.293a1 1 0 00-1.414-1.414L9 10.586 7.707 9.293a1 1 0 00-1.414 1.414l2 2a1 1 0 001.414 0l4-4z" clipRule="evenodd" />
-                                                </svg>
-                                            )}
-                                        </p>
-                                    </div>
-
-                                    <div>
-                                        <label className="block text-sm font-semibold text-gray-700 mb-1">Số điện thoại</label>
-                                        <p className="text-base text-gray-900 border-b border-gray-300 pb-2 flex items-center">
-                                            {selectedForm.phone.phone_number}
-                                            {selectedForm.phone.verified && (
-                                                <svg className="w-5 h-5 text-green-600 ml-2" fill="currentColor" viewBox="0 0 20 20">
-                                                    <path fillRule="evenodd" d="M10 18a8 8 0 100-16 8 8 0 000 16zm3.707-9.293a1 1 0 00-1.414-1.414L9 10.586 7.707 9.293a1 1 0 00-1.414 1.414l2 2a1 1 0 001.414 0l4-4z" clipRule="evenodd" />
-                                                </svg>
-                                            )}
-                                        </p>
-                                    </div>
-
-                                    <div className="col-span-2">
-                                        <label className="block text-sm font-semibold text-gray-700 mb-1">Địa chỉ</label>
-                                        <p className="text-base text-gray-900 border-b border-gray-300 pb-2">
-                                            {selectedForm.address.detail}, {selectedForm.address.ward}, {selectedForm.address.district}, {selectedForm.address.city}
-                                        </p>
-                                    </div>
-                                </div>
-                            </div>
-
-                            {/* Section 2: Thông tin người đại diện */}
-                            <div>
-                                <div className="flex items-center mb-4 pb-2 border-b-2 border-gray-200">
-                                    <div className="w-8 h-8 bg-blue-600 text-white rounded-full flex items-center justify-center font-bold mr-3">
-                                        2
-                                    </div>
-                                    <h2 className="text-xl font-bold text-gray-900">THÔNG TIN NGƯỜI ĐẠI DIỆN</h2>
-                                </div>
-
-                                <div className="grid grid-cols-2 gap-6 pl-11">
-                                    <div>
-                                        <label className="block text-sm font-semibold text-gray-700 mb-1">Họ và tên</label>
-                                        <p className="text-base text-gray-900 border-b border-gray-300 pb-2">{selectedForm.representative.name}</p>
-                                    </div>
-
-                                    <div>
-                                        <label className="block text-sm font-semibold text-gray-700 mb-1">Số CCCD/CMND</label>
-                                        <p className="text-base text-gray-900 border-b border-gray-300 pb-2">{selectedForm.representative.identify_number}</p>
-                                    </div>
-                                </div>
-                            </div>
-
-                            {/* Section 3: Ghi chú */}
-                            {selectedForm.note && (
-                                <div>
-                                    <div className="flex items-center mb-4 pb-2 border-b-2 border-gray-200">
-                                        <div className="w-8 h-8 bg-blue-600 text-white rounded-full flex items-center justify-center font-bold mr-3">
-                                            3
-                                        </div>
-                                        <h2 className="text-xl font-bold text-gray-900">GHI CHÚ</h2>
-                                    </div>
-
-                                    <div className="pl-11">
-                                        <div className="bg-gray-50 border border-gray-200 rounded p-4">
-                                            <p className="text-base text-gray-800 leading-relaxed whitespace-pre-wrap">{selectedForm.note}</p>
-                                        </div>
-                                    </div>
-                                </div>
-                            )}
-
-                            {/* Signature Section */}
-                            <div className="pt-12 pb-8">
-                                <div className="grid grid-cols-2 gap-12">
-                                    <div>
-                                        <p className="text-center text-sm font-semibold text-gray-700 mb-16">
-                                            Người nộp đơn
-                                        </p>
-                                        <div className="border-t-2 border-gray-400 pt-2">
-                                            <p className="text-center font-semibold text-gray-900">{selectedForm.representative.name}</p>
-                                        </div>
-                                    </div>
-
-                                    <div>
-                                        <p className="text-center text-sm font-semibold text-gray-700">
-                                            Ngày {new Date().getDate()} tháng {new Date().getMonth() + 1} năm {new Date().getFullYear()}
-                                        </p>
-                                        <p className="text-center text-sm font-semibold text-gray-700 mb-12">
-                                            Người xét duyệt
-                                        </p>
-                                        <div className="border-t-2 border-gray-400 pt-2">
-                                            <p className="text-center font-semibold text-gray-900">(Ký và ghi rõ họ tên)</p>
-                                        </div>
-                                    </div>
-                                </div>
-                            </div>
-                        </div>
-
-                        {/* Footer */}
-                        <div className="border-t border-gray-200 px-12 py-4 bg-gray-50 text-center text-xs text-gray-500">
-                            <p>Đơn này có giá trị kể từ ngày được phê duyệt • ID: {selectedForm.id}</p>
-                        </div>
                     </div>
                 </div>
 
@@ -433,7 +457,7 @@ export default function RequestTable({ title }: RequestTableProps) {
                                                 <span className={`px-3 py-1 inline-flex text-xs leading-5 font-semibold rounded-full ${getStatusStyles(form.status)}`}>
                                                     {form.status === 'pending' ? 'Đang xử lý' : form.status === 'approved' ? 'Đã duyệt' : 'Từ chối'}
                                                 </span>
-                                            </td>   
+                                            </td>
                                         </tr>
                                     ))}
                                 </tbody>
@@ -481,8 +505,8 @@ export default function RequestTable({ title }: RequestTableProps) {
                                                     key={pageNumber}
                                                     onClick={() => handlePageChange(pageNumber)}
                                                     className={`relative inline-flex items-center px-4 py-2 border text-sm font-medium transition-all ${currentPage === pageNumber
-                                                            ? 'z-10 bg-indigo-600 border-indigo-600 text-white shadow-md'
-                                                            : 'bg-white border-gray-300 text-gray-700 hover:bg-gray-50'
+                                                        ? 'z-10 bg-indigo-600 border-indigo-600 text-white shadow-md'
+                                                        : 'bg-white border-gray-300 text-gray-700 hover:bg-gray-50'
                                                         }`}
                                                 >
                                                     {pageNumber}
