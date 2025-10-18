@@ -1,7 +1,53 @@
-export async function getClinics() {
-  const response = await fetch('');
-  if (!response.ok) {
-    throw new Error('Failed to fetch clinics');
-  }
-  return response.json(); // Assuming it returns [{id: string, name: string}, ...]
+import axios from "axios";
+
+const API_URL = "http://localhost:3000/api/v1/partner/clinic";
+
+// Tạo instance Axios
+const axiosInstance = axios.create({
+  baseURL: API_URL,
+  headers: {
+    "Content-Type": "application/json",
+  },
+});
+
+// Interceptor để thêm token vào header Authorization
+axiosInstance.interceptors.request.use(
+  (config) => {
+    const token = localStorage.getItem("authToken");
+    if (token) {
+      config.headers.Authorization = `Bearer ${token}`;
+    }
+    return config;
+  },
+  (error) => Promise.reject(error)
+);
+
+interface ClinicData {
+  user_id: string;
+  clinic_name: string;
+  email: { email_address: string };
+  phone: { phone_number: string };
+  license_number: string;
+  address: {
+    city: string;
+    district: string;
+    ward: string;
+    detail: string;
+  };
+  representative: {
+    name: string;
+    identify_number: string;
+    responsible_licenses: string[];
+    license_issued_date: string;
+  };
 }
+
+export const registerClinic = async (clinicData: ClinicData) => {
+  try {
+    const response = await axiosInstance.post("/register", clinicData);
+    return response.data;
+  } catch (error) {
+    console.error("Lỗi khi đăng ký phòng khám:", error);
+    throw error;
+  }
+};
