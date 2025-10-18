@@ -1,4 +1,5 @@
 import React, { useState, useEffect } from 'react';
+import { useRouter } from 'next/navigation';
 
 interface Pet {
     id: string | number;
@@ -23,6 +24,7 @@ interface PetCardsProps {
 }
 
 export default function PetCards({ userId }: PetCardsProps) {
+    const router = useRouter();
     const [pets, setPets] = useState<Pet[]>([]);
     const [loading, setLoading] = useState(true);
     const [error, setError] = useState<string | null>(null);
@@ -62,13 +64,18 @@ export default function PetCards({ userId }: PetCardsProps) {
             let data: any;
             try {
                 data = await response.json();
+                // Ensure we're setting an array
+                const petsData = Array.isArray(data.data) ? data.data :
+                    Array.isArray(data) ? data : [];
+                setPets(petsData);
+                setError(null);
             } catch (e) {
                 console.error('Invalid JSON from pets API', e);
+                setPets([]); // Set empty array on error
                 throw new Error('Dữ liệu thú cưng trả về không hợp lệ');
             }
-            setPets(data.data || data);
-            setError(null);
         } catch (err) {
+            setPets([]); // Set empty array on error
             setError(err instanceof Error ? err.message : 'Có lỗi xảy ra');
             console.error('Error fetching pets:', err);
         } finally {
@@ -103,6 +110,10 @@ export default function PetCards({ userId }: PetCardsProps) {
         return icons[species?.toLowerCase() || ''] || '🐾';
     };
 
+    const handlePetClick = (petId: string | number) => {
+        router.push(`/user/user-pet/${petId}`);
+    };
+
     if (loading) {
         return (
             <div className="w-full py-20">
@@ -119,6 +130,7 @@ export default function PetCards({ userId }: PetCardsProps) {
     if (error) {
         return (
             <div className="w-full">
+
                 <div className="bg-red-50 border border-red-200 rounded-xl p-6 text-center">
                     <svg className="w-12 h-12 text-red-500 mx-auto mb-3" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                         <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 8v4m0 4h.01M21 12a9 9 0 11-18 0 9 9 0 0118 0z" />
@@ -153,6 +165,19 @@ export default function PetCards({ userId }: PetCardsProps) {
 
     return (
         <div className="w-full pb-12">
+            <div className="flex items-center gap-2 mb-6">
+                <svg xmlns="http://www.w3.org/2000/svg"
+                    fill="none"
+                    viewBox="0 0 24 24"
+                    strokeWidth={1.5}
+                    stroke="currentColor"
+                    className="size-6 text-teal-600">
+                    <path strokeLinecap="round" strokeLinejoin="round" d="M8.25 6.75h12M8.25 12h12m-12 5.25h12M3.75 6.75h.007v.008H3.75V6.75Zm.375 0a.375.375 0 1 1-.75 0 .375.375 0 0 1 .75 0ZM3.75 12h.007v.008H3.75V12Zm.375 0a.375.375 0 1 1-.75 0 .375.375 0 0 1 .75 0Zm-.375 5.25h.007v.008H3.75v-.008Zm.375 0a.375.375 0 1 1-.75 0 .375.375 0 0 1 .75 0Z" />
+                </svg>
+
+
+                <h2 className="text-2xl font-bold text-gray-900">Thú Cưng Của Bạn</h2>
+            </div>
             <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
                 {pets.map((pet) => (
                     <div
@@ -161,6 +186,7 @@ export default function PetCards({ userId }: PetCardsProps) {
                         onMouseEnter={() => setHoveredCard(pet.id)}
                         onMouseLeave={() => setHoveredCard(null)}
                         style={{ transform: hoveredCard === pet.id ? 'translateY(-8px)' : 'translateY(0)' }}
+                        onClick={() => handlePetClick(pet.id)}
                     >
                         <div className="relative h-48 bg-gradient-to-br from-teal-400 to-cyan-500 overflow-hidden">
                             {pet.image || pet.imageUrl || pet.photo || pet.avatar_url ? (
@@ -255,12 +281,16 @@ export default function PetCards({ userId }: PetCardsProps) {
                                 )}
                             </div>
 
-                            <a href={`/user/user-pet/${pet.id}`}>
-                                <button className="w-full mt-4 bg-gradient-to-r from-teal-600 to-cyan-600 text-white py-2 rounded-lg font-semibold hover:shadow-lg transition-all hover:scale-105 cursor-pointer">
-                                    Xem chi tiết
-                                </button>
-                            </a>
-
+                            {/* Thay thế <a> tag bằng button */}
+                            <button
+                                onClick={(e) => {
+                                    e.stopPropagation();
+                                    handlePetClick(pet.id);
+                                }}
+                                className="w-full mt-4 bg-gradient-to-r from-teal-600 to-cyan-600 text-white py-2 rounded-lg font-semibold hover:shadow-lg transition-all hover:scale-105 cursor-pointer"
+                            >
+                                Xem chi tiết
+                            </button>
                         </div>
                     </div>
                 ))}

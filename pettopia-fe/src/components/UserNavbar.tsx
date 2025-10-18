@@ -1,13 +1,15 @@
 import { useState, useEffect } from 'react';
+import { parseJwt, isTokenExpired } from '../utils/jwt'; 
 
 interface UserData {
+  userId: string;
   fullname: string;
-  gender: string;
-    email: {
+  gender?: string;
+  email: {
     email_address: string;
     verified: boolean;
   };
-  phone_number: string;
+  phone_number?: string;
   username: string;
   dob: string;
   address: {
@@ -29,9 +31,9 @@ export default function UserNavbar({ setShowSearch, showSearch }: UserNavbarProp
   const [userData, setUserData] = useState<UserData | null>(null);
   const [isLoading, setIsLoading] = useState(true);
 
-  // Fetch user data khi component mount
+  // Decode JWT token to get user data
   useEffect(() => {
-    const fetchUserData = async () => {
+    const loadUserDataFromToken = () => {
       try {
         setIsLoading(true);
         
@@ -42,33 +44,53 @@ export default function UserNavbar({ setShowSearch, showSearch }: UserNavbarProp
           setIsLoading(false);
           return;
         }
-        
-        const userId = '2f94020b-d56e-4c40-98a9-7ecb99a8184a';
-        // const userId = localStorage.getItem("userId") ;
-        
-        const response = await fetch(`http://localhost:3000/api/v1/customer/${userId}`, {
-          headers: {
-            'Authorization': `Bearer ${token}`,
-            'Content-Type': 'application/json'
-          }
-        });
-        
-        if (!response.ok) {
-          throw new Error(`HTTP error! status: ${response.status}`);
+
+        // Check if token is expired
+        if (isTokenExpired(token)) {
+          console.error('Token expired');
+          localStorage.removeItem("authToken");
+          // Redirect to login or show error
+          window.location.href = '/login';
+          return;
         }
+
+        // Decode token
+        const decodedToken = parseJwt(token);
         
-        const data = await response.json();
-        setUserData(data);
+        if (!decodedToken) {
+          console.error('Failed to decode token');
+          setIsLoading(false);
+          return;
+        }
+
+        // Lưu userId vào localStorage
+        if (decodedToken.id !== undefined && decodedToken.id !== null) {
+          localStorage.setItem('userId', String(decodedToken.id));
+        }
+
+        // Map decoded token to UserData format
+        const user: UserData = {
+          userId: decodedToken.id,
+          fullname: decodedToken.fullname,
+          email: decodedToken.email,
+          phone_number: decodedToken.phone.phone_number,
+          username: decodedToken.username,
+          dob: decodedToken.dob,
+          address: decodedToken.address
+        };
+
+        setUserData(user);
         setIsLoading(false);
         
       } catch (error) {
-        console.error('Error fetching user data:', error);
+        console.error('Error loading user data from token:', error);
         setIsLoading(false);
-
       }
     };
 
-    fetchUserData();
+    
+
+    loadUserDataFromToken();
   }, []);
 
   const handleSettingsClick = () => {
@@ -83,13 +105,11 @@ export default function UserNavbar({ setShowSearch, showSearch }: UserNavbarProp
 
   const handleLogoutClick = () => {
     setIsDropdownOpen(false);
-    // Xóa token và redirect đến trang login
-    // localStorage.removeItem("authToken");
-    // window.location.href = '/login';
-    alert('Logout clicked - Token will be removed');
+    localStorage.removeItem("authToken");
+    window.location.href = '/login';
   };
 
-  // Lấy initials từ fullname
+  // Get initials from fullname
   const getInitials = (name: string) => {
     const words = name.trim().split(' ');
     if (words.length >= 2) {

@@ -1,5 +1,5 @@
 'use client'
-import React, { useState } from 'react';
+import React, { useState, useEffect } from 'react';
 import Chat from '@/components/Chat';
 import UserNavbar from '@/components/UserNavbar';
 import Link from "next/link";
@@ -10,6 +10,35 @@ export default function PetCareApp() {
     const [hoveredCard, setHoveredCard] = useState<number | null>(null);
     const [showChat, setShowChat] = useState(false);
     const [chatMessage, setChatMessage] = useState('');
+    const [userId, setUserId] = useState<string | null>(null);
+
+    useEffect(() => {
+        const parseJwt = (token: string | null) => {
+            if (!token) return null;
+            try {
+                const payload = token.split('.')[1];
+                return JSON.parse(atob(payload.replace(/-/g, '+').replace(/_/g, '/')));
+            } catch (e) {
+                console.error('Failed to parse JWT', e);
+                return null;
+            }
+        };
+
+        if (typeof window === 'undefined') return;
+        const token = localStorage.getItem('authToken');
+        let id = localStorage.getItem('userId');
+
+        if (!id && token) {
+            const decoded = parseJwt(token);
+            const resolved = decoded?.userId ?? decoded?.id ?? decoded?.sub ?? null;
+            if (resolved) {
+                id = String(resolved);
+                localStorage.setItem('userId', id);
+            }
+        }
+
+        if (id) setUserId(id);
+    }, []);
 
 
     const recentItems = [
@@ -133,7 +162,11 @@ export default function PetCareApp() {
                             </Link>
                         </div>
                     </section>
-                    <PetCards userId="2f94020b-d56e-4c40-98a9-7ecb99a8184a" />
+                    {userId ? (
+                        <PetCards userId={userId} />
+                    ) : (
+                        <div className="text-sm text-gray-500">Loading pets...</div>
+                    )}
                     {/* Recently Visited */}
                     <div className="mb-12">
                         <div className="flex items-center gap-2 mb-6">

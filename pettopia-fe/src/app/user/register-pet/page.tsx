@@ -104,10 +104,39 @@ export default function RegisterPetPage() {
 
     // Trong RegisterPetPage
     useEffect(() => {
+        const parseJwt = (token: string | null) => {
+            if (!token) return null;
+            try {
+                const payload = token.split('.')[1];
+                const decoded = JSON.parse(atob(payload.replace(/-/g, '+').replace(/_/g, '/')));
+                return decoded;
+            } catch (e) {
+                console.error('Failed to parse JWT', e);
+                return null;
+            }
+        };
+
         const fetchUserData = async () => {
             try {
                 const token = localStorage.getItem("authToken");
-                const userId = '2f94020b-d56e-4c40-98a9-7ecb99a8184a'; // You should get this from authentication
+                let userId = localStorage.getItem("userId");
+
+                // Nếu không có userId, thử lấy từ token (các tên trường khả dĩ)
+                if (!userId && token) {
+                    const decoded = parseJwt(token);
+                    const resolvedId = decoded?.userId ?? decoded?.id ?? decoded?.sub ?? null;
+                    if (resolvedId) {
+                        userId = String(resolvedId);
+                        localStorage.setItem("userId", userId);
+                    }
+                }
+
+                if (!token || !userId) {
+                    console.warn('Missing auth token or userId, redirecting to login');
+                    // tuỳ xử lý: redirect về login hoặc return
+                    // router.push('/login');
+                    return;
+                }
 
                 const response = await fetch(`http://localhost:3000/api/v1/customer/${userId}`, {
                     headers: {
@@ -130,13 +159,14 @@ export default function RegisterPetPage() {
                         }
                     });
 
-                    // Update pet form with address
                     setPetForm(prev => ({
                         ...prev,
                         city: data.address?.city || '',
                         district: data.address?.district || '',
                         ward: data.address?.ward || ''
                     }));
+                } else {
+                    console.error('Fetch user data failed', response.status);
                 }
             } catch (error) {
                 console.error('Error fetching user data:', error);
@@ -155,7 +185,7 @@ export default function RegisterPetPage() {
                 <div className="max-w-7xl mx-auto px-11 py-8">
                     {/* Hero Section */}
                     <div className="mb-6">
-                        <Link href="/user/user-page" className="inline-flex items-center gap-2 text-teal-600 hover:text-teal-700 transition-colors mb-4">
+                        <Link href="/user/home" className="inline-flex items-center gap-2 text-teal-600 hover:text-teal-700 transition-colors mb-4">
                             <svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                                 <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M15 19l-7-7 7-7" />
                             </svg>

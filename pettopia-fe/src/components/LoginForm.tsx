@@ -35,7 +35,7 @@ export default function LoginForm() {
           if (decoded.role === 'Admin') {
             router.push('/admin/dashboard');
           } else if (decoded.role === 'User') {
-            router.push('/user/user-page');
+            router.push('/home');
           } else if (decoded.role === 'Staff') {
             router.push('/staff/dashboard');
           } else {

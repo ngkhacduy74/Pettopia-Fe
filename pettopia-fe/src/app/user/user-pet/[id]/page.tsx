@@ -1,65 +1,163 @@
 'use client'
 
-import { useState, useRef } from 'react';
+import { useState, useRef, useEffect } from 'react';
 import { motion, useInView } from 'framer-motion';
+import { useParams, useRouter } from 'next/navigation';
 import UserNavbar from '@/components/UserNavbar';
 import UpcomingMeetings from '@/components/UpcomingMeetings';
 
+interface Owner {
+  user_id: string;
+  fullname: string;
+  phone?: string;
+  email?: string;
+  address?: {
+    city?: string;
+    district?: string;
+    ward?: string;
+  };
+}
+
+interface MedicalRecord {
+  record_id?: string;
+  last_visit_date?: string;
+  diagnoses?: string;
+  treatment?: Array<{ medicine?: string; dosage?: string; frequency?: string; duration?: string }>;
+  notes?: string;
+}
+
+interface Pet {
+  id: string;
+  name: string;
+  species?: string;
+  gender?: string;
+  breed?: string;
+  color?: string;
+  weight?: number;
+  dateOfBirth?: string;
+  age?: number;
+  avatar_url?: string;
+  owner?: Owner;
+  medical_record?: MedicalRecord;
+}
+
 export default function UserPetPage() {
+    const params = useParams();
+    const router = useRouter();
+    const petId = params?.id;
     const [isFlipped, setIsFlipped] = useState(false);
     const [showPetDetails, setShowPetDetails] = useState(false);
     const [showSearch, setShowSearch] = useState(false);
     const servicesRef = useRef(null);
     const isInView = useInView(servicesRef, { once: true, amount: 0.3 });
     const [showCustomerId, setShowCustomerId] = useState(false);
-    const petData = {
-        id: '058f159b-3112-43d3-8712-e741aa958a3c',
-        name: 'Em bảo',
-        species: 'Dog',
-        gender: 'Male',
-        breed: 'Gia Trưởng',
-        color: 'Vàng',
-        weight: 56,
-        dateOfBirth: '2025-10-01T00:00:00.000Z',
-        age: 0,
-        avatar_url: 'https://pettownsendvet.com/wp-content/uploads/2023/01/iStock-1052880600-2048x1365.jpg',
-        owner: {
-            user_id: '2f94020b-d56e-4c40-98a9-7ecb99a8184a',
-            fullname: 'Trần Nam Anh',
-            phone: '0965325903',
-            email: 'nanh25092003@gmail.com',
-            address: {
-                city: 'Thành phố Hà Nội',
-                district: 'Quận Long Biên',
-                ward: 'Phường Long Biên'
-            }
-        },
-        medical_record: {
-            record_id: 'MED001',
-            last_visit_date: '2024-09-15',
-            diagnoses: 'Khỏe mạnh, tiêm phòng đầy đủ',
-            treatment: [
-                {
-                    medicine: 'Vitamin tổng hợp',
-                    dosage: '1 viên/ngày',
-                    frequency: 'Hàng ngày',
-                    duration: '30 ngày'
-                }
-            ],
-            notes: 'Thú cưng rất khỏe mạnh, theo dõi định kỳ 6 tháng/lần'
-        }
-    };
 
-    const upcomingAppointments = [
+    const [petData, setPetData] = useState<Pet | null>(null);
+    const [upcomingAppointments, setUpcomingAppointments] = useState<any[]>([]);
+    const [loading, setLoading] = useState(true);
+    const [error, setError] = useState<string | null>(null);
+
+    // Mock data tạm thời cho "Tính năng quản lý"
+    const mockFeatures = [
         {
-            appointment_id: 'APT001',
-            pet_id: petData.id,
-            service: 'Khám sức khỏe định kỳ',
-            status: 'Pending',
-            created_at: '2024-10-01',
-            checkout_time: '2024-10-15T10:00:00'
+            id: 'log',
+            title: 'Nhật ký thú cưng',
+            description: 'Ghi chép những khoảnh khắc đáng nhớ, hoạt động hàng ngày và những điều đặc biệt về thú cưng của bạn.',
+            bullets: [
+                'Theo dõi hoạt động hàng ngày',
+                'Ghi chú thói quen ăn uống',
+                'Lưu trữ kỷ niệm đặc biệt'
+            ],
+            actionText: 'Xem nhật ký'
+        },
+        {
+            id: 'medical',
+            title: 'Hồ sơ bệnh án',
+            description: 'Theo dõi lịch sử khám bệnh, điều trị và tình trạng sức khỏe tổng thể của thú cưng.',
+            meta: {
+                last_visit: petData?.medical_record?.last_visit_date || 'Chưa có thông tin',
+                diagnoses: petData?.medical_record?.diagnoses || 'Chưa có chẩn đoán'
+            },
+            bullets: [
+                'Hồ sơ bệnh án điện tử',
+                'Lịch sử điều trị',
+                'Theo dõi thuốc men'
+            ],
+            actionText: 'Xem hồ sơ'
         }
     ];
+
+    useEffect(() => {
+        if (!petId) return;
+        const fetchPet = async () => {
+            setLoading(true);
+            setError(null);
+            try {
+                const token = typeof window !== 'undefined' ? localStorage.getItem('authToken') : null;
+                const res = await fetch(`http://localhost:3000/api/v1/pet/${petId}`, {
+                    headers: {
+                        'Content-Type': 'application/json',
+                        ...(token ? { 'Authorization': `Bearer ${token}` } : {})
+                    }
+                });
+
+                if (!res.ok) {
+                    if (res.status === 404) {
+                        setError('Không tìm thấy thú cưng');
+                    } else {
+                        setError(`Lỗi khi lấy dữ liệu: ${res.status}`);
+                    }
+                    setPetData(null);
+                    setUpcomingAppointments([]);
+                    setLoading(false);
+                    return;
+                }
+
+                const data = await res.json();
+
+                setPetData({
+                    id: data.id ?? data.pet_id ?? petId,
+                    name: data.name ?? '',
+                    species: data.species,
+                    gender: data.gender,
+                    breed: data.breed,
+                    color: data.color,
+                    weight: data.weight,
+                    dateOfBirth: data.dateOfBirth ?? data.dob,
+                    age: data.age,
+                    avatar_url: data.avatar_url ?? data.avatar,
+                    owner: data.owner ?? data.owner_info ?? data.customer ?? null,
+                    medical_record: data.medical_record ?? null
+                });
+
+                if (Array.isArray(data.upcomingAppointments)) {
+                    setUpcomingAppointments(data.upcomingAppointments);
+                } else {
+                    try {
+                        const aptRes = await fetch(`http://localhost:3000/api/v1/pet/${petId}/appointments`, {
+                            headers: {
+                                'Content-Type': 'application/json',
+                                ...(token ? { 'Authorization': `Bearer ${token}` } : {})
+                            }
+                        });
+                        if (aptRes.ok) {
+                            const aptData = await aptRes.json();
+                            setUpcomingAppointments(Array.isArray(aptData) ? aptData : aptData.items ?? []);
+                        }
+                    } catch { /* ignore */ }
+                }
+            } catch (e) {
+                console.error(e);
+                setError('Lỗi khi kết nối tới server');
+                setPetData(null);
+                setUpcomingAppointments([]);
+            } finally {
+                setLoading(false);
+            }
+        };
+
+        fetchPet();
+    }, [petId]);
 
     const formatDate = (iso?: string) => {
         if (!iso) return 'Chưa rõ';
@@ -69,6 +167,30 @@ export default function UserPetPage() {
             return iso;
         }
     };
+
+    if (loading) {
+        return (
+            <div className="flex h-screen items-center justify-center">
+                <div className="text-gray-500">Đang tải thông tin thú cưng...</div>
+            </div>
+        );
+    }
+
+    if (error) {
+        return (
+            <div className="flex h-screen items-center justify-center">
+                <div className="text-red-500">{error}</div>
+            </div>
+        );
+    }
+
+    if (!petData) {
+        return (
+            <div className="flex h-screen items-center justify-center">
+                <div className="text-gray-500">Không có dữ liệu thú cưng để hiển thị</div>
+            </div>
+        );
+    }
 
     return (
         <div className="flex h-screen bg-gradient-to-b from-teal-50 to-white text-gray-900">
@@ -106,22 +228,22 @@ export default function UserPetPage() {
                                                 </div>
                                                 <div className="flex gap-6">
                                                     <div className="w-24 h-24 bg-white rounded-xl flex items-center justify-center flex-shrink-0 border-2 border-gray-400 overflow-hidden">
-                                                        <img src={petData.avatar_url} alt={petData.name} className="w-full h-full object-cover" />
+                                                        <img src={petData.avatar_url || '/sampleimg/default-pet.jpg'} alt={petData.name} className="w-full h-full object-cover" />
                                                     </div>
                                                     <div className="flex-1">
                                                         <h4 className="text-3xl font-bold mb-4 text-gray-900">{petData.name}</h4>
                                                         <div className="grid grid-cols-2 gap-3 text-sm">
                                                             <div>
                                                                 <p className="text-gray-700">Giống:</p>
-                                                                <p className="font-semibold text-gray-900">{petData.breed}</p>
+                                                                <p className="font-semibold text-gray-900">{petData.breed || 'Chưa rõ'}</p>
                                                             </div>
                                                             <div>
                                                                 <p className="text-gray-700">Màu lông:</p>
-                                                                <p className="font-semibold text-gray-900">{petData.color}</p>
+                                                                <p className="font-semibold text-gray-900">{petData.color || 'Chưa rõ'}</p>
                                                             </div>
                                                             <div>
                                                                 <p className="text-gray-700">Giới tính:</p>
-                                                                <p className="font-semibold text-gray-900">{petData.gender}</p>
+                                                                <p className="font-semibold text-gray-900">{petData.gender || 'Chưa rõ'}</p>
                                                             </div>
                                                             <div>
                                                                 <p className="text-gray-700">Ngày sinh:</p>
@@ -149,27 +271,31 @@ export default function UserPetPage() {
                                                 <div className="space-y-4 text-sm">
                                                     <div className="flex justify-between border-b-2 border-gray-400 pb-2">
                                                         <span className="text-gray-700">Cân nặng:</span>
-                                                        <span className="font-semibold text-gray-900">{petData.weight} kg</span>
+                                                        <span className="font-semibold text-gray-900">{petData.weight || 'Chưa rõ'} kg</span>
                                                     </div>
                                                     <div className="flex justify-between border-b-2 border-gray-400 pb-2">
                                                         <span className="text-gray-700">Màu lông:</span>
-                                                        <span className="font-semibold text-gray-900">{petData.color}</span>
+                                                        <span className="font-semibold text-gray-900">{petData.color || 'Chưa rõ'}</span>
                                                     </div>
                                                     <div className="flex justify-between border-b-2 border-gray-400 pb-2">
                                                         <span className="text-gray-700">Chủ sở hữu:</span>
-                                                        <span className="font-semibold text-gray-900">{petData.owner.fullname}</span>
+                                                        <span className="font-semibold text-gray-900">{petData.owner?.fullname || 'Chưa có thông tin'}</span>
                                                     </div>
                                                     <div className="flex justify-between border-b-2 border-gray-400 pb-2">
                                                         <span className="text-gray-700">Số điện thoại:</span>
-                                                        <span className="font-semibold text-gray-900">{petData.owner.phone}</span>
+                                                        <span className="font-semibold text-gray-900">{petData.owner?.phone || 'Chưa cập nhật'}</span>
                                                     </div>
                                                     <div className="flex justify-between border-b-2 border-gray-400 pb-2">
                                                         <span className="text-gray-700">Email:</span>
-                                                        <span className="font-semibold text-xs text-gray-900">{petData.owner.email}</span>
+                                                        <span className="font-semibold text-xs text-gray-900">{petData.owner?.email || 'Chưa cập nhật'}</span>
                                                     </div>
                                                     <div className="flex justify-between">
                                                         <span className="text-gray-700">Địa chỉ:</span>
-                                                        <span className="font-semibold text-xs text-gray-900">{petData.owner.address.ward}, {petData.owner.address.district}</span>
+                                                        <span className="font-semibold text-xs text-gray-900">
+                                                            {petData.owner?.address?.ward && petData.owner?.address?.district 
+                                                                ? `${petData.owner.address.ward}, ${petData.owner.address.district}`
+                                                                : 'Chưa cập nhật'}
+                                                        </span>
                                                     </div>
                                                 </div>
                                                 <div className="mt-6 pt-6 border-t-2 border-gray-400">
@@ -186,77 +312,46 @@ export default function UserPetPage() {
                     <section ref={servicesRef} className="mb-20">
                         <h2 className="text-3xl font-bold text-gray-900 mb-8 text-center">Tính năng quản lý</h2>
                         <div className="grid md:grid-cols-2 gap-8">
-                            <motion.div initial={{ x: -100, opacity: 0 }} animate={isInView ? { x: 0, opacity: 1 } : { x: -100, opacity: 0 }} transition={{ duration: 0.6 }} className="bg-white rounded-2xl p-8 shadow-lg border border-teal-100 hover:shadow-xl transition cursor-pointer">
-                                <div className="flex items-center mb-6">
-                                    <div className="w-14 h-14 bg-gradient-to-br from-teal-100 to-cyan-100 rounded-full flex items-center justify-center mr-4">
-                                        <svg className="w-8 h-8 text-teal-600" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                                            <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 6.253v13m0-13C10.832 5.477 9.246 5 7.5 5S4.168 5.477 3 6.253v13C4.168 18.477 5.754 18 7.5 18s3.332.477 4.5 1.253m0-13C13.168 5.477 14.754 5 16.5 5c1.747 0 3.332.477 4.5 1.253v13C19.832 18.477 18.247 18 16.5 18c-1.746 0-3.332.477-4.5 1.253" />
-                                        </svg>
+                            {mockFeatures.map((f, i) => (
+                                <motion.div
+                                    key={f.id}
+                                    initial={{ x: i % 2 === 0 ? -100 : 100, opacity: 0 }}
+                                    whileInView={{ x: 0, opacity: 1 }}
+                                    viewport={{ once: true, amount: 0.3 }}
+                                    transition={{ duration: 0.6 }}
+                                    className="bg-white rounded-2xl p-8 shadow-lg border border-teal-100 hover:shadow-xl transition cursor-pointer"
+                                >
+                                    <div className="flex items-center mb-6">
+                                        <div className="w-14 h-14 bg-gradient-to-br from-teal-100 to-cyan-100 rounded-full flex items-center justify-center mr-4">
+                                            <svg className="w-8 h-8 text-teal-600" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 6.253v13m0-13C10.832 5.477 9.246 5 7.5 5S4.168 5.477 3 6.253v13C4.168 18.477 5.754 18 7.5 18s3.332.477 4.5 1.253" />
+                                            </svg>
+                                        </div>
+                                        <h3 className="text-2xl font-bold text-gray-900">{f.title}</h3>
                                     </div>
-                                    <h3 className="text-2xl font-bold text-gray-900">Nhật ký thú cưng</h3>
-                                </div>
-                                <p className="text-gray-600 mb-6">Ghi chép những khoảnh khắc đáng nhớ, hoạt động hàng ngày và những điều đặc biệt về thú cưng của bạn.</p>
-                                <div className="space-y-3">
-                                    <div className="flex items-center text-sm text-gray-600">
-                                        <svg className="w-5 h-5 mr-2 text-teal-600" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                                            <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M5 13l4 4L19 7" />
-                                        </svg>
-                                        Theo dõi hoạt động hàng ngày
+                                    <p className="text-gray-600 mb-6">{f.description}</p>
+                                    {f.meta && (
+                                        <div className="bg-teal-50 rounded-lg p-4 mb-4">
+                                            <div className="flex justify-between items-center mb-2">
+                                                <span className="text-sm text-gray-600">Khám gần nhất:</span>
+                                                <span className="text-sm font-semibold">{f.meta.last_visit}</span>
+                                            </div>
+                                            <p className="text-sm text-gray-700">{f.meta.diagnoses}</p>
+                                        </div>
+                                    )}
+                                    <div className="space-y-3">
+                                        {f.bullets.map((b, idx) => (
+                                            <div key={idx} className="flex items-center text-sm text-gray-600">
+                                                <svg className="w-5 h-5 mr-2 text-teal-600" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                                    <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M5 13l4 4L19 7" />
+                                                </svg>
+                                                {b}
+                                            </div>
+                                        ))}
                                     </div>
-                                    <div className="flex items-center text-sm text-gray-600">
-                                        <svg className="w-5 h-5 mr-2 text-teal-600" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                                            <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M5 13l4 4L19 7" />
-                                        </svg>
-                                        Ghi chú thói quen ăn uống
-                                    </div>
-                                    <div className="flex items-center text-sm text-gray-600">
-                                        <svg className="w-5 h-5 mr-2 text-teal-600" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                                            <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M5 13l4 4L19 7" />
-                                        </svg>
-                                        Lưu trữ kỷ niệm đặc biệt
-                                    </div>
-                                </div>
-                                <button className="mt-6 w-full bg-teal-600 text-white py-3 rounded-lg font-semibold hover:bg-teal-700 transition">Xem nhật ký</button>
-                            </motion.div>
-                            <motion.div initial={{ x: 100, opacity: 0 }} animate={isInView ? { x: 0, opacity: 1 } : { x: 100, opacity: 0 }} transition={{ duration: 0.6 }} className="bg-white rounded-2xl p-8 shadow-lg border border-teal-100 hover:shadow-xl transition cursor-pointer">
-                                <div className="flex items-center mb-6">
-                                    <div className="w-14 h-14 bg-gradient-to-br from-teal-100 to-cyan-100 rounded-full flex items-center justify-center mr-4">
-                                        <svg className="w-8 h-8 text-teal-600" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                                            <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M9 12h6m-6 4h6m2 5H7a2 2 0 01-2-2V5a2 2 0 012-2h5.586a1 1 0 01.707.293l5.414 5.414a1 1 0 01.293.707V19a2 2 0 01-2 2z" />
-                                        </svg>
-                                    </div>
-                                    <h3 className="text-2xl font-bold text-gray-900">Hồ sơ bệnh án</h3>
-                                </div>
-                                <p className="text-gray-600 mb-6">Theo dõi lịch sử khám bệnh, điều trị và tình trạng sức khỏe tổng thể của thú cưng.</p>
-                                <div className="bg-teal-50 rounded-lg p-4 mb-4">
-                                    <div className="flex justify-between items-center mb-2">
-                                        <span className="text-sm text-gray-600">Khám gần nhất:</span>
-                                        <span className="text-sm font-semibold">{petData.medical_record.last_visit_date}</span>
-                                    </div>
-                                    <p className="text-sm text-gray-700">{petData.medical_record.diagnoses}</p>
-                                </div>
-                                <div className="space-y-3">
-                                    <div className="flex items-center text-sm text-gray-600">
-                                        <svg className="w-5 h-5 mr-2 text-teal-600" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                                            <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M5 13l4 4L19 7" />
-                                        </svg>
-                                        Hồ sơ bệnh án điện tử
-                                    </div>
-                                    <div className="flex items-center text-sm text-gray-600">
-                                        <svg className="w-5 h-5 mr-2 text-teal-600" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                                            <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M5 13l4 4L19 7" />
-                                        </svg>
-                                        Lịch sử điều trị
-                                    </div>
-                                    <div className="flex items-center text-sm text-gray-600">
-                                        <svg className="w-5 h-5 mr-2 text-teal-600" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                                            <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M5 13l4 4L19 7" />
-                                        </svg>
-                                        Theo dõi thuốc men
-                                    </div>
-                                </div>
-                                <button className="mt-6 w-full bg-teal-600 text-white py-3 rounded-lg font-semibold hover:bg-teal-700 transition">Xem hồ sơ</button>
-                            </motion.div>
+                                    <button className="mt-6 w-full bg-teal-600 text-white py-3 rounded-lg font-semibold hover:bg-teal-700 transition">{f.actionText}</button>
+                                </motion.div>
+                            ))}
                         </div>
                     </section>
 
@@ -268,7 +363,7 @@ export default function UserPetPage() {
                                 <div className="space-y-4">
                                     <h3 className="text-xl font-semibold text-gray-900 mb-4">Lịch đã đặt</h3>
                                     {upcomingAppointments.map((apt) => (
-                                        <div key={apt.appointment_id} className="flex items-center justify-between p-4 bg-teal-50 rounded-lg">
+                                        <div key={apt.appointment_id ?? apt.id} className="flex items-center justify-between p-4 bg-teal-50 rounded-lg">
                                             <div className="flex items-center gap-4">
                                                 <div className="w-12 h-12 bg-teal-600 rounded-full flex items-center justify-center">
                                                     <svg className="w-6 h-6 text-white" fill="none" stroke="currentColor" viewBox="0 0 24 24">
@@ -276,8 +371,8 @@ export default function UserPetPage() {
                                                     </svg>
                                                 </div>
                                                 <div>
-                                                    <h4 className="font-semibold text-gray-900">{apt.service}</h4>
-                                                    <p className="text-sm text-gray-600">{new Date(apt.checkout_time).toLocaleDateString('vi-VN', { year: 'numeric', month: 'long', day: 'numeric', hour: '2-digit', minute: '2-digit' })}</p>
+                                                    <h4 className="font-semibold text-gray-900">{apt.service ?? apt.title}</h4>
+                                                    <p className="text-sm text-gray-600">{new Date(apt.checkout_time ?? apt.time).toLocaleDateString('vi-VN', { year: 'numeric', month: 'long', day: 'numeric', hour: '2-digit', minute: '2-digit' })}</p>
                                                 </div>
                                             </div>
                                             <span className="px-3 py-1 bg-yellow-100 text-yellow-800 rounded-full text-sm font-medium">{apt.status}</span>
@@ -286,7 +381,7 @@ export default function UserPetPage() {
                                 </div>
                             ) : (
                                 <div className="text-center pt-4">
-                                    <p className="text-gray-600">Chọn ngày trên lịch để đặt lịch hẹn mới</p>
+                                    <p className="text-gray-600">Chưa có lịch hẹn</p>
                                 </div>
                             )}
                         </div>
@@ -298,11 +393,13 @@ export default function UserPetPage() {
                             <div className="flex items-center justify-between mb-6">
                                 <div className="flex items-center">
                                     <div className="w-20 h-20 rounded-full flex items-center justify-center mr-4 overflow-hidden">
-                                        <img src={petData.avatar_url} alt={petData.name} className="w-full h-full object-cover" />
+                                        <img src={petData.avatar_url || '/sampleimg/default-pet.jpg'} alt={petData.name} className="w-full h-full object-cover" />
                                     </div>
                                     <div>
                                         <h3 className="text-2xl font-bold text-gray-900">{petData.name}</h3>
-                                        <p className="text-gray-600">{petData.species} • {petData.gender} • {petData.age} tuổi</p>
+                                        <p className="text-gray-600">
+                                            {petData.species || 'Chưa rõ'} • {petData.gender || 'Chưa rõ'} • {petData.age || 'Chưa rõ'} tuổi
+                                        </p>
                                     </div>
                                 </div>
                                 <button onClick={() => setShowPetDetails(!showPetDetails)} className="bg-teal-600 text-white px-6 py-3 rounded-lg font-semibold hover:bg-teal-700 transition">
@@ -317,15 +414,15 @@ export default function UserPetPage() {
                                             <div className="space-y-3">
                                                 <div className="flex justify-between">
                                                     <span className="text-gray-600">Loài:</span>
-                                                    <span className="font-medium">{petData.species}</span>
+                                                    <span className="font-medium">{petData.species || 'Chưa rõ'}</span>
                                                 </div>
                                                 <div className="flex justify-between">
                                                     <span className="text-gray-600">Giống:</span>
-                                                    <span className="font-medium">{petData.breed}</span>
+                                                    <span className="font-medium">{petData.breed || 'Chưa rõ'}</span>
                                                 </div>
                                                 <div className="flex justify-between">
                                                     <span className="text-gray-600">Giới tính:</span>
-                                                    <span className="font-medium">{petData.gender}</span>
+                                                    <span className="font-medium">{petData.gender || 'Chưa rõ'}</span>
                                                 </div>
                                                 <div className="flex justify-between">
                                                     <span className="text-gray-600">Ngày sinh:</span>
@@ -333,11 +430,11 @@ export default function UserPetPage() {
                                                 </div>
                                                 <div className="flex justify-between">
                                                     <span className="text-gray-600">Cân nặng:</span>
-                                                    <span className="font-medium">{petData.weight} kg</span>
+                                                    <span className="font-medium">{petData.weight || 'Chưa rõ'} kg</span>
                                                 </div>
                                                 <div className="flex justify-between">
                                                     <span className="text-gray-600">Màu lông:</span>
-                                                    <span className="font-medium">{petData.color}</span>
+                                                    <span className="font-medium">{petData.color || 'Chưa rõ'}</span>
                                                 </div>
                                             </div>
                                         </div>
@@ -346,36 +443,40 @@ export default function UserPetPage() {
                                             <div className="space-y-3">
                                                 <div className="flex justify-between">
                                                     <span className="text-gray-600">Mã hồ sơ:</span>
-                                                    <span className="font-medium">{petData.medical_record.record_id}</span>
+                                                    <span className="font-medium">{petData.medical_record?.record_id || 'Chưa có'}</span>
                                                 </div>
                                                 <div className="flex justify-between">
                                                     <span className="text-gray-600">Khám gần nhất:</span>
-                                                    <span className="font-medium">{petData.medical_record.last_visit_date}</span>
+                                                    <span className="font-medium">{petData.medical_record?.last_visit_date || 'Chưa có'}</span>
                                                 </div>
                                                 <div>
                                                     <span className="text-gray-600 block mb-2">Chẩn đoán:</span>
-                                                    <p className="text-sm bg-gray-50 p-3 rounded-lg">{petData.medical_record.diagnoses}</p>
+                                                    <p className="text-sm bg-gray-50 p-3 rounded-lg">
+                                                        {petData.medical_record?.diagnoses || 'Chưa có thông tin'}
+                                                    </p>
                                                 </div>
                                                 <div>
                                                     <span className="text-gray-600 block mb-2">Ghi chú:</span>
-                                                    <p className="text-sm bg-gray-50 p-3 rounded-lg">{petData.medical_record.notes}</p>
+                                                    <p className="text-sm bg-gray-50 p-3 rounded-lg">
+                                                        {petData.medical_record?.notes || 'Chưa có ghi chú'}
+                                                    </p>
                                                 </div>
                                             </div>
                                         </div>
                                     </div>
-                                    {petData.medical_record.treatment && petData.medical_record.treatment.length > 0 && (
+                                    {petData.medical_record?.treatment && petData.medical_record.treatment.length > 0 && (
                                         <div className="mt-6 pt-6 border-t border-gray-200">
                                             <h4 className="font-semibold text-gray-900 mb-4">Điều trị hiện tại</h4>
                                             <div className="space-y-3">
                                                 {petData.medical_record.treatment.map((med, index) => (
                                                     <div key={index} className="bg-teal-50 rounded-lg p-4">
                                                         <div className="flex justify-between items-start mb-2">
-                                                            <h5 className="font-semibold text-gray-900">{med.medicine}</h5>
-                                                            <span className="text-sm text-teal-600 font-medium">{med.duration}</span>
+                                                            <h5 className="font-semibold text-gray-900">{med.medicine || 'Chưa rõ'}</h5>
+                                                            <span className="text-sm text-teal-600 font-medium">{med.duration || 'Chưa rõ'}</span>
                                                         </div>
                                                         <div className="grid grid-cols-2 gap-2 text-sm text-gray-600">
-                                                            <div><span className="font-medium">Liều lượng:</span> {med.dosage}</div>
-                                                            <div><span className="font-medium">Tần suất:</span> {med.frequency}</div>
+                                                            <div><span className="font-medium">Liều lượng:</span> {med.dosage || 'Chưa rõ'}</div>
+                                                            <div><span className="font-medium">Tần suất:</span> {med.frequency || 'Chưa rõ'}</div>
                                                         </div>
                                                     </div>
                                                 ))}
@@ -387,24 +488,23 @@ export default function UserPetPage() {
                                         <div className="space-y-4">
                                             <div className="grid md:grid-cols-2 gap-4">
                                                 <div className="space-y-3">
-                                                    <div className="pr-5"> {/* Sử dụng class Tailwind pr-5 */}
-                                                        <span className="text-gray-600 mr-2">Họ tên:</span> {/* Thêm margin right */}
-                                                        <span className="font-medium">{petData.owner.fullname}</span>
+                                                    <div className="pr-5">
+                                                        <span className="text-gray-600 mr-2">Họ tên:</span>
+                                                        <span className="font-medium">{petData.owner?.fullname || 'Chưa có thông tin'}</span>
                                                     </div>
                                                 </div>
                                                 <div className="space-y-3">
                                                     <div className="pr-5">
                                                         <span className="text-gray-600 mr-2">Số điện thoại:</span>
-                                                        <span className="font-medium">{petData.owner.phone}</span>
+                                                        <span className="font-medium">{petData.owner?.phone || 'Chưa cập nhật'}</span>
                                                     </div>
                                                     <div className="pr-5">
                                                         <span className="text-gray-600 mr-2">Email:</span>
-                                                        <span className="font-medium">{petData.owner.email}</span>
+                                                        <span className="font-medium">{petData.owner?.email || 'Chưa cập nhật'}</span>
                                                     </div>
                                                 </div>
                                             </div>
 
-                                            {/* Mã khách hàng - dòng riêng với nút ẩn/hiện */}
                                             <div className="pt-3 border-t border-gray-100">
                                                 <button
                                                     onClick={() => setShowCustomerId(!showCustomerId)}
@@ -430,8 +530,8 @@ export default function UserPetPage() {
 
                                                 {showCustomerId && (
                                                     <div className="pr-5 mt-2">
-                                                        <span className="text-gray-600">Mã khách hàng:</span>
-                                                        <span className="font-medium font-mono">{petData.owner.user_id}</span>
+                                                        <span className="text-gray-600 mr-2">Mã khách hàng:</span>
+                                                        <span className="font-medium font-mono">{petData.owner?.user_id || 'Chưa có'}</span>
                                                     </div>
                                                 )}
                                             </div>
@@ -444,7 +544,6 @@ export default function UserPetPage() {
                 </div>
             </div>
 
-            {/* Search Modal */}
             {showSearch && (
                 <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50">
                     <div className="bg-white w-full max-w-2xl mx-4 rounded-2xl shadow-2xl">
@@ -460,16 +559,13 @@ export default function UserPetPage() {
                                     </svg>
                                 </button>
                             </div>
-                            <div className="mt-4">
-                                <input
-                                    type="text"
-                                    placeholder="Nhập từ khóa tìm kiếm..."
-                                    className="w-full px-4 py-3 rounded-lg border border-gray-300 focus:border-teal-500 focus:ring-1 focus:ring-teal-500"
-                                />
-                            </div>
                         </div>
                         <div className="p-6">
-                            <p className="text-gray-600 text-center">Không có kết quả tìm kiếm</p>
+                            <input
+                                type="text"
+                                placeholder="Tìm kiếm thú cưng, dịch vụ..."
+                                className="w-full px-4 py-3 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-teal-500"
+                            />
                         </div>
                     </div>
                 </div>
