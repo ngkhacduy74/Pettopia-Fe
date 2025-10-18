@@ -4,7 +4,7 @@ import { useState } from 'react';
 import { useForm } from 'react-hook-form';
 import { useRouter } from 'next/navigation';
 import { loginUser } from '@/services/userService';
-import { parseJwt } from '@/utils/jwt'; // Giả sử jwt.ts nằm ở utils/jwt.ts, điều chỉnh path nếu cần
+import { parseJwt } from '@/utils/jwt';
 import Image from 'next/image';
 
 type FormData = {
@@ -21,22 +21,23 @@ export default function LoginForm() {
     try {
       const response = await loginUser(data);
       if (response.status && response.token) {
-        // Lưu token vào localStorage
+        // Lưu token vào localStorage và cookie
         localStorage.setItem('authToken', response.token);
+        document.cookie = `authToken=${response.token}; path=/; max-age=3600`;
 
-        // Giải mã token để lấy userRole
+        // Giải mã token để lấy role
         const decoded = parseJwt(response.token);
-        if (decoded && decoded.userRole) {
-          localStorage.setItem('useruserRole', decoded.userRole);
+        if (decoded && decoded.role) {
+          localStorage.setItem('userRole', decoded.role);
 
           alert('Đăng nhập thành công!');
 
-          // Chuyển hướng dựa trên userRole
-          if (decoded.userRole === 'Admin') {
+          // Chuyển hướng dựa trên role
+          if (decoded.role === 'Admin') {
             router.push('/admin/dashboard');
-          } else if (decoded.userRole === 'User') {
+          } else if (decoded.role === 'User') {
             router.push('/user/submit-vet-certificate');
-          } else if (decoded.userRole === 'Staff') {
+          } else if (decoded.role === 'Staff') {
             router.push('/staff/dashboard');
           } else {
             setServerError('Vai trò không hợp lệ');
