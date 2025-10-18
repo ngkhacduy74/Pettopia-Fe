@@ -1,5 +1,7 @@
 import { useState, useEffect } from 'react';
 import { parseJwt, isTokenExpired } from '../utils/jwt'; 
+import Link from 'next/link';
+import { usePathname } from 'next/navigation';  // Thêm import này
 
 interface UserData {
   userId: string;
@@ -20,23 +22,36 @@ interface UserData {
   };
 }
 
+interface Pet {
+  id: string | number;
+  name: string;
+  species?: string;
+  type?: string;
+  breed?: string;
+  image?: string;
+  imageUrl?: string;
+  photo?: string;
+  avatar_url?: string;
+}
+
 interface UserNavbarProps {
   setShowSearch: (v: boolean) => void;
   showSearch: boolean;
 }
 
 export default function UserNavbar({ setShowSearch, showSearch }: UserNavbarProps) {
+  const pathname = usePathname();  // Thêm hook này
   const [isDropdownOpen, setIsDropdownOpen] = useState(false);
   const [isSettingsModalOpen, setIsSettingsModalOpen] = useState(false);
   const [userData, setUserData] = useState<UserData | null>(null);
   const [isLoading, setIsLoading] = useState(true);
+  const [pets, setPets] = useState<Pet[]>([]);
+  const [loadingPets, setLoadingPets] = useState(false);
 
-  // Decode JWT token to get user data
   useEffect(() => {
     const loadUserDataFromToken = () => {
       try {
         setIsLoading(true);
-        
         const token = localStorage.getItem("authToken");
         
         if (!token) {
@@ -45,16 +60,13 @@ export default function UserNavbar({ setShowSearch, showSearch }: UserNavbarProp
           return;
         }
 
-        // Check if token is expired
         if (isTokenExpired(token)) {
           console.error('Token expired');
           localStorage.removeItem("authToken");
-          // Redirect to login or show error
           window.location.href = '/login';
           return;
         }
 
-        // Decode token
         const decodedToken = parseJwt(token);
         
         if (!decodedToken) {
@@ -63,12 +75,10 @@ export default function UserNavbar({ setShowSearch, showSearch }: UserNavbarProp
           return;
         }
 
-        // Lưu userId vào localStorage
         if (decodedToken.id !== undefined && decodedToken.id !== null) {
           localStorage.setItem('userId', String(decodedToken.id));
         }
 
-        // Map decoded token to UserData format
         const user: UserData = {
           userId: decodedToken.id,
           fullname: decodedToken.fullname,
@@ -88,10 +98,41 @@ export default function UserNavbar({ setShowSearch, showSearch }: UserNavbarProp
       }
     };
 
-    
-
     loadUserDataFromToken();
   }, []);
+
+  useEffect(() => {
+    const fetchPets = async () => {
+      if (!userData?.userId) return;
+      
+      try {
+        setLoadingPets(true);
+        const apiUrl = `http://localhost:3000/api/v1/pet/owner/${userData.userId}`;
+        const response = await fetch(apiUrl, {
+          headers: {
+            'Accept': 'application/json',
+          },
+        });
+
+        if (!response.ok) {
+          throw new Error(`Không thể tải danh sách thú cưng`);
+        }
+
+        const data = await response.json();
+        const petsData = Array.isArray(data.data) ? data.data : Array.isArray(data) ? data : [];
+        setPets(petsData.slice(0, 5));
+      } catch (error) {
+        console.error('Error fetching pets:', error);
+        setPets([]);
+      } finally {
+        setLoadingPets(false);
+      }
+    };
+
+    if (userData?.userId) {
+      fetchPets();
+    }
+  }, [userData?.userId]);
 
   const handleSettingsClick = () => {
     setIsDropdownOpen(false);
@@ -109,7 +150,6 @@ export default function UserNavbar({ setShowSearch, showSearch }: UserNavbarProp
     window.location.href = '/login';
   };
 
-  // Get initials from fullname
   const getInitials = (name: string) => {
     const words = name.trim().split(' ');
     if (words.length >= 2) {
@@ -118,10 +158,17 @@ export default function UserNavbar({ setShowSearch, showSearch }: UserNavbarProp
     return name.substring(0, 2).toUpperCase();
   };
 
+  const getPetIcon = (species?: string) => {
+    const icons: { [key: string]: string } = {
+      'dog': '🐕', 'cat': '🐈', 'chó': '🐕', 'mèo': '🐈',
+      'rabbit': '🐇', 'thỏ': '🐇', 'bird': '🐦', 'chim': '🐦',
+    };
+    return icons[species?.toLowerCase() || ''] || '🐾';
+  };
+
   return (
     <>
       <div className="w-64 bg-white border-r border-teal-100 flex flex-col shadow-sm">
-        {/* User Section with Dropdown */}
         <div className="p-3 border-b border-teal-100 relative">
           <button
             onClick={() => setIsDropdownOpen(!isDropdownOpen)}
@@ -150,48 +197,30 @@ export default function UserNavbar({ setShowSearch, showSearch }: UserNavbarProp
                 </div>
               </>
             )}
-            <svg
-              className={`w-4 h-4 text-gray-400 transition-transform flex-shrink-0 ${isDropdownOpen ? 'rotate-180' : ''}`}
-              fill="none"
-              stroke="currentColor"
-              viewBox="0 0 24 24"
-            >
+            <svg className={`w-4 h-4 text-gray-400 transition-transform flex-shrink-0 ${isDropdownOpen ? 'rotate-180' : ''}`} fill="none" stroke="currentColor" viewBox="0 0 24 24">
               <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M19 9l-7 7-7-7" />
             </svg>
           </button>
 
-          {/* Dropdown Menu */}
           {isDropdownOpen && (
             <div className="absolute left-3 right-3 mt-2 bg-white rounded-lg shadow-lg border border-gray-200 py-1 z-50">
-              <button
-                onClick={handleSettingsClick}
-                className="w-full flex items-center gap-3 px-4 py-3 hover:bg-teal-50 transition-colors text-left"
-              >
+              <button onClick={handleSettingsClick} className="w-full flex items-center gap-3 px-4 py-3 hover:bg-teal-50 transition-colors text-left">
                 <svg className="w-5 h-5 text-teal-600" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                  <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M9.594 3.94c.09-.542.56-.94 1.11-.94h2.593c.55 0 1.02.398 1.11.94l.213 1.281c.063.374.313.686.645.87.074.04.147.083.22.127.324.196.72.257 1.075.124l1.217-.456a1.125 1.125 0 011.37.49l1.296 2.247a1.125 1.125 0 01-.26 1.431l-1.003.827c-.293.24-.438.613-.431.992a6.759 6.759 0 010 .255c-.007.378.138.75.43.99l1.005.828c.424.35.534.954.26 1.43l-1.298 2.247a1.125 1.125 0 01-1.369.491l-1.217-.456c-.355-.133-.75-.072-1.076.124a6.57 6.57 0 01-.22.128c-.331.183-.581.495-.644.869l-.213 1.28c-.09.543-.56.941-1.11.941h-2.594c-.55 0-1.02-.398-1.11-.94l-.213-1.281c-.062-.374-.312-.686-.644-.87a6.52 6.52 0 01-.22-.127c-.325-.196-.72-.257-1.076-.124l-1.217.456a1.125 1.125 0 01-1.369-.49l-1.297-2.247a1.125 1.125 0 01.26-1.431l1.004-.827c.292-.24.437-.613.43-.992a6.932 6.932 0 010-.255c.007-.378-.138-.75-.43-.99l-1.004-.828a1.125 1.125 0 01-.26-1.43l1.297-2.247a1.125 1.125 0 011.37-.491l1.216.456c.356.133.751.072 1.076-.124.072-.044.146-.087.22-.128.332-.183.582-.495.644-.869l.214-1.281z" />
+                  <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M10.325 4.317c.426-1.756 2.924-1.756 3.35 0a1.724 1.724 0 002.573 1.066c1.543-.94 3.31.826 2.37 2.37a1.724 1.724 0 001.065 2.572c1.756.426 1.756 2.924 0 3.35a1.724 1.724 0 00-1.066 2.573c.94 1.543-.826 3.31-2.37 2.37a1.724 1.724 0 00-2.572 1.065c-.426 1.756-2.924 1.756-3.35 0a1.724 1.724 0 00-2.573-1.066c-1.543.94-3.31-.826-2.37-2.37a1.724 1.724 0 00-1.065-2.572c-1.756-.426-1.756-2.924 0-3.35a1.724 1.724 0 001.066-2.573c-.94-1.543.826-3.31 2.37-2.37.996.608 2.296.07 2.572-1.065z" />
                   <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M15 12a3 3 0 11-6 0 3 3 0 016 0z" />
                 </svg>
                 <span className="text-sm font-medium text-gray-900">Cài đặt</span>
               </button>
-
-              <button
-                onClick={handleProfileClick}
-                className="w-full flex items-center gap-3 px-4 py-3 hover:bg-teal-50 transition-colors text-left"
-              >
+              <button onClick={handleProfileClick} className="w-full flex items-center gap-3 px-4 py-3 hover:bg-teal-50 transition-colors text-left">
                 <svg className="w-5 h-5 text-teal-600" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                  <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M15.75 6a3.75 3.75 0 11-7.5 0 3.75 3.75 0 017.5 0zM4.501 20.118a7.5 7.5 0 0114.998 0A17.933 17.933 0 0112 21.75c-2.676 0-5.216-.584-7.499-1.632z" />
+                  <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M16 7a4 4 0 11-8 0 4 4 0 018 0zM12 14a7 7 0 00-7 7h14a7 7 0 00-7-7z" />
                 </svg>
                 <span className="text-sm font-medium text-gray-900">Hồ sơ</span>
               </button>
-
               <div className="border-t border-gray-100 my-1"></div>
-
-              <button
-                onClick={handleLogoutClick}
-                className="w-full flex items-center gap-3 px-4 py-3 hover:bg-red-50 transition-colors text-left"
-              >
+              <button onClick={handleLogoutClick} className="w-full flex items-center gap-3 px-4 py-3 hover:bg-red-50 transition-colors text-left">
                 <svg className="w-5 h-5 text-red-600" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                  <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M15.75 9V5.25A2.25 2.25 0 0013.5 3h-6a2.25 2.25 0 00-2.25 2.25v13.5A2.25 2.25 0 007.5 21h6a2.25 2.25 0 002.25-2.25V15M12 9l-3 3m0 0l3 3m-3-3h12.75" />
+                  <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M17 16l4-4m0 0l-4-4m4 4H7m6 4v1a3 3 0 01-3 3H6a3 3 0 01-3-3V7a3 3 0 013-3h4a3 3 0 013 3v1" />
                 </svg>
                 <span className="text-sm font-medium text-red-600">Đăng xuất</span>
               </button>
@@ -199,97 +228,130 @@ export default function UserNavbar({ setShowSearch, showSearch }: UserNavbarProp
           )}
         </div>
 
-        {/* Navigation */}
         <div className="flex-1 overflow-y-auto p-2">
           <div className="space-y-1">
-            <button
-              onClick={() => setShowSearch(!showSearch)}
-              className="w-full flex items-center gap-3 px-3 py-2 rounded-lg hover:bg-teal-50 text-gray-700 text-sm transition-colors"
-            >
+            <button onClick={() => setShowSearch(!showSearch)} 
+              className="w-full flex items-center gap-3 px-3 py-2 rounded-lg hover:bg-teal-50 text-gray-700 text-sm transition-colors">
               <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 20 20" fill="currentColor" className="size-5">
-                <path d="M6.5 9a2.5 2.5 0 1 1 5 0 2.5 2.5 0 0 1-5 0Z" />
-                <path fillRule="evenodd" d="M10 18a8 8 0 1 0 0-16 8 8 0 0 0 0 16ZM9 5a4 4 0 1 0 2.248 7.309l1.472 1.471a.75.75 0 1 0 1.06-1.06l-1.471-1.472A4 4 0 0 0 9 5Z" clipRule="evenodd" />
+                <path fillRule="evenodd" d="M9 3.5a5.5 5.5 0 100 11 5.5 5.5 0 000-11zM2 9a7 7 0 1112.452 4.391l3.328 3.329a.75.75 0 11-1.06 1.06l-3.329-3.328A7 7 0 012 9z" clipRule="evenodd" />
               </svg>
               <span>Tìm kiếm</span>
             </button>
-            <button className="w-full flex items-center gap-3 px-3 py-2 rounded-lg bg-gradient-to-r from-teal-500 to-cyan-600 text-white text-sm shadow-sm">
-              <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 20 20" fill="currentColor" className="size-5">
-                <path fillRule="evenodd" d="M9.293 2.293a1 1 0 0 1 1.414 0l7 7A1 1 0 0 1 17 11h-1v6a1 1 0 0 1-1 1h-2a1 1 0 0 1-1-1v-3a1 1 0 0 0-1-1H9a1 1 0 0 0-1 1v3a1 1 0 0 1-1 1H5a1 1 0 0 1-1-1v-6H3a1 1 0 0 1-.707-1.707l7-7Z" clipRule="evenodd" />
-              </svg>
-              <span>Trang chủ</span>
-            </button>
+            
+            <Link href="/user/home">
+              <button className={`w-full flex items-center gap-3 px-3 py-2 rounded-lg text-sm transition-colors
+                ${pathname === '/user/home' 
+                  ? 'bg-gradient-to-r from-teal-500 to-cyan-600 text-white shadow-sm'
+                  : 'hover:bg-teal-50 text-gray-700'}`}>
+                <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 20 20" fill="currentColor" className="size-5">
+                  <path fillRule="evenodd" d="M9.293 2.293a1 1 0 011.414 0l7 7A1 1 0 0117 11h-1v6a1 1 0 01-1 1h-2a1 1 0 01-1-1v-3a1 1 0 00-1-1H9a1 1 0 00-1 1v3a1 1 0 01-1 1H5a1 1 0 01-1-1v-6H3a1 1 0 01-.707-1.707l7-7z" clipRule="evenodd" />
+                </svg>
+                <span>Trang chủ</span>
+              </button>
+            </Link>
+
+            <Link href="/user/pet-list">
+              <button className={`w-full flex items-center gap-3 px-3 py-2 rounded-lg text-sm transition-colors
+                ${pathname === '/user/pet-list'
+                  ? 'bg-gradient-to-r from-teal-500 to-cyan-600 text-white shadow-sm'
+                  : 'hover:bg-teal-50 text-gray-700'}`}>
+                <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 20 20" fill="currentColor" className="size-5">
+                  <path d="M10 9a3 3 0 100-6 3 3 0 000 6zM6 8a2 2 0 11-4 0 2 2 0 014 0zM1.49 15.326a.78.78 0 01-.358-.442 3 3 0 014.308-3.516 6.484 6.484 0 00-1.905 3.959c-.023.222-.014.442.025.654a4.97 4.97 0 01-2.07-.655zM16.44 15.98a4.97 4.97 0 002.07-.654.78.78 0 00.357-.442 3 3 0 00-4.308-3.517 6.484 6.484 0 011.907 3.96 2.32 2.32 0 01-.026.654zM18 8a2 2 0 11-4 0 2 2 0 014 0zM5.304 16.19a.844.844 0 01-.277-.71 5 5 0 019.947 0 .843.843 0 01-.277.71A6.975 6.975 0 0110 18a6.974 6.974 0 01-4.696-1.81z" />
+                </svg>
+                <span>Danh sách thú cưng</span>
+              </button>
+            </Link>
+            
             <button className="w-full flex items-center gap-3 px-3 py-2 rounded-lg hover:bg-teal-50 text-gray-700 text-sm transition-colors">
               <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 20 20" fill="currentColor" className="size-5">
-                <path fillRule="evenodd" d="M18 10a8 8 0 1 1-16 0 8 8 0 0 1 16 0Zm-5.5-2.5a2.5 2.5 0 1 1-5 0 2.5 2.5 0 0 1 5 0ZM10 12a5.99 5.99 0 0 0-4.793 2.39A6.483 6.483 0 0 0 10 16.5a6.483 6.483 0 0 0 4.793-2.11A5.99 5.99 0 0 0 10 12Z" clipRule="evenodd" />
-              </svg>
-              <span>Hồ sơ Pet</span>
-            </button>
-            <button className="w-full flex items-center gap-3 px-3 py-2 rounded-lg hover:bg-teal-50 text-gray-700 text-sm transition-colors">
-              <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 20 20" fill="currentColor" className="size-5">
-                <path fillRule="evenodd" d="M18 10a8 8 0 1 1-16 0 8 8 0 0 1 16 0Zm-6.5 6.326a6.52 6.52 0 0 1-1.5.174 6.487 6.487 0 0 1-5.011-2.36l.49-.98a.423.423 0 0 1 .614-.164l.294.196a.992.992 0 0 0 1.491-1.139l-.197-.593a.252.252 0 0 1 .126-.304l1.973-.987a.938.938 0 0 0 .361-1.359.375.375 0 0 1 .239-.576l.125-.025A2.421 2.421 0 0 0 12.327 6.6l.05-.149a1 1 0 0 0-.242-1.023l-1.489-1.489a.5.5 0 0 1-.146-.353v-.067a6.5 6.5 0 0 1 5.392 9.23 1.398 1.398 0 0 0-.68-.244l-.566-.566a1.5 1.5 0 0 0-1.06-.439h-.172a1.5 1.5 0 0 0-1.06.44l-.593.592a.501.501 0 0 1-.13.093l-1.578.79a1 1 0 0 0-.553.894v.191a1 1 0 0 0 1 1h.5a.5.5 0 0 1 .5.5v.326Z" clipRule="evenodd" />
+                <path fillRule="evenodd" d="M10 18a8 8 0 100-16 8 8 0 000 16zm3.857-9.809a.75.75 0 00-1.214-.882l-3.483 4.79-1.88-1.88a.75.75 0 10-1.06 1.061l2.5 2.5a.75.75 0 001.137-.089l4-5.5z" clipRule="evenodd" />
               </svg>
               <span>Community</span>
             </button>
           </div>
 
-          {/* Quick Actions */}
           <div className="mt-6">
             <div className="text-xs text-teal-600 font-semibold px-3 mb-2 uppercase tracking-wide">Truy cập nhanh</div>
             <div className="space-y-1">
               <button className="w-full flex items-center gap-3 px-3 py-2 rounded-lg hover:bg-teal-50 text-gray-700 text-sm transition-colors">
                 <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 20 20" fill="currentColor" className="size-5">
-                  <path d="M10.75 16.82A7.462 7.462 0 0 1 15 15.5c.71 0 1.396.098 2.046.282A.75.75 0 0 0 18 15.06v-11a.75.75 0 0 0-.546-.721A9.006 9.006 0 0 0 15 3a8.963 8.963 0 0 0-4.25 1.065V16.82ZM9.25 4.065A8.963 8.963 0 0 0 5 3c-.85 0-1.673.118-2.454.339A.75.75 0 0 0 2 4.06v11a.75.75 0 0 0 .954.721A7.506 7.506 0 0 1 5 15.5c1.579 0 3.042.487 4.25 1.32V4.065Z" />
+                  <path d="M10.75 16.82A7.462 7.462 0 0115 15.5c.71 0 1.396.098 2.046.282A.75.75 0 0018 15.06v-11a.75.75 0 00-.546-.721A9.006 9.006 0 0015 3a8.963 8.963 0 00-4.25 1.065V16.82zM9.25 4.065A8.963 8.963 0 005 3c-.85 0-1.673.118-2.454.339A.75.75 0 002 4.06v11a.75.75 0 00.954.721A7.506 7.506 0 015 15.5c1.579 0 3.042.487 4.25 1.32V4.065z" />
                 </svg>
                 <span>Nhật ký Pet</span>
               </button>
               <button className="w-full flex items-center gap-3 px-3 py-2 rounded-lg hover:bg-teal-50 text-gray-700 text-sm transition-colors">
                 <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 20 20" fill="currentColor" className="size-5">
-                  <path d="M5.25 12a.75.75 0 0 1 .75-.75h.01a.75.75 0 0 1 .75.75v.01a.75.75 0 0 1-.75.75H6a.75.75 0 0 1-.75-.75V12ZM6 13.25a.75.75 0 0 0-.75.75v.01c0 .414.336.75.75.75h.01a.75.75 0 0 0 .75-.75V14a.75.75 0 0 0-.75-.75H6ZM7.25 12a.75.75 0 0 1 .75-.75h.01a.75.75 0 0 1 .75.75v.01a.75.75 0 0 1-.75.75H8a.75.75 0 0 1-.75-.75V12ZM8 13.25a.75.75 0 0 0-.75.75v.01c0 .414.336.75.75.75h.01a.75.75 0 0 0 .75-.75V14a.75.75 0 0 0-.75-.75H8ZM9.25 10a.75.75 0 0 1 .75-.75h.01a.75.75 0 0 1 .75.75v.01a.75.75 0 0 1-.75.75H10a.75.75 0 0 1-.75-.75V10ZM10 11.25a.75.75 0 0 0-.75.75v.01c0 .414.336.75.75.75h.01a.75.75 0 0 0 .75-.75V12a.75.75 0 0 0-.75-.75H10ZM9.25 14a.75.75 0 0 1 .75-.75h.01a.75.75 0 0 1 .75.75v.01a.75.75 0 0 1-.75.75H10a.75.75 0 0 1-.75-.75V14ZM12 9.25a.75.75 0 0 0-.75.75v.01c0 .414.336.75.75.75h.01a.75.75 0 0 0 .75-.75V10a.75.75 0 0 0-.75-.75H12ZM11.25 12a.75.75 0 0 1 .75-.75h.01a.75.75 0 0 1 .75.75v.01a.75.75 0 0 1-.75.75H12a.75.75 0 0 1-.75-.75V12ZM12 13.25a.75.75 0 0 0-.75.75v.01c0 .414.336.75.75.75h.01a.75.75 0 0 0 .75-.75V14a.75.75 0 0 0-.75-.75H12ZM13.25 10a.75.75 0 0 1 .75-.75h.01a.75.75 0 0 1 .75.75v.01a.75.75 0 0 1-.75.75H14a.75.75 0 0 1-.75-.75V10ZM14 11.25a.75.75 0 0 0-.75.75v.01c0 .414.336.75.75.75h.01a.75.75 0 0 0 .75-.75V12a.75.75 0 0 0-.75-.75H14Z" />
-                  <path fillRule="evenodd" d="M5.75 2a.75.75 0 0 1 .75.75V4h7V2.75a.75.75 0 0 1 1.5 0V4h.25A2.75 2.75 0 0 1 18 6.75v8.5A2.75 2.75 0 0 1 15.25 18H4.75A2.75 2.75 0 0 1 2 15.25v-8.5A2.75 2.75 0 0 1 4.75 4H5V2.75A.75.75 0 0 1 5.75 2Zm-1 5.5c-.69 0-1.25.56-1.25 1.25v6.5c0 .69.56 1.25 1.25 1.25h10.5c.69 0 1.25-.56 1.25-1.25v-6.5c0-.69-.56-1.25-1.25-1.25H4.75Z" clipRule="evenodd" />
+                  <path fillRule="evenodd" d="M5.75 2a.75.75 0 01.75.75V4h7V2.75a.75.75 0 011.5 0V4h.25A2.75 2.75 0 0118 6.75v8.5A2.75 2.75 0 0115.25 18H4.75A2.75 2.75 0 012 15.25v-8.5A2.75 2.75 0 014.75 4H5V2.75A.75.75 0 015.75 2zm-1 5.5c-.69 0-1.25.56-1.25 1.25v6.5c0 .69.56 1.25 1.25 1.25h10.5c.69 0 1.25-.56 1.25-1.25v-6.5c0-.69-.56-1.25-1.25-1.25H4.75z" clipRule="evenodd" />
                 </svg>
                 <span>Lịch khám</span>
               </button>
               <button className="w-full flex items-center gap-3 px-3 py-2 rounded-lg hover:bg-teal-50 text-gray-700 text-sm transition-colors">
                 <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 20 20" fill="currentColor" className="size-5">
-                  <path d="m9.653 16.915-.005-.003-.019-.01a20.759 20.759 0 0 1-1.162-.682 22.045 22.045 0 0 1-2.582-1.9C4.045 12.733 2 10.352 2 7.5a4.5 4.5 0 0 1 8-2.828A4.5 4.5 0 0 1 18 7.5c0 2.852-2.044 5.233-3.885 6.82a22.049 22.049 0 0 1-3.744 2.582l-.019.01-.005.003h-.002a.739.739 0 0 1-.69.001l-.002-.001Z" />
+                  <path d="M9.653 16.915l-.005-.003-.019-.01a20.759 20.759 0 01-1.162-.682 22.045 22.045 0 01-2.582-1.9C4.045 12.733 2 10.352 2 7.5a4.5 4.5 0 018-2.828A4.5 4.5 0 0118 7.5c0 2.852-2.044 5.233-3.885 6.82a22.049 22.049 0 01-3.744 2.582l-.019.01-.005.003h-.002a.739.739 0 01-.69.001l-.002-.001z" />
                 </svg>
                 <span>Đơn thuốc</span>
               </button>
             </div>
           </div>
 
-          {/* Services */}
           <div className="mt-6">
             <div className="text-xs text-teal-600 font-semibold px-3 mb-2 uppercase tracking-wide">Dịch vụ</div>
             <button className="w-full flex items-center gap-3 px-3 py-2 rounded-lg hover:bg-teal-50 text-gray-700 text-sm transition-colors">
               <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 20 20" fill="currentColor" className="size-5">
-                <path d="M10.75 4.75a.75.75 0 0 0-1.5 0v4.5h-4.5a.75.75 0 0 0 0 1.5h4.5v4.5a.75.75 0 0 0 1.5 0v-4.5h4.5a.75.75 0 0 0 0-1.5h-4.5v-4.5Z" />
+                <path d="M10.75 4.75a.75.75 0 00-1.5 0v4.5h-4.5a.75.75 0 000 1.5h4.5v4.5a.75.75 0 001.5 0v-4.5h4.5a.75.75 0 000-1.5h-4.5v-4.5z" />
               </svg>
               <span>Thêm dịch vụ</span>
             </button>
           </div>
 
-          {/* My Pets */}
           <div className="mt-6">
             <div className="text-xs text-teal-600 font-semibold px-3 mb-2 uppercase tracking-wide">Thú cưng của tôi</div>
             <div className="space-y-1">
-              <button className="w-full flex items-center gap-3 px-3 py-2 rounded-lg hover:bg-teal-50 text-gray-700 text-sm transition-colors">
-                <div className="w-6 h-6 rounded-full bg-gradient-to-br from-amber-400 to-orange-500 flex items-center justify-center text-xs">
-                  🐕
+              {loadingPets ? (
+                <>
+                  <div className="px-3 py-2"><div className="flex items-center gap-3"><div className="w-6 h-6 rounded-full bg-gray-200 animate-pulse"></div><div className="h-4 bg-gray-200 rounded w-20 animate-pulse"></div></div></div>
+                  <div className="px-3 py-2"><div className="flex items-center gap-3"><div className="w-6 h-6 rounded-full bg-gray-200 animate-pulse"></div><div className="h-4 bg-gray-200 rounded w-20 animate-pulse"></div></div></div>
+                </>
+              ) : pets.length > 0 ? (
+                <>
+                  {pets.map((pet) => (
+                    <Link key={pet.id} href={`/user/user-pet/${pet.id}`}>
+                      <button className="w-full flex items-center gap-3 px-3 py-2 rounded-lg hover:bg-teal-50 text-gray-700 text-sm transition-colors">
+                        {pet.image || pet.imageUrl || pet.photo || pet.avatar_url ? (
+                          <img src={pet.image || pet.imageUrl || pet.photo || pet.avatar_url} alt={pet.name} className="w-6 h-6 rounded-full object-cover border border-teal-200" />
+                        ) : (
+                          <div className="w-6 h-6 rounded-full bg-gradient-to-br from-amber-400 to-orange-500 flex items-center justify-center text-xs">
+                            {getPetIcon(pet.species || pet.type)}
+                          </div>
+                        )}
+                        <span className="truncate">{pet.name}</span>
+                      </button>
+                    </Link>
+                  ))}
+                  {pets.length >= 5 && (
+                    <Link href="/user/pet-list">
+                      <button className="w-full flex items-center gap-3 px-3 py-2 rounded-lg hover:bg-teal-50 text-teal-600 text-sm transition-colors font-medium">
+                        <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 20 20" fill="currentColor" className="size-5">
+                          <path d="M10.75 4.75a.75.75 0 00-1.5 0v4.5h-4.5a.75.75 0 000 1.5h4.5v4.5a.75.75 0 001.5 0v-4.5h4.5a.75.75 0 000-1.5h-4.5v-4.5z" />
+                        </svg>
+                        <span>Xem tất cả</span>
+                      </button>
+                    </Link>
+                  )}
+                </>
+              ) : (
+                <div className="px-3 py-4 text-center">
+                  <div className="text-2xl mb-2">🐾</div>
+                  <p className="text-xs text-gray-500 mb-2">Chưa có thú cưng</p>
+                  <Link href="/user/register-pet">
+                    <button className="text-xs text-teal-600 hover:text-teal-700 font-medium">+ Thêm thú cưng</button>
+                  </Link>
                 </div>
-                <span>Milu</span>
-              </button>
-              <button className="w-full flex items-center gap-3 px-3 py-2 rounded-lg hover:bg-teal-50 text-gray-700 text-sm transition-colors">
-                <div className="w-6 h-6 rounded-full bg-gradient-to-br from-gray-400 to-gray-600 flex items-center justify-center text-xs">
-                  🐈
-                </div>
-                <span>Kitty</span>
-              </button>
+              )}
             </div>
           </div>
         </div>
 
-        {/* Bottom Section */}
         <div className="p-3 border-t border-teal-100">
           <button className="w-full flex items-center gap-3 px-3 py-2 rounded-lg hover:bg-teal-50 text-gray-700 text-sm transition-colors">
             <div className="w-6 h-6 bg-gradient-to-br from-teal-100 to-cyan-100 rounded flex items-center justify-center">
