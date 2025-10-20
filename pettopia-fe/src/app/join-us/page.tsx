@@ -16,7 +16,7 @@ export default function page() {
             </Link>
                 <h1 className="text-5xl font-bold leading-tight mb-4">Welcome to Our Awesome Website</h1>
                 <p className="text-lg text-gray-300 mb-8">Discover amazing features and services that await you.</p>
-                <a href="http://localhost:3000/login" className="bg-yellow-400 text-gray-900 hover:bg-yellow-300 py-2 px-6 rounded-full text-lg font-semibold transition duration-300 ease-in-out transform hover:scale-105 hover:shadow-lg">Become a veterianrian</a>
+                <a href="http://localhost:4000/auth/login" className="bg-teal-400 text-white hover:bg-teal-300 py-2 px-6 rounded-full text-lg font-semibold transition duration-300 ease-in-out transform hover:scale-105 hover:shadow-lg">Become a veterianrian</a>
 
                 <p className="absolute bottom-4 w-full text-center text-sm text-gray-400">
                     © 2025 Pettopia. All rights reserved.

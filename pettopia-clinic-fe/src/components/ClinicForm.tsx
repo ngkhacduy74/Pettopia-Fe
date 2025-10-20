@@ -3,7 +3,6 @@
 import { useState, useEffect } from 'react';
 import { useForm } from 'react-hook-form';
 import { ChevronDownIcon } from '@heroicons/react/16/solid';
-import Link from 'next/link';
 import axios from 'axios';
 import { parseJwt, isTokenExpired } from '../utils/jwt';
 import { useRouter } from 'next/navigation';
@@ -28,7 +27,6 @@ type Province = { code: number; name: string };
 type District = { code: number; name: string; province_code: number };
 type Ward = { code: number; name: string; district_code: number };
 
-// Fallback data
 const fallbackProvinces: Province[] = [
   { code: 1, name: "Thành phố Hà Nội" },
   { code: 79, name: "Thành phố Hồ Chí Minh" },
@@ -60,7 +58,21 @@ export default function VeterinarianForm() {
   const selectedDistrict = watch('district');
   const selectedWard = watch('ward');
 
-  // Fetch helper with retry
+  useEffect(() => {
+    console.log("Form state:", {
+      errors,
+      selectedCity,
+      selectedDistrict,
+      selectedWard,
+      isLoadingProvinces,
+      isLoadingDistricts,
+      isLoadingWards,
+      provincesLength: provinces.length,
+      districtsLength: districts.length,
+      wardsLength: wards.length,
+    });
+  }, [errors, selectedCity, selectedDistrict, selectedWard, isLoadingProvinces, isLoadingDistricts, isLoadingWards, provinces, districts, wards]);
+
   const fetchWithRetry = async (url: string, retries = 3) => {
     for (let i = 0; i < retries; i++) {
       try {
@@ -76,7 +88,6 @@ export default function VeterinarianForm() {
     }
   };
 
-  // Load provinces
   const fetchProvinces = async () => {
     setIsLoadingProvinces(true);
     setApiError(false);
@@ -97,7 +108,6 @@ export default function VeterinarianForm() {
     fetchProvinces();
   }, []);
 
-  // Fetch districts when city selected
   useEffect(() => {
     if (selectedCity) {
       const fetchDistricts = async () => {
@@ -126,7 +136,6 @@ export default function VeterinarianForm() {
     }
   }, [selectedCity, setValue]);
 
-  // Fetch wards when district selected
   useEffect(() => {
     if (selectedDistrict) {
       const fetchWards = async () => {
@@ -154,9 +163,10 @@ export default function VeterinarianForm() {
   }, [selectedDistrict, setValue]);
 
   const onSubmit = async (data: ClinicFormData) => {
+    console.log("Form submitted with data:", data);
     try {
-      // Get user_id from token
       const token = localStorage.getItem('authToken');
+      console.log("authToken:", token);
       if (!token || isTokenExpired(token)) {
         setServerError('Phiên đăng nhập không hợp lệ hoặc đã hết hạn. Vui lòng đăng nhập lại.');
         router.push('/auth/login');
@@ -164,6 +174,7 @@ export default function VeterinarianForm() {
       }
 
       const decoded = parseJwt(token);
+      console.log("Decoded token:", decoded);
       if (!decoded) {
         setServerError('Không thể giải mã token. Vui lòng đăng nhập lại.');
         router.push('/auth/login');
@@ -171,13 +182,13 @@ export default function VeterinarianForm() {
       }
 
       const userId = decoded.id;
+      console.log("userId:", userId);
 
-      // Convert codes to names
       const province = provinces.find((p) => p.code === Number(data.city));
       const district = districts.find((d) => d.code === Number(data.district));
       const ward = wards.find((w) => w.code === Number(data.ward));
+      console.log("Selected address:", { province, district, ward });
 
-      // Validate address selections
       if (!province || !district || !ward) {
         setServerError('Vui lòng chọn đầy đủ tỉnh/thành phố, quận/huyện và phường/xã hợp lệ.');
         return;
@@ -204,14 +215,12 @@ export default function VeterinarianForm() {
       };
 
       console.log('📋 Dữ liệu gửi đi:', formattedData);
-
-      // Send data using clinicService
       await registerClinic(formattedData);
 
       alert('Đăng ký phòng khám thành công!');
-      router.push('/vet/waiting');
+      router.push('/user/waiting');
     } catch (error: any) {
-      console.error('Lỗi khi gửi dữ liệu:', error);
+      console.error('Lỗi khi gửi dữ liệu:', error.response?.data || error.message);
       setServerError(error.response?.data?.message || 'Đăng ký thất bại. Vui lòng thử lại.');
     }
   };
@@ -275,7 +284,7 @@ export default function VeterinarianForm() {
             <input
               id="phone_number"
               {...register('phone_number', { required: 'Vui lòng nhập số điện thoại' })}
-              type="tel"
+              type="text"
               placeholder="Ex: +84901234567"
               className="block w-full bg-white/10 px-3 py-1.5 text-base text-black border-b border-teal-700 placeholder:text-gray-500 focus:outline-2 focus:-outline-offset-2 focus:outline-teal-700 sm:text-sm/6"
             />
@@ -373,7 +382,7 @@ export default function VeterinarianForm() {
           )}
 
           {selectedWard && (
-            <div className="sm:col-span-4">
+            <div className="sm-col-span-4">
               <label htmlFor="address_detail" className="block text-sm/6 font-medium text-black">
                 Address Detail
               </label>
@@ -455,29 +464,27 @@ export default function VeterinarianForm() {
             >
               Cancel
             </button>
-            <Link href="/vet/waiting">
-              <button
-                type="submit"
-                className="rounded-md bg-teal-600 hover:bg-teal-700 px-4 py-2 text-sm font-semibold text-white border border-teal-700 transition focus:outline-2 focus:outline-offset-2 focus:outline-teal-700"
-                disabled={
-                  Boolean(errors.city) ||
-                  Boolean(errors.district) ||
-                  Boolean(errors.ward) ||
-                  Boolean(errors.address_detail) ||
-                  !Boolean(selectedCity) ||
-                  !Boolean(selectedDistrict) ||
-                  !Boolean(selectedWard) ||
-                  isLoadingProvinces ||
-                  isLoadingDistricts ||
-                  isLoadingWards ||
-                  provinces.length === 0 ||
-                  (Boolean(selectedCity) && districts.length === 0) ||
-                  (Boolean(selectedDistrict) && wards.length === 0)
-                }
-              >
-                Save
-              </button>
-            </Link>
+            <button
+              type="submit"
+              className="rounded-md bg-teal-600 hover:bg-teal-700 px-4 py-2 text-sm font-semibold text-white border border-teal-700 transition focus:outline-2 focus:outline-offset-2 focus:outline-teal-700"
+              disabled={
+                Boolean(errors.city) ||
+                Boolean(errors.district) ||
+                Boolean(errors.ward) ||
+                Boolean(errors.address_detail) ||
+                !Boolean(selectedCity) ||
+                !Boolean(selectedDistrict) ||
+                !Boolean(selectedWard) ||
+                isLoadingProvinces ||
+                isLoadingDistricts ||
+                isLoadingWards ||
+                provinces.length === 0 ||
+                (Boolean(selectedCity) && districts.length === 0) ||
+                (Boolean(selectedDistrict) && wards.length === 0)
+              }
+            >
+              Save
+            </button>
           </div>
         </div>
       </div>
