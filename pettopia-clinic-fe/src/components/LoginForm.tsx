@@ -39,6 +39,10 @@ export default function LoginForm() {
             router.push('/user/submit-vet-certificate');
           } else if (decoded.role === 'Staff') {
             router.push('/staff/dashboard');
+          } else if (decoded.role === 'Clinic') {
+            router.push('/clinic/dashboard');
+          } else if (decoded.role === 'Vet') {
+            router.push('/vet/dashboard');
           } else {
             setServerError('Vai trò không hợp lệ');
           }
