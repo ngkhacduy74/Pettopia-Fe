@@ -156,11 +156,6 @@ export default function PetCareApp() {
                                 </div>
                             </div>
                         </div>
-                        <div className="mt-4">
-                            <Link href="/user-pet" className="text-teal-600 hover:text-teal-700 underline">
-                                Đến trang User Pet
-                            </Link>
-                        </div>
                     </section>
                     {userId ? (
                         <PetCards userId={userId} />
