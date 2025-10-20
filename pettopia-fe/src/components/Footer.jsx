@@ -14,6 +14,12 @@ export default function Footer() {
               2005. Our mission is to ensure every pet lives a healthy and happy
               life.
             </p>
+            <ul className="space-y-3 text-gray-400 mb-3"><li>
+              <Link href="/join-us" className="hover:text-cyan-400 transition">
+                Want to become a Veterianrian?
+              </Link>
+            </li></ul>
+
             <div className="flex space-x-4">
               <a
                 href="#"

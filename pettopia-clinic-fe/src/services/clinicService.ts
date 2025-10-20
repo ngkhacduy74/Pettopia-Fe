@@ -91,9 +91,10 @@ interface ClinicData {
 export const registerClinic = async (clinicData: ClinicData) => {
   try {
     const response = await axiosInstance.post("/register", clinicData);
+    console.log("API response:", response.data); // Debug
     return response.data;
-  } catch (error) {
-    console.error("Lỗi khi đăng ký phòng khám:", error);
+  } catch (error: any) {
+    console.error("Lỗi khi đăng ký phòng khám:", error.response?.data || error.message);
     throw error;
   }
 };
