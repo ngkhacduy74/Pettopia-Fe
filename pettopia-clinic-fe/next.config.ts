@@ -1,7 +1,14 @@
 import type { NextConfig } from "next";
 
 const nextConfig: NextConfig = {
-  /* config options here */
+  async rewrites() {
+    return [
+      {
+        source: '/clinic/dashboard',
+        destination: 'http://localhost:4000/clinic/dashboard'
+      }
+    ]
+  }
 };
 
 export default nextConfig;
