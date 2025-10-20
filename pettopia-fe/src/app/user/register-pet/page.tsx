@@ -91,7 +91,7 @@ export default function RegisterPetPage() {
             const res = await createPet(payload);
 
             alert(res?.message || 'Tạo thú cưng thành công');
-            router.push('/user/user-pet');
+            router.push('/user/home');
         } catch (err: any) {
             if (typeof window !== 'undefined') {
                 console.error('Create pet error:', err?.response || err);
