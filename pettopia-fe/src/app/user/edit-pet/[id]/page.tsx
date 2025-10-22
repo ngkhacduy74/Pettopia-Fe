@@ -1,21 +1,25 @@
 'use client'
-import React, { useState } from 'react';
-import { useEffect } from 'react';
-import { useRouter } from 'next/navigation';
+import React, { useState, useEffect } from 'react';
+import { useRouter, useParams } from 'next/navigation';
 import Link from 'next/link';
 import { motion } from 'framer-motion';
 import UserNavbar from '@/components/UserNavbar';
-import { createPet } from '@/services/petService';
+import { getPetById, updatePet, UpdatePetPayload } from '@/services/petService';
 
-export default function RegisterPetPage() {
+export default function EditPetPage() {
     const router = useRouter();
+    const params = useParams();
+    const petId = params.id as string;
+    
     const [showSearch, setShowSearch] = useState(false);
     const [isSubmitting, setIsSubmitting] = useState(false);
     const [serverError, setServerError] = useState('');
     const [isFlipped, setIsFlipped] = useState(false);
-    const [avatarUploadMethod, setAvatarUploadMethod] = useState<'file' | 'url'>('file');
+    const [avatarUploadMethod, setAvatarUploadMethod] = useState<'file' | 'url'>('url');
     const [avatarFile, setAvatarFile] = useState<File | null>(null);
     const [avatarPreview, setAvatarPreview] = useState<string>('');
+    const [loading, setLoading] = useState(true);
+    
     const [petForm, setPetForm] = useState({
         name: '',
         species: '',
@@ -131,7 +135,7 @@ export default function RegisterPetPage() {
                 avatarUrl = petForm.avatar_url;
             }
 
-            const payload = {
+            const payload: UpdatePetPayload = {
                 name: petForm.name,
                 species: normalizedSpecies,
                 breed: petForm.breed || undefined,
@@ -140,25 +144,62 @@ export default function RegisterPetPage() {
                 weight: petForm.weight ? Number(petForm.weight) : undefined,
                 dateOfBirth: petForm.dateOfBirth ? new Date(petForm.dateOfBirth).toISOString() : undefined,
                 avatar_url: avatarUrl || undefined,
-                // Many backends expect user_id at top-level instead of an owner object
-                user_id: userData.user_id
             };
 
-            const res = await createPet(payload);
+            const res = await updatePet(petId, payload);
 
-            alert(res?.message || 'Tạo thú cưng thành công');
-            router.push('/user/home');
+            alert(res?.message || 'Cập nhật thú cưng thành công');
+            router.push('/user/pet-list');
         } catch (err: any) {
             if (typeof window !== 'undefined') {
-                console.error('Create pet error:', err?.response || err);
+                console.error('Update pet error:', err?.response || err);
             }
-            setServerError(err?.response?.data?.message || 'Có lỗi xảy ra khi tạo thú cưng');
+            setServerError(err?.response?.data?.message || 'Có lỗi xảy ra khi cập nhật thú cưng');
         } finally {
             setIsSubmitting(false);
         }
     };
 
-    // Trong RegisterPetPage
+    // Load pet data
+    useEffect(() => {
+        const loadPetData = async () => {
+            try {
+                setLoading(true);
+                const petData = await getPetById(petId);
+                
+                setPetForm({
+                    name: petData.name || '',
+                    species: petData.species || '',
+                    breed: petData.breed || '',
+                    gender: petData.gender?.toLowerCase() || '',
+                    color: petData.color || '',
+                    weight: petData.weight?.toString() || '',
+                    dateOfBirth: petData.dateOfBirth ? new Date(petData.dateOfBirth).toISOString().split('T')[0] : '',
+                    avatar_url: petData.avatar_url || '',
+                    city: '',
+                    district: '',
+                    ward: ''
+                });
+
+                // Set avatar preview if exists
+                if (petData.avatar_url) {
+                    setAvatarPreview(petData.avatar_url);
+                    setAvatarUploadMethod('url');
+                }
+            } catch (error) {
+                console.error('Error loading pet data:', error);
+                setServerError('Không thể tải thông tin thú cưng');
+            } finally {
+                setLoading(false);
+            }
+        };
+
+        if (petId) {
+            loadPetData();
+        }
+    }, [petId]);
+
+    // Load user data
     useEffect(() => {
         const parseJwt = (token: string | null) => {
             if (!token) return null;
@@ -189,8 +230,6 @@ export default function RegisterPetPage() {
 
                 if (!token || !userId) {
                     console.warn('Missing auth token or userId, redirecting to login');
-                    // tuỳ xử lý: redirect về login hoặc return
-                    // router.push('/login');
                     return;
                 }
 
@@ -232,6 +271,20 @@ export default function RegisterPetPage() {
         fetchUserData();
     }, []);
 
+    if (loading) {
+        return (
+            <div className="flex h-screen bg-gradient-to-b from-teal-50 to-white">
+                <UserNavbar setShowSearch={setShowSearch} showSearch={showSearch} />
+                <div className="flex-1 flex items-center justify-center">
+                    <div className="text-center">
+                        <div className="w-16 h-16 border-4 border-teal-600 border-t-transparent rounded-full animate-spin mx-auto mb-4"></div>
+                        <p className="text-gray-600">Đang tải thông tin thú cưng...</p>
+                    </div>
+                </div>
+            </div>
+        );
+    }
+
     return (
         <div className="flex h-screen bg-gradient-to-b from-teal-50 to-white text-gray-900">
             <UserNavbar setShowSearch={setShowSearch} showSearch={showSearch} />
@@ -245,14 +298,14 @@ export default function RegisterPetPage() {
                             <svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                                 <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M15 19l-7-7 7-7" />
                             </svg>
-                            <span className="font-medium">Quay lại trang chủ</span>
+                            <span className="font-medium">Quay lại danh sách thú cưng</span>
                         </Link>
                     </div>
 
                     {/* Form */}
                     <form onSubmit={handleSubmitPet} className="bg-white rounded-xl shadow-lg border border-gray-200 overflow-hidden">
                         <div className="bg-gradient-to-r from-teal-600 to-cyan-600 p-4 text-white">
-                            <h2 className="text-xl font-bold">Thông tin đăng kí thú cưng</h2>
+                            <h2 className="text-xl font-bold">Chỉnh sửa thông tin thú cưng</h2>
                         </div>
 
                         <div className="p-6">
@@ -683,7 +736,7 @@ export default function RegisterPetPage() {
 
                             {/* Action Buttons */}
                             <div className="flex gap-3 pt-6 mt-6 border-t border-gray-200">
-                                <Link href="/" className="flex-1">
+                                <Link href="/user/pet-list" className="flex-1">
                                     <button
                                         type="button"
                                         className="w-full px-4 py-2.5 border-2 border-gray-300 text-gray-700 rounded-lg hover:bg-gray-50 transition-all font-medium"
@@ -699,15 +752,14 @@ export default function RegisterPetPage() {
                                         : 'bg-gradient-to-r from-teal-600 to-cyan-600 hover:from-teal-700 hover:to-cyan-700'
                                         }`}
                                 >
-                                    {isSubmitting ? 'Đang xử lý...' : 'Đăng ký thú cưng'}
+                                    {isSubmitting ? 'Đang cập nhật...' : 'Cập nhật thú cưng'}
                                 </button>
                             </div>
                         </div>
                     </form>
                 </div>
-
-
             </div>
+
             {/* Search Modal */}
             {showSearch && (
                 <div className="fixed inset-0 bg-black/50 flex items-start justify-center pt-20 z-50" onClick={() => setShowSearch(false)}>
