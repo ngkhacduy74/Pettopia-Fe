@@ -128,7 +128,7 @@ export default function LoginForm() {
 
         <p className="mt-10 text-center text-sm/6 text-gray-400">
           Chưa có tài khoản?{' '}
-          <a href="/auth/register" className="font-semibold text-teal-500 hover:text-teal-300">
+          <a href="http://localhost:4001/auth/register" className="font-semibold text-teal-500 hover:text-teal-300">
             Đăng ký ngay
           </a>
         </p>

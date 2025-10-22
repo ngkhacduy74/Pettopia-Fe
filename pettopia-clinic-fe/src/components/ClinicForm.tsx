@@ -43,7 +43,23 @@ const fallbackWards: Ward[] = [
 ];
 
 export default function VeterinarianForm() {
-  const { register, handleSubmit, formState: { errors }, watch, setValue } = useForm<ClinicFormData>();
+  const { register, handleSubmit, formState: { errors }, watch, setValue } = useForm<ClinicFormData>({
+    defaultValues: {
+      clinic_name: '',
+      email_address: '',
+      phone_number: '',
+      license_number: '',
+      city: '',
+      district: '',
+      ward: '',
+      address_detail: '',
+      representative_name: '',
+      identify_number: '',
+      responsible_licenses: '',
+      license_issued_date: '',
+    },
+    mode: 'onChange',
+  });
   const [provinces, setProvinces] = useState<Province[]>([]);
   const [districts, setDistricts] = useState<District[]>([]);
   const [wards, setWards] = useState<Ward[]>([]);
@@ -255,7 +271,15 @@ export default function VeterinarianForm() {
             </label>
             <input
               id="clinic_name"
-              {...register('clinic_name', { required: 'Vui lòng nhập tên phòng khám' })}
+              {...register('clinic_name', {
+                required: 'Vui lòng nhập tên phòng khám',
+                minLength: { value: 3, message: 'Tên phòng khám phải có ít nhất 3 ký tự' },
+                maxLength: { value: 100, message: 'Tên phòng khám không được vượt quá 100 ký tự' },
+                pattern: {
+                  value: /^[A-Za-zÀ-ỹ0-9\s'’().,-]+$/,
+                  message: 'Tên phòng khám không hợp lệ',
+                },
+              })}
               type="text"
               placeholder="Ex: Phong Hai Clinic"
               className="block w-full bg-white/10 px-3 py-1.5 text-base text-black border-b border-teal-700 placeholder:text-gray-500 focus:outline-2 focus:-outline-offset-2 focus:outline-teal-700 sm:text-sm/6"
@@ -269,7 +293,13 @@ export default function VeterinarianForm() {
             </label>
             <input
               id="email_address"
-              {...register('email_address', { required: 'Vui lòng nhập email', pattern: { value: /^\S+@\S+$/i, message: 'Email không hợp lệ' } })}
+              {...register('email_address', {
+                required: 'Vui lòng nhập email',
+                pattern: {
+                  value: /^[A-Za-z0-9._%+-]+@[A-Za-z0-9.-]+\.[A-Za-z]{2,}$/,
+                  message: 'Email không hợp lệ',
+                },
+              })}
               type="email"
               placeholder="Ex: abc@gmail.com"
               className="block w-full bg-white/10 px-3 py-1.5 text-base text-black border-b border-teal-700 placeholder:text-gray-500 focus:outline-2 focus:-outline-offset-2 focus:outline-teal-700 sm:text-sm/6"
@@ -283,7 +313,13 @@ export default function VeterinarianForm() {
             </label>
             <input
               id="phone_number"
-              {...register('phone_number', { required: 'Vui lòng nhập số điện thoại' })}
+              {...register('phone_number', {
+                required: 'Vui lòng nhập số điện thoại',
+                pattern: {
+                  value: /^(?:\+84|0)(?:3[2-9]|5[6|8|9]|7[0|6-9]|8[1-9]|9[0-9])[0-9]{7}$/,
+                  message: 'Số điện thoại không hợp lệ (chỉ chấp nhận số Việt Nam)',
+                },
+              })}
               type="text"
               placeholder="Ex: +84901234567"
               className="block w-full bg-white/10 px-3 py-1.5 text-base text-black border-b border-teal-700 placeholder:text-gray-500 focus:outline-2 focus:-outline-offset-2 focus:outline-teal-700 sm:text-sm/6"
@@ -297,9 +333,16 @@ export default function VeterinarianForm() {
             </label>
             <input
               id="license_number"
-              {...register('license_number', { required: 'Vui lòng nhập số giấy phép' })}
+              {...register('license_number', {
+                required: 'Vui lòng nhập số giấy phép',
+                pattern: {
+                  value: /^[A-Z0-9\-]{6,20}$/,
+                  message: 'Số giấy phép hành nghề không hợp lệ (6-20 ký tự, chỉ chữ cái in hoa và số)',
+                },
+                setValueAs: (value: string) => value.toUpperCase(),
+              })}
               type="text"
-              placeholder="Ex: 12345"
+              placeholder="Ex: ABC123"
               className="block w-full bg-white/10 px-3 py-1.5 text-base text-black border-b border-teal-700 placeholder:text-gray-500 focus:outline-2 focus:-outline-offset-2 focus:outline-teal-700 sm:text-sm/6"
             />
             {errors.license_number && <p className="text-sm text-red-400 mt-1">{errors.license_number.message}</p>}
@@ -382,7 +425,7 @@ export default function VeterinarianForm() {
           )}
 
           {selectedWard && (
-            <div className="sm-col-span-4">
+            <div className="sm:col-span-4">
               <label htmlFor="address_detail" className="block text-sm/6 font-medium text-black">
                 Address Detail
               </label>
@@ -403,7 +446,13 @@ export default function VeterinarianForm() {
             </label>
             <input
               id="representative_name"
-              {...register('representative_name', { required: 'Vui lòng nhập tên người đại diện' })}
+              {...register('representative_name', {
+                required: 'Vui lòng nhập tên người đại diện',
+                pattern: {
+                  value: /^[A-Za-zÀ-ỹ\s]+$/,
+                  message: 'Tên người đại diện không hợp lệ (chỉ chấp nhận chữ cái và khoảng trắng)',
+                },
+              })}
               type="text"
               placeholder="Ex: Nguyen Van A"
               className="block w-full bg-white/10 px-3 py-1.5 text-base text-black border-b border-teal-700 placeholder:text-gray-500 focus:outline-2 focus:-outline-offset-2 focus:outline-teal-700 sm:text-sm/6"
@@ -417,7 +466,13 @@ export default function VeterinarianForm() {
             </label>
             <input
               id="identify_number"
-              {...register('identify_number', { required: 'Vui lòng nhập số CMND/CCCD' })}
+              {...register('identify_number', {
+                required: 'Vui lòng nhập số CMND/CCCD',
+                pattern: {
+                  value: /^[0-9]{9,12}$/,
+                  message: 'Số CMND/CCCD không hợp lệ (9-12 chữ số)',
+                },
+              })}
               type="text"
               placeholder="Ex: 012345678901"
               className="block w-full bg-white/10 px-3 py-1.5 text-base text-black border-b border-teal-700 placeholder:text-gray-500 focus:outline-2 focus:-outline-offset-2 focus:outline-teal-700 sm:text-sm/6"
@@ -431,9 +486,16 @@ export default function VeterinarianForm() {
             </label>
             <input
               id="responsible_licenses"
-              {...register('responsible_licenses', { required: 'Vui lòng nhập số giấy phép chịu trách nhiệm' })}
+              {...register('responsible_licenses', {
+                required: 'Vui lòng nhập số giấy phép chịu trách nhiệm',
+                validate: {
+                  nonEmptyArray: (value) =>
+                    value.split(',').map(item => item.trim()).filter(item => item).length > 0 ||
+                    'Phải có ít nhất một giấy phép hành nghề',
+                },
+              })}
               type="text"
-              placeholder="Ex: 1234"
+              placeholder="Ex: 1234, 5678"
               className="block w-full bg-white/10 px-3 py-1.5 text-base text-black border-b border-teal-700 placeholder:text-gray-500 focus:outline-2 focus:-outline-offset-2 focus:outline-teal-700 sm:text-sm/6"
             />
             {errors.responsible_licenses && <p className="text-sm text-red-400 mt-1">{errors.responsible_licenses.message}</p>}
@@ -445,7 +507,13 @@ export default function VeterinarianForm() {
             </label>
             <input
               id="license_issued_date"
-              {...register('license_issued_date', { required: 'Vui lòng chọn ngày cấp giấy phép' })}
+              {...register('license_issued_date', {
+                required: false,
+                validate: {
+                  notFutureDate: (value) =>
+                    !value || new Date(value) <= new Date() || 'Ngày cấp phép không được lớn hơn ngày hiện tại',
+                },
+              })}
               type="date"
               className="block w-full bg-white/10 px-3 py-1.5 text-base text-black border-b border-teal-700 placeholder:text-gray-500 focus:outline-2 focus:-outline-offset-2 focus:outline-teal-700 sm:text-sm/6"
             />

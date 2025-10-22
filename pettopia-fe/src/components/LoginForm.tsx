@@ -26,24 +26,28 @@ export default function LoginForm() {
 
         // Giải mã token để lấy role
         const decoded = parseJwt(response.token);
-        if (decoded && decoded.role) {
-          localStorage.setItem('userRole', decoded.role);
+        if (decoded && decoded.role && Array.isArray(decoded.role)) {
+          // Lưu role vào localStorage dưới dạng JSON string
+          localStorage.setItem('userrole', JSON.stringify(decoded.role));
+
+          // Lưu role vào cookie dưới dạng JSON string
+          document.cookie = `userrole=${JSON.stringify(decoded.role)}; path=/; max-age=3600; SameSite=Strict`;
 
           alert('Đăng nhập thành công!');
 
           // Chuyển hướng dựa trên role
-          if (decoded.role === 'Admin') {
-            router.push('/user/home');
-          } else if (decoded.role === 'User') {
-            router.push('/user/home');
-          } else if (decoded.role === 'Staff') {
-            router.push('/user/home');
-          } else if (decoded.role === 'Clinic') {
-            router.push('/user/home');
-          } else if (decoded.role === 'Vet') {
-            router.push('/user/home');
+          if (decoded.role.includes('Admin')) {
+            router.push('/admin');
+          } else if (decoded.role.includes('Staff')) {
+            router.push('/staff');
+          } else if (decoded.role.includes('Clinic')) {
+            router.push('/clinic');
+          } else if (decoded.role.includes('Vet')) {
+            router.push('/vet');
+          } else if (decoded.role.includes('User')) {
+            router.push('/user');
           } else {
-            setServerError('Vai trò không hợp lệ');
+            setServerError('Không có vai trò hợp lệ để chuyển hướng');
           }
         } else {
           setServerError('Không thể lấy thông tin vai trò từ token');

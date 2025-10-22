@@ -61,6 +61,7 @@ export const logoutUser = () => {
   localStorage.removeItem("authToken");
   document.cookie = "userRole=; path=/; expires=Thu, 01 Jan 1970 00:00:01 GMT;";
 };
+
 export const createUser = async (userData: {
   fullname: string;
   username: string;

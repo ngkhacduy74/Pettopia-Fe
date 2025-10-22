@@ -12,15 +12,25 @@ const rolePermissions: { [key: string]: string[] } = {
 
 // Middleware function to handle role-based authorization
 export function middleware(request: NextRequest) {
-  // Since localStorage is client-side, we rely on headers or cookies for server-side checks
-  // For this example, assume the role is passed via a cookie or header
-  // In a real app, you might use a server-side session or JWT
-  const userRole = request.cookies.get('userRole')?.value || null;
+  // Assume user roles are passed as a JSON string in a cookie or header
+  const userRolesJson = request.cookies.get('userRoles')?.value || null;
+  let userRoles: string[] = [];
+
+  try {
+    // Parse JSON string to get array of roles
+    userRoles = userRolesJson ? JSON.parse(userRolesJson) : [];
+    if (!Array.isArray(userRoles)) {
+      throw new Error('Invalid roles format');
+    }
+  } catch (error) {
+    console.error('Error parsing user roles:', error);
+    return NextResponse.redirect(new URL('/', request.url));
+  }
 
   const { pathname } = request.nextUrl;
 
-  // If no userRole (not logged in), restrict access to protected routes
-  if (!userRole) {
+  // If no userRoles (not logged in), restrict access to protected routes
+  if (!userRoles.length) {
     if (
       pathname.startsWith('/admin') ||
       pathname.startsWith('/staff') ||
@@ -33,9 +43,11 @@ export function middleware(request: NextRequest) {
     return NextResponse.next();
   }
 
-  // Check if the user has permission to access the requested path
-  const allowedPaths = rolePermissions[userRole] || [];
-  const isAuthorized = allowedPaths.some((path) => pathname.startsWith(path));
+  // Check if the user has at least one role that allows access to the requested path
+  const isAuthorized = userRoles.some((role) => {
+    const allowedPaths = rolePermissions[role] || [];
+    return allowedPaths.some((path) => pathname.startsWith(path));
+  });
 
   if (!isAuthorized) {
     return NextResponse.redirect(new URL('/', request.url));

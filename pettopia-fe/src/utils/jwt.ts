@@ -6,7 +6,7 @@ interface JwtPayload {
   email: { email_address: string; verified: boolean };
   phone: { phone_number: string; verified: boolean };
   username: string;
-  role: string;
+  role: object;
   address: { city: string; district: string; ward: string; description: string };
   reward_point: number;
   dob: string;

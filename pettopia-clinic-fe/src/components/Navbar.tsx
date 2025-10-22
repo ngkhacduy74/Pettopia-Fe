@@ -63,7 +63,7 @@ export default function Navbar({ setShowSearch, showSearch }: NavbarProps) {
         if (isTokenExpired(token)) {
           console.error('Token expired');
           localStorage.removeItem("authToken");
-          window.location.href = '/login';
+          window.location.href = 'auth/login';
           return;
         }
 
