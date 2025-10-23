@@ -65,4 +65,63 @@ export async function getPetById(petId: string): Promise<PetDetailResponse> {
     return res.data;
 }
 
+export interface UpdatePetPayload {
+    name?: string;
+    species?: string;
+    breed?: string;
+    gender?: string;
+    color?: string;
+    weight?: number;
+    dateOfBirth?: string; // ISO string
+    avatar_url?: string;
+}
+
+export async function updatePet(petId: string, payload: UpdatePetPayload) {
+    try {
+        const url = `/api/v1/pet/${encodeURIComponent(petId)}`;
+        const response = await axios.patch(url, payload);
+        return response.data;
+    } catch (error) {
+        if ((axios as any).isAxiosError?.(error)) {
+            const err = error as any;
+            console.error('updatePet axios error', {
+                message: err.message,
+                code: err.code,
+                status: err.response?.status,
+                statusText: err.response?.statusText,
+                url: err.config?.url,
+                method: err.config?.method,
+                data: err.response?.data,
+            });
+        } else {
+            console.error('updatePet non-axios error', error);
+        }
+        throw error;
+    }
+}
+
+export async function deletePet(petId: string) {
+    try {
+        const url = `/api/v1/pet/${encodeURIComponent(petId)}`;
+        const response = await axios.delete(url);
+        return response.data;
+    } catch (error) {
+        if ((axios as any).isAxiosError?.(error)) {
+            const err = error as any;
+            console.error('deletePet axios error', {
+                message: err.message,
+                code: err.code,
+                status: err.response?.status,
+                statusText: err.response?.statusText,
+                url: err.config?.url,
+                method: err.config?.method,
+                data: err.response?.data,
+            });
+        } else {
+            console.error('deletePet non-axios error', error);
+        }
+        throw error;
+    }
+}
+
 
