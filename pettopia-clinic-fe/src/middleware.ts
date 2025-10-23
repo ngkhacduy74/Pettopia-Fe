@@ -12,15 +12,25 @@ const rolePermissions: { [key: string]: string[] } = {
 
 // Middleware function to handle role-based authorization
 export function middleware(request: NextRequest) {
-  // Assume user roles are passed as a JSON string in a cookie or header
+  // Get user roles from cookie
   const userRolesJson = request.cookies.get('userRoles')?.value || null;
   let userRoles: string[] = [];
 
   try {
-    // Parse JSON string to get array of roles
-    userRoles = userRolesJson ? JSON.parse(userRolesJson) : [];
-    if (!Array.isArray(userRoles)) {
-      throw new Error('Invalid roles format');
+    if (userRolesJson) {
+      // Try parsing as JSON array
+      try {
+        userRoles = JSON.parse(userRolesJson);
+        if (!Array.isArray(userRoles)) {
+          throw new Error('Invalid roles format');
+        }
+      } catch {
+        // Fallback to comma-separated string
+        userRoles = userRolesJson.split(',').map((role) => role.trim());
+        if (!userRoles.every((role) => typeof role === 'string' && role)) {
+          throw new Error('Invalid roles format');
+        }
+      }
     }
   } catch (error) {
     console.error('Error parsing user roles:', error);

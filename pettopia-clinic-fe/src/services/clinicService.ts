@@ -100,8 +100,17 @@ export const registerClinic = async (clinicData: ClinicData) => {
 };
 
 export const getClinicForms = async (page: number = 1, limit: number = 10) => {
+  const token = localStorage.getItem('authToken');
+  if (!token) {
+    throw new Error('No authentication token found');
+  }
   try {
-    const response = await axiosInstance.get(`/form?page=${page}&limit=${limit}`);
+    const response = await axiosInstance.get(`/form?page=${page}&limit=${limit}`, {
+      headers: {
+        'Content-Type': 'application/json',
+        'token': token,
+      },
+    });
     return response.data as ClinicFormsResponse;
   } catch (error) {
     console.error("Lỗi khi lấy danh sách form đăng ký phòng khám:", error);
@@ -110,10 +119,19 @@ export const getClinicForms = async (page: number = 1, limit: number = 10) => {
 };
 
 export const updateClinicFormStatus = async (formId: string, status: string, note?: string) => {
+  const token = localStorage.getItem('authToken');
+  if (!token) {
+    throw new Error('No authentication token found');
+  }
   try {
     const response = await axiosInstance.post(`/status/${formId}`, {
       status,
       note: note || (status === 'approved' ? 'Phòng khám đủ điều kiện hoạt động' : 'Phòng khám không đủ điều kiện hoạt động')
+    }, {
+      headers: {
+        'Content-Type': 'application/json',
+        'token': token,
+      },
     });
     return response.data;
   } catch (error) {
