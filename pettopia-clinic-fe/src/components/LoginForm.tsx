@@ -28,43 +28,43 @@ export default function LoginForm() {
 
         // Giải mã token để lấy role
         const decoded = parseJwt(response.token);
-        let userRoles: string[] = [];
+        let userRole: string[] = [];
 
         // Xử lý vai trò từ token
         if (decoded && decoded.role) {
           if (Array.isArray(decoded.role)) {
             // Nếu role là mảng
-            userRoles = decoded.role.filter((role) => typeof role === 'string' && role);
+            userRole = decoded.role.filter((role) => typeof role === 'string' && role);
           } else if (typeof decoded.role === 'string') {
             // Nếu role là chuỗi, tách bằng dấu phẩy
-            userRoles = decoded.role.split(',').map((role) => role.trim()).filter((role) => role);
+            userRole = decoded.role.split(',').map((role) => role.trim()).filter((role) => role);
           } else {
             setServerError('Định dạng vai trò không hợp lệ');
             return;
           }
 
-          if (!userRoles.length) {
+          if (!userRole.length) {
             setServerError('Không tìm thấy vai trò hợp lệ');
             return;
           }
 
-          // Lưu roles vào cookie userRoles (định dạng JSON) và localStorage
-          const rolesJson = JSON.stringify(userRoles);
-          document.cookie = `userRoles=${rolesJson}; path=/; max-age=3600; Secure`;
-          localStorage.setItem('userRoles', rolesJson);
+          // Lưu roles vào cookie userRole (định dạng JSON) và localStorage
+          const rolesJson = JSON.stringify(userRole);
+          document.cookie = `userRole=${rolesJson}; path=/; max-age=3600; Secure`;
+          localStorage.setItem('userRole', rolesJson);
 
           alert('Đăng nhập thành công!');
 
           // Chuyển hướng dựa trên vai trò ưu tiên
-          if (userRoles.includes('Admin')) {
+          if (userRole.includes('Admin')) {
             router.push('/admin/dashboard');
-          } else if (userRoles.includes('Staff')) {
+          } else if (userRole.includes('Staff')) {
             router.push('/staff/dashboard');
-          } else if (userRoles.includes('Clinic')) {
+          } else if (userRole.includes('Clinic')) {
             router.push('/clinic/dashboard');
-          } else if (userRoles.includes('Vet')) {
+          } else if (userRole.includes('Vet')) {
             router.push('/vet/dashboard');
-          } else if (userRoles.includes('User')) {
+          } else if (userRole.includes('User')) {
             router.push('/user/submit-vet-certificate');
           } else {
             setServerError('Không tìm thấy vai trò phù hợp để chuyển hướng');
