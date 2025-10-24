@@ -42,7 +42,7 @@ const fallbackWards: Ward[] = [
   { code: 26734, name: "Phường Bến Nghé", district_code: 760 },
 ];
 
-export default function VeterinarianForm() {
+export default function ClinicCreateForm() {
   const { register, handleSubmit, formState: { errors }, watch, setValue } = useForm<ClinicFormData>({
     defaultValues: {
       clinic_name: '',
@@ -234,7 +234,7 @@ export default function VeterinarianForm() {
       await registerClinic(formattedData);
 
       alert('Đăng ký phòng khám thành công!');
-      router.push('/user/waiting');
+      router.push('/user/waitting');
     } catch (error: any) {
       console.error('Lỗi khi gửi dữ liệu:', error.response?.data || error.message);
       setServerError(error.response?.data?.message || 'Đăng ký thất bại. Vui lòng thử lại.');

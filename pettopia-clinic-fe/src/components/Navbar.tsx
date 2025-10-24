@@ -22,18 +22,6 @@ interface UserData {
   };
 }
 
-interface Pet {
-  id: string | number;
-  name: string;
-  species?: string;
-  type?: string;
-  breed?: string;
-  image?: string;
-  imageUrl?: string;
-  photo?: string;
-  avatar_url?: string;
-}
-
 interface NavbarProps {
   setShowSearch: (v: boolean) => void;
   showSearch: boolean;
@@ -45,7 +33,7 @@ export default function Navbar({ setShowSearch, showSearch }: NavbarProps) {
   const [isSettingsModalOpen, setIsSettingsModalOpen] = useState(false);
   const [userData, setUserData] = useState<UserData | null>(null);
   const [isLoading, setIsLoading] = useState(true);
-  const [pets, setPets] = useState<Pet[]>([]);
+
   const [loadingPets, setLoadingPets] = useState(false);
 
   useEffect(() => {
@@ -101,38 +89,6 @@ export default function Navbar({ setShowSearch, showSearch }: NavbarProps) {
     loadUserDataFromToken();
   }, []);
 
-  useEffect(() => {
-    const fetchPets = async () => {
-      if (!userData?.userId) return;
-      
-      try {
-        setLoadingPets(true);
-        const apiUrl = `http://localhost:3000/api/v1/pet/owner/${userData.userId}`;
-        const response = await fetch(apiUrl, {
-          headers: {
-            'Accept': 'application/json',
-          },
-        });
-
-        if (!response.ok) {
-          throw new Error(`Không thể tải danh sách thú cưng`);
-        }
-
-        const data = await response.json();
-        const petsData = Array.isArray(data.data) ? data.data : Array.isArray(data) ? data : [];
-        setPets(petsData.slice(0, 5));
-      } catch (error) {
-        console.error('Error fetching pets:', error);
-        setPets([]);
-      } finally {
-        setLoadingPets(false);
-      }
-    };
-
-    if (userData?.userId) {
-      fetchPets();
-    }
-  }, [userData?.userId]);
 
   const handleSettingsClick = () => {
     setIsDropdownOpen(false);
@@ -304,52 +260,7 @@ export default function Navbar({ setShowSearch, showSearch }: NavbarProps) {
             </button>
           </div>
 
-          <div className="mt-6">
-            <div className="text-xs text-teal-600 font-semibold px-3 mb-2 uppercase tracking-wide">Thú cưng của tôi</div>
-            <div className="space-y-1">
-              {loadingPets ? (
-                <>
-                  <div className="px-3 py-2"><div className="flex items-center gap-3"><div className="w-6 h-6 rounded-full bg-gray-200 animate-pulse"></div><div className="h-4 bg-gray-200 rounded w-20 animate-pulse"></div></div></div>
-                  <div className="px-3 py-2"><div className="flex items-center gap-3"><div className="w-6 h-6 rounded-full bg-gray-200 animate-pulse"></div><div className="h-4 bg-gray-200 rounded w-20 animate-pulse"></div></div></div>
-                </>
-              ) : pets.length > 0 ? (
-                <>
-                  {pets.map((pet) => (
-                    <Link key={pet.id} href={`/user/user-pet/${pet.id}`}>
-                      <button className="w-full flex items-center gap-3 px-3 py-2 rounded-lg hover:bg-teal-50 text-gray-700 text-sm transition-colors">
-                        {pet.image || pet.imageUrl || pet.photo || pet.avatar_url ? (
-                          <img src={pet.image || pet.imageUrl || pet.photo || pet.avatar_url} alt={pet.name} className="w-6 h-6 rounded-full object-cover border border-teal-200" />
-                        ) : (
-                          <div className="w-6 h-6 rounded-full bg-gradient-to-br from-amber-400 to-orange-500 flex items-center justify-center text-xs">
-                            {getPetIcon(pet.species || pet.type)}
-                          </div>
-                        )}
-                        <span className="truncate">{pet.name}</span>
-                      </button>
-                    </Link>
-                  ))}
-                  {pets.length >= 5 && (
-                    <Link href="/clinic/vet-list">
-                      <button className="w-full flex items-center gap-3 px-3 py-2 rounded-lg hover:bg-teal-50 text-teal-600 text-sm transition-colors font-medium">
-                        <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 20 20" fill="currentColor" className="size-5">
-                          <path d="M10.75 4.75a.75.75 0 00-1.5 0v4.5h-4.5a.75.75 0 000 1.5h4.5v4.5a.75.75 0 001.5 0v-4.5h4.5a.75.75 0 000-1.5h-4.5v-4.5z" />
-                        </svg>
-                        <span>Xem tất cả</span>
-                      </button>
-                    </Link>
-                  )}
-                </>
-              ) : (
-                <div className="px-3 py-4 text-center">
-                  <div className="text-2xl mb-2">🐾</div>
-                  <p className="text-xs text-gray-500 mb-2">Chưa có thú cưng</p>
-                  <Link href="/user/register-pet">
-                    <button className="text-xs text-teal-600 hover:text-teal-700 font-medium">+ Thêm thú cưng</button>
-                  </Link>
-                </div>
-              )}
-            </div>
-          </div>
+
         </div>
 
         <div className="p-3 border-t border-teal-100">
@@ -465,4 +376,4 @@ export default function Navbar({ setShowSearch, showSearch }: NavbarProps) {
       )}
     </>
   );
-}
+}  

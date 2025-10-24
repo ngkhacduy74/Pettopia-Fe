@@ -1,12 +1,12 @@
 'use client';
 
 import { useState } from 'react';
-import VeterinarianForm from '../../../components/VeterianrianForm';
+import VetCreateForm from '../../../components/VetCreateForm';
 
 
 
 export default function SubmitCertificatePage() {
   return (
-    <VeterinarianForm />
+    <VetCreateForm />
   );
 }

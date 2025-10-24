@@ -1,12 +1,12 @@
 'use client';
 
 import { useState } from 'react';
-import ClinicForm from '../../../components/ClinicForm';
+import ClinicCreateForm from '../../../components/ClinicCreateForm';
 
 
 
 export default function SubmitCertificatePage() {
   return (
-    <ClinicForm />
+    <ClinicCreateForm />
   );
 }

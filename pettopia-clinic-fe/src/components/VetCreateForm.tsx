@@ -9,7 +9,7 @@ interface Certification {
   link?: string;
 }
 
-export default function VeterinarianForm() {
+export default function VetCreateForm() {
   const [subSpecialties, setSubSpecialties] = useState<string[]>(['']);
   const [certifications, setCertifications] = useState<Certification[]>([{ name: '', link: '' }]);
   const [formData, setFormData] = useState({

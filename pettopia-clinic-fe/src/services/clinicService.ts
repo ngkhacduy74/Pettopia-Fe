@@ -89,8 +89,17 @@ interface ClinicData {
 }
 
 export const registerClinic = async (clinicData: ClinicData) => {
+  const token = localStorage.getItem('authToken');
+  if (!token) {
+    throw new Error('No authentication token found');
+  }
   try {
-    const response = await axiosInstance.post("/register", clinicData);
+    const response = await axiosInstance.post("/register", clinicData, {
+      headers: {
+        'Content-Type': 'application/json',
+        'token': token,
+      },
+    });
     console.log("API response:", response.data); // Debug
     return response.data;
   } catch (error: any) {
