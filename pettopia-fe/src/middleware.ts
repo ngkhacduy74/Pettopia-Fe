@@ -3,24 +3,34 @@ import type { NextRequest } from 'next/server';
 
 // Define role hierarchy and their accessible paths
 const rolePermissions: { [key: string]: string[] } = {
-  Admin: ['/admin', '/staff', '/clinic', '/vet', '/user'],
-  Staff: ['/staff', '/clinic', '/vet', '/user'],
-  Clinic: ['/clinic', '/vet', '/user'],
-  Vet: ['/vet', '/user'],
+  Admin: ['/admin'],
+  Staff: ['/staff'],
+  Clinic: ['/clinic'],
+  Vet: ['/vet'],
   User: ['/user'],
 };
 
 // Middleware function to handle role-based authorization
 export function middleware(request: NextRequest) {
-  // Assume user roles are passed as a JSON string in a cookie or header
-  const userRolesJson = request.cookies.get('userRoles')?.value || null;
-  let userRoles: string[] = [];
+  // Get user roles from cookie
+  const userRoleJson = request.cookies.get('userRole')?.value || null;
+  let userRole: string[] = [];
 
   try {
-    // Parse JSON string to get array of roles
-    userRoles = userRolesJson ? JSON.parse(userRolesJson) : [];
-    if (!Array.isArray(userRoles)) {
-      throw new Error('Invalid roles format');
+    if (userRoleJson) {
+      // Try parsing as JSON array
+      try {
+        userRole = JSON.parse(userRoleJson);
+        if (!Array.isArray(userRole)) {
+          throw new Error('Invalid roles format');
+        }
+      } catch {
+        // Fallback to comma-separated string
+        userRole = userRoleJson.split(',').map((role) => role.trim());
+        if (!userRole.every((role) => typeof role === 'string' && role)) {
+          throw new Error('Invalid roles format');
+        }
+      }
     }
   } catch (error) {
     console.error('Error parsing user roles:', error);
@@ -29,8 +39,8 @@ export function middleware(request: NextRequest) {
 
   const { pathname } = request.nextUrl;
 
-  // If no userRoles (not logged in), restrict access to protected routes
-  if (!userRoles.length) {
+  // If no userRole (not logged in), restrict access to protected routes
+  if (!userRole.length) {
     if (
       pathname.startsWith('/admin') ||
       pathname.startsWith('/staff') ||
@@ -43,8 +53,8 @@ export function middleware(request: NextRequest) {
     return NextResponse.next();
   }
 
-  // Check if the user has at least one role that allows access to the requested path
-  const isAuthorized = userRoles.some((role) => {
+  // Check if the user has a role that allows access to the requested path
+  const isAuthorized = userRole.some((role) => {
     const allowedPaths = rolePermissions[role] || [];
     return allowedPaths.some((path) => pathname.startsWith(path));
   });
