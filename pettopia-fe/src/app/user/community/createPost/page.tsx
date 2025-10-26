@@ -1,6 +1,6 @@
 'use client'
 import React, { useState } from 'react';
-import UserNavbar from '@/components/UserNavbar';
+
 interface Category {
   id: string;
   name: string;
@@ -14,7 +14,6 @@ export default function CreatePostPage() {
   const [tags, setTags] = useState<string[]>([]);
   const [tagInput, setTagInput] = useState<string>('');
   const [images, setImages] = useState<string[]>([]);
-const [showSearch, setShowSearch] = useState<boolean>(false);
   const categories: Category[] = [
     { id: 'thongbao', name: 'Thông báo', color: 'bg-blue-100 text-blue-600' },
     { id: 'gopy', name: 'Góp ý', color: 'bg-orange-100 text-orange-600' },
@@ -59,12 +58,7 @@ const [showSearch, setShowSearch] = useState<boolean>(false);
   };
 
   return (
-    <div className="flex h-screen bg-gradient-to-b from-teal-50 to-white text-gray-900">
-      {/* Navbar */}
-      <UserNavbar showSearch={showSearch} setShowSearch={setShowSearch} />
-
-     {/* Main content: fix alignment by using flex-1 */}
-     <main className="flex-1 overflow-auto">
+    <>
        {/* Header */}
        <div className="bg-gradient-to-r from-teal-50 to-white border-b border-teal-200 shadow-sm">
          <div className="max-w-4xl mx-auto px-6 py-8">
@@ -265,7 +259,6 @@ const [showSearch, setShowSearch] = useState<boolean>(false);
            </div>
          </div>
        </div>
-     </main>
-    </div>
+    </>
   );
 }
