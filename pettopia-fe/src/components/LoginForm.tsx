@@ -37,15 +37,15 @@ export default function LoginForm() {
 
           // Chuyển hướng dựa trên role
           if (decoded.role.includes('Admin')) {
-            router.push('/admin');
+            router.push('/user/home');
           } else if (decoded.role.includes('Staff')) {
-            router.push('/staff');
+            router.push('/user/home');
           } else if (decoded.role.includes('Clinic')) {
-            router.push('/clinic');
+            router.push('/user/home');
           } else if (decoded.role.includes('Vet')) {
-            router.push('/vet');
+            router.push('/user/home');
           } else if (decoded.role.includes('User')) {
-            router.push('/user');
+            router.push('/user/home');
           } else {
             setServerError('Không có vai trò hợp lệ để chuyển hướng');
           }
