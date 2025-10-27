@@ -97,7 +97,7 @@ export default function Sidebar({
   > = {
     Admin: [
       { label: 'Dashboard', href: '/admin/dashboard', icon: <HomeIcon className="w-4 h-4" /> },
-      { label: 'Manage Users', href: '/admin/users', icon: <UsersIcon className="w-4 h-4" /> },
+      { label: 'Manage Users', href: '/admin/manager-user', icon: <UsersIcon className="w-4 h-4" /> },
       { label: 'System Logs', href: '/admin/logs', icon: <ClipboardDocumentListIcon className="w-4 h-4" /> },
     ],
     Staff: [

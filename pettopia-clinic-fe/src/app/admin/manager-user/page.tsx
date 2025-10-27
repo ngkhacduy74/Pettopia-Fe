@@ -1,4 +1,4 @@
-import VetFormDetail from '@/components/VetFormDetail';
+import UserList from '@/components/User-List';
 
 
 export default function ClinicFormDetailPage({ params }: { params: { id?: string | string[] } }) {
@@ -10,5 +10,5 @@ export default function ClinicFormDetailPage({ params }: { params: { id?: string
       id = params.id;
     }
   }
-  return <VetFormDetail title="Quản lí đăng ký bác sĩ" />;
+  return <UserList title="Quản lí người dùng" />;
 }
