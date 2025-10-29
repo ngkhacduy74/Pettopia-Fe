@@ -6,7 +6,7 @@ import { ChevronDownIcon } from '@heroicons/react/16/solid';
 import axios from 'axios';
 import { parseJwt, isTokenExpired } from '../utils/jwt';
 import { useRouter } from 'next/navigation';
-import { registerClinic } from '../services/clinicService';
+import { registerClinic } from '../services/partner/clinicService';
 
 interface ClinicFormData {
   clinic_name: string;

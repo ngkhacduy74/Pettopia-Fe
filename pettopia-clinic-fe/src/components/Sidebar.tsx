@@ -97,7 +97,7 @@ export default function Sidebar({
   > = {
     Admin: [
       { label: 'Dashboard', href: '/admin/dashboard', icon: <HomeIcon className="w-4 h-4" /> },
-      { label: 'Manage Users', href: '/admin/users', icon: <UsersIcon className="w-4 h-4" /> },
+      { label: 'Manage Users', href: '/admin/manager-user', icon: <UsersIcon className="w-4 h-4" /> },
       { label: 'System Logs', href: '/admin/logs', icon: <ClipboardDocumentListIcon className="w-4 h-4" /> },
     ],
     Staff: [
@@ -116,7 +116,8 @@ export default function Sidebar({
     ],
     User: [
       { label: 'My Dashboard', href: '/user/dashboard', icon: <HomeIcon className="w-4 h-4" /> },
-      { label: 'My Requests', href: '/user/requests', icon: <DocumentCheckIcon className="w-4 h-4" /> },
+      { label: 'Submit veterianrian form', href: '/user/submit-vet-certificate', icon: <DocumentCheckIcon className="w-4 h-4" /> },
+      { label: 'Submit clinic form', href: '/user/submit-clinic-certificate', icon: <DocumentCheckIcon className="w-4 h-4" /> },
     ],
   };
 
