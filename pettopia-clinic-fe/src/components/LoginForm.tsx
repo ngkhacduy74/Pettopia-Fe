@@ -4,7 +4,7 @@
 import { useState } from 'react';
 import { useForm } from 'react-hook-form';
 import { useRouter } from 'next/navigation';
-import { loginUser } from '@/services/userService';
+import { loginUser } from '@/services/auth/authService';
 import { parseJwt } from '@/utils/jwt';
 import Image from 'next/image';
 
