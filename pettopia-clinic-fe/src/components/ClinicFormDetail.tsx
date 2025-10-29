@@ -1,6 +1,6 @@
 'use client'
 import React, { useState, useEffect } from 'react'
-import { ClinicFormData, getClinicForms, updateClinicFormStatus } from '../services/clinicService';
+import { ClinicFormData, getClinicForms, updateClinicFormStatus } from '../services/partner/clinicService';
 
 interface RequestTableProps {
     title: string;

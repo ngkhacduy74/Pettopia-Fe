@@ -1,7 +1,7 @@
 
 'use client'
 import React, { useState, useEffect } from 'react'
-import {  } from '../services/veterianrianService';
+import {  } from '../services/partner/veterianrianService';
 
 interface RequestTableProps {
     title: string;
