@@ -109,6 +109,8 @@ export default function Sidebar({
     Clinic: [
       { label: 'Dashboard', href: '/clinic/dashboard', icon: <HomeIcon className="w-4 h-4" /> },
       { label: 'Request List', href: '/clinic/request-list', icon: <DocumentCheckIcon className="w-4 h-4" /> },
+      { label: 'Manage Shifts', href: '/clinic/shift', icon: <ClipboardDocumentListIcon className="w-4 h-4" /> },
+      { label: 'Services', href: '/clinic/service', icon: <ClipboardDocumentListIcon className="w-4 h-4" /> },
     ],
     Vet: [
       { label: 'Dashboard', href: '/vet/dashboard', icon: <HomeIcon className="w-4 h-4" /> },
