@@ -1,5 +1,6 @@
 'use client'
 import React, { useEffect, useMemo, useState } from 'react';
+import { getClinicServices, createClinicService, updateClinicService } from '../services/partner/clinicService';
 
 interface Service {
   _id?: string;
@@ -24,35 +25,7 @@ interface ApiResponse {
   data: Service[];
 }
 
-// Replace these with your actual API service calls
-async function getServices(page: number, limit: number): Promise<ApiResponse> {
-  const token = '{{token}}'; // Replace with actual token from your auth
-  const response = await fetch(`http://localhost:3000/api/v1/partner/service?page=${page}&limit=${limit}`, {
-    headers: {
-      'Authorization': `Bearer ${token}`,
-      'Content-Type': 'application/json',
-    },
-  });
-  return response.json();
-}
-
-async function upsertService(service: Service): Promise<any> {
-  const token = '{{token}}'; // Replace with actual token from your auth
-  const method = service.id ? 'PUT' : 'POST';
-  const url = service.id 
-    ? `http://localhost:3000/api/v1/partner/service/${service.id}`
-    : 'http://localhost:3000/api/v1/partner/service';
-  
-  const response = await fetch(url, {
-    method,
-    headers: {
-      'Authorization': `Bearer ${token}`,
-      'Content-Type': 'application/json',
-    },
-    body: JSON.stringify(service),
-  });
-  return response.json();
-}
+// Xóa bỏ các hàm getServices và upsertService cục bộ vì đã có trong service file
 
 export default function ClinicService() {
   const [page, setPage] = useState(1);
@@ -80,7 +53,7 @@ export default function ClinicService() {
     setLoading(true);
     setError(null);
     try {
-      const res = await getServices(page, limit);
+      const res = await getClinicServices(page, limit);
       setServices(res.data || []);
       const inferredTotal = res.pagination?.total ?? (res as any).total ?? (res.data?.length || 0);
       setTotal(inferredTotal);
@@ -105,7 +78,11 @@ export default function ClinicService() {
     setLoading(true);
     setError(null);
     try {
-      await upsertService(form);
+      if (editingId && form.id) {
+        await updateClinicService(form.id, form);
+      } else {
+        await createClinicService(form);
+      }
       await load();
       resetForm();
     } catch (e: any) {

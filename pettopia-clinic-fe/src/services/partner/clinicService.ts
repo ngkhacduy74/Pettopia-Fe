@@ -1,6 +1,8 @@
 import axios from "axios";
 
 const API_URL = "http://localhost:3000/api/v1/partner/clinic";
+const PARTNER_API_URL = "http://localhost:3000/api/v1/partner";
+
 
 // Tạo instance Axios
 const axiosInstance = axios.create({
@@ -10,17 +12,17 @@ const axiosInstance = axios.create({
   },
 });
 
-// Interceptor để thêm token vào header Authorization
-axiosInstance.interceptors.request.use(
-  (config) => {
-    const token = localStorage.getItem("authToken");
-    if (token) {
-      config.headers.Authorization = `Bearer ${token}`;
-    }
-    return config;
-  },
-  (error) => Promise.reject(error)
-);
+// Gỡ bỏ interceptor không cần thiết
+// axiosInstance.interceptors.request.use(
+//   (config) => {
+//     const token = localStorage.getItem("authToken");
+//     if (token) {
+//       config.headers.Authorization = `Bearer ${token}`;
+//     }
+//     return config;
+//   },
+//   (error) => Promise.reject(error)
+// );
 
 export interface ClinicFormData {
   user_id: string;
@@ -145,6 +147,60 @@ export const updateClinicFormStatus = async (formId: string, status: string, not
     return response.data;
   } catch (error) {
     console.error("Lỗi khi cập nhật trạng thái phòng khám:", error);
+    throw error;
+  }
+};
+
+// Lấy danh sách service (GET /service)
+export const getClinicServices = async (page: number = 1, limit: number = 10) => {
+  const token = localStorage.getItem('authToken');
+  if (!token) {
+    throw new Error('No authentication token found');
+  }
+  try {
+    // Sử dụng axios toàn cục với URL đầy đủ để tránh lỗi baseURL
+    const response = await axios.get(`${PARTNER_API_URL}/service`, {
+      params: { page, limit },
+      headers: { 'token': token }
+    });
+    return response.data;
+  } catch (error) {
+    console.error("Lỗi khi lấy danh sách service:", error);
+    throw error;
+  }
+};
+
+// Tạo mới service  (POST /service)
+export const createClinicService = async (serviceData: any) => {
+  const token = localStorage.getItem('authToken');
+  if (!token) {
+    throw new Error('No authentication token found');
+  }
+  try {
+    // Sử dụng axios toàn cục với URL đầy đủ để tránh lỗi baseURL
+    const response = await axios.post(`${PARTNER_API_URL}/service`, serviceData, {
+      headers: { 'token': token }
+    });
+    return response.data;
+  } catch (error) {
+    console.error("Lỗi khi tạo service:", error);
+    throw error;
+  }
+};
+
+// Cập nhật service (PUT /service/:id)
+export const updateClinicService = async (serviceId: string, serviceData: any) => {
+  const token = localStorage.getItem('authToken');
+  if (!token) {
+    throw new Error('No authentication token found');
+  }
+  try {
+    const response = await axios.put(`${PARTNER_API_URL}/service/${serviceId}`, serviceData, {
+      headers: { 'token': token }
+    });
+    return response.data;
+  } catch (error) {
+    console.error("Lỗi khi cập nhật service:", error);
     throw error;
   }
 };

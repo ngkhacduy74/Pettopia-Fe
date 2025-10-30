@@ -1,6 +1,6 @@
 'use client'
 import React, { useEffect, useMemo, useState } from 'react';
-import { getClinicShifts, upsertClinicShift, type ClinicShift } from '@/services/partner/shiftService';
+import { getClinicShifts, upsertClinicShift, type ClinicShift } from '../services/partner/shiftService';
 
 export default function ClinicShift() {
   const [page, setPage] = useState(1);
@@ -17,6 +17,7 @@ export default function ClinicShift() {
     end_time: '11:30',
     is_active: true,
   });
+  const [editingId, setEditingId] = useState<string | undefined>(undefined);
 
   const totalPages = useMemo(() => {
     if (!total) return 1;
@@ -48,13 +49,35 @@ export default function ClinicShift() {
     setLoading(true);
     setError(null);
     try {
-      await upsertClinicShift(form);
+      await upsertClinicShift(
+        editingId
+          ? { ...form, _id: editingId }
+          : { ...form }
+      );
       await load();
+      resetForm();
     } catch (e: any) {
       setError(e?.response?.data?.message || e?.message || 'Failed to save shift');
     } finally {
       setLoading(false);
     }
+  }
+
+  function editShift(s: ClinicShift) {
+    setForm({ ...s });
+    setEditingId(s._id);
+    window.scrollTo({ top: 0, behavior: 'smooth' });
+  }
+
+  function resetForm() {
+    setForm({
+      shift: 'Morning',
+      max_slot: 20,
+      start_time: '07:30',
+      end_time: '11:30',
+      is_active: true,
+    });
+    setEditingId(undefined);
   }
 
   return (
@@ -126,8 +149,17 @@ export default function ClinicShift() {
             className="w-full bg-teal-600 text-white rounded-md px-4 py-2 hover:bg-teal-700 disabled:opacity-60"
             disabled={loading}
           >
-            {loading ? 'Saving...' : 'Create / Update'}
+            {loading ? 'Saving...' : editingId ? 'Update Shift' : 'Create Shift'}
           </button>
+          {editingId && (
+            <button
+              type="button"
+              className="w-full mt-2 bg-gray-500 text-white rounded-md px-4 py-2 hover:bg-gray-600"
+              onClick={resetForm}
+            >
+              Cancel
+            </button>
+          )}
         </div>
       </form>
 
@@ -140,16 +172,17 @@ export default function ClinicShift() {
               <th className="text-left p-3">Start</th>
               <th className="text-left p-3">End</th>
               <th className="text-left p-3">Active</th>
+              <th className="text-center p-3">Actions</th>
             </tr>
           </thead>
           <tbody>
             {loading && shifts.length === 0 ? (
               <tr>
-                <td className="p-3" colSpan={5}>Loading...</td>
+                <td className="p-3" colSpan={6}>Loading...</td>
               </tr>
             ) : shifts.length === 0 ? (
               <tr>
-                <td className="p-3" colSpan={5}>No shifts found</td>
+                <td className="p-3" colSpan={6}>No shifts found</td>
               </tr>
             ) : (
               shifts.map((s, idx) => (
@@ -159,6 +192,14 @@ export default function ClinicShift() {
                   <td className="p-3">{s.start_time}</td>
                   <td className="p-3">{s.end_time}</td>
                   <td className="p-3">{s.is_active ? 'Yes' : 'No'}</td>
+                  <td className="p-3 text-center">
+                    <button
+                      className="text-teal-600 hover:text-teal-800 font-medium"
+                      onClick={() => editShift(s)}
+                    >
+                      Edit
+                    </button>
+                  </td>
                 </tr>
               ))
             )}
