@@ -15,7 +15,7 @@ interface Service {
 
 export default function ClinicService() {
   const [page, setPage] = useState(1);
-  const [limit] = useState(10);
+  const [limit] = useState(8);
   const [total, setTotal] = useState(0);
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState<string | null>(null);
@@ -23,6 +23,8 @@ export default function ClinicService() {
   const [editingId, setEditingId] = useState<string | null>(null);
   const [isModalOpen, setIsModalOpen] = useState(false);
   const [hoveredService, setHoveredService] = useState<string | null>(null);
+  const [searchTerm, setSearchTerm] = useState('');
+  const [debouncedSearch, setDebouncedSearch] = useState('');
 
   const [form, setForm] = useState<Service>({
     name: '',
@@ -37,11 +39,19 @@ export default function ClinicService() {
     return Math.max(1, Math.ceil(total / limit));
   }, [total, limit]);
 
-  async function load() {
+  useEffect(() => {
+    const handler = setTimeout(() => {
+      setDebouncedSearch(searchTerm.trim());
+    }, 300);
+
+    return () => clearTimeout(handler);
+  }, [searchTerm]);
+
+  async function load(pageToLoad = page, search = debouncedSearch) {
     setLoading(true);
     setError(null);
     try {
-      const res = await getClinicServices(page, limit);
+      const res = await getClinicServices(pageToLoad, limit, search);
       setServices(res.data || []);
       const inferredTotal = res.pagination?.total ?? (res as any).total ?? (res.data?.length || 0);
       setTotal(inferredTotal);
@@ -51,10 +61,10 @@ export default function ClinicService() {
       setLoading(false);
     }
   }
-
   useEffect(() => {
-    load();
-  }, [page]);
+    load(page, debouncedSearch);
+  }, [page, debouncedSearch]);
+
 
   async function handleSubmit() {
     if (!form.name.trim()) {
@@ -69,7 +79,7 @@ export default function ClinicService() {
       } else {
         await createClinicService(form);
       }
-      await load();
+      await load(page, debouncedSearch);
       resetForm();
       setIsModalOpen(false);
     } catch (e: any) {
@@ -124,20 +134,41 @@ export default function ClinicService() {
     <div className="min-h-screen">
       <div className="max-w-7xl mx-auto ">
         {/* Header */}
-        <div className="mb-8 flex items-center justify-between">
+        <div className="mb-8 flex flex-col gap-4 md:flex-row md:items-center md:justify-between">
           <div>
             <h1 className="text-3xl font-bold text-gray-900">Quản lý Dịch vụ</h1>
             <p className="mt-2 text-gray-600">Thêm mới và chỉnh sửa các dịch vụ của phòng khám</p>
           </div>
-          <button
-            onClick={() => openModal()}
-            className="bg-teal-600 text-white rounded-lg px-6 py-3 font-medium hover:bg-teal-700 focus:ring-4 focus:ring-teal-200 transition flex items-center gap-2"
-          >
-            <svg className="h-5 w-5" fill="none" viewBox="0 0 24 24" stroke="currentColor">
-              <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 4v16m8-8H4" />
-            </svg>
-            Thêm dịch vụ
-          </button>
+          <div className="w-full md:w-auto flex flex-col sm:flex-row sm:items-center sm:justify-end gap-3">
+            <div className="relative w-full sm:w-64">
+              <span className="absolute left-4 top-1/2 -translate-y-1/2 text-gray-400">
+                <svg className="h-5 w-5" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                  <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M21 21l-4.35-4.35M17 10.5a6.5 6.5 0 11-13 0 6.5 6.5 0 0113 0z" />
+                </svg>
+              </span>
+              <input
+                type="search"
+                className="w-full border border-gray-300 rounded-lg pl-12 pr-4 py-2.5 focus:ring-2 focus:ring-teal-500 focus:border-transparent transition"
+                placeholder="Tìm kiếm dịch vụ..."
+                value={searchTerm}
+                onChange={(e) => {
+                  const value = e.target.value;
+                  setSearchTerm(value);
+                  // Reset về trang 1 khi tìm kiếm
+                  setPage(1);
+                }}
+              />
+            </div>
+            <button
+              onClick={() => openModal()}
+              className="bg-teal-600 text-white rounded-lg px-6 py-3 font-medium hover:bg-teal-700 focus:ring-4 focus:ring-teal-200 transition flex items-center gap-2 justify-center"
+            >
+              <svg className="h-5 w-5" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 4v16m8-8H4" />
+              </svg>
+              Thêm dịch vụ
+            </button>
+          </div>
         </div>
 
         {/* Error Alert */}
@@ -247,8 +278,8 @@ export default function ClinicService() {
                         </td>
                         <td className="px-6 py-4 whitespace-nowrap text-center">
                           <span className={`inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-medium ${s.is_active
-                              ? 'bg-green-100 text-green-800'
-                              : 'bg-gray-100 text-gray-800'
+                            ? 'bg-green-100 text-green-800'
+                            : 'bg-gray-100 text-gray-800'
                             }`}>
                             {s.is_active ? 'Hoạt động' : 'Tạm ngưng'}
                           </span>
@@ -271,7 +302,7 @@ export default function ClinicService() {
 
           {/* Pagination */}
           {services.length > 0 && (
-            <div className="bg-white px-6 py-4 border-t border-gray-200 flex items-center justify-between">
+            <div className="bg-white px-6 py-4 pt-5 border-t border-gray-200 flex items-center justify-between">
               <div className="flex-1 flex justify-between sm:hidden">
                 <button
                   className="relative inline-flex items-center px-4 py-2 border border-gray-300 text-sm font-medium rounded-md text-gray-700 bg-white hover:bg-gray-50 disabled:opacity-50"
@@ -326,7 +357,7 @@ export default function ClinicService() {
 
       {/* Modal */}
       {isModalOpen && (
-        <div className="fixed inset-0 bg-black/50 flex items-start justify-center pt-20 z-50">
+        <div className="fixed inset-0 bg-white bg-opacity-100 backdrop-blur-md z-50 flex items-center justify-center p-4">
           <div className="bg-white rounded-xl shadow-xl max-w-2xl w-full max-h-[90vh] overflow-y-auto">
             {/* Modal Header */}
             <div className="border-b border-gray-200 px-6 py-4 flex items-center justify-between sticky top-0 bg-white z-10">
