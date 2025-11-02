@@ -10,6 +10,12 @@ interface Category {
   color: string;
 }
 
+interface ValidationErrors {
+  category?: string;
+  title?: string;
+  content?: string;
+}
+
 export default function CreatePostPage() {
   const [title, setTitle] = useState<string>('');
   const [content, setContent] = useState<string>('');
@@ -17,7 +23,9 @@ export default function CreatePostPage() {
   const [imagePreviews, setImagePreviews] = useState<string[]>([]);
   const [imageFiles, setImageFiles] = useState<File[]>([]);
   const [submitting, setSubmitting] = useState<boolean>(false);
+  const [errors, setErrors] = useState<ValidationErrors>({});
   const router = useRouter();
+  
   const categories: Category[] = [
     { id: 'thongbao', name: 'Thông báo', color: 'bg-blue-100 text-blue-600' },
     { id: 'gopy', name: 'Góp ý', color: 'bg-orange-100 text-orange-600' },
@@ -26,8 +34,6 @@ export default function CreatePostPage() {
     { id: 'chiase', name: 'Chia sẻ kiến thức', color: 'bg-green-100 text-green-600' },
     { id: 'tuvan', name: 'Tư vấn cấu hình', color: 'bg-pink-100 text-pink-600' }
   ];
-
-  // removed free-tag inputs; categories act as the only tag
 
   const handleImageUpload = (e: React.ChangeEvent<HTMLInputElement>) => {
     const files = e.target.files;
@@ -51,18 +57,52 @@ export default function CreatePostPage() {
     return decoded?.id ?? null;
   }, [token]);
 
+  const validateForm = (): ValidationErrors => {
+    const newErrors: ValidationErrors = {};
+    
+    // Validate category
+    if (!selectedCategory) {
+      newErrors.category = 'Vui lòng chọn một danh mục';
+    }
+    
+    // Validate title
+    const trimmedTitle = title.trim();
+    if (!trimmedTitle) {
+      newErrors.title = 'Vui lòng nhập tiêu đề bài viết';
+    } else if (trimmedTitle.length < 10) {
+      newErrors.title = 'Tiêu đề phải có ít nhất 10 ký tự';
+    } else if (trimmedTitle.length > 200) {
+      newErrors.title = 'Tiêu đề không được vượt quá 200 ký tự';
+    }
+    
+    // Validate content
+    const trimmedContent = content.trim();
+    if (!trimmedContent) {
+      newErrors.content = 'Vui lòng nhập nội dung bài viết';
+    } else if (trimmedContent.length < 20) {
+      newErrors.content = 'Nội dung phải có ít nhất 20 ký tự';
+    } else if (trimmedContent.length > 10000) {
+      newErrors.content = 'Nội dung không được vượt quá 10,000 ký tự';
+    }
+
+    return newErrors;
+  };
+
   const handleSubmit = async () => {
-    if (!title.trim() || !content.trim() || !selectedCategory) {
-      alert('Vui lòng nhập đầy đủ tiêu đề, nội dung và danh mục.');
+    const validationErrors = validateForm();
+
+    if (Object.keys(validationErrors).length > 0) {
+      setErrors(validationErrors);
+      window.scrollTo({ top: 0, behavior: 'smooth' });
       return;
     }
 
     try {
       setSubmitting(true);
+      setErrors({});
       const token = typeof window !== 'undefined' ? localStorage.getItem('authToken') : null;
       if (token) communicationService.setToken(token);
 
-      // Categories act as tags: only send the selected category as the tag
       const finalTags = [selectedCategory];
 
       const post = await communicationService.createPost({
@@ -109,18 +149,48 @@ export default function CreatePostPage() {
 
        {/* Form */}
        <div className="max-w-4xl mx-auto px-6 py-8">
+         {/* Error Summary */}
+         {Object.keys(errors).length > 0 && (
+           <div className="bg-red-50 border-l-4 border-red-500 p-4 mb-6 rounded-lg">
+             <div className="flex items-start">
+               <svg className="w-5 h-5 text-red-500 mt-0.5 mr-3 flex-shrink-0" fill="currentColor" viewBox="0 0 20 20">
+                 <path fillRule="evenodd" d="M10 18a8 8 0 100-16 8 8 0 000 16zM8.707 7.293a1 1 0 00-1.414 1.414L8.586 10l-1.293 1.293a1 1 0 101.414 1.414L10 11.414l1.293 1.293a1 1 0 001.414-1.414L11.414 10l1.293-1.293a1 1 0 00-1.414-1.414L10 8.586 8.707 7.293z" clipRule="evenodd" />
+               </svg>
+               <div>
+                 <h3 className="text-red-800 font-semibold mb-1">Vui lòng kiểm tra lại thông tin</h3>
+                 <ul className="text-sm text-red-700 space-y-1">
+                   {errors.category && <li>• {errors.category}</li>}
+                   {errors.title && <li>• {errors.title}</li>}
+                   {errors.content && <li>• {errors.content}</li>}
+                 </ul>
+               </div>
+             </div>
+           </div>
+         )}
+         
          <div className="space-y-6">
            {/* Category Selection */}
-           <div className="bg-white rounded-xl shadow-sm border border-teal-100 p-6">
+           <div className={`bg-white rounded-xl shadow-sm border p-6 ${errors.category ? 'border-red-300 ring-2 ring-red-200' : 'border-teal-100'}`}>
              <label className="block text-sm font-semibold text-gray-900 mb-3">
                Chọn danh mục <span className="text-red-500">*</span>
              </label>
+             {errors.category && (
+               <p className="text-red-600 text-sm mb-3 flex items-center">
+                 <svg className="w-4 h-4 mr-1 flex-shrink-0" fill="currentColor" viewBox="0 0 20 20">
+                   <path fillRule="evenodd" d="M18 10a8 8 0 11-16 0 8 8 0 0116 0zm-7 4a1 1 0 11-2 0 1 1 0 012 0zm-1-9a1 1 0 00-1 1v4a1 1 0 102 0V6a1 1 0 00-1-1z" clipRule="evenodd" />
+                 </svg>
+                 {errors.category}
+               </p>
+             )}
              <div className="grid grid-cols-2 md:grid-cols-3 gap-3">
                {categories.map((cat) => (
                  <button
                    key={cat.id}
                    type="button"
-                   onClick={() => setSelectedCategory(cat.id)}
+                   onClick={() => {
+                     setSelectedCategory(cat.id);
+                     setErrors(prev => ({...prev, category: undefined}));
+                   }}
                    className={`p-3 rounded-lg transition-all ${
                      selectedCategory === cat.id
                        ? 'bg-teal-600 text-white shadow-md ring-2 ring-teal-300'
@@ -134,37 +204,72 @@ export default function CreatePostPage() {
            </div>
 
            {/* Title */}
-           <div className="bg-white rounded-xl shadow-sm border border-teal-100 p-6">
+           <div className={`bg-white rounded-xl shadow-sm border p-6 ${errors.title ? 'border-red-300 ring-2 ring-red-200' : 'border-teal-100'}`}>
              <label className="block text-sm font-semibold text-gray-900 mb-3">
                Tiêu đề <span className="text-red-500">*</span>
              </label>
+             {errors.title && (
+               <p className="text-red-600 text-sm mb-3 flex items-center">
+                 <svg className="w-4 h-4 mr-1 flex-shrink-0" fill="currentColor" viewBox="0 0 20 20">
+                   <path fillRule="evenodd" d="M18 10a8 8 0 11-16 0 8 8 0 0116 0zm-7 4a1 1 0 11-2 0 1 1 0 012 0zm-1-9a1 1 0 00-1 1v4a1 1 0 102 0V6a1 1 0 00-1-1z" clipRule="evenodd" />
+                 </svg>
+                 {errors.title}
+               </p>
+             )}
              <input
                type="text"
                value={title}
-               onChange={(e) => setTitle(e.target.value)}
+               onChange={(e) => {
+                 setTitle(e.target.value);
+                 if (e.target.value.trim() && errors.title) {
+                   setErrors(prev => ({...prev, title: undefined}));
+                 }
+               }}
                placeholder="Nhập tiêu đề bài viết..."
-               className="w-full px-4 py-3 border border-gray-200 rounded-lg focus:outline-none focus:ring-2 focus:ring-teal-500 focus:border-transparent"
-             />
-           </div>
-
-           {/* Content */}
-           <div className="bg-white rounded-xl shadow-sm border border-teal-100 p-6">
-             <label className="block text-sm font-semibold text-gray-900 mb-3">
-               Nội dung <span className="text-red-500">*</span>
-             </label>
-             <textarea
-               value={content}
-               onChange={(e) => setContent(e.target.value)}
-               placeholder="Viết nội dung bài viết của bạn..."
-               rows={10}
-               className="w-full px-4 py-3 border border-gray-200 rounded-lg focus:outline-none focus:ring-2 focus:ring-teal-500 focus:border-transparent resize-none"
+               className={`w-full px-4 py-3 border rounded-lg focus:outline-none focus:ring-2 focus:border-transparent ${
+                 errors.title 
+                   ? 'border-red-300 focus:ring-red-500' 
+                   : 'border-gray-200 focus:ring-teal-500'
+               }`}
              />
              <div className="mt-2 text-sm text-gray-500">
-               {content.length} ký tự
+               {title.length}/200 ký tự
              </div>
            </div>
 
-          {/* Free tag input removed; category is the only tag sent */}
+           {/* Content */}
+           <div className={`bg-white rounded-xl shadow-sm border p-6 ${errors.content ? 'border-red-300 ring-2 ring-red-200' : 'border-teal-100'}`}>
+             <label className="block text-sm font-semibold text-gray-900 mb-3">
+               Nội dung <span className="text-red-500">*</span>
+             </label>
+             {errors.content && (
+               <p className="text-red-600 text-sm mb-3 flex items-center">
+                 <svg className="w-4 h-4 mr-1 flex-shrink-0" fill="currentColor" viewBox="0 0 20 20">
+                   <path fillRule="evenodd" d="M18 10a8 8 0 11-16 0 8 8 0 0116 0zm-7 4a1 1 0 11-2 0 1 1 0 012 0zm-1-9a1 1 0 00-1 1v4a1 1 0 102 0V6a1 1 0 00-1-1z" clipRule="evenodd" />
+                 </svg>
+                 {errors.content}
+               </p>
+             )}
+             <textarea
+               value={content}
+               onChange={(e) => {
+                 setContent(e.target.value);
+                 if (e.target.value.trim() && errors.content) {
+                   setErrors(prev => ({...prev, content: undefined}));
+                 }
+               }}
+               placeholder="Viết nội dung bài viết của bạn..."
+               rows={10}
+               className={`w-full px-4 py-3 border rounded-lg focus:outline-none focus:ring-2 focus:border-transparent resize-none ${
+                 errors.content
+                   ? 'border-red-300 focus:ring-red-500'
+                   : 'border-gray-200 focus:ring-teal-500'
+               }`}
+             />
+             <div className="mt-2 text-sm text-gray-500">
+               {content.length}/10,000 ký tự
+             </div>
+           </div>
 
            {/* Image Upload */}
            <div className="bg-white rounded-xl shadow-sm border border-teal-100 p-6">
