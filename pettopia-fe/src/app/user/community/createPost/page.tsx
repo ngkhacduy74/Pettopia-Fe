@@ -1,6 +1,9 @@
 'use client'
-import React, { useState } from 'react';
-import UserNavbar from '@/components/UserNavbar';
+import React, { useMemo, useState } from 'react';
+import { useRouter } from 'next/navigation';
+import { communicationService } from '@/services/communicationService';
+import { parseJwt } from '@/utils/jwt';
+
 interface Category {
   id: string;
   name: string;
@@ -11,10 +14,10 @@ export default function CreatePostPage() {
   const [title, setTitle] = useState<string>('');
   const [content, setContent] = useState<string>('');
   const [selectedCategory, setSelectedCategory] = useState<string>('');
-  const [tags, setTags] = useState<string[]>([]);
-  const [tagInput, setTagInput] = useState<string>('');
-  const [images, setImages] = useState<string[]>([]);
-const [showSearch, setShowSearch] = useState<boolean>(false);
+  const [imagePreviews, setImagePreviews] = useState<string[]>([]);
+  const [imageFiles, setImageFiles] = useState<File[]>([]);
+  const [submitting, setSubmitting] = useState<boolean>(false);
+  const router = useRouter();
   const categories: Category[] = [
     { id: 'thongbao', name: 'Thông báo', color: 'bg-blue-100 text-blue-600' },
     { id: 'gopy', name: 'Góp ý', color: 'bg-orange-100 text-orange-600' },
@@ -24,47 +27,64 @@ const [showSearch, setShowSearch] = useState<boolean>(false);
     { id: 'tuvan', name: 'Tư vấn cấu hình', color: 'bg-pink-100 text-pink-600' }
   ];
 
-  const handleAddTag = () => {
-    if (tagInput.trim() && !tags.includes(tagInput.trim())) {
-      setTags([...tags, tagInput.trim()]);
-      setTagInput('');
-    }
-  };
-
-  const handleRemoveTag = (tagToRemove: string) => {
-    setTags(tags.filter(tag => tag !== tagToRemove));
-  };
+  // removed free-tag inputs; categories act as the only tag
 
   const handleImageUpload = (e: React.ChangeEvent<HTMLInputElement>) => {
     const files = e.target.files;
     if (files) {
-      const newImages = Array.from(files).map(file => URL.createObjectURL(file));
-      setImages([...images, ...newImages]);
+      const fileList = Array.from(files);
+      const previews = fileList.map(file => URL.createObjectURL(file));
+      setImageFiles(prev => [...prev, ...fileList]);
+      setImagePreviews(prev => [...prev, ...previews]);
     }
   };
 
   const handleRemoveImage = (index: number) => {
-    setImages(images.filter((_, i) => i !== index));
+    setImagePreviews(imagePreviews.filter((_, i) => i !== index));
+    setImageFiles(imageFiles.filter((_, i) => i !== index));
   };
 
-  const handleSubmit = () => {
-    console.log({
-      title,
-      content,
-      category: selectedCategory,
-      tags,
-      images
-    });
-    // Handle submission
+  const token = useMemo(() => (typeof window !== 'undefined' ? localStorage.getItem('authToken') : null), []);
+  const currentUserId = useMemo(() => {
+    if (!token) return null;
+    const decoded = parseJwt(token);
+    return decoded?.id ?? null;
+  }, [token]);
+
+  const handleSubmit = async () => {
+    if (!title.trim() || !content.trim() || !selectedCategory) {
+      alert('Vui lòng nhập đầy đủ tiêu đề, nội dung và danh mục.');
+      return;
+    }
+
+    try {
+      setSubmitting(true);
+      const token = typeof window !== 'undefined' ? localStorage.getItem('authToken') : null;
+      if (token) communicationService.setToken(token);
+
+      // Categories act as tags: only send the selected category as the tag
+      const finalTags = [selectedCategory];
+
+      const post = await communicationService.createPost({
+        user_id: currentUserId || undefined,
+        title: title.trim(),
+        content: content.trim(),
+        tags: finalTags,
+        imageFiles,
+      });
+
+      alert('Đăng bài thành công');
+      router.push('/user/community/mainPage');
+    } catch (e: any) {
+      console.error('Create post error:', e);
+      alert(e?.message || 'Không thể tạo bài viết. Vui lòng thử lại.');
+    } finally {
+      setSubmitting(false);
+    }
   };
 
   return (
-    <div className="flex h-screen bg-gradient-to-b from-teal-50 to-white text-gray-900">
-      {/* Navbar */}
-      <UserNavbar showSearch={showSearch} setShowSearch={setShowSearch} />
-
-     {/* Main content: fix alignment by using flex-1 */}
-     <main className="flex-1 overflow-auto">
+    <>
        {/* Header */}
        <div className="bg-gradient-to-r from-teal-50 to-white border-b border-teal-200 shadow-sm">
          <div className="max-w-4xl mx-auto px-6 py-8">
@@ -144,55 +164,7 @@ const [showSearch, setShowSearch] = useState<boolean>(false);
              </div>
            </div>
 
-           {/* Tags */}
-           <div className="bg-white rounded-xl shadow-sm border border-teal-100 p-6">
-             <label className="block text-sm font-semibold text-gray-900 mb-3">
-               Thẻ tag
-             </label>
-             <div className="flex gap-2 mb-3">
-               <input
-                 type="text"
-                 value={tagInput}
-                 onChange={(e) => setTagInput(e.target.value)}
-                 onKeyPress={(e) => {
-                   if (e.key === 'Enter') {
-                     e.preventDefault();
-                     handleAddTag();
-                   }
-                 }}
-                 placeholder="Thêm thẻ tag..."
-                 className="flex-1 px-4 py-2 border border-gray-200 rounded-lg focus:outline-none focus:ring-2 focus:ring-teal-500 focus:border-transparent"
-               />
-               <button
-                 type="button"
-                 onClick={handleAddTag}
-                 className="px-4 py-2 bg-teal-600 text-white rounded-lg hover:bg-teal-700 transition-colors"
-               >
-                 Thêm
-               </button>
-             </div>
-             {tags.length > 0 && (
-               <div className="flex flex-wrap gap-2">
-                 {tags.map((tag, index) => (
-                   <span
-                     key={index}
-                     className="inline-flex items-center gap-2 px-3 py-1 bg-teal-100 text-teal-700 rounded-full text-sm"
-                   >
-                     {tag}
-                     <button
-                       type="button"
-                       onClick={() => handleRemoveTag(tag)}
-                       className="hover:text-teal-900"
-                     >
-                       <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                         <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M6 18L18 6M6 6l12 12" />
-                       </svg>
-                     </button>
-                   </span>
-                 ))}
-               </div>
-             )}
-           </div>
+          {/* Free tag input removed; category is the only tag sent */}
 
            {/* Image Upload */}
            <div className="bg-white rounded-xl shadow-sm border border-teal-100 p-6">
@@ -216,9 +188,9 @@ const [showSearch, setShowSearch] = useState<boolean>(false);
                  <p className="text-sm text-gray-500">PNG, JPG, GIF up to 10MB</p>
                </label>
              </div>
-             {images.length > 0 && (
+            {imagePreviews.length > 0 && (
                <div className="grid grid-cols-2 md:grid-cols-4 gap-4 mt-4">
-                 {images.map((img, index) => (
+                {imagePreviews.map((img, index) => (
                    <div key={index} className="relative group">
                      <img
                        src={img}
@@ -255,17 +227,17 @@ const [showSearch, setShowSearch] = useState<boolean>(false);
              >
                Lưu nháp
              </button>
-             <button
+            <button
                type="button"
-               onClick={handleSubmit}
-               className="px-6 py-3 bg-teal-600 text-white rounded-lg hover:bg-teal-700 transition-colors font-semibold shadow-md hover:shadow-lg"
+              onClick={handleSubmit}
+              disabled={submitting}
+              className={`px-6 py-3 bg-teal-600 text-white rounded-lg transition-colors font-semibold shadow-md hover:shadow-lg ${submitting ? 'opacity-60 cursor-not-allowed' : 'hover:bg-teal-700'}`}
              >
-               Đăng bài
+              {submitting ? 'Đang đăng...' : 'Đăng bài'}
              </button>
            </div>
          </div>
        </div>
-     </main>
-    </div>
+    </>
   );
 }

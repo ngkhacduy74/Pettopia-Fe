@@ -1,5 +1,5 @@
 import { useState, useEffect } from 'react';
-import { parseJwt, isTokenExpired } from '../utils/jwt'; 
+import { parseJwt, isTokenExpired } from '../utils/jwt';
 import Link from 'next/link';
 import { usePathname } from 'next/navigation';  // Thêm import này
 
@@ -53,7 +53,7 @@ export default function UserNavbar({ setShowSearch, showSearch }: UserNavbarProp
       try {
         setIsLoading(true);
         const token = localStorage.getItem("authToken");
-        
+
         if (!token) {
           console.error('No auth token found');
           setIsLoading(false);
@@ -68,7 +68,7 @@ export default function UserNavbar({ setShowSearch, showSearch }: UserNavbarProp
         }
 
         const decodedToken = parseJwt(token);
-        
+
         if (!decodedToken) {
           console.error('Failed to decode token');
           setIsLoading(false);
@@ -91,7 +91,7 @@ export default function UserNavbar({ setShowSearch, showSearch }: UserNavbarProp
 
         setUserData(user);
         setIsLoading(false);
-        
+
       } catch (error) {
         console.error('Error loading user data from token:', error);
         setIsLoading(false);
@@ -104,7 +104,7 @@ export default function UserNavbar({ setShowSearch, showSearch }: UserNavbarProp
   useEffect(() => {
     const fetchPets = async () => {
       if (!userData?.userId) return;
-      
+
       try {
         setLoadingPets(true);
         const apiUrl = `http://localhost:3000/api/v1/pet/owner/${userData.userId}`;
@@ -230,17 +230,17 @@ export default function UserNavbar({ setShowSearch, showSearch }: UserNavbarProp
 
         <div className="flex-1 overflow-y-auto p-2">
           <div className="space-y-1">
-            <button onClick={() => setShowSearch(!showSearch)} 
+            <button onClick={() => setShowSearch(!showSearch)}
               className="w-full flex items-center gap-3 px-3 py-2 rounded-lg hover:bg-teal-50 text-gray-700 text-sm transition-colors">
               <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 20 20" fill="currentColor" className="size-5">
                 <path fillRule="evenodd" d="M9 3.5a5.5 5.5 0 100 11 5.5 5.5 0 000-11zM2 9a7 7 0 1112.452 4.391l3.328 3.329a.75.75 0 11-1.06 1.06l-3.329-3.328A7 7 0 012 9z" clipRule="evenodd" />
               </svg>
               <span>Tìm kiếm</span>
             </button>
-            
+
             <Link href="/user/home">
-              <button className={`w-full flex items-center gap-3 px-3 py-2 rounded-lg text-sm transition-colors
-                ${pathname === '/user/home' 
+              <button className={`w-full flex items-center gap-3 px-3 py-2 rounded-lg text-sm transition-colors cursor-pointer
+                ${pathname === '/user/home'
                   ? 'bg-gradient-to-r from-teal-500 to-cyan-600 text-white shadow-sm'
                   : 'hover:bg-teal-50 text-gray-700'}`}>
                 <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 20 20" fill="currentColor" className="size-5">
@@ -251,7 +251,7 @@ export default function UserNavbar({ setShowSearch, showSearch }: UserNavbarProp
             </Link>
 
             <Link href="/user/pet-list">
-              <button className={`w-full flex items-center gap-3 px-3 py-2 rounded-lg text-sm transition-colors
+              <button className={`w-full flex items-center gap-3 px-3 py-2 rounded-lg text-sm transition-colors cursor-pointer
                 ${pathname === '/user/pet-list'
                   ? 'bg-gradient-to-r from-teal-500 to-cyan-600 text-white shadow-sm'
                   : 'hover:bg-teal-50 text-gray-700'}`}>
@@ -261,13 +261,20 @@ export default function UserNavbar({ setShowSearch, showSearch }: UserNavbarProp
                 <span>Danh sách thú cưng</span>
               </button>
             </Link>
-            
-            <button className="w-full flex items-center gap-3 px-3 py-2 rounded-lg hover:bg-teal-50 text-gray-700 text-sm transition-colors">
-              <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 20 20" fill="currentColor" className="size-5">
-                <path fillRule="evenodd" d="M10 18a8 8 0 100-16 8 8 0 000 16zm3.857-9.809a.75.75 0 00-1.214-.882l-3.483 4.79-1.88-1.88a.75.75 0 10-1.06 1.061l2.5 2.5a.75.75 0 001.137-.089l4-5.5z" clipRule="evenodd" />
-              </svg>
-              <span>Community</span>
-            </button>
+
+
+            <Link href="/user/community/mainPage">
+               <button className={`w-full flex items-center gap-3 px-3 py-2 rounded-lg text-sm transition-colors cursor-pointer
+                ${pathname === '/user/community/mainPage'
+                    ? 'bg-gradient-to-r from-teal-500 to-cyan-600 text-white shadow-sm'
+                  : 'hover:bg-teal-50 text-gray-700'}`}>
+                <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 20 20" fill="currentColor" className="size-5">
+                  <path fillRule="evenodd" d="M10 18a8 8 0 100-16 8 8 0 000 16zm3.857-9.809a.75.75 0 00-1.214-.882l-3.483 4.79-1.88-1.88a.75.75 0 10-1.06 1.061l2.5 2.5a.75.75 0 001.137-.089l4-5.5z" clipRule="evenodd" />
+                </svg>
+                <span>Community</span>
+              </button>
+            </Link>
+
           </div>
 
           <div className="mt-6">
@@ -362,107 +369,111 @@ export default function UserNavbar({ setShowSearch, showSearch }: UserNavbarProp
             <span>Nâng cấp Premium</span>
           </button>
         </div>
-      </div>
+      </div >
 
       {/* Click outside to close dropdown */}
-      {isDropdownOpen && (
-        <div
-          className="fixed inset-0 z-40"
-          onClick={() => setIsDropdownOpen(false)}
-        />
-      )}
+      {
+        isDropdownOpen && (
+          <div
+            className="fixed inset-0 z-40"
+            onClick={() => setIsDropdownOpen(false)}
+          />
+        )
+      }
 
       {/* Settings Modal */}
-      {isSettingsModalOpen && (
-        <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50 p-4">
-          <div className="bg-white rounded-xl shadow-2xl max-w-2xl w-full max-h-[90vh] overflow-y-auto">
-            {/* Modal Header */}
-            <div className="flex items-center justify-between p-6 border-b border-gray-200">
-              <h2 className="text-2xl font-bold text-gray-900">Settings</h2>
-              <button
-                onClick={() => setIsSettingsModalOpen(false)}
-                className="p-2 hover:bg-gray-100 rounded-lg transition-colors"
-              >
-                <svg className="w-6 h-6 text-gray-500" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                  <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M6 18L18 6M6 6l12 12" />
-                </svg>
-              </button>
-            </div>
+      {
+        isSettingsModalOpen && (
+          <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50 p-4">
+            <div className="bg-white rounded-xl shadow-2xl max-w-2xl w-full max-h-[90vh] overflow-y-auto">
+              {/* Modal Header */}
+              <div className="flex items-center justify-between p-6 border-b border-gray-200">
+                <h2 className="text-2xl font-bold text-gray-900">Settings</h2>
+                <button
+                  onClick={() => setIsSettingsModalOpen(false)}
+                  className="p-2 hover:bg-gray-100 rounded-lg transition-colors"
+                >
+                  <svg className="w-6 h-6 text-gray-500" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                    <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M6 18L18 6M6 6l12 12" />
+                  </svg>
+                </button>
+              </div>
 
-            {/* Modal Content */}
-            <div className="p-6 space-y-6">
-              {/* Account Settings */}
-              <div>
-                <h3 className="text-lg font-semibold text-gray-900 mb-4">Account Settings</h3>
-                <div className="space-y-3">
-                  <div className="flex items-center justify-between p-4 bg-gray-50 rounded-lg">
-                    <div>
-                      <p className="font-medium text-gray-900">Email Notifications</p>
-                      <p className="text-sm text-gray-500">Receive updates about your pets</p>
+              {/* Modal Content */}
+              <div className="p-6 space-y-6">
+                {/* Account Settings */}
+                <div>
+                  <h3 className="text-lg font-semibold text-gray-900 mb-4">Account Settings</h3>
+                  <div className="space-y-3">
+                    <div className="flex items-center justify-between p-4 bg-gray-50 rounded-lg">
+                      <div>
+                        <p className="font-medium text-gray-900">Email Notifications</p>
+                        <p className="text-sm text-gray-500">Receive updates about your pets</p>
+                      </div>
+                      <input type="checkbox" defaultChecked className="w-5 h-5 text-teal-600" />
                     </div>
-                    <input type="checkbox" defaultChecked className="w-5 h-5 text-teal-600" />
+
+                    <div className="flex items-center justify-between p-4 bg-gray-50 rounded-lg">
+                      <div>
+                        <p className="font-medium text-gray-900">Push Notifications</p>
+                        <p className="text-sm text-gray-500">Get alerts on your device</p>
+                      </div>
+                      <input type="checkbox" className="w-5 h-5 text-teal-600" />
+                    </div>
                   </div>
+                </div>
 
-                  <div className="flex items-center justify-between p-4 bg-gray-50 rounded-lg">
-                    <div>
-                      <p className="font-medium text-gray-900">Push Notifications</p>
-                      <p className="text-sm text-gray-500">Get alerts on your device</p>
+                {/* Appearance */}
+                <div>
+                  <h3 className="text-lg font-semibold text-gray-900 mb-4">Appearance</h3>
+                  <div className="space-y-3">
+                    <div className="flex items-center justify-between p-4 bg-gray-50 rounded-lg">
+                      <div>
+                        <p className="font-medium text-gray-900">Dark Mode</p>
+                        <p className="text-sm text-gray-500">Switch to dark theme</p>
+                      </div>
+                      <input type="checkbox" className="w-5 h-5 text-teal-600" />
                     </div>
-                    <input type="checkbox" className="w-5 h-5 text-teal-600" />
+                  </div>
+                </div>
+
+                {/* Privacy */}
+                <div>
+                  <h3 className="text-lg font-semibold text-gray-900 mb-4">Privacy</h3>
+                  <div className="space-y-3">
+                    <div className="flex items-center justify-between p-4 bg-gray-50 rounded-lg">
+                      <div>
+                        <p className="font-medium text-gray-900">Profile Visibility</p>
+                        <p className="text-sm text-gray-500">Make profile public</p>
+                      </div>
+                      <input type="checkbox" defaultChecked className="w-5 h-5 text-teal-600" />
+                    </div>
                   </div>
                 </div>
               </div>
 
-              {/* Appearance */}
-              <div>
-                <h3 className="text-lg font-semibold text-gray-900 mb-4">Appearance</h3>
-                <div className="space-y-3">
-                  <div className="flex items-center justify-between p-4 bg-gray-50 rounded-lg">
-                    <div>
-                      <p className="font-medium text-gray-900">Dark Mode</p>
-                      <p className="text-sm text-gray-500">Switch to dark theme</p>
-                    </div>
-                    <input type="checkbox" className="w-5 h-5 text-teal-600" />
-                  </div>
-                </div>
+              {/* Modal Footer */}
+              <div className="flex items-center justify-end gap-3 p-6 border-t border-gray-200">
+                <button
+                  onClick={() => setIsSettingsModalOpen(false)}
+                  className="px-6 py-2 text-gray-700 hover:bg-gray-100 rounded-lg transition-colors"
+                >
+                  Cancel
+                </button>
+                <button
+                  onClick={() => {
+                    alert('Settings saved!');
+                    setIsSettingsModalOpen(false);
+                  }}
+                  className="px-6 py-2 bg-teal-600 text-white rounded-lg hover:bg-teal-700 transition-colors"
+                >
+                  Save Changes
+                </button>
               </div>
-
-              {/* Privacy */}
-              <div>
-                <h3 className="text-lg font-semibold text-gray-900 mb-4">Privacy</h3>
-                <div className="space-y-3">
-                  <div className="flex items-center justify-between p-4 bg-gray-50 rounded-lg">
-                    <div>
-                      <p className="font-medium text-gray-900">Profile Visibility</p>
-                      <p className="text-sm text-gray-500">Make profile public</p>
-                    </div>
-                    <input type="checkbox" defaultChecked className="w-5 h-5 text-teal-600" />
-                  </div>
-                </div>
-              </div>
-            </div>
-
-            {/* Modal Footer */}
-            <div className="flex items-center justify-end gap-3 p-6 border-t border-gray-200">
-              <button
-                onClick={() => setIsSettingsModalOpen(false)}
-                className="px-6 py-2 text-gray-700 hover:bg-gray-100 rounded-lg transition-colors"
-              >
-                Cancel
-              </button>
-              <button
-                onClick={() => {
-                  alert('Settings saved!');
-                  setIsSettingsModalOpen(false);
-                }}
-                className="px-6 py-2 bg-teal-600 text-white rounded-lg hover:bg-teal-700 transition-colors"
-              >
-                Save Changes
-              </button>
             </div>
           </div>
-        </div>
-      )}
+        )
+      }
     </>
   );
 }

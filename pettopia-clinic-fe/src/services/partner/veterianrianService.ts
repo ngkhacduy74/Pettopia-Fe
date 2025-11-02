@@ -67,7 +67,7 @@ export async function submitVeterinarianData(data: {
   }
 }
 
-// Hàm mới: Lấy danh sách hồ sơ bác sĩ thú y (phân trang)
+// Hàm mới: Lấy danh sách hồ sơ bác sĩ thú y
 export async function getVeterinarianForms(page: number = 1, limit: number = 10): Promise<VeterinarianFormResponse> {
   const token = localStorage.getItem('authToken');
   if (!token) {
