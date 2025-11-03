@@ -20,6 +20,7 @@ interface Post {
   images: string[];
   isHidden: boolean;
   likeCount: number;
+  commentCount: number;
   viewCount: number;
   reportCount: number;
   createdAt: string;
@@ -79,22 +80,6 @@ class CommunicationService {
     return this.handleResponse<Post[]>(response);
   }
 
-  async searchPosts(keyword: string): Promise<Post[]> {
-    const response = await fetch(`${this.baseUrl}/search?q=${encodeURIComponent(keyword)}`, {
-      method: 'GET',
-      headers: this.getHeaders(),
-    });
-    return this.handleResponse<Post[]>(response);
-  }
-
-  async getPostsByTag(tag: string): Promise<Post[]> {
-    const response = await fetch(`${this.baseUrl}/tag/${encodeURIComponent(tag)}`, {
-      method: 'GET',
-      headers: this.getHeaders(),
-    });
-    return this.handleResponse<Post[]>(response);
-  }
-
   formatTimeAgo(dateString: string): string {
     const date = new Date(dateString);
     const now = new Date();
@@ -138,6 +123,7 @@ export default function CommunityPage() {
   const [activeTab, setActiveTab] = useState<string>('all');
   const [searchQuery, setSearchQuery] = useState<string>('');
   const [posts, setPosts] = useState<Post[]>([]);
+  const [allPosts, setAllPosts] = useState<Post[]>([]); // Store all posts for local search
   const [trendingPosts, setTrendingPosts] = useState<Post[]>([]);
   const [loading, setLoading] = useState<boolean>(true);
   const [error, setError] = useState<string>('');
@@ -161,6 +147,9 @@ export default function CommunityPage() {
 
   // Load posts khi activeTab thay đổi
   useEffect(() => {
+    // Skip if allPosts is not loaded yet
+    if (allPosts.length === 0) return;
+    
     // Reset search query khi đổi tab
     setSearchQuery('');
     setCurrentPage(1);
@@ -168,25 +157,22 @@ export default function CommunityPage() {
     if (activeTab !== 'all') {
       loadPostsByTag(activeTab);
     } else {
-      loadPosts();
+      setPosts(allPosts);
     }
-  }, [activeTab]);
+  }, [activeTab, allPosts]);
 
   // Search debounce
   useEffect(() => {
+    // Skip if allPosts is not loaded yet
+    if (allPosts.length === 0 && !searchQuery) return;
+    
     const timer = setTimeout(() => {
-      if (searchQuery.trim()) {
-        handleSearch();
-      } else if (activeTab === 'all') {
-        loadPosts();
-      } else {
-        loadPostsByTag(activeTab);
-      }
+      handleSearch();
       setCurrentPage(1);
     }, 500);
 
     return () => clearTimeout(timer);
-  }, [searchQuery]);
+  }, [searchQuery, allPosts]);
 
   const loadPosts = async () => {
     try {
@@ -196,10 +182,12 @@ export default function CommunityPage() {
       const normalized = (data || [])
         .filter(p => !p.isHidden)
         .map(p => ({ ...p, tags: communicationService.parseTags(p.tags) }));
+      setAllPosts(normalized); // Store all posts
       setPosts(normalized);
     } catch (err) {
       setError('Không thể tải bài viết. Vui lòng thử lại sau.');
       console.error('Error loading posts:', err);
+      setAllPosts([]);
       setPosts([]);
     } finally {
       setLoading(false);
@@ -229,43 +217,57 @@ export default function CommunityPage() {
     }
   };
 
-  const loadPostsByTag = async (tag: string) => {
-    try {
-      setLoading(true);
-      setError('');
-      // Fetch all then filter client-side to be resilient to API tag format
-      const data = await communicationService.getAllPosts();
-      const normalized = (data || [])
-        .filter(p => !p.isHidden)
-        .map(p => ({ ...p, tags: communicationService.parseTags(p.tags) }));
-      const filtered = normalized.filter(p => (p.tags || []).map(t => String(t).toLowerCase()).includes(tag.toLowerCase()));
-      setPosts(filtered);
-    } catch (err) {
-      setError('Không thể tải bài viết theo danh mục.');
-      console.error('Error loading posts by tag:', err);
-      setPosts([]);
-    } finally {
-      setLoading(false);
-    }
+  const loadPostsByTag = (tag: string) => {
+    // Don't show loading spinner for client-side filtering
+    const filtered = allPosts.filter(p => 
+      (p.tags || []).map(t => String(t).toLowerCase()).includes(tag.toLowerCase())
+    );
+    setPosts(filtered);
   };
 
-  const handleSearch = async () => {
-    if (!searchQuery.trim()) return;
+  const handleSearch = () => {
+    // Wait for allPosts to be loaded
+    if (allPosts.length === 0 && !searchQuery.trim()) {
+      return;
+    }
+    
+    if (!searchQuery.trim()) {
+      // If search is empty, show all posts or filtered by tag
+      if (activeTab === 'all') {
+        setPosts(allPosts);
+      } else {
+        const filtered = allPosts.filter(p => 
+          (p.tags || []).map(t => String(t).toLowerCase()).includes(activeTab.toLowerCase())
+        );
+        setPosts(filtered);
+      }
+      return;
+    }
     
     try {
-      setLoading(true);
-      setError('');
-      const data = await communicationService.searchPosts(searchQuery);
-      const normalized = (data || [])
-        .filter(p => !p.isHidden)
-        .map(p => ({ ...p, tags: communicationService.parseTags(p.tags) }));
-      setPosts(normalized);
+      // Don't show loading spinner for search (instant)
+      
+      // Search locally from allPosts
+      const query = searchQuery.toLowerCase().trim();
+      let filtered = allPosts.filter(p => {
+        const titleMatch = p.title.toLowerCase().includes(query);
+        const contentMatch = p.content.toLowerCase().includes(query);
+        const authorMatch = p.author.fullname.toLowerCase().includes(query);
+        return titleMatch || contentMatch || authorMatch;
+      });
+      
+      // Apply tag filter if not on 'all' tab
+      if (activeTab !== 'all') {
+        filtered = filtered.filter(p => 
+          (p.tags || []).map(t => String(t).toLowerCase()).includes(activeTab.toLowerCase())
+        );
+      }
+      
+      setPosts(filtered);
     } catch (err) {
       setError('Không thể tìm kiếm bài viết.');
       console.error('Error searching posts:', err);
       setPosts([]);
-    } finally {
-      setLoading(false);
     }
   };
 
@@ -431,7 +433,7 @@ export default function CommunityPage() {
                             </span>
                           )}
                           <h3 className="text-base font-semibold text-orange-600 hover:text-orange-700 break-words flex-1">
-                            {post.title}
+                            {post.title.length > 30 ? post.title.substring(0, 30) + '...' : post.title}
                           </h3>
                         </div>
 
@@ -551,7 +553,7 @@ export default function CommunityPage() {
                         <span className="text-teal-600 font-bold text-lg flex-shrink-0">#{index + 1}</span>
                         <div className="flex-1 min-w-0">
                           <h4 className="text-sm font-semibold text-gray-900 hover:text-teal-600 line-clamp-2 break-words">
-                            {post.title}
+                            {post.title.length > 30 ? post.title.substring(0, 30) + '...' : post.title}
                           </h4>
                           <div className="flex items-center gap-3 text-xs text-gray-500 mt-1">
                             <span className="flex items-center gap-1">

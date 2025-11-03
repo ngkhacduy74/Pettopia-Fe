@@ -16,6 +16,7 @@ export default function RegisterPetPage() {
     const [avatarUploadMethod, setAvatarUploadMethod] = useState<'file' | 'url'>('file');
     const [avatarFile, setAvatarFile] = useState<File | null>(null);
     const [avatarPreview, setAvatarPreview] = useState<string>('');
+    const [errors, setErrors] = useState<Record<string, string>>({});
     const [petForm, setPetForm] = useState({
         name: '',
         species: '',
@@ -29,6 +30,18 @@ export default function RegisterPetPage() {
         district: '',
         ward: ''
     });
+
+    // Common pet colors
+    const commonColors = [
+        { name: 'Trắng', value: 'Trắng', hex: '#FFFFFF' },
+        { name: 'Đen', value: 'Đen', hex: '#000000' },
+        { name: 'Nâu', value: 'Nâu', hex: '#8B4513' },
+        { name: 'Vàng', value: 'Vàng', hex: '#FFD700' },
+        { name: 'Xám', value: 'Xám', hex: '#808080' },
+        { name: 'Cam', value: 'Cam', hex: '#FFA500' },
+        { name: 'Kem', value: 'Kem', hex: '#FFFDD0' },
+        { name: 'Vện', value: 'Vện', hex: 'linear-gradient(90deg, #000 50%, #FFF 50%)' }
+    ];
 
     // Add useState for user data
     const [userData, setUserData] = useState({
@@ -45,6 +58,14 @@ export default function RegisterPetPage() {
 
     const handleInputChange = (field: string, value: string) => {
         setPetForm(prev => ({ ...prev, [field]: value }));
+        // Clear error for this field when user starts typing
+        if (errors[field]) {
+            setErrors(prev => {
+                const newErrors = { ...prev };
+                delete newErrors[field];
+                return newErrors;
+            });
+        }
     };
 
     // Handle file upload
@@ -107,9 +128,75 @@ export default function RegisterPetPage() {
     const handleSubmitPet = async (e: React.FormEvent) => {
         e.preventDefault();
         setServerError('');
+        setErrors({});
 
-        if (!petForm.name || !petForm.species) {
-            setServerError('Vui lòng nhập tên và loại thú cưng');
+        // Validate form
+        const newErrors: Record<string, string> = {};
+
+        // Required fields
+        if (!petForm.name.trim()) {
+            newErrors.name = 'Vui lòng nhập tên thú cưng';
+        } else if (petForm.name.trim().length < 2) {
+            newErrors.name = 'Tên thú cưng phải có ít nhất 2 ký tự';
+        } else if (petForm.name.trim().length > 50) {
+            newErrors.name = 'Tên thú cưng không được quá 50 ký tự';
+        }
+
+        if (!petForm.species) {
+            newErrors.species = 'Vui lòng chọn loại thú cưng';
+        }
+
+        // Optional field validations
+        if (petForm.weight) {
+            const weightNum = Number(petForm.weight);
+            if (isNaN(weightNum) || weightNum <= 0) {
+                newErrors.weight = 'Cân nặng phải là số dương';
+            } else if (weightNum > 200) {
+                newErrors.weight = 'Cân nặng không hợp lệ (tối đa 200kg)';
+            }
+        }
+
+        if (petForm.dateOfBirth) {
+            const birthDate = new Date(petForm.dateOfBirth);
+            const today = new Date();
+            if (birthDate > today) {
+                newErrors.dateOfBirth = 'Ngày sinh không được trong tương lai';
+            }
+            const maxAge = new Date();
+            maxAge.setFullYear(maxAge.getFullYear() - 50);
+            if (birthDate < maxAge) {
+                newErrors.dateOfBirth = 'Ngày sinh không hợp lệ';
+            }
+        }
+
+        if (petForm.breed && petForm.breed.length > 50) {
+            newErrors.breed = 'Tên giống không được quá 50 ký tự';
+        }
+
+        if (petForm.color && petForm.color.length > 50) {
+            newErrors.color = 'Màu sắc không được quá 50 ký tự';
+        }
+
+        // Avatar validation
+        if (avatarUploadMethod === 'url' && petForm.avatar_url) {
+            try {
+                new URL(petForm.avatar_url);
+            } catch {
+                newErrors.avatar_url = 'URL ảnh không hợp lệ';
+            }
+        }
+
+        // If there are validation errors, show them and stop
+        if (Object.keys(newErrors).length > 0) {
+            setErrors(newErrors);
+            setServerError('Vui lòng kiểm tra lại thông tin đã nhập');
+            // Scroll to first error
+            const firstErrorField = Object.keys(newErrors)[0];
+            const element = document.getElementById(`pet-${firstErrorField}`);
+            if (element) {
+                element.scrollIntoView({ behavior: 'smooth', block: 'center' });
+                element.focus();
+            }
             return;
         }
 
@@ -125,34 +212,88 @@ export default function RegisterPetPage() {
             // Handle avatar - if file upload, convert to base64
             let avatarUrl = undefined;
             if (avatarUploadMethod === 'file' && avatarFile) {
-                // Convert file to base64 synchronously using the existing preview
                 avatarUrl = avatarPreview;
             } else if (avatarUploadMethod === 'url' && petForm.avatar_url) {
                 avatarUrl = petForm.avatar_url;
             }
 
             const payload = {
-                name: petForm.name,
+                name: petForm.name.trim(),
                 species: normalizedSpecies,
-                breed: petForm.breed || undefined,
+                breed: petForm.breed.trim() || undefined,
                 gender: petForm.gender ? (petForm.gender === 'male' ? 'Male' : 'Female') : undefined,
-                color: petForm.color || undefined,
+                color: petForm.color.trim() || undefined,
                 weight: petForm.weight ? Number(petForm.weight) : undefined,
                 dateOfBirth: petForm.dateOfBirth ? new Date(petForm.dateOfBirth).toISOString() : undefined,
                 avatar_url: avatarUrl || undefined,
-                // Many backends expect user_id at top-level instead of an owner object
                 user_id: userData.user_id
             };
 
             const res = await createPet(payload);
 
-            alert(res?.message || 'Tạo thú cưng thành công');
-            router.push('/user/home');
-        } catch (err: any) {
-            if (typeof window !== 'undefined') {
-                console.error('Create pet error:', err?.response || err);
+            // ✅ CHỈ THÀNH CÔNG MỚI ALERT + REDIRECT
+            if (res?.message) {  // res?.message để tránh crash nếu res null
+                alert(res.message);  // hoặc dùng toast đẹp hơn
+                router.push('/user/home');  // thành công → về home
+                return;  // quan trọng: thoát hàm, không chạy xuống catch
+            } else {
+                // Server trả 200 nhưng không có message → coi như lỗi
+                throw new Error('Tạo pet thành công nhưng không có thông báo');
             }
-            setServerError(err?.response?.data?.message || 'Có lỗi xảy ra khi tạo thú cưng');
+        } catch (err: any) {
+            // ✅ THẤT BẠI: KHÔNG REDIRECT, CHỈ HIỆN LỖI
+            console.error('Create pet error:', err?.response || err);
+
+            let errorMessage = 'Có lỗi xảy ra khi tạo thú cưng. Vui lòng thử lại.';
+            let errorDetails: string[] = [];
+
+            if (err?.response?.data) {
+                const errorData = err.response.data;
+                
+                // Check for message field
+                if (errorData.message) {
+                    errorMessage = errorData.message;
+                }
+                
+                // Check for errors array or object with details
+                if (errorData.errors) {
+                    if (Array.isArray(errorData.errors)) {
+                        errorDetails = errorData.errors.map((e: any) => 
+                            typeof e === 'string' ? e : e.message || JSON.stringify(e)
+                        );
+                    } else if (typeof errorData.errors === 'object') {
+                        errorDetails = Object.entries(errorData.errors).map(
+                            ([field, msg]) => `${field}: ${msg}`
+                        );
+                    }
+                }
+                
+                // Check for error field
+                if (errorData.error && typeof errorData.error === 'string') {
+                    errorMessage = errorData.error;
+                }
+            } else if (err?.message) {
+                errorMessage = err.message;
+            }
+
+            setServerError(errorMessage);
+            
+            // Set field-specific errors if available
+            if (errorDetails.length > 0) {
+                const fieldErrors: Record<string, string> = {};
+                errorDetails.forEach(detail => {
+                    const match = detail.match(/^(\w+):\s*(.+)$/);
+                    if (match) {
+                        fieldErrors[match[1]] = match[2];
+                    }
+                });
+                if (Object.keys(fieldErrors).length > 0) {
+                    setErrors(fieldErrors);
+                }
+            }
+            
+            // Scroll to error message
+            window.scrollTo({ top: 0, behavior: 'smooth' });
         } finally {
             setIsSubmitting(false);
         }
@@ -267,11 +408,16 @@ export default function RegisterPetPage() {
                                             id="pet-name"
                                             type="text"
                                             placeholder="VD: Milu, Cún..."
-                                            className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-teal-500 focus:border-transparent outline-none"
+                                            className={`w-full px-3 py-2 border rounded-lg focus:ring-2 focus:ring-teal-500 focus:border-transparent outline-none ${
+                                                errors.name ? 'border-red-500' : 'border-gray-300'
+                                            }`}
                                             value={petForm.name}
                                             onChange={(e) => handleInputChange('name', e.target.value)}
                                             required
                                         />
+                                        {errors.name && (
+                                            <p className="mt-1 text-sm text-red-600">{errors.name}</p>
+                                        )}
                                     </div>
 
                                     <div>
@@ -279,8 +425,10 @@ export default function RegisterPetPage() {
                                             Loại thú cưng <span className="text-red-500">*</span>
                                         </label>
                                         <select
-                                            id="pet-type"
-                                            className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-teal-500 focus:border-transparent outline-none"
+                                            id="pet-species"
+                                            className={`w-full px-3 py-2 border rounded-lg focus:ring-2 focus:ring-teal-500 focus:border-transparent outline-none ${
+                                                errors.species ? 'border-red-500' : 'border-gray-300'
+                                            }`}
                                             value={petForm.species}
                                             onChange={(e) => handleInputChange('species', e.target.value)}
                                             required
@@ -292,6 +440,9 @@ export default function RegisterPetPage() {
                                             <option value="Bird">Chim</option>
                                             <option value="Other">Khác</option>
                                         </select>
+                                        {errors.species && (
+                                            <p className="mt-1 text-sm text-red-600">{errors.species}</p>
+                                        )}
                                     </div>
 
                                     <div>
@@ -302,24 +453,61 @@ export default function RegisterPetPage() {
                                             id="pet-breed"
                                             type="text"
                                             placeholder="VD: Golden Retriever..."
-                                            className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-teal-500 focus:border-transparent outline-none"
+                                            className={`w-full px-3 py-2 border rounded-lg focus:ring-2 focus:ring-teal-500 focus:border-transparent outline-none ${
+                                                errors.breed ? 'border-red-500' : 'border-gray-300'
+                                            }`}
                                             value={petForm.breed}
                                             onChange={(e) => handleInputChange('breed', e.target.value)}
                                         />
+                                        {errors.breed && (
+                                            <p className="mt-1 text-sm text-red-600">{errors.breed}</p>
+                                        )}
                                     </div>
 
                                     <div>
                                         <label htmlFor="pet-color" className="block text-sm font-medium text-gray-700 mb-1">
                                             Màu sắc
                                         </label>
+                                        
+                                        {/* Color selection buttons */}
+                                        <div className="grid grid-cols-4 gap-2 mb-2">
+                                            {commonColors.map((color) => (
+                                                <button
+                                                    key={color.value}
+                                                    type="button"
+                                                    onClick={() => handleInputChange('color', color.value)}
+                                                    className={`flex items-center gap-2 px-3 py-2 rounded-lg border-2 transition-all ${
+                                                        petForm.color === color.value
+                                                            ? 'border-teal-600 bg-teal-50'
+                                                            : 'border-gray-200 hover:border-teal-300'
+                                                    }`}
+                                                >
+                                                    <div
+                                                        className="w-5 h-5 rounded-full border border-gray-300"
+                                                        style={{
+                                                            background: color.hex.includes('gradient') ? color.hex : color.hex,
+                                                            boxShadow: 'inset 0 1px 2px rgba(0,0,0,0.1)'
+                                                        }}
+                                                    />
+                                                    <span className="text-xs font-medium">{color.name}</span>
+                                                </button>
+                                            ))}
+                                        </div>
+
+                                        {/* Custom color input */}
                                         <input
                                             id="pet-color"
                                             type="text"
-                                            placeholder="VD: Vàng nâu..."
-                                            className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-teal-500 focus:border-transparent outline-none"
+                                            placeholder="Hoặc nhập màu khác..."
+                                            className={`w-full px-3 py-2 border rounded-lg focus:ring-2 focus:ring-teal-500 focus:border-transparent outline-none ${
+                                                errors.color ? 'border-red-500' : 'border-gray-300'
+                                            }`}
                                             value={petForm.color}
                                             onChange={(e) => handleInputChange('color', e.target.value)}
                                         />
+                                        {errors.color && (
+                                            <p className="mt-1 text-sm text-red-600">{errors.color}</p>
+                                        )}
                                     </div>
                                 </div>
 
@@ -333,11 +521,18 @@ export default function RegisterPetPage() {
                                             id="pet-weight"
                                             type="number"
                                             step="0.1"
+                                            min="0"
+                                            max="200"
                                             placeholder="VD: 12.5"
-                                            className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-teal-500 focus:border-transparent outline-none"
+                                            className={`w-full px-3 py-2 border rounded-lg focus:ring-2 focus:ring-teal-500 focus:border-transparent outline-none ${
+                                                errors.weight ? 'border-red-500' : 'border-gray-300'
+                                            }`}
                                             value={petForm.weight}
                                             onChange={(e) => handleInputChange('weight', e.target.value)}
                                         />
+                                        {errors.weight && (
+                                            <p className="mt-1 text-sm text-red-600">{errors.weight}</p>
+                                        )}
                                     </div>
 
                                     <div>
@@ -361,12 +556,18 @@ export default function RegisterPetPage() {
                                             Ngày sinh
                                         </label>
                                         <input
-                                            id="pet-dob"
+                                            id="pet-dateOfBirth"
                                             type="date"
-                                            className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-teal-500 focus:border-transparent outline-none"
+                                            max={new Date().toISOString().split('T')[0]}
+                                            className={`w-full px-3 py-2 border rounded-lg focus:ring-2 focus:ring-teal-500 focus:border-transparent outline-none ${
+                                                errors.dateOfBirth ? 'border-red-500' : 'border-gray-300'
+                                            }`}
                                             value={petForm.dateOfBirth}
                                             onChange={(e) => handleInputChange('dateOfBirth', e.target.value)}
                                         />
+                                        {errors.dateOfBirth && (
+                                            <p className="mt-1 text-sm text-red-600">{errors.dateOfBirth}</p>
+                                        )}
                                     </div>
 
                                     <div>
@@ -426,13 +627,19 @@ export default function RegisterPetPage() {
                                         {avatarUploadMethod === 'url' && (
                                             <div className="space-y-3">
                                                 <input
+                                                    id="pet-avatar_url"
                                                     type="url"
                                                     placeholder="https://example.com/image.jpg"
-                                                    className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-teal-500 focus:border-transparent outline-none"
+                                                    className={`w-full px-3 py-2 border rounded-lg focus:ring-2 focus:ring-teal-500 focus:border-transparent outline-none ${
+                                                        errors.avatar_url ? 'border-red-500' : 'border-gray-300'
+                                                    }`}
                                                     value={petForm.avatar_url}
                                                     onChange={(e) => handleUrlChange(e.target.value)}
                                                 />
-                                                {petForm.avatar_url && (
+                                                {errors.avatar_url && (
+                                                    <p className="mt-1 text-sm text-red-600">{errors.avatar_url}</p>
+                                                )}
+                                                {petForm.avatar_url && !errors.avatar_url && (
                                                     <div className="mt-2">
                                                         <p className="text-xs text-gray-600 mb-1">Preview:</p>
                                                         <img
@@ -596,7 +803,6 @@ export default function RegisterPetPage() {
                                                                             {petForm.gender === 'male' ? 'Đực' : petForm.gender === 'female' ? 'Cái' : '---'}
                                                                         </p>
                                                                     </div>
-                                                                 
                                                                 </div>
                                                             </div>
                                                         </div>
@@ -676,8 +882,37 @@ export default function RegisterPetPage() {
 
                             {/* Error Message */}
                             {serverError && (
-                                <div className="mt-6 bg-red-50 border border-red-200 rounded-lg p-3 text-red-800 text-sm">
-                                    {serverError}
+                                <div className="mt-6 bg-red-50 border-l-4 border-red-500 rounded-lg p-4 shadow-md">
+                                    <div className="flex items-start">
+                                        <svg className="w-6 h-6 text-red-500 mt-0.5 mr-3 flex-shrink-0" fill="currentColor" viewBox="0 0 20 20">
+                                            <path fillRule="evenodd" d="M10 18a8 8 0 100-16 8 8 0 000 16zM8.707 7.293a1 1 0 00-1.414 1.414L8.586 10l-1.293 1.293a1 1 0 101.414 1.414L10 11.414l1.293 1.293a1 1 0 001.414-1.414L11.414 10l1.293-1.293a1 1 0 00-1.414-1.414L10 8.586 8.707 7.293z" clipRule="evenodd"/>
+                                        </svg>
+                                        <div className="flex-1">
+                                            <h3 className="text-base font-semibold text-red-800 mb-1">❌ Không thể tạo thú cưng</h3>
+                                            <p className="text-sm text-red-700 mb-2">{serverError}</p>
+                                            {Object.keys(errors).length > 0 && (
+                                                <div className="mt-3 bg-red-100 rounded-md p-3">
+                                                    <p className="text-xs font-semibold text-red-800 mb-2">Chi tiết lỗi:</p>
+                                                    <ul className="space-y-1">
+                                                        {Object.entries(errors).map(([field, error], idx) => (
+                                                            <li key={idx} className="text-sm text-red-700 flex items-start">
+                                                                <span className="mr-2">•</span>
+                                                                <span>
+                                                                    <strong className="font-medium">{field}:</strong> {error}
+                                                                </span>
+                                                            </li>
+                                                        ))}
+                                                    </ul>
+                                                </div>
+                                            )}
+                                            <div className="mt-3 flex items-center gap-2 text-xs text-red-600">
+                                                <svg className="w-4 h-4" fill="currentColor" viewBox="0 0 20 20">
+                                                    <path fillRule="evenodd" d="M18 10a8 8 0 11-16 0 8 8 0 0116 0zm-7-4a1 1 0 11-2 0 1 1 0 012 0zM9 9a1 1 0 000 2v3a1 1 0 001 1h1a1 1 0 100-2v-3a1 1 0 00-1-1H9z" clipRule="evenodd"/>
+                                                </svg>
+                                                <span>Vui lòng kiểm tra và sửa các lỗi trên, sau đó thử lại.</span>
+                                            </div>
+                                        </div>
+                                    </div>
                                 </div>
                             )}
 
