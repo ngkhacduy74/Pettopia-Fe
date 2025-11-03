@@ -3,7 +3,7 @@
 import { useState, useEffect } from "react";
 import { useForm } from "react-hook-form";
 import { useRouter } from "next/navigation";
-import { createUser } from "@/services/userService";
+import { createUser } from "@/services/auth/authService";
 import Image from "next/image";
 import axios from "axios";
 
