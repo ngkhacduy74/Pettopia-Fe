@@ -1,6 +1,6 @@
 'use client'
 import React, { useState } from 'react';
-import UserNavbar from '@/components/Navbar/UserNavbar';
+import UserNavbar from '@/components/Sidebar';
 export default function VetPage() {
     const [showSearch, setShowSearch] = useState(false);
     const [hoveredCard, setHoveredCard] = useState<number | null>(null);
