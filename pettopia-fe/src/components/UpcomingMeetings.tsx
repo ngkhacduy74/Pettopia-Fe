@@ -132,9 +132,12 @@ const UpcomingMeetings = () => {
             </div>
 
             {/* Add Event Button */}
-            <button className="w-full mt-4 bg-teal-600 hover:bg-teal-700 text-white font-semibold py-2.5 rounded-lg transition-colors shadow-sm text-sm">
+            <a
+              href="/user/user-booking"
+              className="w-full mt-4 bg-teal-600 hover:bg-teal-700 text-white font-semibold py-2.5 rounded-lg transition-colors shadow-sm text-sm inline-block text-center"
+            >
               Đặt lịch hẹn mới
-            </button>
+            </a>
           </div>
 
           {/* Upcoming Appointments */}
