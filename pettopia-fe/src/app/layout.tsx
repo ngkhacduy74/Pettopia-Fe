@@ -5,7 +5,7 @@ import './globals.css';
 const inter = Inter({ subsets: ["latin"] });
 
 export const metadata: Metadata = {
-  title: 'PawsHealth - Pet Hospital',
+  title: 'Pettopia',
   description: 'Exceptional care for your furry family members',
 };
 
