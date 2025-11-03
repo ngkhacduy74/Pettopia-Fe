@@ -1,4 +1,3 @@
-
 'use client';
 
 import { useState } from 'react';
@@ -16,12 +15,21 @@ type FormData = {
 export default function LoginForm() {
   const { register, handleSubmit, formState: { errors } } = useForm<FormData>();
   const [serverError, setServerError] = useState('');
+  const [isSuccess, setIsSuccess] = useState(false);
   const router = useRouter();
 
   const onSubmit = async (data: FormData) => {
+    setServerError('');
     try {
       const response = await loginUser(data);
-      if (response.status && response.token) {
+
+      // ✅ Bắt lỗi dựa trên response.message
+      if (!response || !response.status) {
+        setServerError(response?.message || 'Đăng nhập thất bại');
+        return;
+      }
+
+      if (response.token) {
         // Lưu token vào localStorage và cookie
         localStorage.setItem('authToken', response.token);
         document.cookie = `authToken=${response.token}; path=/; max-age=3600; Secure`;
@@ -30,17 +38,11 @@ export default function LoginForm() {
         const decoded = parseJwt(response.token);
         let userRole: string[] = [];
 
-        // Xử lý vai trò từ token
         if (decoded && decoded.role) {
           if (Array.isArray(decoded.role)) {
-            // Nếu role là mảng
             userRole = decoded.role.filter((role) => typeof role === 'string' && role);
           } else if (typeof decoded.role === 'string') {
-            // Nếu role là chuỗi, tách bằng dấu phẩy
             userRole = decoded.role.split(',').map((role) => role.trim()).filter((role) => role);
-          } else {
-            setServerError('Định dạng vai trò không hợp lệ');
-            return;
           }
 
           if (!userRole.length) {
@@ -48,37 +50,53 @@ export default function LoginForm() {
             return;
           }
 
-          // Lưu roles vào cookie userRole (định dạng JSON) và localStorage
+          // Lưu roles
           const rolesJson = JSON.stringify(userRole);
           document.cookie = `userRole=${rolesJson}; path=/; max-age=3600; Secure`;
           localStorage.setItem('userRole', rolesJson);
 
-          alert('Đăng nhập thành công!');
+          // ✅ Hiện animation thành công
+          setIsSuccess(true);
 
-          // Chuyển hướng dựa trên vai trò ưu tiên
-          if (userRole.includes('Admin')) {
-            router.push('/admin/dashboard');
-          } else if (userRole.includes('Staff')) {
-            router.push('/staff/dashboard');
-          } else if (userRole.includes('Clinic')) {
-            router.push('/clinic/dashboard');
-          } else if (userRole.includes('Vet')) {
-            router.push('/vet/dashboard');
-          } else if (userRole.includes('User')) {
-            router.push('/user/submit-vet-certificate');
-          } else {
-            setServerError('Không tìm thấy vai trò phù hợp để chuyển hướng');
-          }
+          // ✅ Sau 2 giây chuyển hướng
+          setTimeout(() => {
+            if (userRole.includes('Admin')) {
+              router.push('/admin/dashboard');
+            } else if (userRole.includes('Staff')) {
+              router.push('/staff/dashboard');
+            } else if (userRole.includes('Clinic')) {
+              router.push('/clinic/dashboard');
+            } else if (userRole.includes('Vet')) {
+              router.push('/vet/dashboard');
+            } else if (userRole.includes('User')) {
+              router.push('/user/submit-vet-certificate');
+            } else {
+              setServerError('Không tìm thấy vai trò phù hợp để chuyển hướng');
+            }
+          }, 1500);
         } else {
           setServerError('Không thể lấy thông tin vai trò từ token');
         }
       } else {
-        setServerError('Đăng nhập thất bại');
+        setServerError(response?.message || 'Đăng nhập thất bại');
       }
-    } catch (err) {
-      setServerError('Thông tin đăng nhập không hợp lệ hoặc lỗi server');
+    } catch (err: any) {
+      // ✅ Nếu backend trả về lỗi dạng { message: '...' }
+      const errorMessage = err?.response?.data?.message || 'Lỗi kết nối hoặc server không phản hồi';
+      setServerError(errorMessage);
     }
   };
+
+  // ✅ Nếu đăng nhập thành công → hiển thị animation mèo
+  if (isSuccess) {
+    return (
+      <div className="flex flex-col items-center justify-center min-h-screen bg-white text-center">
+        <h2 className="text-2xl font-semibold text-teal-600 mb-4">Đăng nhập thành công!</h2>
+        <div style={{ width: "200px", height: "100px", margin: "20px auto", backgroundImage: "url(./sampleimg/cat.gif)", backgroundSize: "cover", borderRadius: "12px", }} ></div> 
+        <p className="text-gray-500 text-sm mt-3">Đang chuyển hướng...</p>
+      </div>
+    );
+  }
 
   return (
     <div className="flex min-h-full flex-col justify-center px-6 py-12 lg:px-8">
@@ -90,16 +108,19 @@ export default function LoginForm() {
           height={60}
           className="mx-auto h-25 w-auto"
         />
-        <h2 className="mt-10 text-center text-2xl/9 font-bold tracking-tight text-gray-900">
+        <h2 className="mt-10 text-center text-2xl font-bold tracking-tight text-gray-900">
           Đăng nhập
         </h2>
       </div>
 
       <div className="mt-10 sm:mx-auto sm:w-full sm:max-w-sm">
         <form onSubmit={handleSubmit(onSubmit)} className="space-y-6">
-          {serverError && <p className="text-center text-sm text-red-400">{serverError}</p>}
+          {serverError && (
+            <p className="text-center text-sm text-red-500">{serverError}</p>
+          )}
+
           <div>
-            <label htmlFor="username" className="block text-sm/6 font-medium text-gray-900">
+            <label htmlFor="username" className="block text-sm font-medium text-gray-900">
               Tên đăng nhập
             </label>
             <div className="mt-2">
@@ -108,16 +129,17 @@ export default function LoginForm() {
                 {...register('username', { required: true })}
                 type="text"
                 placeholder="Tên đăng nhập"
-                autoComplete="username"
-                className="block w-full bg-white px-3 py-1.5 text-base text-gray-900 border-b border-gray-300 placeholder:text-gray-500 focus:border-indigo-600 focus:outline-none sm:text-sm"
+                className="block w-full bg-white px-3 py-1.5 border-b border-gray-300 text-gray-900 placeholder:text-gray-500 focus:border-teal-600 focus:outline-none sm:text-sm"
               />
-              {errors.username && <p className="text-sm text-red-400 mt-1">Tên đăng nhập là bắt buộc</p>}
+              {errors.username && (
+                <p className="text-sm text-red-400 mt-1">Tên đăng nhập là bắt buộc</p>
+              )}
             </div>
           </div>
 
           <div>
             <div className="flex items-center justify-between">
-              <label htmlFor="password" className="block text-sm/6 font-medium text-gray-900">
+              <label htmlFor="password" className="block text-sm font-medium text-gray-900">
                 Mật khẩu
               </label>
               <div className="text-sm">
@@ -132,26 +154,32 @@ export default function LoginForm() {
                 {...register('password', { required: true, minLength: 6 })}
                 type="password"
                 placeholder="*******"
-                autoComplete="current-password"
-                className="block w-full bg-white px-3 py-1.5 text-base text-gray-900 border-b border-gray-300 placeholder:text-gray-500 focus:border-indigo-600 focus:outline-none sm:text-sm"
+                className="block w-full bg-white px-3 py-1.5 border-b border-gray-300 text-gray-900 placeholder:text-gray-500 focus:border-teal-600 focus:outline-none sm:text-sm"
               />
-              {errors.password && <p className="text-sm text-red-400 mt-1">Mật khẩu là bắt buộc (tối thiểu 6 ký tự)</p>}
+              {errors.password && (
+                <p className="text-sm text-red-400 mt-1">
+                  Mật khẩu là bắt buộc (tối thiểu 6 ký tự)
+                </p>
+              )}
             </div>
           </div>
 
           <div>
             <button
               type="submit"
-              className="flex w-full justify-center rounded-md bg-teal-500 px-3 py-1.5 text-sm/6 font-semibold text-white hover:bg-teal-600 focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-teal-700"
+              className="flex w-full justify-center rounded-md bg-teal-500 px-3 py-1.5 text-sm font-semibold text-white hover:bg-teal-600 focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-teal-700"
             >
               Đăng nhập
             </button>
           </div>
         </form>
 
-        <p className="mt-10 text-center text-sm/6 text-gray-400">
+        <p className="mt-10 text-center text-sm text-gray-400">
           Chưa có tài khoản?{' '}
-          <a href="http://localhost:4001/auth/register" className="font-semibold text-teal-500 hover:text-teal-300">
+          <a
+            href="http://localhost:4001/auth/register"
+            className="font-semibold text-teal-500 hover:text-teal-300"
+          >
             Đăng ký ngay
           </a>
         </p>

@@ -174,7 +174,7 @@ export default function RequestTable({ title }: RequestTableProps) {
                                         <div className="col-span-2">
                                             <label className="block text-sm font-semibold text-gray-700 mb-1">Địa chỉ</label>
                                             <p className="text-base text-gray-900 border-b border-gray-300 pb-2">
-                                                {selectedForm.address.description}, {selectedForm.address.ward}, {selectedForm.address.district}, {selectedForm.address.city}
+                                                {selectedForm.address ? `${selectedForm.address.description || ''}, ${selectedForm.address.ward || ''}, ${selectedForm.address.district || ''}, ${selectedForm.address.city || ''}` : 'Chưa có thông tin địa chỉ'}
                                             </p>
                                         </div>
                                     </div>
@@ -339,7 +339,7 @@ export default function RequestTable({ title }: RequestTableProps) {
                                             <td className="px-6 py-4">
                                                 <div className="text-sm text-gray-900 flex items-center">
                                                     <svg className="w-4 h-4 mr-2 text-gray-400" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                                                        <path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M3 8l7.89 5.26a2 2 0 002.22 0L21 8M5 19h14a2 2 0 002-2V7a2 2 0 00-2-2H5a2 2 0 00-2 2v10a2 2 0 002 2z" />
+                                                        <path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M3 8l7.89 5.26a2 2 0 002.22 0L21 8M5 19h14a2 2 0 002-2V7a2 2 0 00-2-2H5a2 2 0 00-2 2v10a2 2 0 012 2z" />
                                                     </svg>
                                                     {form.email.email_address}
                                                 </div>
@@ -352,7 +352,7 @@ export default function RequestTable({ title }: RequestTableProps) {
                                             </td>
                                             <td className="px-6 py-4">
                                                 <div className="text-sm font-medium text-gray-900">
-                                                    {form.address.description}, {form.address.ward}, {form.address.district}, {form.address.city}
+                                                    {form.address ? `${form.address.description || ''}, ${form.address.ward || ''}, ${form.address.district || ''}, ${form.address.city || ''}` : 'Chưa có thông tin địa chỉ'}
                                                 </div>
                                             </td>
                                             <td className="px-6 py-4">
