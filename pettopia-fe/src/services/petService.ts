@@ -56,7 +56,6 @@ export interface PetDetailResponse {
     color?: string;
     weight?: number;
     dateOfBirth?: string;
-    avatar_url?: string;
     owner?: any;
 }
 

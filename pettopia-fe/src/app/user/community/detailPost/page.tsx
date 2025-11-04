@@ -2,7 +2,7 @@
 
 import React, { useEffect, useMemo, useState } from "react";
 import { useSearchParams } from "next/navigation";
-import { communicationService, Post, Comment } from "@/services/communication/communicationService";
+import { communicationService, Post, Comment } from "@/services/communicationService";
 import { parseJwt } from "@/utils/jwt";
 
 interface LightboxState {

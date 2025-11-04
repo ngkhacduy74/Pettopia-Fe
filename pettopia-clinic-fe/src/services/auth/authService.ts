@@ -1,12 +1,9 @@
 import axios from "axios";
-import { parseJwt } from "@/utils/jwt";
+import { parseJwt } from "@/utils/jwt"; // Import parseJwt từ jwt.ts
 
-// ✅ Lấy base URL từ biến môi trường
-const API_URL = process.env.NEXT_PUBLIC_API_URL
-  ? `${process.env.NEXT_PUBLIC_API_URL}/auth`
-  : "http://localhost:3000/api/v1/auth"; 
+const API_URL = "http://localhost:3000/api/v1/auth";
 
-// ✅ Tạo instance Axios
+// Tạo instance Axios
 const axiosInstance = axios.create({
   baseURL: API_URL,
   headers: {
@@ -14,35 +11,38 @@ const axiosInstance = axios.create({
   },
 });
 
-// ✅ Interceptor để thêm token vào Authorization header
+// Interceptor để thêm token vào header Authorization
 axiosInstance.interceptors.request.use(
   (config) => {
-    if (typeof window !== "undefined") {
-      const token = localStorage.getItem("authToken");
-      if (token) {
-        config.headers.Authorization = `Bearer ${token}`;
-      }
+    const token = localStorage.getItem("authToken");
+    if (token) {
+      config.headers.Authorization = `Bearer ${token}`;
     }
     return config;
   },
   (error) => Promise.reject(error)
 );
 
-// ✅ Hàm đăng nhập
-export const loginUser = async (loginData: { username: string; password: string }) => {
+export const loginUser = async (loginData: {
+  username: string;
+  password: string;
+}) => {
   try {
     const response = await axiosInstance.post("/login", loginData);
     const { token } = response.data;
 
-    console.log("API Response:", response.data);
+    // Kiểm tra dữ liệu từ API
+    console.log("API Response:", response.data); // Debug để kiểm tra dữ liệu
 
+    // Lưu token vào localStorage
     if (token) {
       localStorage.setItem("authToken", token);
 
+      // Giải mã token để lấy userRole
       const decoded = parseJwt(token);
       if (decoded && decoded.role) {
-        document.cookie = `userRole=${decoded.role}; path=/; max-age=86400;`;
-        console.log("Đã lưu userRole vào cookie:", decoded.role);
+        document.cookie = `userRole=${decoded.role}; path=/; max-age=86400;`; // Cookie hết hạn sau 1 ngày
+        console.log("Đã lưu userRole vào cookie:", decoded.role); // Debug để xác nhận
       } else {
         console.warn("Không tìm thấy role trong token đã giải mã");
       }
@@ -51,13 +51,12 @@ export const loginUser = async (loginData: { username: string; password: string 
     }
 
     return response.data;
-  } catch (error: any) {
+  } catch (error) {
     console.error("Lỗi khi đăng nhập:", error);
     throw error;
   }
 };
 
-// ✅ Hàm đăng xuất
 export const logoutUser = () => {
   localStorage.removeItem("authToken");
   document.cookie = "userRole=; path=/; expires=Thu, 01 Jan 1970 00:00:01 GMT;";

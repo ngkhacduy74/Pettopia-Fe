@@ -5,7 +5,7 @@ import { useRouter } from 'next/navigation';
 import Link from 'next/link';
 import { motion } from 'framer-motion';
 import UserNavbar from '@/components/UserNavbar';
-import { createPet } from '@/services/petcare/petService';
+import { createPet } from '@/services/petService';
 
 export default function RegisterPetPage() {
     const router = useRouter();
