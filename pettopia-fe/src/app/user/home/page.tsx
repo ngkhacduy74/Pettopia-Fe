@@ -11,6 +11,8 @@ export default function PetCareApp() {
     const [showChat, setShowChat] = useState(false);
     const [chatMessage, setChatMessage] = useState('');
     const [userId, setUserId] = useState<string | null>(null);
+    const [hasPets, setHasPets] = useState<boolean>(false);
+    const [petsLoading, setPetsLoading] = useState<boolean>(true);
 
     useEffect(() => {
         const parseJwt = (token: string | null) => {
@@ -40,6 +42,31 @@ export default function PetCareApp() {
         if (id) setUserId(id);
     }, []);
 
+    // Kiểm tra xem user có thú cưng không
+    useEffect(() => {
+        const checkPets = async () => {
+            if (!userId) return;
+            
+            try {
+                setPetsLoading(true);
+                const response = await fetch(`/api/pets/user/${userId}`);
+                
+                if (response.ok) {
+                    const data = await response.json();
+                    setHasPets(data && data.length > 0);
+                } else {
+                    setHasPets(false);
+                }
+            } catch (error) {
+                console.error('Error checking pets:', error);
+                setHasPets(false);
+            } finally {
+                setPetsLoading(false);
+            }
+        };
+
+        checkPets();
+    }, [userId]);
 
     const recentItems = [
         {
@@ -117,51 +144,58 @@ export default function PetCareApp() {
     return (
         <div className="flex h-screen bg-gradient-to-b from-teal-50 to-white text-gray-900">
             <UserNavbar setShowSearch={setShowSearch} showSearch={showSearch} />
-            
+
             {/* Main Content */}
             <div className="flex-1 overflow-y-auto bg-gradient-to-b from-teal-50 to-white">
                 <div className="max-w-6xl mx-auto p-12">
                     {/* Header */}
-                    <h1 className="text-5xl font-bold mb-12 text-gray-900">Trang chủ</h1>
-                    
-                    {/* Pet Registration Banner */}
-                    <section className="mb-12" aria-labelledby="register-heading">
-                        <div className="bg-gradient-to-r from-teal-600 to-cyan-600 rounded-2xl p-8 relative overflow-hidden shadow-xl hover:shadow-2xl transition-shadow duration-300">
-                            {/* Background decoration */}
-                            <div className="absolute right-0 top-0 w-64 h-64 bg-white/10 rounded-full -translate-y-32 translate-x-32" aria-hidden="true" />
-                            <div className="absolute left-0 bottom-0 w-48 h-48 bg-white/5 rounded-full translate-y-24 -translate-x-24" aria-hidden="true" />
+                    <h1 className="text-5xl font-extrabold mb-12 text-teal-800 tracking-tight whitespace-nowrap">
+                        Community
+                    </h1>
 
-                            <div className="relative z-10 flex items-center justify-between flex-wrap gap-6">
-                                <div className="flex-1 min-w-[300px]">
-                                    <div className="flex items-center gap-3 mb-3">
-                                        <h2 id="register-heading" className="text-3xl font-bold text-white">
-                                            Bạn đã đăng ký thú cưng chưa?
-                                        </h2>
+                    {/* Pet Registration Banner - Chỉ hiện khi chưa có thú cưng */}
+                    {!petsLoading && !hasPets ? (
+                        <section className="mb-12" aria-labelledby="register-heading">
+                            <div className="bg-gradient-to-r from-teal-600 to-cyan-600 rounded-2xl p-8 relative overflow-hidden shadow-xl hover:shadow-2xl transition-shadow duration-300">
+                                {/* Background decoration */}
+                                <div className="absolute right-0 top-0 w-64 h-64 bg-white/10 rounded-full -translate-y-32 translate-x-32" aria-hidden="true" />
+                                <div className="absolute left-0 bottom-0 w-48 h-48 bg-white/5 rounded-full translate-y-24 -translate-x-24" aria-hidden="true" />
+
+                                <div className="relative z-10 flex items-center justify-between flex-wrap gap-6">
+                                    <div className="flex-1 min-w-[300px]">
+                                        <div className="flex items-center gap-3 mb-3">
+                                            <h2 id="register-heading" className="text-3xl font-bold text-white">
+                                                Bạn đã đăng ký thú cưng chưa?
+                                            </h2>
+                                        </div>
+                                        <p className="text-cyan-50 text-lg mb-6">
+                                            Đăng ký hồ sơ để theo dõi sức khỏe và chăm sóc thú cưng của bạn tốt hơn
+                                        </p>
+                                        <Link href="/user/register-pet">
+                                            <button className="bg-white text-teal-700 px-8 py-4 rounded-full font-semibold hover:bg-teal-50 transition-all duration-300 shadow-md hover:shadow-lg hover:scale-105 focus:outline-none focus:ring-2 focus:ring-white focus:ring-offset-2 focus:ring-offset-teal-600">
+                                                Đăng ký ngay →
+                                            </button>
+                                        </Link>
                                     </div>
-                                    <p className="text-cyan-50 text-lg mb-6">
-                                        Đăng ký hồ sơ để theo dõi sức khỏe và chăm sóc thú cưng của bạn tốt hơn
-                                    </p>
-                                    <Link href="/user/register-pet">
-                                        <button className="bg-white text-teal-700 px-1 py-4 rounded-full font-semibold hover:bg-teal-50 transition-all duration-300 shadow-md hover:shadow-lg hover:scale-105 focus:outline-none focus:ring-2 focus:ring-white focus:ring-offset-2 focus:ring-offset-teal-600">
-                                            Đăng ký ngay →
-                                        </button>
-                                    </Link>
-                                </div>
 
-                                {/* Decorative pet icons */}
-                                <div className="flex gap-4 text-6xl opacity-80">
-                                    <span className="animate-bounce" style={{ animationDelay: '0s', animationDuration: '2s' }}>🐕</span>
-                                    <span className="animate-bounce" style={{ animationDelay: '0.3s', animationDuration: '2s' }}>🐈</span>
-                                    <span className="animate-bounce" style={{ animationDelay: '0.6s', animationDuration: '2s' }}>🐇</span>
+                                    {/* Decorative pet icons */}
+                                    <div className="flex gap-4 text-6xl opacity-80">
+                                        <span className="animate-bounce" style={{ animationDelay: '0s', animationDuration: '2s' }}>🐕</span>
+                                        <span className="animate-bounce" style={{ animationDelay: '0.3s', animationDuration: '2s' }}>🐈</span>
+                                        <span className="animate-bounce" style={{ animationDelay: '0.6s', animationDuration: '2s' }}>🐇</span>
+                                    </div>
                                 </div>
                             </div>
-                        </div>
-                    </section>
+                        </section>
+                    ) : null}
+
+                    {/* Pet Cards */}
                     {userId ? (
                         <PetCards userId={userId} />
                     ) : (
                         <div className="text-sm text-gray-500">Loading pets...</div>
                     )}
+
                     {/* Recently Visited */}
                     <div className="mb-12">
                         <div className="flex items-center gap-2 mb-6">
@@ -170,7 +204,7 @@ export default function PetCareApp() {
                             </svg>
                             <h2 className="text-2xl font-bold text-gray-900">Truy cập gần đây</h2>
                         </div>
-                        
+
                         <div className="grid grid-cols-5 gap-4">
                             {recentItems.map((item) => (
                                 <div
