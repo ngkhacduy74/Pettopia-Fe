@@ -1,7 +1,7 @@
 'use client'
 import React, { useMemo, useState } from 'react';
 import { useRouter } from 'next/navigation';
-import { communicationService } from '@/services/communicationService';
+import { communicationService } from '@/services/communication/communicationService';
 import { parseJwt } from '@/utils/jwt';
 
 interface Category {

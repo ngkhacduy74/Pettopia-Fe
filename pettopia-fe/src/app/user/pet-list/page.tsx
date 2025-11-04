@@ -3,7 +3,7 @@ import React, { useState, useEffect } from 'react';
 import UserNavbar from '@/components/UserNavbar';
 import Link from 'next/link';
 import { useRouter } from 'next/navigation';
-import { deletePet } from '@/services/petService';
+import { deletePet } from '@/services/petcare/petService';
 
 interface Pet {
     id: string | number;
