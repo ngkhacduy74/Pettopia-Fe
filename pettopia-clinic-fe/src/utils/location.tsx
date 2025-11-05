@@ -1,5 +1,6 @@
 'use client';
 import React, { useState, useEffect } from 'react';
+import axios from 'axios';
 
 interface Address {
   city: string;
@@ -18,8 +19,7 @@ interface LocationProps {
 }
 
 /**
- * 🏙️ Component chọn địa chỉ tái sử dụng
- * Dùng để chỉnh sửa dữ liệu address trong modal
+ * 🏙️ Component chọn địa chỉ dùng API Supership (ổn định)
  */
 export default function Location({ value, onChange, hideLabel = false }: LocationProps) {
   const [city, setCity] = useState(value?.city || '');
@@ -27,37 +27,74 @@ export default function Location({ value, onChange, hideLabel = false }: Locatio
   const [ward, setWard] = useState(value?.ward || '');
   const [description, setDescription] = useState(value?.description || '');
 
-  // Giả lập dữ liệu có sẵn (bạn có thể thay bằng API thật)
-  const [cities] = useState(['Thành phố Hà Nội', 'Thành phố Hồ Chí Minh']);
-  const [districts, setDistricts] = useState<string[]>([]);
-  const [wards, setWards] = useState<string[]>([]);
+  const [cities, setCities] = useState<{ code: string; name: string }[]>([]);
+  const [districts, setDistricts] = useState<{ code: string; name: string }[]>([]);
+  const [wards, setWards] = useState<{ code: string; name: string }[]>([]);
 
-  // Khi chọn city → load danh sách district
+  // 🟢 Fetch provinces (cities)
   useEffect(() => {
-    if (city === 'Thành phố Hà Nội') {
-      setDistricts(['Quận Tây Hồ', 'Quận Ba Đình', 'Quận Hoàn Kiếm']);
-    } else if (city === 'Thành phố Hồ Chí Minh') {
-      setDistricts(['Quận 1', 'Quận 3', 'Quận Bình Thạnh']);
-    } else {
+    const fetchCities = async () => {
+      try {
+        const res = await axios.get('https://api.mysupership.vn/v1/partner/areas/province');
+        setCities(res.data.results || []);
+      } catch (error) {
+        console.error('Lỗi khi tải danh sách tỉnh/thành:', error);
+      }
+    };
+    fetchCities();
+  }, []);
+
+  // 🟢 Fetch districts theo city
+  useEffect(() => {
+    if (!city) {
       setDistricts([]);
+      setDistrict('');
+      setWard('');
+      setWards([]);
+      return;
     }
-    setDistrict('');
-    setWard('');
+
+    const selectedCity = cities.find((c) => c.name === city);
+    if (!selectedCity) return;
+
+    const fetchDistricts = async () => {
+      try {
+        const res = await axios.get(
+          `https://api.mysupership.vn/v1/partner/areas/district?province=${selectedCity.code}`
+        );
+        setDistricts(res.data.results || []);
+      } catch (error) {
+        console.error('Lỗi khi tải danh sách quận/huyện:', error);
+      }
+    };
+    fetchDistricts();
   }, [city]);
 
-  // Khi chọn district → load danh sách ward
+  // 🟢 Fetch wards theo district
   useEffect(() => {
-    if (district === 'Quận Tây Hồ') {
-      setWards(['Phường Phú Thượng', 'Phường Nhật Tân', 'Phường Quảng An']);
-    } else if (district === 'Quận 1') {
-      setWards(['Phường Bến Nghé', 'Phường Bến Thành']);
-    } else {
+    if (!district) {
+      setWard('');
       setWards([]);
+      return;
     }
-    setWard('');
+
+    const selectedDistrict = districts.find((d) => d.name === district);
+    if (!selectedDistrict) return;
+
+    const fetchWards = async () => {
+      try {
+        const res = await axios.get(
+          `https://api.mysupership.vn/v1/partner/areas/commune?district=${selectedDistrict.code}`
+        );
+        setWards(res.data.results || []);
+      } catch (error) {
+        console.error('Lỗi khi tải danh sách phường/xã:', error);
+      }
+    };
+    fetchWards();
   }, [district]);
 
-  // Gửi dữ liệu lên modal khi có thay đổi
+  // 🟢 Cập nhật dữ liệu gửi ngược lên modal
   useEffect(() => {
     onChange({
       city,
@@ -65,7 +102,7 @@ export default function Location({ value, onChange, hideLabel = false }: Locatio
       ward,
       description,
     });
-  }, [city, district, ward, description, onChange]);
+  }, [city, district, ward, description]);
 
   return (
     <div className="space-y-3">
@@ -81,9 +118,9 @@ export default function Location({ value, onChange, hideLabel = false }: Locatio
           className="w-full border rounded-lg px-3 py-2 focus:ring-2 focus:ring-teal-500"
         >
           <option value="">-- Chọn tỉnh / thành phố --</option>
-          {cities.map((c, i) => (
-            <option key={i} value={c}>
-              {c}
+          {cities.map((c) => (
+            <option key={c.code} value={c.name}>
+              {c.name}
             </option>
           ))}
         </select>
@@ -98,9 +135,9 @@ export default function Location({ value, onChange, hideLabel = false }: Locatio
             className="w-full border rounded-lg px-3 py-2 focus:ring-2 focus:ring-teal-500"
           >
             <option value="">-- Chọn quận / huyện --</option>
-            {districts.map((d, i) => (
-              <option key={i} value={d}>
-                {d}
+            {districts.map((d) => (
+              <option key={d.code} value={d.name}>
+                {d.name}
               </option>
             ))}
           </select>
@@ -116,9 +153,9 @@ export default function Location({ value, onChange, hideLabel = false }: Locatio
             className="w-full border rounded-lg px-3 py-2 focus:ring-2 focus:ring-teal-500"
           >
             <option value="">-- Chọn phường / xã --</option>
-            {wards.map((w, i) => (
-              <option key={i} value={w}>
-                {w}
+            {wards.map((w) => (
+              <option key={w.code} value={w.name}>
+                {w.name}
               </option>
             ))}
           </select>

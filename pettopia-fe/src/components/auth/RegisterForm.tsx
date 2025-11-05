@@ -84,9 +84,11 @@ export default function RegisterForm() {
     setIsLoadingProvinces(true);
     setApiError(false);
     try {
-      const data = await fetchWithRetry("https://provinces.open-api.vn/api/p/");
-      // Đảm bảo code là number
-      const processedData = data.map((p: any) => ({ ...p, code: Number(p.code) }));
+      const data = await fetchWithRetry("https://api.mysupership.vn/v1/partner/areas/province");
+      const processedData = data.results.map((p: any) => ({
+        code: p.code,
+        name: p.name,
+      }));
       setProvinces(processedData && processedData.length > 0 ? processedData : fallbackProvinces);
     } catch (error) {
       setServerError("Không thể tải danh sách tỉnh/thành phố. Sử dụng dữ liệu mặc định.");
@@ -108,12 +110,11 @@ export default function RegisterForm() {
         setIsLoadingDistricts(true);
         setApiError(false);
         try {
-          const data = await fetchWithRetry(`https://provinces.open-api.vn/api/p/${selectedCity}?depth=2`);
-          // Đảm bảo code là number
-          const processedDistricts = (data.districts || []).map((d: any) => ({
-            ...d,
-            code: Number(d.code),
-            province_code: Number(d.province_code),
+          const data = await fetchWithRetry(`https://api.mysupership.vn/v1/partner/areas/district?province=${selectedCity}`);
+          const processedDistricts = data.results.map((d: any) => ({
+            code: d.code,
+            name: d.name,
+            province_code: d.province_code,
           }));
           setDistricts(processedDistricts.length > 0 ? processedDistricts : fallbackDistricts.filter(d => d.province_code === Number(selectedCity)));
           setValue("district", "");
@@ -138,12 +139,11 @@ export default function RegisterForm() {
         setIsLoadingWards(true);
         setApiError(false);
         try {
-          const data = await fetchWithRetry(`https://provinces.open-api.vn/api/d/${selectedDistrict}?depth=2`);
-          // Đảm bảo code là number
-          const processedWards = (data.wards || []).map((w: any) => ({
-            ...w,
-            code: Number(w.code),
-            district_code: Number(w.district_code),
+          const data = await fetchWithRetry(`https://api.mysupership.vn/v1/partner/areas/commune?district=${selectedDistrict}`);
+          const processedWards = data.results.map((w: any) => ({
+            code: w.code,
+            name: w.name,
+            district_code: w.district_code,
           }));
           setWards(processedWards.length > 0 ? processedWards : fallbackWards.filter(w => w.district_code === Number(selectedDistrict)));
           setValue("ward", "");
