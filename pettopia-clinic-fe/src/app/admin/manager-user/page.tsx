@@ -1,4 +1,4 @@
-import UserList from '@/components/User-List';
+import UserList from '@/components/admin/User-List';
 
 
 export default function ClinicFormDetailPage() {

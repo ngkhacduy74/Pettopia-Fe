@@ -57,6 +57,30 @@ export const loginUser = async (loginData: { username: string; password: string 
   }
 };
 
+export const createUser = async (userData: {
+  fullname: string;
+  username: string;
+  email_address: string;
+  phone_number: string;
+  gender: string;
+  dob: string;
+  password: string;
+  address: {
+    city: string;
+    district: string;
+    ward: string;
+    description: string;
+  };
+}) => {
+  try {
+    const response = await axiosInstance.post("/register", userData);
+    return response.data;
+  } catch (error) {
+    console.error("Lỗi khi tạo người dùng:", error);
+    throw error;
+  }
+};
+
 // ✅ Hàm đăng xuất
 export const logoutUser = () => {
   localStorage.removeItem("authToken");

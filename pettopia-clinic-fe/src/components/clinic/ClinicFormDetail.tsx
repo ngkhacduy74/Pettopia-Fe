@@ -1,44 +1,48 @@
 'use client'
 import React, { useState, useEffect } from 'react'
-import { getCustomerData } from '@/services/customer/customerService';
+import { ClinicFormData, getClinicForms, updateClinicFormStatus } from '@/services/partner/clinicService';
 
 interface RequestTableProps {
     title: string;
 }
 
 export default function RequestTable({ title }: RequestTableProps) {
-    const [selectedForm, setSelectedForm] = useState<any | null>(null); // Thay đổi kiểu để phù hợp với dữ liệu mới
+    const [selectedForm, setSelectedForm] = useState<ClinicFormData | null>(null);
     const [dropdownRow, setDropdownRow] = useState<number | null>(null);
-    const [forms, setForms] = useState<any[]>([]);
+    const [forms, setForms] = useState<ClinicFormData[]>([]);
     const [currentPage, setCurrentPage] = useState(1);
     const [totalPages, setTotalPages] = useState(1);
     const [isLoading, setIsLoading] = useState(true);
     const [limit] = useState(10);
-    const [filterRole, setFilterRole] = useState('all');
+    const [searchQuery, setSearchQuery] = useState('');
+    const [filterStatus, setFilterStatus] = useState('all');
 
     useEffect(() => {
         fetchForms();
-    }, [currentPage, filterRole]);
+    }, [currentPage]);
 
     const fetchForms = async () => {
         try {
             setIsLoading(true);
-            const response = await getCustomerData(currentPage, limit);
-            setForms(response.items);
-            setTotalPages(Math.ceil(response.total / limit));
+            const response = await getClinicForms(currentPage, limit);
+            setForms(response.data);
+            setTotalPages(response.pagination.totalPages);
         } catch (error) {
-            console.error('Error fetching customer data:', error);
+            console.error('Error fetching clinic forms:', error);
         } finally {
             setIsLoading(false);
         }
     };
 
     const filteredForms = forms.filter(form => {
-        const matchesFilter = filterRole === 'all' || form.role.some((r: string) => r.toLowerCase() === filterRole.toLowerCase());
-        return matchesFilter;
+        const matchesSearch = form.clinic_name.toLowerCase().includes(searchQuery.toLowerCase()) ||
+            form.email.email_address.toLowerCase().includes(searchQuery.toLowerCase()) ||
+            form.phone.phone_number.includes(searchQuery);
+        const matchesFilter = filterStatus === 'all' || form.status === filterStatus;
+        return matchesSearch && matchesFilter;
     });
 
-    const openDetailPage = (form: any) => {
+    const openDetailPage = (form: ClinicFormData) => {
         setSelectedForm(form);
     };
 
@@ -48,6 +52,19 @@ export default function RequestTable({ title }: RequestTableProps) {
 
     const toggleDropdown = (index: number) => {
         setDropdownRow(dropdownRow === index ? null : index);
+    };
+
+    const updateStatus = async (newStatus: string) => {
+        if (!selectedForm) return;
+
+        try {
+            await updateClinicFormStatus(selectedForm.id, newStatus);
+            await fetchForms();
+            setSelectedForm({ ...selectedForm, status: newStatus });
+        } catch (error) {
+            console.error('Error updating clinic form status:', error);
+            alert('Có lỗi xảy ra khi cập nhật trạng thái');
+        }
     };
 
     const getStatusStyles = (status: string) => {
@@ -100,19 +117,19 @@ export default function RequestTable({ title }: RequestTableProps) {
                                 <div className="flex items-center justify-between">
                                     <div className="flex items-center space-x-4">
                                         <div className="w-20 h-20 bg-gradient-to-br from-teal-500 to-teal-600 rounded-full flex items-center justify-center shadow-lg">
-                                            <span className="text-white font-bold text-3xl">{selectedForm.fullname.charAt(0).toUpperCase()}</span>
+                                            <span className="text-white font-bold text-3xl">{selectedForm.clinic_name.charAt(0).toUpperCase()}</span>
                                         </div>
                                         <div>
                                             <p className="text-sm text-gray-600 uppercase tracking-wider font-medium">Đơn đăng ký</p>
-                                            <h1 className="text-3xl font-bold text-gray-900">Khách hàng</h1>
+                                            <h1 className="text-3xl font-bold text-gray-900">Phòng khám y tế</h1>
                                         </div>
                                     </div>
                                     <div className="text-right">
-                                        <span className={`px-4 py-2 rounded-lg text-sm font-bold inline-block ${getStatusStyles(selectedForm.is_active ? 'approved' : 'rejected')}`}>
-                                            {selectedForm.is_active ? 'Đã kích hoạt' : 'Chưa kích hoạt'}
+                                        <span className={`px-4 py-2 rounded-lg text-sm font-bold inline-block ${getStatusStyles(selectedForm.status)}`}>
+                                            {selectedForm.status === 'pending' ? 'ĐANG XỬ LÝ' : selectedForm.status === 'approved' ? 'ĐÃ DUYỆT' : 'TỪ CHỐI'}
                                         </span>
                                         <p className="text-xs text-gray-500 mt-2">
-                                            Ngày nộp: {new Date(selectedForm.createdAt).toLocaleDateString('vi-VN')}
+                                            Ngày nộp: {new Date().toLocaleDateString('vi-VN')}
                                         </p>
                                     </div>
                                 </div>
@@ -120,30 +137,30 @@ export default function RequestTable({ title }: RequestTableProps) {
 
                             {/* Form Content */}
                             <div className="px-12 py-8 space-y-8">
-                                {/* Section 1: Thông tin khách hàng */}
+                                {/* Section 1: Thông tin phòng khám */}
                                 <div>
                                     <div className="flex items-center mb-4 pb-2 border-b-2 border-gray-200">
                                         <div className="w-8 h-8 bg-teal-600 text-white rounded-full flex items-center justify-center font-bold mr-3">
                                             1
                                         </div>
-                                        <h2 className="text-xl font-bold text-gray-900">THÔNG TIN KHÁCH HÀNG</h2>
+                                        <h2 className="text-xl font-bold text-gray-900">THÔNG TIN PHÒNG KHÁM</h2>
                                     </div>
 
                                     <div className="grid grid-cols-2 gap-6 pl-11">
                                         <div className="col-span-2">
-                                            <label className="block text-sm font-semibold text-gray-700 mb-1">Họ và tên</label>
-                                            <p className="text-base text-gray-900 border-b border-gray-300 pb-2">{selectedForm.fullname}</p>
+                                            <label className="block text-sm font-semibold text-gray-700 mb-1">Tên phòng khám</label>
+                                            <p className="text-base text-gray-900 border-b border-gray-300 pb-2">{selectedForm.clinic_name}</p>
                                         </div>
 
                                         <div>
-                                            <label className="block text-sm font-semibold text-gray-700 mb-1">Tên đăng nhập</label>
-                                            <p className="text-base text-gray-900 border-b border-gray-300 pb-2">{selectedForm.username}</p>
+                                            <label className="block text-sm font-semibold text-gray-700 mb-1">Số giấy phép hoạt động</label>
+                                            <p className="text-base text-gray-900 border-b border-gray-300 pb-2">{selectedForm.license_number}</p>
                                         </div>
 
                                         <div>
-                                            <label className="block text-sm font-semibold text-gray-700 mb-1">Ngày sinh</label>
+                                            <label className="block text-sm font-semibold text-gray-700 mb-1">Ngày cấp giấy phép</label>
                                             <p className="text-base text-gray-900 border-b border-gray-300 pb-2">
-                                                {new Date(selectedForm.dob).toLocaleDateString('vi-VN')}
+                                                {new Date(selectedForm.representative.license_issued_date).toLocaleDateString('vi-VN')}
                                             </p>
                                         </div>
 
@@ -174,33 +191,51 @@ export default function RequestTable({ title }: RequestTableProps) {
                                         <div className="col-span-2">
                                             <label className="block text-sm font-semibold text-gray-700 mb-1">Địa chỉ</label>
                                             <p className="text-base text-gray-900 border-b border-gray-300 pb-2">
-                                                {selectedForm.address ? `${selectedForm.address.description || ''}, ${selectedForm.address.ward || ''}, ${selectedForm.address.district || ''}, ${selectedForm.address.city || ''}` : 'Chưa có thông tin địa chỉ'}
+                                                {selectedForm.address.detail}, {selectedForm.address.ward}, {selectedForm.address.district}, {selectedForm.address.city}
                                             </p>
                                         </div>
                                     </div>
                                 </div>
 
-                                {/* Section 2: Quyền và điểm uy tín */}
+                                {/* Section 2: Thông tin người đại diện */}
                                 <div>
                                     <div className="flex items-center mb-4 pb-2 border-b-2 border-gray-200">
                                         <div className="w-8 h-8 bg-teal-600 text-white rounded-full flex items-center justify-center font-bold mr-3">
                                             2
                                         </div>
-                                        <h2 className="text-xl font-bold text-gray-900">THÔNG TIN KHÁC</h2>
+                                        <h2 className="text-xl font-bold text-gray-900">THÔNG TIN NGƯỜI ĐẠI DIỆN</h2>
                                     </div>
 
                                     <div className="grid grid-cols-2 gap-6 pl-11">
                                         <div>
-                                            <label className="block text-sm font-semibold text-gray-700 mb-1">Quyền</label>
-                                            <p className="text-base text-gray-900 border-b border-gray-300 pb-2">{selectedForm.role.join(', ')}</p>
+                                            <label className="block text-sm font-semibold text-gray-700 mb-1">Họ và tên</label>
+                                            <p className="text-base text-gray-900 border-b border-gray-300 pb-2">{selectedForm.representative.name}</p>
                                         </div>
 
                                         <div>
-                                            <label className="block text-sm font-semibold text-gray-700 mb-1">Điểm uy tín</label>
-                                            <p className="text-base text-gray-900 border-b border-gray-300 pb-2">{selectedForm.reward_point}</p>
+                                            <label className="block text-sm font-semibold text-gray-700 mb-1">Số CCCD/CMND</label>
+                                            <p className="text-base text-gray-900 border-b border-gray-300 pb-2">{selectedForm.representative.identify_number}</p>
                                         </div>
                                     </div>
                                 </div>
+
+                                {/* Section 3: Ghi chú */}
+                                {selectedForm.note && (
+                                    <div>
+                                        <div className="flex items-center mb-4 pb-2 border-b-2 border-gray-200">
+                                            <div className="w-8 h-8 bg-teal-600 text-white rounded-full flex items-center justify-center font-bold mr-3">
+                                                3
+                                            </div>
+                                            <h2 className="text-xl font-bold text-gray-900">GHI CHÚ</h2>
+                                        </div>
+
+                                        <div className="pl-11">
+                                            <div className="bg-gray-50 border border-gray-200 rounded p-4">
+                                                <p className="text-base text-gray-800 leading-relaxed whitespace-pre-wrap">{selectedForm.note}</p>
+                                            </div>
+                                        </div>
+                                    </div>
+                                )}
 
                                 {/* Signature Section */}
                                 <div className="pt-16 pb-8">
@@ -210,7 +245,7 @@ export default function RequestTable({ title }: RequestTableProps) {
                                                 Người nộp đơn
                                             </p>
                                             <div className="border-t-2 border-gray-400 pt-2">
-                                                <p className="text-center font-semibold text-gray-900">{selectedForm.fullname}</p>
+                                                <p className="text-center font-semibold text-gray-900">{selectedForm.representative.name}</p>
                                             </div>
                                         </div>
 
@@ -235,7 +270,58 @@ export default function RequestTable({ title }: RequestTableProps) {
                             </div>
                         </div>
                     </div>
+
+                    {/* Action Buttons - Bottom */}
+                    <div className="mt-8 flex flex-wrap gap-3 print:hidden">
+                        <button
+                            className="flex-1 min-w-[140px] bg-teal-500 hover:bg-teal-600 text-white font-medium py-3 px-6 rounded-lg transition-all duration-200 flex items-center justify-center space-x-2 shadow-md hover:shadow-lg"
+                            onClick={() => updateStatus('pending')}
+                        >
+                            <svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M12 8v4l3 3m6-3a9 9 0 11-18 0 9 9 0 0118 0z" />
+                            </svg>
+                            <span>Đang xử lý</span>
+                        </button>
+                        <button
+                            className="flex-1 min-w-[140px] bg-green-500 hover:bg-green-600 text-white font-medium py-3 px-6 rounded-lg transition-all duration-200 flex items-center justify-center space-x-2 shadow-md hover:shadow-lg"
+                            onClick={() => updateStatus('approved')}
+                        >
+                            <svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M5 13l4 4L19 7" />
+                            </svg>
+                            <span>Phê duyệt</span>
+                        </button>
+                        <button
+                            className="flex-1 min-w-[140px] bg-red-500 hover:bg-red-600 text-white font-medium py-3 px-6 rounded-lg transition-all duration-200 flex items-center justify-center space-x-2 shadow-md hover:shadow-lg"
+                            onClick={() => updateStatus('rejected')}
+                        >
+                            <svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M6 18L18 6M6 6l12 12" />
+                            </svg>
+                            <span>Từ chối</span>
+                        </button>
+                        <button
+                            className="flex-1 min-w-[140px] bg-indigo-600 hover:bg-indigo-700 text-white font-medium py-3 px-6 rounded-lg transition-all duration-200 flex items-center justify-center space-x-2 shadow-md hover:shadow-lg"
+                            onClick={() => window.print()}
+                        >
+                            <svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M17 17h2a2 2 0 002-2v-4a2 2 0 00-2-2H5a2 2 0 00-2 2v4a2 2 0 002 2h2m2 4h6a2 2 0 002-2v-4a2 2 0 00-2-2H9a2 2 0 00-2 2v4a2 2 0 002 2zm8-12V5a2 2 0 00-2-2H9a2 2 0 00-2 2v4h10z" />
+                            </svg>
+                            <span>In đơn</span>
+                        </button>
+                    </div>
                 </div>
+
+                <style jsx>{`
+          @media print {
+            body {
+              background: white;
+            }
+            .print\\:hidden {
+              display: none !important;
+            }
+          }
+        `}</style>
             </div>
         );
     }
@@ -250,7 +336,7 @@ export default function RequestTable({ title }: RequestTableProps) {
                         <div className="flex flex-col md:flex-row md:items-center md:justify-between">
                             <div>
                                 <h1 className="text-3xl font-bold bg-gradient-to-r from-teal-500 to-teal-600 bg-clip-text text-transparent">{title}</h1>
-                                <p className="text-gray-600 mt-2">Quản lý thông tin khách hàng</p>
+                                <p className="text-gray-600 mt-2">Quản lý đăng ký và phê duyệt phòng khám</p>
                             </div>
                             <div className="mt-4 md:mt-0">
                                 <button className="bg-gradient-to-r from-indigo-600 to-indigo-700 hover:from-indigo-700 hover:to-indigo-800 text-white font-medium py-2.5 px-5 rounded-lg transition duration-200 ease-in-out shadow-md hover:shadow-lg flex items-center space-x-2">
@@ -262,19 +348,31 @@ export default function RequestTable({ title }: RequestTableProps) {
                             </div>
                         </div>
 
-                        {/* Filter */}
+                        {/* Search and Filter */}
                         <div className="mt-6 flex flex-col sm:flex-row gap-4">
+                            <div className="relative flex-grow">
+                                <div className="absolute inset-y-0 left-0 pl-3 flex items-center pointer-events-none">
+                                    <svg className="h-5 w-5 text-gray-400" xmlns="http://www.w3.org/2000/svg" viewBox="0 0 20 20" fill="currentColor">
+                                        <path fillRule="evenodd" d="M8 4a4 4 0 100 8 4 4 0 000-8zM2 8a6 6 0 1110.89 3.476l4.817 4.817a1 1 0 01-1.414 1.414l-4.816-4.816A6 6 0 012 8z" clipRule="evenodd" />
+                                    </svg>
+                                </div>
+                                <input
+                                    type="text"
+                                    className="pl-10 pr-4 py-2.5 border border-gray-300 rounded-lg w-full focus:ring-2 focus:ring-indigo-500 focus:border-transparent transition"
+                                    placeholder="Tìm kiếm theo tên, email hoặc số điện thoại..."
+                                    value={searchQuery}
+                                    onChange={(e) => setSearchQuery(e.target.value)}
+                                />
+                            </div>
                             <select
                                 className="px-4 py-2.5 border border-gray-300 rounded-lg focus:ring-2 focus:ring-indigo-500 focus:border-transparent transition"
-                                value={filterRole}
-                                onChange={(e) => setFilterRole(e.target.value)}
+                                value={filterStatus}
+                                onChange={(e) => setFilterStatus(e.target.value)}
                             >
-                                <option value="all">Tất cả vai trò</option>
-                                <option value="admin">Admin</option>
-                                <option value="staff">Staff</option>
-                                <option value="clinic">Clinic</option>
-                                <option value="vet">Vet</option>
-                                <option value="user">User</option>
+                                <option value="all">Tất cả trạng thái</option>
+                                <option value="pending">Đang xử lý</option>
+                                <option value="approved">Đã duyệt</option>
+                                <option value="rejected">Từ chối</option>
                             </select>
                         </div>
                     </div>
@@ -293,26 +391,23 @@ export default function RequestTable({ title }: RequestTableProps) {
                                     <path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M20 13V6a2 2 0 00-2-2H6a2 2 0 00-2 2v7m16 0v5a2 2 0 01-2 2H6a2 2 0 01-2-2v-5m16 0h-2.586a1 1 0 00-.707.293l-2.414 2.414a1 1 0 01-.707.293h-3.172a1 1 0 01-.707-.293l-2.414-2.414A1 1 0 006.586 13H4" />
                                 </svg>
                                 <p className="text-lg font-medium">Không tìm thấy kết quả</p>
-                                <p className="text-sm mt-1">Thử điều chỉnh bộ lọc vai trò</p>
+                                <p className="text-sm mt-1">Thử điều chỉnh bộ lọc hoặc tìm kiếm của bạn</p>
                             </div>
                         ) : (
                             <table className="min-w-full divide-y divide-gray-200">
                                 <thead className="bg-gray-50">
                                     <tr>
                                         <th scope="col" className="px-6 py-4 text-left text-xs font-semibold text-gray-600 uppercase tracking-wider">
-                                            Khách hàng
+                                            Phòng khám
                                         </th>
                                         <th scope="col" className="px-6 py-4 text-left text-xs font-semibold text-gray-600 uppercase tracking-wider">
                                             Liên hệ
                                         </th>
                                         <th scope="col" className="px-6 py-4 text-left text-xs font-semibold text-gray-600 uppercase tracking-wider">
-                                            Địa chỉ
+                                            Người đại diện
                                         </th>
                                         <th scope="col" className="px-6 py-4 text-left text-xs font-semibold text-gray-600 uppercase tracking-wider">
-                                            Điểm uy tín
-                                        </th>
-                                        <th scope="col" className="px-6 py-4 text-left text-xs font-semibold text-gray-600 uppercase tracking-wider">
-                                            Quyền
+                                            Trạng thái
                                         </th>
                                     </tr>
                                 </thead>
@@ -325,13 +420,16 @@ export default function RequestTable({ title }: RequestTableProps) {
                                         >
                                             <td className="px-6 py-4">
                                                 <div className="flex items-center space-x-3">
+                                                    <div className="flex-shrink-0 h-12 w-12 bg-gradient-to-br from-teal-400 to-teal-600 rounded-lg flex items-center justify-center shadow-md">
+                                                        <span className="text-white font-bold text-lg">{form.clinic_name.charAt(0).toUpperCase()}</span>
+                                                    </div>
                                                     <div>
-                                                        <div className="text-sm font-semibold text-gray-900">{form.fullname}</div>
+                                                        <div className="text-sm font-semibold text-gray-900">{form.clinic_name}</div>
                                                         <div className="text-xs text-gray-500 flex items-center mt-0.5">
                                                             <svg className="w-3 h-3 mr-1" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                                                                 <path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M9 12h6m-6 4h6m2 5H7a2 2 0 01-2-2V5a2 2 0 012-2h5.586a1 1 0 01.707.293l5.414 5.414a1 1 0 01.293.707V19a2 2 0 01-2 2z" />
                                                             </svg>
-                                                            {form.username}
+                                                            {form.license_number}
                                                         </div>
                                                     </div>
                                                 </div>
@@ -339,7 +437,7 @@ export default function RequestTable({ title }: RequestTableProps) {
                                             <td className="px-6 py-4">
                                                 <div className="text-sm text-gray-900 flex items-center">
                                                     <svg className="w-4 h-4 mr-2 text-gray-400" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                                                        <path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M3 8l7.89 5.26a2 2 0 002.22 0L21 8M5 19h14a2 2 0 002-2V7a2 2 0 00-2-2H5a2 2 0 00-2 2v10a2 2 0 012 2z" />
+                                                        <path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M3 8l7.89 5.26a2 2 0 002.22 0L21 8M5 19h14a2 2 0 002-2V7a2 2 0 00-2-2H5a2 2 0 00-2 2v10a2 2 0 002 2z" />
                                                     </svg>
                                                     {form.email.email_address}
                                                 </div>
@@ -351,18 +449,12 @@ export default function RequestTable({ title }: RequestTableProps) {
                                                 </div>
                                             </td>
                                             <td className="px-6 py-4">
-                                                <div className="text-sm font-medium text-gray-900">
-                                                    {form.address ? `${form.address.description || ''}, ${form.address.ward || ''}, ${form.address.district || ''}, ${form.address.city || ''}` : 'Chưa có thông tin địa chỉ'}
-                                                </div>
+                                                <div className="text-sm font-medium text-gray-900">{form.representative.name}</div>
+                                                <div className="text-xs text-gray-500 mt-0.5">CCCD: {form.representative.identify_number}</div>
                                             </td>
                                             <td className="px-6 py-4">
-                                                <div className="text-sm font-medium text-gray-900">
-                                                    {form.reward_point}
-                                                </div>
-                                            </td>
-                                            <td className="px-6 py-4">
-                                                <span className={`px-3 py-1 inline-flex text-xs leading-5 font-semibold rounded-full ${getStatusStyles(form.is_active ? 'approved' : 'rejected')}`}>
-                                                    {form.role.join(', ')}
+                                                <span className={`px-3 py-1 inline-flex text-xs leading-5 font-semibold rounded-full ${getStatusStyles(form.status)}`}>
+                                                    {form.status === 'pending' ? 'Đang xử lý' : form.status === 'approved' ? 'Đã duyệt' : 'Từ chối'}
                                                 </span>
                                             </td>
                                         </tr>
