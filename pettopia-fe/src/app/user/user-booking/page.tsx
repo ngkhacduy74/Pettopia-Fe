@@ -1,9 +1,14 @@
 'use client'
 
 import { useState } from 'react';
-import UserNavbar from '@/components/UserNavbar';
 
-const mockClinics = [
+type Address = { city: string; district: string; ward: string; detail: string };
+type Clinic = { id: string; name: string; address: Address; phone: string; image: string; rating: number };
+type Service = { id: string; name: string; price: number; duration: string };
+type Pet = { id: string; name: string; species: string; breed: string; avatar: string };
+type PetServiceMap = Record<string, string[]>;
+
+const mockClinics: Clinic[] = [
   { 
     id: 'clinic1', 
     name: 'Pettopia Hà Nội', 
@@ -58,7 +63,7 @@ const mockClinics = [
   },
 ];
 
-const mockServices = [
+const mockServices: Service[] = [
   { id: 'sv1', name: 'Khám tổng quát', price: 200000, duration: '30 phút' },
   { id: 'sv2', name: 'Tiêm phòng', price: 150000, duration: '15 phút' },
   { id: 'sv3', name: 'Tắm và cắt tỉa lông', price: 300000, duration: '60 phút' },
@@ -73,7 +78,7 @@ const timeShifts = [
   { id: 'evening', name: 'Ca tối', time: '17:00 - 21:00' },
 ];
 
-const mockPets = [
+const mockPets: Pet[] = [
   { id: 'pet1', name: 'Milo', species: 'Chó', breed: 'Golden Retriever', avatar: '/sampleimg/default-pet.jpg' },
   { id: 'pet2', name: 'Luna', species: 'Mèo', breed: 'Mèo Ba Tư', avatar: '/sampleimg/default-pet.jpg' },
   { id: 'pet3', name: 'Max', species: 'Chó', breed: 'Husky', avatar: '/sampleimg/default-pet.jpg' },
@@ -86,10 +91,10 @@ export default function AppointmentBooking() {
   const [selectedCity, setSelectedCity] = useState('all');
   const [selectedDate, setSelectedDate] = useState('');
   const [selectedShift, setSelectedShift] = useState('');
-  const [selectedServices, setSelectedServices] = useState([]);
-  const [petServiceMap, setPetServiceMap] = useState({});
+  const [selectedServices, setSelectedServices] = useState<string[]>([]);
+  const [petServiceMap, setPetServiceMap] = useState<PetServiceMap>({});
   const [showSuccess, setShowSuccess] = useState(false);
-  const [showSearch, setShowSearch] = useState(false);
+  
 
   // Get unique cities from clinics
   const availableCities = [...new Set(mockClinics.map(clinic => clinic.address.city))];
@@ -99,11 +104,11 @@ export default function AppointmentBooking() {
     ? mockClinics 
     : mockClinics.filter(clinic => clinic.address.city === selectedCity);
 
-  const formatAddress = (address) => {
+  const formatAddress = (address: Address) => {
     return `${address.detail}, ${address.ward}, ${address.district}, ${address.city}`;
   };
 
-  const formatDate = (dateString) => {
+  const formatDate = (dateString: string) => {
     if (!dateString) return '';
     const [year, month, day] = dateString.split('-');
     return `${day}/${month}/${year}`;
@@ -111,12 +116,12 @@ export default function AppointmentBooking() {
 
   const getMinDate = () => new Date().toISOString().split('T')[0];
 
-  const toggleService = (serviceId) => {
-    setSelectedServices(prev => {
+  const toggleService = (serviceId: string) => {
+    setSelectedServices((prev: string[]) => {
       if (prev.includes(serviceId)) {
-        const newMap = { ...petServiceMap };
-        Object.keys(newMap).forEach(petId => {
-          newMap[petId] = newMap[petId].filter(sId => sId !== serviceId);
+        const newMap: PetServiceMap = { ...petServiceMap };
+        Object.keys(newMap).forEach((petId: string) => {
+          newMap[petId] = newMap[petId].filter((sId: string) => sId !== serviceId);
           if (newMap[petId].length === 0) delete newMap[petId];
         });
         setPetServiceMap(newMap);
@@ -126,14 +131,14 @@ export default function AppointmentBooking() {
     });
   };
 
-  const togglePetService = (petId, serviceId) => {
-    setPetServiceMap(prev => {
-      const newMap = { ...prev };
+  const togglePetService = (petId: string, serviceId: string) => {
+    setPetServiceMap((prev: PetServiceMap) => {
+      const newMap: PetServiceMap = { ...prev };
       if (!newMap[petId]) {
         newMap[petId] = [serviceId];
       } else {
         if (newMap[petId].includes(serviceId)) {
-          newMap[petId] = newMap[petId].filter(sId => sId !== serviceId);
+          newMap[petId] = newMap[petId].filter((sId: string) => sId !== serviceId);
           if (newMap[petId].length === 0) delete newMap[petId];
         } else {
           newMap[petId] = [...newMap[petId], serviceId];
@@ -153,8 +158,8 @@ export default function AppointmentBooking() {
 
   const calculateTotal = () => {
     let total = 0;
-    Object.values(petServiceMap).forEach(services => {
-      services.forEach(serviceId => {
+    Object.values(petServiceMap).forEach((services: string[]) => {
+      services.forEach((serviceId: string) => {
         const service = mockServices.find(s => s.id === serviceId);
         if (service) total += service.price;
       });
@@ -177,13 +182,8 @@ export default function AppointmentBooking() {
   };
 
   return (
-    <div className="flex h-screen bg-gradient-to-b from-teal-50 to-white text-gray-900">
-      {/* Sidebar Navigation */}
-      <UserNavbar setShowSearch={setShowSearch} showSearch={showSearch} />
-
-      {/* Main Content */}
-      <div className="flex-1 overflow-y-auto">
-        <div className="max-w-6xl mx-auto p-8">
+    <>
+      <div className="max-w-6xl mx-auto p-8">
           <div className="mb-12 text-center">
             <h1 className="text-5xl font-bold text-gray-900 mb-2">Đặt lịch hẹn</h1>
             <p className="text-gray-600">Chăm sóc thú cưng của bạn với dịch vụ chuyên nghiệp</p>
@@ -373,6 +373,7 @@ export default function AppointmentBooking() {
                 <div className="space-y-8">
                   {selectedServices.map((serviceId) => {
                     const service = mockServices.find(s => s.id === serviceId);
+                    if (!service) return null;
                     return (
                       <div key={serviceId} className="border-2 rounded-xl p-6">
                         <h3 className="text-xl font-bold mb-4">{service.name}</h3>
@@ -416,11 +417,12 @@ export default function AppointmentBooking() {
                     <h3 className="font-bold mb-3">Phòng khám</h3>
                     {(() => {
                       const clinic = mockClinics.find(c => c.id === selectedClinic);
+                      if (!clinic) return null;
                       return (
                         <>
-                          <p className="font-semibold">{clinic?.name}</p>
-                          <p className="text-sm text-gray-600">{formatAddress(clinic?.address)}</p>
-                          <p className="text-sm text-gray-600">{clinic?.phone}</p>
+                          <p className="font-semibold">{clinic.name}</p>
+                          <p className="text-sm text-gray-600">{formatAddress(clinic.address)}</p>
+                          <p className="text-sm text-gray-600">{clinic.phone}</p>
                         </>
                       );
                     })()}
@@ -434,12 +436,14 @@ export default function AppointmentBooking() {
                     <h3 className="font-bold mb-4">Chi tiết đặt lịch</h3>
                     {Object.entries(petServiceMap).map(([petId, serviceIds]) => {
                       const pet = mockPets.find(p => p.id === petId);
+                      if (!pet) return null;
                       return (
                         <div key={petId} className="mb-4 border-l-4 border-teal-600 pl-4">
                           <h4 className="font-bold">{pet.name} - {pet.breed}</h4>
                           <ul className="mt-2 space-y-1">
                             {serviceIds.map(sId => {
                               const service = mockServices.find(s => s.id === sId);
+                              if (!service) return null;
                               return (
                                 <li key={sId} className="flex justify-between text-sm">
                                   <span>{service.name}</span>
@@ -498,7 +502,6 @@ export default function AppointmentBooking() {
             )}
           </div>
         </div>
-
         {/* Success Modal */}
         {showSuccess && (
           <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50">
@@ -518,7 +521,6 @@ export default function AppointmentBooking() {
             </div>
           </div>
         )}
-      </div>
-    </div>
+    </>
   );
 }

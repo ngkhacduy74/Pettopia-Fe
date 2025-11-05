@@ -1,4 +1,4 @@
-import React, { useState, useEffect } from 'react';
+import React, { useEffect, useState, useCallback } from 'react';
 import { useRouter } from 'next/navigation';
 
 interface Pet {
@@ -21,27 +21,24 @@ interface Pet {
 
 interface PetCardsProps {
     userId: string;
+    onPetsLoaded?: (petsCount: number) => void;
 }
 
-export default function PetCards({ userId }: PetCardsProps) {
+export default function PetCards({ userId, onPetsLoaded }: PetCardsProps) {
     const router = useRouter();
     const [pets, setPets] = useState<Pet[]>([]);
     const [loading, setLoading] = useState(true);
     const [error, setError] = useState<string | null>(null);
     const [hoveredCard, setHoveredCard] = useState<string | number | null>(null);
 
-    useEffect(() => {
-        fetchPets();
-    }, [userId]);
-
-    const fetchPets = async () => {
+    const fetchPets = useCallback(async (signal?: AbortSignal) => {
         try {
             setLoading(true);
+            setError(null);
             const apiUrl = `http://localhost:3000/api/v1/pet/owner/${userId}`;
             const response = await fetch(apiUrl, {
-                headers: {
-                    'Accept': 'application/json',
-                },
+                headers: { Accept: 'application/json' },
+                signal,
             });
 
             if (!response.ok) {
@@ -51,7 +48,7 @@ export default function PetCards({ userId }: PetCardsProps) {
                     errorDetail = contentType.includes('application/json')
                         ? JSON.stringify(await response.json())
                         : await response.text();
-                } catch { }
+                } catch { /* ignore */ }
                 console.error('Failed to fetch pets', {
                     status: response.status,
                     statusText: response.statusText,
@@ -61,27 +58,25 @@ export default function PetCards({ userId }: PetCardsProps) {
                 throw new Error(`Không thể tải danh sách thú cưng (HTTP ${response.status})`);
             }
 
-            let data: any;
-            try {
-                data = await response.json();
-                // Ensure we're setting an array
-                const petsData = Array.isArray(data.data) ? data.data :
-                    Array.isArray(data) ? data : [];
-                setPets(petsData);
-                setError(null);
-            } catch (e) {
-                console.error('Invalid JSON from pets API', e);
-                setPets([]); // Set empty array on error
-                throw new Error('Dữ liệu thú cưng trả về không hợp lệ');
-            }
-        } catch (err) {
-            setPets([]); // Set empty array on error
+            const data = await response.json();
+            const petsData = Array.isArray(data.data) ? data.data : Array.isArray(data) ? data : [];
+            setPets(petsData);
+            onPetsLoaded?.(petsData.length);
+        } catch (err: any) {
+            if (err.name === 'AbortError') return;
+            setPets([]);
             setError(err instanceof Error ? err.message : 'Có lỗi xảy ra');
             console.error('Error fetching pets:', err);
         } finally {
             setLoading(false);
         }
-    };
+    }, [userId, onPetsLoaded]);
+
+    useEffect(() => {
+        const controller = new AbortController();
+        if (userId) fetchPets(controller.signal);
+        return () => controller.abort();
+    }, [userId, fetchPets]);
 
     const getAgeText = (birthDate?: string) => {
         if (!birthDate) return 'Chưa rõ';
@@ -138,7 +133,7 @@ export default function PetCards({ userId }: PetCardsProps) {
                     <h3 className="text-lg font-semibold text-red-900 mb-2">Có lỗi xảy ra</h3>
                     <p className="text-red-700 mb-4">{error}</p>
                     <button
-                        onClick={fetchPets}
+                        onClick={() => fetchPets()}
                         className="bg-red-600 text-white px-6 py-2 rounded-lg hover:bg-red-700 transition-colors"
                     >
                         Thử lại

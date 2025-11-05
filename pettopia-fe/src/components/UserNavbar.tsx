@@ -1,7 +1,7 @@
 import { useState, useEffect } from 'react';
 import { parseJwt, isTokenExpired } from '../utils/jwt';
 import Link from 'next/link';
-import { usePathname } from 'next/navigation';  // Thêm import này
+import { usePathname, useRouter } from 'next/navigation';  // Thêm import này
 
 interface UserData {
   userId: string;
@@ -41,6 +41,7 @@ interface UserNavbarProps {
 
 export default function UserNavbar({ setShowSearch, showSearch }: UserNavbarProps) {
   const pathname = usePathname();  // Thêm hook này
+  const router = useRouter();
   const [isDropdownOpen, setIsDropdownOpen] = useState(false);
   const [isSettingsModalOpen, setIsSettingsModalOpen] = useState(false);
   const [userData, setUserData] = useState<UserData | null>(null);
@@ -63,7 +64,7 @@ export default function UserNavbar({ setShowSearch, showSearch }: UserNavbarProp
         if (isTokenExpired(token)) {
           console.error('Token expired');
           localStorage.removeItem("authToken");
-          window.location.href = 'auth/login';
+          router.replace('/auth/login');
           return;
         }
 
@@ -147,7 +148,7 @@ export default function UserNavbar({ setShowSearch, showSearch }: UserNavbarProp
   const handleLogoutClick = () => {
     setIsDropdownOpen(false);
     localStorage.removeItem("authToken");
-    window.location.href = '/auth/login';
+    router.replace('/auth/login');
   };
 
   const getInitials = (name: string) => {
