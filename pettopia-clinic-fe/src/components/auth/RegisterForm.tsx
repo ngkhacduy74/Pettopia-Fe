@@ -6,6 +6,7 @@ import { useRouter } from "next/navigation";
 import { createUser } from "@/services/auth/authService";
 import Image from "next/image";
 import axios from "axios";
+import { EyeIcon, EyeSlashIcon } from "@heroicons/react/24/outline";
 
 type FormData = {
   fullname: string;
@@ -21,24 +22,24 @@ type FormData = {
   description: string;
 };
 
-type Province = { code: number; name: string };
-type District = { code: number; name: string; province_code: number };
-type Ward = { code: number; name: string; district_code: number };
+type Province = { code: string; name: string };
+type District = { code: string; name: string; province_code: string };
+type Ward = { code: string; name: string; district_code: string };
 
-// Fallback dữ liệu tĩnh nếu API thất bại (code là number)
+// Fallback dữ liệu tĩnh (code là string, đúng định dạng API)
 const fallbackProvinces: Province[] = [
-  { code: 1, name: "Thành phố Hà Nội" },
-  { code: 79, name: "Thành phố Hồ Chí Minh" },
+  { code: "01", name: "Thành phố Hà Nội" },
+  { code: "79", name: "Thành phố Hồ Chí Minh" },
 ];
 
 const fallbackDistricts: District[] = [
-  { code: 1, name: "Quận Ba Đình", province_code: 1 },
-  { code: 760, name: "Quận 1", province_code: 79 },
+  { code: "001", name: "Quận Ba Đình", province_code: "01" },
+  { code: "760", name: "Quận 1", province_code: "79" },
 ];
 
 const fallbackWards: Ward[] = [
-  { code: 1, name: "Phường Phúc Xá", district_code: 1 },
-  { code: 26734, name: "Phường Bến Nghé", district_code: 760 },
+  { code: "00001", name: "Phường Phúc Xá", district_code: "001" },
+  { code: "26734", name: "Phường Bến Nghé", district_code: "760" },
 ];
 
 export default function RegisterForm() {
@@ -58,12 +59,16 @@ export default function RegisterForm() {
   const [isLoadingWards, setIsLoadingWards] = useState(false);
   const [apiError, setApiError] = useState(false);
   const router = useRouter();
+  const [confirmPassword, setConfirmPassword] = useState("");
+  const [passwordError, setPasswordError] = useState("");
+  const [showPassword, setShowPassword] = useState(false);
+  const [showConfirmPassword, setShowConfirmPassword] = useState(false);
 
   const selectedCity = watch("city");
   const selectedDistrict = watch("district");
   const selectedWard = watch("ward");
 
-  // Fetch helper
+  // Fetch helper với retry
   const fetchWithRetry = async (url: string, retries = 3) => {
     for (let i = 0; i < retries; i++) {
       try {
@@ -86,10 +91,10 @@ export default function RegisterForm() {
     try {
       const data = await fetchWithRetry("https://api.mysupership.vn/v1/partner/areas/province");
       const processedData = data.results.map((p: any) => ({
-        code: p.code,
+        code: String(p.code), // ép kiểu string
         name: p.name,
       }));
-      setProvinces(processedData && processedData.length > 0 ? processedData : fallbackProvinces);
+      setProvinces(processedData.length > 0 ? processedData : fallbackProvinces);
     } catch (error) {
       setServerError("Không thể tải danh sách tỉnh/thành phố. Sử dụng dữ liệu mặc định.");
       setProvinces(fallbackProvinces);
@@ -103,7 +108,7 @@ export default function RegisterForm() {
     fetchProvinces();
   }, []);
 
-  // Fetch districts when city selected
+  // Fetch districts
   useEffect(() => {
     if (selectedCity) {
       const fetchDistricts = async () => {
@@ -112,17 +117,19 @@ export default function RegisterForm() {
         try {
           const data = await fetchWithRetry(`https://api.mysupership.vn/v1/partner/areas/district?province=${selectedCity}`);
           const processedDistricts = data.results.map((d: any) => ({
-            code: d.code,
+            code: String(d.code),
             name: d.name,
-            province_code: d.province_code,
+            province_code: String(d.province_code),
           }));
-          setDistricts(processedDistricts.length > 0 ? processedDistricts : fallbackDistricts.filter(d => d.province_code === Number(selectedCity)));
+          const filteredFallback = fallbackDistricts.filter(d => d.province_code === selectedCity);
+          setDistricts(processedDistricts.length > 0 ? processedDistricts : filteredFallback);
           setValue("district", "");
           setValue("ward", "");
           setWards([]);
         } catch (error) {
           setServerError("Không thể tải danh sách quận/huyện. Sử dụng dữ liệu mặc định.");
-          setDistricts(fallbackDistricts.filter(d => d.province_code === Number(selectedCity)));
+          const filteredFallback = fallbackDistricts.filter(d => d.province_code === selectedCity);
+          setDistricts(filteredFallback);
           setApiError(true);
         } finally {
           setIsLoadingDistricts(false);
@@ -132,7 +139,7 @@ export default function RegisterForm() {
     }
   }, [selectedCity, setValue]);
 
-  // Fetch wards when district selected
+  // Fetch wards
   useEffect(() => {
     if (selectedDistrict) {
       const fetchWards = async () => {
@@ -141,15 +148,17 @@ export default function RegisterForm() {
         try {
           const data = await fetchWithRetry(`https://api.mysupership.vn/v1/partner/areas/commune?district=${selectedDistrict}`);
           const processedWards = data.results.map((w: any) => ({
-            code: w.code,
+            code: String(w.code),
             name: w.name,
-            district_code: w.district_code,
+            district_code: String(w.district_code),
           }));
-          setWards(processedWards.length > 0 ? processedWards : fallbackWards.filter(w => w.district_code === Number(selectedDistrict)));
+          const filteredFallback = fallbackWards.filter(w => w.district_code === selectedDistrict);
+          setWards(processedWards.length > 0 ? processedWards : filteredFallback);
           setValue("ward", "");
         } catch (error) {
           setServerError("Không thể tải danh sách phường/xã. Sử dụng dữ liệu mặc định.");
-          setWards(fallbackWards.filter(w => w.district_code === Number(selectedDistrict)));
+          const filteredFallback = fallbackWards.filter(w => w.district_code === selectedDistrict);
+          setWards(filteredFallback);
           setApiError(true);
         } finally {
           setIsLoadingWards(false);
@@ -161,44 +170,28 @@ export default function RegisterForm() {
 
   const onSubmit = async (data: FormData) => {
     try {
-      // Log dữ liệu đầu vào để debug
-      console.log("📋 Dữ liệu form:", data);
+      if (data.password !== confirmPassword) {
+        setPasswordError("Mật khẩu nhập lại không khớp.");
+        return;
+      }
+      setPasswordError("");
 
-      // Chuyển đổi code từ string sang number
-      const cityCode = Number(data.city);
-      const districtCode = Number(data.district);
-      const wardCode = Number(data.ward);
+      const cityCode = data.city;
+      const districtCode = data.district;
+      const wardCode = data.ward;
 
-      // Kiểm tra nếu code không hợp lệ (NaN)
-      if (isNaN(cityCode) || isNaN(districtCode) || isNaN(wardCode)) {
-        setServerError("Giá trị địa chỉ không hợp lệ. Vui lòng chọn lại.");
+      if (!cityCode || !districtCode || !wardCode) {
+        setServerError("Vui lòng chọn đầy đủ tỉnh, quận, phường.");
         return;
       }
 
-      // Tìm tên chính xác từ code
       const province = provinces.find((p) => p.code === cityCode);
       const district = districts.find((d) => d.code === districtCode);
       const ward = wards.find((w) => w.code === wardCode);
 
-      // Sử dụng tên thay vì code
-      const cityName = province?.name || "";
-      const districtName = district?.name || "";
-      const wardName = ward?.name || "";
-
-      // Kiểm tra dữ liệu hợp lệ
-      if (!cityName) {
-        setServerError("Vui lòng chọn tỉnh/thành phố hợp lệ.");
-        console.warn("Không tìm thấy tên tỉnh/thành phố:", { cityCode, provinces });
-        return;
-      }
-      if (!districtName) {
-        setServerError("Vui lòng chọn quận/huyện hợp lệ.");
-        console.warn("Không tìm thấy tên quận/huyện:", { districtCode, districts });
-        return;
-      }
-      if (!wardName) {
-        setServerError("Vui lòng chọn phường/xã hợp lệ.");
-        console.warn("Không tìm thấy tên phường/xã:", { wardCode, wards });
+      if (!province || !district || !ward) {
+        setServerError("Địa chỉ không hợp lệ. Vui lòng chọn lại.");
+        console.warn("Lỗi địa chỉ:", { cityCode, districtCode, wardCode, province, district, ward });
         return;
       }
 
@@ -211,25 +204,14 @@ export default function RegisterForm() {
         dob: data.dob,
         password: data.password,
         address: {
-          city: cityName, // Chỉ gửi tên
-          district: districtName, // Chỉ gửi tên
-          ward: wardName, // Chỉ gửi tên
+          city: province.name,
+          district: district.name,
+          ward: ward.name,
           description: data.description,
         },
       };
 
-      console.log("✅ Dữ liệu gửi đi:", formattedData);
-
-      // Kiểm tra để đảm bảo không có mã trong address
-      if (
-        formattedData.address.city === data.city ||
-        formattedData.address.district === data.district ||
-        formattedData.address.ward === data.ward
-      ) {
-        console.error("Lỗi: Dữ liệu trong address chứa mã thay vì tên:", formattedData.address);
-        setServerError("Lỗi dữ liệu địa chỉ. Vui lòng thử lại.");
-        return;
-      }
+      console.log("Dữ liệu gửi đi:", formattedData);
 
       await createUser(formattedData);
       alert("Đăng ký thành công!");
@@ -250,7 +232,7 @@ export default function RegisterForm() {
           height={40}
           className="mx-auto h-25 w-auto"
         />
-        <h2 className="mt-10 text-center text-2xl font-bold text-gray-900">
+        <h2 className="mt-10 text-center text-2xl font-bold text-teal-600">
           Đăng ký
         </h2>
       </div>
@@ -361,7 +343,7 @@ export default function RegisterForm() {
             </div>
           </div>
 
-          {/* Tỉnh/Thành phố và Quận/Huyện */}
+          {/* Tỉnh/Thành phố */}
           <div className="flex space-x-4">
             <div className="w-1/2">
               <label htmlFor="city" className="block text-sm font-medium text-gray-900">
@@ -371,18 +353,20 @@ export default function RegisterForm() {
                 id="city"
                 {...register("city", { required: true })}
                 className="block w-full rounded-md bg-white px-3 py-1.5 text-base text-gray-900 outline-1 outline-gray-300 focus:outline-teal-300 sm:text-sm/6"
-                disabled={isLoadingProvinces || provinces.length === 0}
+                disabled={isLoadingProvinces}
               >
-                <option value="">Chọn Tỉnh/Thành phố</option>
-                {isLoadingProvinces ? (
-                  <option value="">Đang tải...</option>
-                ) : (
-                  provinces.map((province) => (
-                    <option key={province.code} value={province.code}>
-                      {province.name}
-                    </option>
-                  ))
-                )}
+                <option value="">
+                  {isLoadingProvinces
+                    ? "Đang tải tỉnh/thành..."
+                    : provinces.length === 0
+                    ? "Không có dữ liệu"
+                    : "Chọn Tỉnh/Thành phố"}
+                </option>
+                {provinces.map((province) => (
+                  <option key={province.code} value={province.code}>
+                    {province.name}
+                  </option>
+                ))}
               </select>
               {errors.city && <p className="text-sm text-red-400 mt-1">Vui lòng chọn tỉnh/thành phố</p>}
             </div>
@@ -396,18 +380,20 @@ export default function RegisterForm() {
                   id="district"
                   {...register("district", { required: true })}
                   className="block w-full rounded-md bg-white px-3 py-1.5 text-base text-gray-900 outline-1 outline-gray-300 focus:outline-teal-300 sm:text-sm/6"
-                  disabled={!selectedCity || isLoadingDistricts || districts.length === 0}
+                  disabled={isLoadingDistricts}
                 >
-                  <option value="">Chọn Quận/Huyện</option>
-                  {isLoadingDistricts ? (
-                    <option value="">Đang tải...</option>
-                  ) : (
-                    districts.map((district) => (
-                      <option key={district.code} value={district.code}>
-                        {district.name}
-                      </option>
-                    ))
-                  )}
+                  <option value="">
+                    {isLoadingDistricts
+                      ? "Đang tải quận/huyện..."
+                      : districts.length === 0
+                      ? "Không có dữ liệu"
+                      : "Chọn Quận/Huyện"}
+                  </option>
+                  {districts.map((district) => (
+                    <option key={district.code} value={district.code}>
+                      {district.name}
+                    </option>
+                  ))}
                 </select>
                 {errors.district && <p className="text-sm text-red-400 mt-1">Vui lòng chọn quận/huyện</p>}
               </div>
@@ -425,18 +411,20 @@ export default function RegisterForm() {
                   id="ward"
                   {...register("ward", { required: true })}
                   className="block w-full rounded-md bg-white px-3 py-1.5 text-base text-gray-900 outline-1 outline-gray-300 focus:outline-teal-300 sm:text-sm/6"
-                  disabled={!selectedDistrict || isLoadingWards || wards.length === 0}
+                  disabled={isLoadingWards}
                 >
-                  <option value="">Chọn Phường/Xã</option>
-                  {isLoadingWards ? (
-                    <option value="">Đang tải...</option>
-                  ) : (
-                    wards.map((ward) => (
-                      <option key={ward.code} value={ward.code}>
-                        {ward.name}
-                      </option>
-                    ))
-                  )}
+                  <option value="">
+                    {isLoadingWards
+                      ? "Đang tải phường/xã..."
+                      : wards.length === 0
+                      ? "Không có dữ liệu"
+                      : "Chọn Phường/Xã"}
+                  </option>
+                  {wards.map((ward) => (
+                    <option key={ward.code} value={ward.code}>
+                      {ward.name}
+                    </option>
+                  ))}
                 </select>
                 {errors.ward && <p className="text-sm text-red-400 mt-1">Vui lòng chọn phường/xã</p>}
               </div>
@@ -451,7 +439,7 @@ export default function RegisterForm() {
                   id="description"
                   {...register("description", { required: true })}
                   className="block w-full border-b border-gray-300 px-3 py-1.5 text-gray-900 focus:border-teal-500 focus:outline-none sm:text-sm"
-                  placeholder="Địa chỉ chi tiết"
+                  placeholder="Số nhà, đường..."
                 />
                 {errors.description && <p className="text-sm text-red-400 mt-1">Vui lòng nhập địa chỉ chi tiết</p>}
               </div>
@@ -459,30 +447,71 @@ export default function RegisterForm() {
           </div>
 
           {/* Mật khẩu */}
-          <div>
+          <div className="relative">
             <label htmlFor="password" className="block text-sm font-medium text-gray-900">
               Mật khẩu
             </label>
-            <input
-              id="password"
-              type="password"
-              {...register("password", { required: true, minLength: 6 })}
-              className="block w-full border-b border-gray-300 px-3 py-1.5 text-gray-900 focus:border-teal-500 focus:outline-none sm:text-sm"
-              placeholder="Mật khẩu"
-            />
-            {errors.password && <p className="text-sm text-red-400 mt-1">Mật khẩu phải có ít nhất 6 ký tự</p>}
+            <div className="relative">
+              <input
+                id="password"
+                type={showPassword ? "text" : "password"}
+                {...register("password", { required: true, minLength: 6 })}
+                className="block w-full border-b border-gray-300 px-3 py-1.5 pr-10 text-gray-900 focus:border-teal-500 focus:outline-none sm:text-sm"
+                placeholder="Mật khẩu"
+              />
+              <button
+                type="button"
+                onClick={() => setShowPassword(!showPassword)}
+                className="absolute right-2 top-1/2 -translate-y-1/2 text-gray-500 hover:text-teal-500"
+                tabIndex={-1}
+              >
+                {showPassword ? (
+                  <EyeSlashIcon className="h-5 w-5" />
+                ) : (
+                  <EyeIcon className="h-5 w-5" />
+                )}
+              </button>
+            </div>
+
+            <div className="mt-4 relative">
+              <label htmlFor="confirmPassword" className="block text-sm font-medium text-gray-900">
+                Nhập lại mật khẩu
+              </label>
+              <div className="relative">
+                <input
+                  type={showConfirmPassword ? "text" : "password"}
+                  id="confirmPassword"
+                  value={confirmPassword}
+                  onChange={(e) => setConfirmPassword(e.target.value)}
+                  className="block w-full border-b border-gray-300 px-3 py-1.5 pr-10 text-gray-900 focus:border-teal-500 focus:outline-none sm:text-sm"
+                  placeholder="Nhập lại mật khẩu"
+                  required
+                />
+                <button
+                  type="button"
+                  onClick={() => setShowConfirmPassword(!showConfirmPassword)}
+                  className="absolute right-2 top-1/2 -translate-y-1/2 text-gray-500 hover:text-teal-500"
+                  tabIndex={-1}
+                >
+                  {showConfirmPassword ? (
+                    <EyeSlashIcon className="h-5 w-5" />
+                  ) : (
+                    <EyeIcon className="h-5 w-5" />
+                  )}
+                </button>
+              </div>
+              {passwordError && <p className="text-red-500 text-sm mt-1">{passwordError}</p>}
+            </div>
+
+            {errors.password && (
+              <p className="text-sm text-red-400 mt-1">Mật khẩu phải có ít nhất 6 ký tự</p>
+            )}
           </div>
 
           <button
             type="submit"
             className="flex w-full justify-center rounded-md bg-teal-500 px-3 py-1.5 text-sm font-semibold text-white hover:bg-teal-400 disabled:bg-gray-300"
             disabled={
-              !!errors.city ||
-              !!errors.district ||
-              !!errors.ward ||
-              !selectedCity ||
-              !selectedDistrict ||
-              !selectedWard ||
               isLoadingProvinces ||
               isLoadingDistricts ||
               isLoadingWards ||

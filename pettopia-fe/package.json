@@ -8,6 +8,7 @@
     "start": "next start --port=4001"
   },
   "dependencies": {
+    "@heroicons/react": "^2.2.0",
     "@clerk/nextjs": "^6.33.2",
     "@next/font": "^14.2.15",
     "axios": "^1.12.2",
