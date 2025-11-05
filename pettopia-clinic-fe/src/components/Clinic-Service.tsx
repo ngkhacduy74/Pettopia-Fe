@@ -48,19 +48,27 @@ export default function ClinicService() {
   }, [searchTerm]);
 
   async function load(pageToLoad = page, search = debouncedSearch) {
-    setLoading(true);
-    setError(null);
-    try {
-      const res = await getClinicServices(pageToLoad, limit, search);
-      setServices(res.data || []);
-      const inferredTotal = res.pagination?.total ?? (res as any).total ?? (res.data?.length || 0);
-      setTotal(inferredTotal);
-    } catch (e: any) {
-      setError(e?.message || 'Failed to load services');
-    } finally {
-      setLoading(false);
+  setLoading(true);
+  setError(null);
+  try {
+    const res = await getClinicServices(pageToLoad, limit, search);
+    
+    // API trả về: { status: "success", data: { items: [...], total: 2, page: 1, limit: 10, totalPages: 1 } }
+    if (res.status === 'success' && res.data) {
+      setServices(res.data.items || []);
+      setTotal(res.data.total || 0);
+    } else {
+      setServices([]);
+      setTotal(0);
     }
+  } catch (e: any) {
+    setError(e?.message || 'Failed to load services');
+    setServices([]);
+    setTotal(0);
+  } finally {
+    setLoading(false);
   }
+}
   useEffect(() => {
     load(page, debouncedSearch);
   }, [page, debouncedSearch]);
