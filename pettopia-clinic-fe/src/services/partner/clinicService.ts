@@ -152,18 +152,20 @@ export const updateClinicFormStatus = async (formId: string, status: string, not
 };
 
 // Lấy danh sách service (GET /service)
+// Lấy danh sách service (GET /service/all)
 export const getClinicServices = async (page: number = 1, limit: number = 10, search?: string) => {
   const token = localStorage.getItem('authToken');
   if (!token) {
     throw new Error('No authentication token found');
   }
   try {
-    // Sử dụng axios toàn cục với URL đầy đủ để tránh lỗi baseURL
     const params: Record<string, any> = { page, limit };
     if (search && search.trim()) {
       params.search = search.trim();
     }
-    const response = await axios.get(`${PARTNER_API_URL}/service`, {
+    
+    // ✅ Thêm /all vào endpoint
+    const response = await axios.get(`${PARTNER_API_URL}/service/all`, {
       params,
       headers: { 'token': token }
     });

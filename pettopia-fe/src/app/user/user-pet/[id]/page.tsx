@@ -3,7 +3,6 @@
 import { useState, useRef, useEffect } from 'react';
 import { motion, useInView } from 'framer-motion';
 import { useParams, useRouter } from 'next/navigation';
-import UserNavbar from '@/components/UserNavbar';
 import UpcomingMeetings from '@/components/UpcomingMeetings';
 
 interface Owner {
@@ -47,7 +46,7 @@ export default function UserPetPage() {
     const petId = params?.id;
     const [isFlipped, setIsFlipped] = useState(false);
     const [showPetDetails, setShowPetDetails] = useState(false);
-    const [showSearch, setShowSearch] = useState(false);
+    
     const servicesRef = useRef(null);
     const isInView = useInView(servicesRef, { once: true, amount: 0.3 });
     const [showCustomerId, setShowCustomerId] = useState(false);
@@ -193,13 +192,9 @@ export default function UserPetPage() {
     }
 
     return (
-        <div className="flex h-screen bg-gradient-to-b from-teal-50 to-white text-gray-900">
-            <UserNavbar setShowSearch={setShowSearch} showSearch={showSearch} />
-
-            <div className="flex-1 overflow-y-auto">
-                <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-12">
+        <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-12">
                     <div className="mb-12">
-                        <h1 className="text-5xl font-bold text-gray-900 mb-2">Hồ sơ thú cưng</h1>
+                        <h1 className="text-4xl font-bold text-gray-900 mb-2">Hồ sơ thú cưng</h1>
                         <p className="text-gray-600">Quản lý thông tin và chăm sóc thú cưng của bạn</p>
                     </div>
 
@@ -315,14 +310,14 @@ export default function UserPetPage() {
                             {mockFeatures.map((f, i) => (
                                 <motion.div
                                     key={f.id}
-                                    initial={{ x: i % 2 === 0 ? -100 : 100, opacity: 0 }}
-                                    whileInView={{ x: 0, opacity: 1 }}
+                                    initial={{ y: 50, opacity: 0 }}
+                                    whileInView={{ y: 0, opacity: 1 }}
                                     viewport={{ once: true, amount: 0.3 }}
-                                    transition={{ duration: 0.6 }}
-                                    className="bg-white rounded-2xl p-8 shadow-lg border border-teal-100 hover:shadow-xl transition cursor-pointer"
+                                    transition={{ duration: 0.6, delay: i * 0.2 }}
+                                    className="bg-white rounded-2xl p-8 shadow-lg border border-teal-100 hover:shadow-xl transition cursor-pointer flex flex-col"
                                 >
-                                    <div className="flex items-center mb-6">
-                                        <div className="w-14 h-14 bg-gradient-to-br from-teal-100 to-cyan-100 rounded-full flex items-center justify-center mr-4">
+                                    <div className="flex items-start mb-6">
+                                        <div className="w-14 h-14 bg-gradient-to-br from-teal-100 to-cyan-100 rounded-full flex items-center justify-center mr-4 flex-shrink-0">
                                             <svg className="w-8 h-8 text-teal-600" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                                                 <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 6.253v13m0-13C10.832 5.477 9.246 5 7.5 5S4.168 5.477 3 6.253v13C4.168 18.477 5.754 18 7.5 18s3.332.477 4.5 1.253" />
                                             </svg>
@@ -339,17 +334,17 @@ export default function UserPetPage() {
                                             <p className="text-sm text-gray-700">{f.meta.diagnoses}</p>
                                         </div>
                                     )}
-                                    <div className="space-y-3">
+                                    <div className="space-y-3 flex-grow">
                                         {f.bullets.map((b, idx) => (
-                                            <div key={idx} className="flex items-center text-sm text-gray-600">
-                                                <svg className="w-5 h-5 mr-2 text-teal-600" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                            <div key={idx} className="flex items-start text-sm text-gray-600">
+                                                <svg className="w-5 h-5 mr-2 text-teal-600 flex-shrink-0 mt-0.5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                                                     <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M5 13l4 4L19 7" />
                                                 </svg>
-                                                {b}
+                                                <span>{b}</span>
                                             </div>
                                         ))}
                                     </div>
-                                    <button className="mt-6 w-full bg-teal-600 text-white py-3 rounded-lg font-semibold hover:bg-teal-700 transition">{f.actionText}</button>
+                                    <button className="mt-6 w-full bg-teal-600 text-white py-3 rounded-lg font-semibold hover:bg-teal-700 transition h-12">{f.actionText}</button>
                                 </motion.div>
                             ))}
                         </div>
@@ -541,35 +536,6 @@ export default function UserPetPage() {
                             )}
                         </div>
                     </section>
-                </div>
-            </div>
-
-            {showSearch && (
-                <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50">
-                    <div className="bg-white w-full max-w-2xl mx-4 rounded-2xl shadow-2xl">
-                        <div className="p-6 border-b border-gray-200">
-                            <div className="flex items-center justify-between">
-                                <h3 className="text-2xl font-bold text-gray-900">Tìm kiếm</h3>
-                                <button
-                                    onClick={() => setShowSearch(false)}
-                                    className="text-gray-400 hover:text-gray-500"
-                                >
-                                    <svg className="w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                                        <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M6 18L18 6M6 6l12 12" />
-                                    </svg>
-                                </button>
-                            </div>
-                        </div>
-                        <div className="p-6">
-                            <input
-                                type="text"
-                                placeholder="Tìm kiếm thú cưng, dịch vụ..."
-                                className="w-full px-4 py-3 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-teal-500"
-                            />
-                        </div>
-                    </div>
-                </div>
-            )}
         </div>
     );
 }

@@ -1,7 +1,7 @@
 import { useState, useEffect } from 'react';
 import { parseJwt, isTokenExpired } from '../utils/jwt';
 import Link from 'next/link';
-import { usePathname } from 'next/navigation';  // Thêm import này
+import { usePathname, useRouter } from 'next/navigation';  // Thêm import này
 
 interface UserData {
   userId: string;
@@ -41,6 +41,7 @@ interface UserNavbarProps {
 
 export default function UserNavbar({ setShowSearch, showSearch }: UserNavbarProps) {
   const pathname = usePathname();  // Thêm hook này
+  const router = useRouter();
   const [isDropdownOpen, setIsDropdownOpen] = useState(false);
   const [isSettingsModalOpen, setIsSettingsModalOpen] = useState(false);
   const [userData, setUserData] = useState<UserData | null>(null);
@@ -63,7 +64,7 @@ export default function UserNavbar({ setShowSearch, showSearch }: UserNavbarProp
         if (isTokenExpired(token)) {
           console.error('Token expired');
           localStorage.removeItem("authToken");
-          window.location.href = 'auth/login';
+          router.replace('/auth/login');
           return;
         }
 
@@ -147,7 +148,7 @@ export default function UserNavbar({ setShowSearch, showSearch }: UserNavbarProp
   const handleLogoutClick = () => {
     setIsDropdownOpen(false);
     localStorage.removeItem("authToken");
-    window.location.href = '/auth/login';
+    router.replace('/auth/login');
   };
 
   const getInitials = (name: string) => {
@@ -264,9 +265,9 @@ export default function UserNavbar({ setShowSearch, showSearch }: UserNavbarProp
 
 
             <Link href="/user/community/mainPage">
-               <button className={`w-full flex items-center gap-3 px-3 py-2 rounded-lg text-sm transition-colors cursor-pointer
+              <button className={`w-full flex items-center gap-3 px-3 py-2 rounded-lg text-sm transition-colors cursor-pointer
                 ${pathname === '/user/community/mainPage'
-                    ? 'bg-gradient-to-r from-teal-500 to-cyan-600 text-white shadow-sm'
+                  ? 'bg-gradient-to-r from-teal-500 to-cyan-600 text-white shadow-sm'
                   : 'hover:bg-teal-50 text-gray-700'}`}>
                 <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 20 20" fill="currentColor" className="size-5">
                   <path fillRule="evenodd" d="M10 18a8 8 0 100-16 8 8 0 000 16zm3.857-9.809a.75.75 0 00-1.214-.882l-3.483 4.79-1.88-1.88a.75.75 0 10-1.06 1.061l2.5 2.5a.75.75 0 001.137-.089l4-5.5z" clipRule="evenodd" />
@@ -286,12 +287,20 @@ export default function UserNavbar({ setShowSearch, showSearch }: UserNavbarProp
                 </svg>
                 <span>Nhật ký Pet</span>
               </button>
-              <button className="w-full flex items-center gap-3 px-3 py-2 rounded-lg hover:bg-teal-50 text-gray-700 text-sm transition-colors">
-                <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 20 20" fill="currentColor" className="size-5">
-                  <path fillRule="evenodd" d="M5.75 2a.75.75 0 01.75.75V4h7V2.75a.75.75 0 011.5 0V4h.25A2.75 2.75 0 0118 6.75v8.5A2.75 2.75 0 0115.25 18H4.75A2.75 2.75 0 012 15.25v-8.5A2.75 2.75 0 014.75 4H5V2.75A.75.75 0 015.75 2zm-1 5.5c-.69 0-1.25.56-1.25 1.25v6.5c0 .69.56 1.25 1.25 1.25h10.5c.69 0 1.25-.56 1.25-1.25v-6.5c0-.69-.56-1.25-1.25-1.25H4.75z" clipRule="evenodd" />
-                </svg>
-                <span>Lịch khám</span>
-              </button>
+
+              <Link href="/user/user-booking">
+
+                <button className={`w-full flex items-center gap-3 px-3 py-2 rounded-lg text-sm transition-colors cursor-pointer
+                ${pathname === '/user/user-booking'
+                    ? 'bg-gradient-to-r from-teal-500 to-cyan-600 text-white shadow-sm'
+                    : 'hover:bg-teal-50 text-gray-700'}`}>
+                  <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 20 20" fill="currentColor" className="size-5">
+                    <path fillRule="evenodd" d="M5.75 2a.75.75 0 01.75.75V4h7V2.75a.75.75 0 011.5 0V4h.25A2.75 2.75 0 0118 6.75v8.5A2.75 2.75 0 0115.25 18H4.75A2.75 2.75 0 012 15.25v-8.5A2.75 2.75 0 014.75 4H5V2.75A.75.75 0 015.75 2zm-1 5.5c-.69 0-1.25.56-1.25 1.25v6.5c0 .69.56 1.25 1.25 1.25h10.5c.69 0 1.25-.56 1.25-1.25v-6.5c0-.69-.56-1.25-1.25-1.25H4.75z" clipRule="evenodd" />
+                  </svg>
+                  <span>Lịch khám</span>
+                </button>
+              </Link>
+
               <button className="w-full flex items-center gap-3 px-3 py-2 rounded-lg hover:bg-teal-50 text-gray-700 text-sm transition-colors">
                 <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 20 20" fill="currentColor" className="size-5">
                   <path d="M9.653 16.915l-.005-.003-.019-.01a20.759 20.759 0 01-1.162-.682 22.045 22.045 0 01-2.582-1.9C4.045 12.733 2 10.352 2 7.5a4.5 4.5 0 018-2.828A4.5 4.5 0 0118 7.5c0 2.852-2.044 5.233-3.885 6.82a22.049 22.049 0 01-3.744 2.582l-.019.01-.005.003h-.002a.739.739 0 01-.69.001l-.002-.001z" />
@@ -384,7 +393,7 @@ export default function UserNavbar({ setShowSearch, showSearch }: UserNavbarProp
       {/* Settings Modal */}
       {
         isSettingsModalOpen && (
-          <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50 p-4">
+          <div className="fixed inset-0 bg-black/30 backdrop-blur-sm flex items-center justify-center z-50 p-4">
             <div className="bg-white rounded-xl shadow-2xl max-w-2xl w-full max-h-[90vh] overflow-y-auto">
               {/* Modal Header */}
               <div className="flex items-center justify-between p-6 border-b border-gray-200">

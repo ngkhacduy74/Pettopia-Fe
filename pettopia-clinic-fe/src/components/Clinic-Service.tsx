@@ -1,6 +1,6 @@
 'use client'
 import React, { useEffect, useMemo, useState } from 'react';
-import { getClinicServices, createClinicService, updateClinicService } from '../services/partner/clinicService';
+import { getClinicServices, createClinicService, updateClinicService } from '@/services/partner/clinicService';
 
 interface Service {
   _id?: string;
@@ -48,19 +48,27 @@ export default function ClinicService() {
   }, [searchTerm]);
 
   async function load(pageToLoad = page, search = debouncedSearch) {
-    setLoading(true);
-    setError(null);
-    try {
-      const res = await getClinicServices(pageToLoad, limit, search);
-      setServices(res.data || []);
-      const inferredTotal = res.pagination?.total ?? (res as any).total ?? (res.data?.length || 0);
-      setTotal(inferredTotal);
-    } catch (e: any) {
-      setError(e?.message || 'Failed to load services');
-    } finally {
-      setLoading(false);
+  setLoading(true);
+  setError(null);
+  try {
+    const res = await getClinicServices(pageToLoad, limit, search);
+    
+    // API trả về: { status: "success", data: { items: [...], total: 2, page: 1, limit: 10, totalPages: 1 } }
+    if (res.status === 'success' && res.data) {
+      setServices(res.data.items || []);
+      setTotal(res.data.total || 0);
+    } else {
+      setServices([]);
+      setTotal(0);
     }
+  } catch (e: any) {
+    setError(e?.message || 'Failed to load services');
+    setServices([]);
+    setTotal(0);
+  } finally {
+    setLoading(false);
   }
+}
   useEffect(() => {
     load(page, debouncedSearch);
   }, [page, debouncedSearch]);
@@ -357,7 +365,7 @@ export default function ClinicService() {
 
       {/* Modal */}
       {isModalOpen && (
-        <div className="fixed inset-0 bg-white bg-opacity-100 backdrop-blur-md z-50 flex items-center justify-center p-4">
+        <div className="fixed inset-0 bg-black/30 backdrop-blur-sm flex items-center justify-center z-50 p-4">
           <div className="bg-white rounded-xl shadow-xl max-w-2xl w-full max-h-[90vh] overflow-y-auto">
             {/* Modal Header */}
             <div className="border-b border-gray-200 px-6 py-4 flex items-center justify-between sticky top-0 bg-white z-10">

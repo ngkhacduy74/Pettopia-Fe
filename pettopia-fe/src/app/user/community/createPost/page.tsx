@@ -150,7 +150,7 @@ export default function CreatePostPage() {
        {/* Form */}
        <div className="max-w-4xl mx-auto px-6 py-8">
          {/* Error Summary */}
-         {Object.keys(errors).length > 0 && (
+         {/* {Object.keys(errors).length > 0 && (
            <div className="bg-red-50 border-l-4 border-red-500 p-4 mb-6 rounded-lg">
              <div className="flex items-start">
                <svg className="w-5 h-5 text-red-500 mt-0.5 mr-3 flex-shrink-0" fill="currentColor" viewBox="0 0 20 20">
@@ -166,7 +166,7 @@ export default function CreatePostPage() {
                </div>
              </div>
            </div>
-         )}
+         )} */}
          
          <div className="space-y-6">
            {/* Category Selection */}
