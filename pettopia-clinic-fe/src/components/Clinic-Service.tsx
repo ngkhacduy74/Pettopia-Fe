@@ -1,6 +1,6 @@
 'use client'
 import React, { useEffect, useMemo, useState } from 'react';
-import { getClinicServices, createClinicService, updateClinicService } from '../services/partner/clinicService';
+import { getClinicServices, createClinicService, updateClinicService } from '@/services/partner/clinicService';
 
 interface Service {
   _id?: string;
