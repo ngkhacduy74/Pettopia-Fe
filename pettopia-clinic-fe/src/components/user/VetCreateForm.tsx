@@ -2,7 +2,7 @@
 
 import { useState } from 'react';
 import { useRouter } from 'next/navigation';
-import { submitVeterinarianData } from '../services/partner/veterianrianService';
+import { submitVeterinarianData } from '../../services/partner/veterianrianService';
 
 interface Certification {
   name: string;

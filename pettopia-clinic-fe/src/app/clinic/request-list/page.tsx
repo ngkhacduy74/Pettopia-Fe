@@ -1,6 +1,6 @@
 'use client'
 import React, { useState } from 'react';
-import Dashboard from '@/components/Clinic-Dashboard';
+import Dashboard from '@/components/clinic/Clinic-Dashboard';
 
 export default function ClinicHomePage() {
 

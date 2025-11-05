@@ -53,15 +53,7 @@ export default function Dashboard() {
         { name: 'T12', revenue: 67, appointments: 182 },
     ];
 
-    // Mock data cho dịch vụ
-    const serviceData = [
-        { name: 'Khám bệnh', value: 45, color: '#14b8a6' },
-        { name: 'Tiêm phòng', value: 30, color: '#06b6d4' },
-        { name: 'Ký gửi', value: 15, color: '#0e7490' },
-        { name: 'Khác', value: 10, color: '#0891b2' }
-    ];
-
-    const statsCards = [
+          const statsCards = [
         {
             id: 1,
             title: 'Doanh thu tháng này',
@@ -108,6 +100,16 @@ export default function Dashboard() {
             trend: 'up',
         },
     ];
+
+    // Mock data cho dịch vụ
+    const serviceData = [
+        { name: 'Khám bệnh', value: 45, color: '#14b8a6' },
+        { name: 'Tiêm phòng', value: 30, color: '#06b6d4' },
+        { name: 'Ký gửi', value: 15, color: '#0e7490' },
+        { name: 'Khác', value: 10, color: '#0891b2' }
+    ];
+
+
 
     const quickActions = [
         {
