@@ -1,17 +1,19 @@
 'use client';
 
 import { useState } from 'react';
-import { useForm, useFieldArray, Controller } from 'react-hook-form';
+import { useForm, useFieldArray } from 'react-hook-form';
 import { ChevronDownIcon } from '@heroicons/react/24/outline';
 import { useRouter } from 'next/navigation';
 import { submitVeterinarianData } from '../../services/partner/veterianrianService';
 
-interface Certification {
+// Interface cho chứng chỉ
+interface FormCertification {
   name: string;
   link?: string;
 }
 
-interface VetFormData {
+// Interface cho form data
+interface FormFields {
   specialty: string;
   subSpecialties: string[];
   exp: string;
@@ -20,7 +22,22 @@ interface VetFormData {
   bio: string;
   license_number: string;
   license_image_url: string;
-  certifications: Certification[];
+  certifications: FormCertification[];
+}
+
+// Interface cho data gửi lên API
+interface VetFormApiData {
+  specialty: string;
+  subSpecialties: string[];
+  exp: number;
+  social_link: {
+    facebook: string;
+    linkedin: string;
+  };
+  bio: string;
+  certifications: FormCertification[];
+  license_number: string;
+  license_image_url: string;
 }
 
 export default function VetCreateForm() {
@@ -28,12 +45,11 @@ export default function VetCreateForm() {
     register,
     handleSubmit,
     control,
-    formState: { errors, isSubmitting },
-    trigger,
-  } = useForm<VetFormData>({
+    formState: { errors },
+  } = useForm<FormFields>({
     defaultValues: {
       specialty: '',
-      subSpecialties: [], // Không có ô mặc định
+      subSpecialties: [],
       exp: '',
       facebook: '',
       linkedin: '',
@@ -42,28 +58,30 @@ export default function VetCreateForm() {
       license_image_url: '',
       certifications: [{ name: '', link: '' }],
     },
-    mode: 'onChange',
   });
 
-  // Sub Specialties: max 3
+  // State for subSpecialties
   const [subSpecialties, setSubSpecialties] = useState<string[]>([]);
-  
   const addSubSpecialty = () => {
     if (subSpecialties.length < 3) {
       setSubSpecialties([...subSpecialties, '']);
     }
   };
-
   const removeSubSpecialty = (index: number) => {
     setSubSpecialties(subSpecialties.filter((_, i) => i !== index));
   };
+  const updateSubSpecialty = (index: number, value: string) => {
+    const newSpecialties = [...subSpecialties];
+    newSpecialties[index] = value;
+    setSubSpecialties(newSpecialties);
+  };
 
-  // Certifications: max 5
+  // useFieldArray cho certifications
   const {
     fields: certFields,
     append: appendCert,
     remove: removeCert,
-  } = useFieldArray({
+  } = useFieldArray<FormFields>({
     control,
     name: 'certifications',
   });
@@ -71,10 +89,16 @@ export default function VetCreateForm() {
   const router = useRouter();
   const [serverError, setServerError] = useState('');
 
-  const onSubmit = async (data: VetFormData) => {
+  const onSubmit = async (data: FormFields) => {
     try {
       setServerError('');
-      const formattedData = {
+      // Validate subSpecialties
+      if (subSpecialties.some(s => !s.trim())) {
+        setServerError('Vui lòng điền đầy đủ thông tin chuyên môn phụ');
+        return;
+      }
+      
+      const formattedData: VetFormApiData = {
         specialty: data.specialty,
         subSpecialties: subSpecialties.filter(s => s.trim()),
         exp: parseInt(data.exp) || 0,
@@ -84,13 +108,15 @@ export default function VetCreateForm() {
         },
         bio: data.bio,
         certifications: data.certifications
-          .filter(c => c.name.trim())
-          .map(c => ({ name: c.name, link: c.link?.trim() })),
+          .filter((c: FormCertification) => c.name.trim())
+          .map((c: FormCertification) => ({
+            name: c.name,
+            link: c.link?.trim() || undefined,
+          })),
         license_number: data.license_number,
         license_image_url: data.license_image_url || '',
       };
 
-      // Fix lỗi dòng 88
       await submitVeterinarianData(formattedData);
       alert('Thông tin bác sĩ thú y đã được gửi thành công!');
       router.push('/user/waitting');
@@ -127,47 +153,7 @@ export default function VetCreateForm() {
           {errors.specialty && <p className="mt-1 text-xs text-red-600">{errors.specialty.message}</p>}
         </div>
 
-        {/* Sub Specialties: KHÔNG CÓ Ô MẶC ĐỊNH, ẤN "THÊM" TỐI ĐA 3 LẦN */}
-        <div className="md:col-span-2">
-          <label className="block text-sm font-medium text-gray-700 mb-1">
-            Chuyên môn phụ (tối đa 3)
-          </label>
-          <div className="space-y-2">
-            {subSpecialties.map((specialty, index) => (
-              <div key={index} className="flex gap-2">
-                <input
-                  value={specialty}
-                  onChange={(e) => {
-                    const newSpecialties = [...subSpecialties];
-                    newSpecialties[index] = e.target.value;
-                    setSubSpecialties(newSpecialties);
-                  }}
-                  placeholder={`VD: Chẩn đoán hình ảnh ${index + 1}`}
-                  className="flex-1 px-3 py-2 border border-gray-300 rounded-md focus:ring-2 focus:ring-teal-500 focus:border-teal-500"
-                />
-                <button
-                  type="button"
-                  onClick={() => removeSubSpecialty(index)}
-                  className="px-3 py-1 text-red-600 hover:bg-red-50 rounded-md border border-red-200 transition text-sm"
-                >
-                  Xóa
-                </button>
-              </div>
-            ))}
-            {/* NÚT "THÊM CHUYÊN MÔN PHỤ" GIỐNG HỆT NÚT "THÊM CHỨNG CHỈ" */}
-            {subSpecialties.length < 3 && (
-              <button
-                type="button"
-                onClick={addSubSpecialty}
-                className="text-teal-600 hover:text-teal-700 font-medium text-sm flex items-center gap-1"
-              >
-                <span className="text-xl">+</span> Thêm chuyên môn phụ
-              </button>
-            )}
-          </div>
-        </div>
-
-        {/* Kinh nghiệm: NẰM DƯỚI CHUYÊN MÔN PHỤ, CHIẾM 1 CỘT */}
+        {/* Experience */}
         <div>
           <label className="block text-sm font-medium text-gray-700 mb-1">Kinh nghiệm (năm)</label>
           <input
@@ -186,8 +172,8 @@ export default function VetCreateForm() {
           {errors.exp && <p className="mt-1 text-xs text-red-600">{errors.exp.message}</p>}
         </div>
 
-        {/* Facebook + LinkedIn: DƯỚI KINH NGHIỆM, CHIẾM TOÀN BỘ 1 DÒNG, 50% MỖI Ô */}
-        <div className="md:col-span-2 grid grid-cols-1 sm:grid-cols-2 gap-4">
+        {/* Facebook + LinkedIn */}
+        <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
           <div>
             <label className="block text-sm font-medium text-gray-700 mb-1">Facebook (tùy chọn)</label>
             <input
@@ -221,6 +207,43 @@ export default function VetCreateForm() {
           </div>
         </div>
 
+        {/* Sub Specialties */}
+        <div className="md:col-span-2">
+          <label className="block text-sm font-medium text-gray-700 mb-1">
+            Chuyên môn phụ (tối đa 3)
+          </label>
+          <div className="space-y-2">
+            {subSpecialties.map((specialty, index) => (
+              <div key={index} className="flex gap-2">
+                <input
+                  value={specialty}
+                  onChange={(e) => updateSubSpecialty(index, e.target.value)}
+                  placeholder={`VD: Chẩn đoán hình ảnh ${index + 1}`}
+                  className="flex-1 px-3 py-2 border border-gray-300 rounded-md focus:ring-2 focus:ring-teal-500 focus:border-teal-500"
+                  required
+                  minLength={3}
+                />
+                <button
+                  type="button"
+                  onClick={() => removeSubSpecialty(index)}
+                  className="px-3 py-1 text-red-600 hover:bg-red-50 rounded-md border border-red-200 transition text-sm"
+                >
+                  Xóa
+                </button>
+              </div>
+            ))}
+            {subSpecialties.length < 3 && (
+              <button
+                type="button"
+                onClick={addSubSpecialty}
+                className="text-teal-600 hover:text-teal-700 font-medium text-sm flex items-center gap-1"
+              >
+                <span className="text-xl">+</span> Thêm chuyên môn phụ
+              </button>
+            )}
+          </div>
+        </div>
+
         {/* Bio */}
         <div className="md:col-span-2">
           <label className="block text-sm font-medium text-gray-700 mb-1">Giới thiệu bản thân</label>
@@ -236,7 +259,7 @@ export default function VetCreateForm() {
           {errors.bio && <p className="mt-1 text-xs text-red-600">{errors.bio.message}</p>}
         </div>
 
-        {/* Certifications: max 5 */}
+        {/* Certifications */}
         <div className="md:col-span-2">
           <label className="block text-sm font-medium text-gray-700 mb-1">Chứng chỉ (tối đa 5)</label>
           <div className="space-y-3">
@@ -328,10 +351,10 @@ export default function VetCreateForm() {
         </button>
         <button
           type="submit"
-          disabled={isSubmitting || Object.keys(errors).length > 0}
+          disabled={Object.keys(errors).length > 0}
           className="px-8 py-2 text-sm font-medium text-white bg-teal-600 rounded-md hover:bg-teal-700 disabled:bg-gray-400 disabled:cursor-not-allowed transition shadow-sm"
         >
-          {isSubmitting ? 'Đang gửi...' : 'Gửi thông tin'}
+          Gửi thông tin
         </button>
       </div>
     </form>
