@@ -167,12 +167,12 @@ export default function RequestTable({ title }: RequestTableProps) {
                     </th>
                     <th scope="col" className="px-6 py-4 text-left text-xs font-semibold text-gray-600 uppercase tracking-wider">
                       Liên hệ
+                    </th>                    
+                    <th scope="col" className="px-6 py-4 text-left text-xs font-semibold text-gray-600 uppercase tracking-wider">
+                      Điểm uy tín
                     </th>
                     <th scope="col" className="px-6 py-4 text-left text-xs font-semibold text-gray-600 uppercase tracking-wider w-64 max-w-xs">
                       Địa chỉ
-                    </th>
-                    <th scope="col" className="px-6 py-4 text-left text-xs font-semibold text-gray-600 uppercase tracking-wider">
-                      Điểm uy tín
                     </th>
                     <th scope="col" className="px-6 py-4 text-left text-xs font-semibold text-gray-600 uppercase tracking-wider">
                       Quyền
@@ -213,11 +213,18 @@ export default function RequestTable({ title }: RequestTableProps) {
                           {form.phone.phone_number}
                         </div>
                       </td>
-                      <td className="px-6 py-4 text-sm font-medium text-gray-900 w-64 max-w-xs truncate">
-                        {form.address ? `${form.address.description || ''}, ${form.address.ward || ''}, ${form.address.district || ''}, ${form.address.city || ''}` : 'Chưa có thông tin địa chỉ'}
-                      </td>
                       <td className="px-6 py-4 text-sm font-medium text-gray-900">
                         {form.reward_point}
+                      </td>
+                      <td className="px-6 py-4">
+                        <span
+                      className={`px-3 py-1 inline-flex text-xs leading-5 font-semibold rounded-full ${form.is_active
+                        ? 'bg-green-100 text-green-800'
+                        : 'bg-red-100 text-red-800'
+                        }`}
+                    >
+                      {form.is_active ? 'Đã kích hoạt' : 'Đã bị đình chỉ'}
+                    </span>
                       </td>
                       <td className="px-6 py-4">
                         <div className="flex flex-wrap gap-2">
