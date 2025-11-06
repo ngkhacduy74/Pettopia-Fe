@@ -12,18 +12,6 @@ const axiosInstance = axios.create({
   },
 });
 
-// Gỡ bỏ interceptor không cần thiết
-// axiosInstance.interceptors.request.use(
-//   (config) => {
-//     const token = localStorage.getItem("authToken");
-//     if (token) {
-//       config.headers.Authorization = `Bearer ${token}`;
-//     }
-//     return config;
-//   },
-//   (error) => Promise.reject(error)
-// );
-
 export interface ClinicFormData {
   user_id: string;
   clinic_name: string;

@@ -2,10 +2,12 @@
 import React, { useState, useEffect } from 'react';
 import {
   HomeIcon,
+  DocumentTextIcon,
   DocumentCheckIcon,
   UsersIcon,
   ClipboardDocumentListIcon,
   WrenchScrewdriverIcon,
+  ArrowPathIcon
 } from '@heroicons/react/24/outline';
 import { usePathname } from 'next/navigation';
 import { parseJwt, isTokenExpired } from '@/utils/jwt';
@@ -118,8 +120,8 @@ export default function Sidebar({
     ],
     User: [
       { label: 'My Dashboard', href: '/user/dashboard', icon: <HomeIcon className="w-4 h-4" /> },
-      { label: 'Submit veterianrian form', href: '/user/submit-vet-certificate', icon: <DocumentCheckIcon className="w-4 h-4" /> },
-      { label: 'Submit clinic form', href: '/user/submit-clinic-certificate', icon: <DocumentCheckIcon className="w-4 h-4" /> },
+      { label: 'Submit veterianrian form', href: '/user/submit-vet-certificate', icon: <DocumentTextIcon className="w-4 h-4" /> },
+      { label: 'Submit clinic form', href: '/user/submit-clinic-certificate', icon: <DocumentTextIcon className="w-4 h-4" /> },
     ],
   };
 
@@ -272,7 +274,7 @@ export default function Sidebar({
                       href={roleLinks[role] || '#'}
                       className="w-full flex items-center gap-3 px-4 py-3 hover:bg-teal-50 transition-colors text-left"
                     >
-                      <svg
+                      <ArrowPathIcon
                         className="w-5 h-5 text-teal-600"
                         fill="none"
                         stroke="currentColor"
@@ -284,8 +286,8 @@ export default function Sidebar({
                           strokeWidth={2}
                           d="M5 13l4 4L19 7"
                         />
-                      </svg>
-                      <span className="text-sm font-medium text-gray-900">{role} Dashboard</span>
+                      </ArrowPathIcon>
+                      <span className="text-sm font-medium text-gray-900">Switch to {role}</span>
                     </a>
                   ))}
                 </>
