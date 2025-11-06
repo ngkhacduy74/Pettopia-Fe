@@ -1,3 +1,4 @@
+
 'use client'
 
 import { useState, useEffect } from 'react';
@@ -13,20 +14,18 @@ type Clinic = {
   license_number: string;
   is_active: boolean;
 };
-type Service = { id: string; name: string; price: number; duration: string };
+type Service = { 
+  id: string; 
+  name: string; 
+  price: number; 
+  duration: number;
+  description?: string;
+  is_active?: boolean;
+};
 type Pet = { id: string; name: string; species: string; breed: string; avatar: string };
 type PetServiceMap = Record<string, string[]>;
 
 const API_BASE_URL = 'http://localhost:3000/api/v1';
-
-const mockServices: Service[] = [
-  { id: 'sv1', name: 'Khám tổng quát', price: 200000, duration: '30 phút' },
-  { id: 'sv2', name: 'Tiêm phòng', price: 150000, duration: '15 phút' },
-  { id: 'sv3', name: 'Tắm và cắt tỉa lông', price: 300000, duration: '60 phút' },
-  { id: 'sv4', name: 'Chăm sóc răng miệng', price: 250000, duration: '45 phút' },
-  { id: 'sv5', name: 'Siêu âm', price: 400000, duration: '30 phút' },
-  { id: 'sv6', name: 'Xét nghiệm máu', price: 350000, duration: '20 phút' },
-];
 
 const timeShifts = [
   { id: 'morning', name: 'Ca sáng', time: '08:00 - 12:00' },
@@ -51,14 +50,15 @@ export default function AppointmentBooking() {
   const [petServiceMap, setPetServiceMap] = useState<PetServiceMap>({});
   const [showSuccess, setShowSuccess] = useState(false);
   
-  // API states
   const [clinics, setClinics] = useState<Clinic[]>([]);
+  const [services, setServices] = useState<Service[]>([]);
   const [loading, setLoading] = useState(true);
+  const [servicesLoading, setServicesLoading] = useState(false);
   const [error, setError] = useState<string | null>(null);
+  const [servicesError, setServicesError] = useState<string | null>(null);
   const [currentPage, setCurrentPage] = useState(1);
   const [totalPages, setTotalPages] = useState(1);
 
-  // Fetch clinics from API
   useEffect(() => {
     const fetchClinics = async () => {
       try {
@@ -66,9 +66,7 @@ export default function AppointmentBooking() {
         setError(null);
         const response = await fetch(`${API_BASE_URL}/partner/clinic?page=${currentPage}&limit=10`);
         
-        if (!response.ok) {
-          throw new Error('Không thể tải danh sách phòng khám');
-        }
+        if (!response.ok) throw new Error('Không thể tải danh sách phòng khám');
         
         const result = await response.json();
         
@@ -80,33 +78,59 @@ export default function AppointmentBooking() {
         }
       } catch (err) {
         setError(err instanceof Error ? err.message : 'Đã xảy ra lỗi');
-        console.error('Error fetching clinics:', err);
       } finally {
         setLoading(false);
       }
     };
-
     fetchClinics();
   }, [currentPage]);
 
-  // Get unique cities from clinics
+  useEffect(() => {
+    const fetchServices = async () => {
+      if (!selectedClinic) {
+        setServices([]);
+        return;
+      }
+
+      try {
+        setServicesLoading(true);
+        setServicesError(null);
+        const response = await fetch(`${API_BASE_URL}/partner/service/${selectedClinic}`);
+        
+        if (!response.ok) throw new Error('Không thể tải danh sách dịch vụ');
+        
+        const result = await response.json();
+        
+        if (result.status === 'success' && result.data && result.data.items) {
+          const activeServices = result.data.items.filter((s: Service) => s.is_active);
+          setServices(activeServices);
+        } else {
+          throw new Error('Dữ liệu không hợp lệ');
+        }
+      } catch (err) {
+        setServicesError(err instanceof Error ? err.message : 'Đã xảy ra lỗi');
+      } finally {
+        setServicesLoading(false);
+      }
+    };
+    fetchServices();
+  }, [selectedClinic]);
+
   const availableCities = [...new Set(clinics.map(clinic => clinic.address.city))];
+  const filteredClinics = selectedCity === 'all' ? clinics : clinics.filter(clinic => clinic.address.city === selectedCity);
 
-  // Filter clinics by selected city
-  const filteredClinics = selectedCity === 'all' 
-    ? clinics 
-    : clinics.filter(clinic => clinic.address.city === selectedCity);
-
-  const formatAddress = (address: Address) => {
-    return `${address.detail}, ${address.ward}, ${address.district}, ${address.city}`;
-  };
-
+  const formatAddress = (address: Address) => `${address.detail}, ${address.ward}, ${address.district}, ${address.city}`;
   const formatDate = (dateString: string) => {
     if (!dateString) return '';
     const [year, month, day] = dateString.split('-');
     return `${day}/${month}/${year}`;
   };
-
+  const formatDuration = (minutes: number) => {
+    if (minutes < 60) return `${minutes} phút`;
+    const hours = Math.floor(minutes / 60);
+    const mins = minutes % 60;
+    return mins > 0 ? `${hours}h ${mins}ph` : `${hours}h`;
+  };
   const getMinDate = () => new Date().toISOString().split('T')[0];
 
   const toggleService = (serviceId: string) => {
@@ -151,9 +175,9 @@ export default function AppointmentBooking() {
 
   const calculateTotal = () => {
     let total = 0;
-    Object.values(petServiceMap).forEach((services: string[]) => {
-      services.forEach((serviceId: string) => {
-        const service = mockServices.find(s => s.id === serviceId);
+    Object.values(petServiceMap).forEach((serviceIds: string[]) => {
+      serviceIds.forEach((serviceId: string) => {
+        const service = services.find(s => s.id === serviceId);
         if (service) total += service.price;
       });
     });
@@ -182,7 +206,6 @@ export default function AppointmentBooking() {
           <p className="text-gray-600">Chăm sóc thú cưng của bạn với dịch vụ chuyên nghiệp</p>
         </div>
 
-        {/* Progress Steps */}
         <div className="mb-12">
           <div className="flex items-center justify-center">
             {[1, 2, 3, 4, 5].map((step) => (
@@ -205,13 +228,10 @@ export default function AppointmentBooking() {
           </div>
         </div>
 
-        {/* Content */}
         <div className="bg-white rounded-2xl shadow-xl p-8 min-h-96">
-          {/* Step 1 */}
           {currentStep === 1 && (
             <div>
               <h2 className="text-3xl font-bold mb-6">Chọn phòng khám</h2>
-              
               {loading ? (
                 <div className="text-center py-12">
                   <div className="inline-block animate-spin rounded-full h-12 w-12 border-b-2 border-teal-600"></div>
@@ -225,58 +245,30 @@ export default function AppointmentBooking() {
                     </svg>
                   </div>
                   <p className="text-red-600 text-lg font-semibold">{error}</p>
-                  <button 
-                    onClick={() => setCurrentPage(1)}
-                    className="mt-4 px-6 py-2 bg-teal-600 text-white rounded-lg hover:bg-teal-700"
-                  >
+                  <button onClick={() => setCurrentPage(1)} className="mt-4 px-6 py-2 bg-teal-600 text-white rounded-lg hover:bg-teal-700">
                     Thử lại
                   </button>
                 </div>
               ) : (
                 <>
-                  {/* City Filter */}
                   <div className="mb-6">
                     <label className="block font-semibold mb-3">Lọc theo thành phố</label>
                     <div className="flex flex-wrap gap-3">
-                      <button
-                        onClick={() => setSelectedCity('all')}
-                        className={`px-6 py-2 rounded-lg font-medium transition-colors ${
-                          selectedCity === 'all' 
-                            ? 'bg-teal-600 text-white' 
-                            : 'bg-gray-100 text-gray-700 hover:bg-gray-200'
-                        }`}
-                      >
+                      <button onClick={() => setSelectedCity('all')} className={`px-6 py-2 rounded-lg font-medium transition-colors ${selectedCity === 'all' ? 'bg-teal-600 text-white' : 'bg-gray-100 text-gray-700 hover:bg-gray-200'}`}>
                         Tất cả
                       </button>
                       {availableCities.map((city) => (
-                        <button
-                          key={city}
-                          onClick={() => setSelectedCity(city)}
-                          className={`px-6 py-2 rounded-lg font-medium transition-colors ${
-                            selectedCity === city 
-                              ? 'bg-teal-600 text-white' 
-                              : 'bg-gray-100 text-gray-700 hover:bg-gray-200'
-                          }`}
-                        >
+                        <button key={city} onClick={() => setSelectedCity(city)} className={`px-6 py-2 rounded-lg font-medium transition-colors ${selectedCity === city ? 'bg-teal-600 text-white' : 'bg-gray-100 text-gray-700 hover:bg-gray-200'}`}>
                           {city}
                         </button>
                       ))}
                     </div>
                   </div>
 
-                  {/* Clinics List */}
                   <div className="grid gap-6">
                     {filteredClinics.length > 0 ? (
                       filteredClinics.map((clinic) => (
-                        <div 
-                          key={clinic.id} 
-                          onClick={() => setSelectedClinic(clinic.id)} 
-                          className={`p-6 rounded-xl border-2 cursor-pointer transition-all ${
-                            selectedClinic === clinic.id 
-                              ? 'border-teal-600 bg-teal-50' 
-                              : 'border-gray-200 hover:border-teal-300'
-                          }`}
-                        >
+                        <div key={clinic.id} onClick={() => setSelectedClinic(clinic.id)} className={`p-6 rounded-xl border-2 cursor-pointer transition-all ${selectedClinic === clinic.id ? 'border-teal-600 bg-teal-50' : 'border-gray-200 hover:border-teal-300'}`}>
                           <div className="flex items-start justify-between">
                             <div className="flex items-start flex-1">
                               <div className="w-16 h-16 rounded-lg mr-4 bg-teal-100 flex items-center justify-center flex-shrink-0">
@@ -301,7 +293,6 @@ export default function AppointmentBooking() {
                                     </span>
                                   )}
                                 </div>
-                                {/* <p className="text-xs text-gray-500 mt-2">Giấy phép: {clinic.license_number}</p> */}
                               </div>
                             </div>
                             {selectedClinic === clinic.id && (
@@ -319,32 +310,13 @@ export default function AppointmentBooking() {
                     )}
                   </div>
 
-                  {/* Pagination */}
                   {totalPages > 1 && (
                     <div className="flex justify-center items-center gap-2 mt-6">
-                      <button
-                        onClick={() => setCurrentPage(prev => Math.max(1, prev - 1))}
-                        disabled={currentPage === 1}
-                        className={`px-4 py-2 rounded-lg font-medium ${
-                          currentPage === 1
-                            ? 'bg-gray-100 text-gray-400 cursor-not-allowed'
-                            : 'bg-gray-200 text-gray-700 hover:bg-gray-300'
-                        }`}
-                      >
+                      <button onClick={() => setCurrentPage(prev => Math.max(1, prev - 1))} disabled={currentPage === 1} className={`px-4 py-2 rounded-lg font-medium ${currentPage === 1 ? 'bg-gray-100 text-gray-400 cursor-not-allowed' : 'bg-gray-200 text-gray-700 hover:bg-gray-300'}`}>
                         ← Trước
                       </button>
-                      <span className="px-4 py-2 text-gray-700">
-                        Trang {currentPage} / {totalPages}
-                      </span>
-                      <button
-                        onClick={() => setCurrentPage(prev => Math.min(totalPages, prev + 1))}
-                        disabled={currentPage === totalPages}
-                        className={`px-4 py-2 rounded-lg font-medium ${
-                          currentPage === totalPages
-                            ? 'bg-gray-100 text-gray-400 cursor-not-allowed'
-                            : 'bg-gray-200 text-gray-700 hover:bg-gray-300'
-                        }`}
-                      >
+                      <span className="px-4 py-2 text-gray-700">Trang {currentPage} / {totalPages}</span>
+                      <button onClick={() => setCurrentPage(prev => Math.min(totalPages, prev + 1))} disabled={currentPage === totalPages} className={`px-4 py-2 rounded-lg font-medium ${currentPage === totalPages ? 'bg-gray-100 text-gray-400 cursor-not-allowed' : 'bg-gray-200 text-gray-700 hover:bg-gray-300'}`}>
                         Sau →
                       </button>
                     </div>
@@ -354,35 +326,20 @@ export default function AppointmentBooking() {
             </div>
           )}
 
-          {/* Step 2 */}
           {currentStep === 2 && (
             <div>
               <h2 className="text-3xl font-bold mb-6">Chọn ngày và ca khám</h2>
               <div className="space-y-8">
                 <div>
                   <label className="block font-semibold mb-3">Chọn ngày</label>
-                  <input 
-                    type="date" 
-                    min={getMinDate()} 
-                    value={selectedDate} 
-                    onChange={(e) => setSelectedDate(e.target.value)} 
-                    className="w-full px-4 py-3 border-2 rounded-lg focus:ring-2 focus:ring-teal-500 focus:border-teal-500" 
-                  />
+                  <input type="date" min={getMinDate()} value={selectedDate} onChange={(e) => setSelectedDate(e.target.value)} className="w-full px-4 py-3 border-2 rounded-lg focus:ring-2 focus:ring-teal-500 focus:border-teal-500" />
                   {selectedDate && <p className="mt-2 text-sm text-teal-600">Ngày đã chọn: {formatDate(selectedDate)}</p>}
                 </div>
                 <div>
                   <label className="block font-semibold mb-3">Chọn ca khám</label>
                   <div className="grid md:grid-cols-3 gap-4">
                     {timeShifts.map((shift) => (
-                      <div 
-                        key={shift.id} 
-                        onClick={() => setSelectedShift(shift.id)} 
-                        className={`p-6 rounded-xl border-2 cursor-pointer text-center transition-all ${
-                          selectedShift === shift.id 
-                            ? 'border-teal-600 bg-teal-50' 
-                            : 'border-gray-200 hover:border-teal-300'
-                        }`}
-                      >
+                      <div key={shift.id} onClick={() => setSelectedShift(shift.id)} className={`p-6 rounded-xl border-2 cursor-pointer text-center transition-all ${selectedShift === shift.id ? 'border-teal-600 bg-teal-50' : 'border-gray-200 hover:border-teal-300'}`}>
                         <h3 className="text-lg font-bold mb-1">{shift.name}</h3>
                         <p className="text-sm text-gray-600">{shift.time}</p>
                       </div>
@@ -393,61 +350,72 @@ export default function AppointmentBooking() {
             </div>
           )}
 
-          {/* Step 3 */}
           {currentStep === 3 && (
             <div>
               <h2 className="text-3xl font-bold mb-6">Chọn dịch vụ</h2>
-              <div className="grid md:grid-cols-2 gap-4">
-                {mockServices.map((service) => (
-                  <div 
-                    key={service.id} 
-                    onClick={() => toggleService(service.id)} 
-                    className={`p-6 rounded-xl border-2 cursor-pointer transition-all ${
-                      selectedServices.includes(service.id) 
-                        ? 'border-teal-600 bg-teal-50' 
-                        : 'border-gray-200 hover:border-teal-300'
-                    }`}
-                  >
-                    <div className="flex justify-between items-start">
-                      <div>
-                        <h3 className="text-xl font-bold">{service.name}</h3>
-                        <p className="text-sm text-gray-600 mt-1">{service.duration}</p>
-                        <p className="text-lg font-semibold text-teal-600 mt-2">{service.price.toLocaleString('vi-VN')}đ</p>
-                      </div>
-                      {selectedServices.includes(service.id) && (
-                        <svg className="w-6 h-6 text-teal-600" fill="currentColor" viewBox="0 0 20 20">
-                          <path fillRule="evenodd" d="M10 18a8 8 0 100-16 8 8 0 000 16zm3.707-9.293a1 1 0 00-1.414-1.414L9 10.586 7.707 9.293a1 1 0 00-1.414 1.414l2 2a1 1 0 001.414 0l4-4z" clipRule="evenodd" />
-                        </svg>
-                      )}
-                    </div>
+              {servicesLoading ? (
+                <div className="text-center py-12">
+                  <div className="inline-block animate-spin rounded-full h-12 w-12 border-b-2 border-teal-600"></div>
+                  <p className="mt-4 text-gray-600">Đang tải danh sách dịch vụ...</p>
+                </div>
+              ) : servicesError ? (
+                <div className="text-center py-12">
+                  <div className="text-red-500 mb-4">
+                    <svg className="w-16 h-16 mx-auto" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                      <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 8v4m0 4h.01M21 12a9 9 0 11-18 0 9 9 0 0118 0z" />
+                    </svg>
                   </div>
-                ))}
-              </div>
+                  <p className="text-red-600 text-lg font-semibold">{servicesError}</p>
+                </div>
+              ) : services.length === 0 ? (
+                <div className="text-center py-12">
+                  <div className="text-gray-400 mb-4">
+                    <svg className="w-16 h-16 mx-auto" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                      <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M9.172 16.172a4 4 0 015.656 0M9 10h.01M15 10h.01M21 12a9 9 0 11-18 0 9 9 0 0118 0z" />
+                    </svg>
+                  </div>
+                  <p className="text-gray-500 text-lg">Phòng khám này chưa có dịch vụ nào</p>
+                </div>
+              ) : (
+                <div className="grid md:grid-cols-2 gap-4">
+                  {services.map((service) => (
+                    <div key={service.id} onClick={() => toggleService(service.id)} className={`p-6 rounded-xl border-2 cursor-pointer transition-all ${selectedServices.includes(service.id) ? 'border-teal-600 bg-teal-50' : 'border-gray-200 hover:border-teal-300'}`}>
+                      <div className="flex justify-between items-start">
+                        <div className="flex-1 pr-4">
+                          <h3 className="text-xl font-bold">{service.name}</h3>
+                          {service.description && <p className="text-sm text-gray-600 mt-1 line-clamp-2">{service.description}</p>}
+                          <p className="text-sm text-gray-600 mt-2">⏱️ {formatDuration(service.duration)}</p>
+                          <p className="text-lg font-semibold text-teal-600 mt-2">{service.price.toLocaleString('vi-VN')}đ</p>
+                        </div>
+                        {selectedServices.includes(service.id) && (
+                          <svg className="w-6 h-6 text-teal-600 flex-shrink-0" fill="currentColor" viewBox="0 0 20 20">
+                            <path fillRule="evenodd" d="M10 18a8 8 0 100-16 8 8 0 000 16zm3.707-9.293a1 1 0 00-1.414-1.414L9 10.586 7.707 9.293a1 1 0 00-1.414 1.414l2 2a1 1 0 001.414 0l4-4z" clipRule="evenodd" />
+                          </svg>
+                        )}
+                      </div>
+                    </div>
+                  ))}
+                </div>
+              )}
             </div>
           )}
 
-          {/* Step 4 */}
           {currentStep === 4 && (
             <div>
               <h2 className="text-3xl font-bold mb-6">Chọn thú cưng cho từng dịch vụ</h2>
               <div className="space-y-8">
                 {selectedServices.map((serviceId) => {
-                  const service = mockServices.find(s => s.id === serviceId);
+                  const service = services.find(s => s.id === serviceId);
                   if (!service) return null;
                   return (
                     <div key={serviceId} className="border-2 rounded-xl p-6">
-                      <h3 className="text-xl font-bold mb-4">{service.name}</h3>
+                      <div className="mb-4">
+                        <h3 className="text-xl font-bold">{service.name}</h3>
+                        <p className="text-sm text-teal-600 mt-1">{formatDuration(service.duration)} • {service.price.toLocaleString('vi-VN')}đ</p>
+                      </div>
                       <div className="grid md:grid-cols-2 gap-3">
                         {mockPets.map((pet) => (
-                          <div 
-                            key={pet.id} 
-                            onClick={() => togglePetService(pet.id, serviceId)} 
-                            className={`p-4 rounded-lg border-2 cursor-pointer flex items-center transition-all ${
-                              petServiceMap[pet.id]?.includes(serviceId) 
-                                ? 'border-teal-600 bg-teal-50' 
-                                : 'border-gray-200 hover:border-teal-300'
-                            }`}
-                          >
+                          <div key={pet.id} onClick={() => togglePetService(pet.id, serviceId)} className={`p-4 rounded-lg border-2 cursor-pointer flex items-center transition-all ${petServiceMap[pet.id]?.includes(serviceId) ? 'border-teal-600 bg-teal-50' : 'border-gray-200 hover:border-teal-300'}`}>
                             <img src={pet.avatar} alt={pet.name} className="w-12 h-12 rounded-full mr-4 object-cover" />
                             <div className="flex-1">
                               <h4 className="font-bold">{pet.name}</h4>
@@ -468,7 +436,6 @@ export default function AppointmentBooking() {
             </div>
           )}
 
-          {/* Step 5 */}
           {currentStep === 5 && (
             <div>
               <h2 className="text-3xl font-bold mb-6">Xác nhận đặt lịch</h2>
