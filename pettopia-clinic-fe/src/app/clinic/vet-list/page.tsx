@@ -1,7 +1,7 @@
 'use client'
 import React, { useState } from 'react';
 import Sidebar from '@/components/sidebar/Sidebar';
-import ClinicInviteVet from '@/components/Clinic-InviteVet';
+import ClinicInviteVet from '@/components/clinic/Clinic-InviteVet';
 
 export default function VetListPage() {
     const [showSearch, setShowSearch] = useState(false);

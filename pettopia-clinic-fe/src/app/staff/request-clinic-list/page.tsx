@@ -1,4 +1,4 @@
-import ClinicFormDetail from '@/components/ClinicFormDetail';
+import ClinicFormDetail from '@/components/staff/ClinicFormDetail';
 
 
 export default function ClinicFormDetailPage() {

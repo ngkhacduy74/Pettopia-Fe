@@ -1,4 +1,4 @@
-import VetFormDetail from '@/components/VetFormDetail';
+import VetFormDetail from '@/components/staff/VetFormDetail';
 
 
 export default function ClinicFormDetailPage() {
