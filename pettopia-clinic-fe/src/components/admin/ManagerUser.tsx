@@ -172,7 +172,7 @@ export default function RequestTable({ title }: RequestTableProps) {
                       Điểm uy tín
                     </th>
                     <th scope="col" className="px-6 py-4 text-left text-xs font-semibold text-gray-600 uppercase tracking-wider w-64 max-w-xs">
-                      Địa chỉ
+                      Trạng thái
                     </th>
                     <th scope="col" className="px-6 py-4 text-left text-xs font-semibold text-gray-600 uppercase tracking-wider">
                       Quyền
@@ -537,19 +537,8 @@ export default function RequestTable({ title }: RequestTableProps) {
               </button>
 
               <div className="p-8">
-                <h2 className="text-2xl font-bold text-gray-800 mb-6">Thêm người dùng mới</h2>
-
-                {/* 🧩 Form đăng ký (Register component) */}
+                <h2 className="text-2xl font-bold text-gray-800 ">Thêm người dùng mới</h2>
                 <Register />
-
-                <div className="flex justify-end mt-6">
-                  <button
-                    onClick={() => setShowRegisterModal(false)}
-                    className="bg-gray-400 hover:bg-gray-500 text-white px-5 py-2.5 rounded-lg shadow"
-                  >
-                    Đóng
-                  </button>
-                </div>
               </div>
             </div>
           </div>
