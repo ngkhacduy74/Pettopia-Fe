@@ -123,7 +123,7 @@ export default function PetCareApp() {
         <div className="max-w-6xl mx-auto p-12">
             {/* Header */}
             <h1 className="text-5xl font-extrabold mb-12 text-teal-800 tracking-tight whitespace-nowrap">
-                Trang Chủ
+                Community
             </h1>
 
             {/* Pet Registration Banner - Chỉ hiện khi chưa có thú cưng */}

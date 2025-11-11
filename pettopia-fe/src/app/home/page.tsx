@@ -7,7 +7,6 @@ import Header from '@/components/Header';
 import Footer from '@/components/Footer';
 import Link from 'next/link';
 
-
 export default function Home() {
   const servicesRef = useRef(null);
   const isInView = useInView(servicesRef, { once: true, amount: 0.3 });
@@ -20,7 +19,7 @@ export default function Home() {
         <div className="absolute inset-0 z-0">
           <img
             src="/sampleimg/herosector.jpg"
-            alt="Happy dog on a comfortable bed"
+            alt="Chú chó hạnh phúc trên giường êm ái"
             className="w-full h-full object-cover"
           />
           <div className="absolute inset-0 bg-gradient-to-r from-teal-900/70 to-cyan-800/60"></div>
@@ -28,23 +27,18 @@ export default function Home() {
 
         <div className="relative z-10 max-w-7xl px-4 sm:px-6 lg:px-8 text-white py-32">
           <div className="max-w-2xl text-left">
-            <p className="text-lg mb-6 text-cyan-100">
-              Your Pet's Home Away From Home
-            </p>
-            <h1 className="text-6xl md:text-7xl font-bold mb-8 leading-tight">
-              Exceptional Care, Peace of Mind
+            <h1 className="text-5xl md:text-7xl font-bold mb-8 leading-tight">
+              Pettopia vì sức khỏe của thú cưng
             </h1>
             <p className="text-xl mb-12 text-cyan-50 max-w-xl">
-              Your pets deserve the best care. Our team of experienced
-              veterinarians and staff are dedicated to keeping your pets healthy
-              and happy.
+              Thú cưng của bạn xứng đáng được chăm sóc tốt nhất bởi đội ngũ bác sĩ giàu kinh nghiệm và nhân viên tận tâm.
             </p>
             <div className="flex flex-col sm:flex-row gap-4">
               <Link href='/user/user-page'>
                 <button className="bg-white text-teal-700 px-8 py-3.5 rounded-full font-medium 
                      hover:bg-teal-700 hover:text-white hover:shadow-lg hover:scale-105 
                      transition-all duration-300 inline-flex items-center cursor-pointer">
-                  Our Services
+                  Dịch Vụ Của Chúng Tôi
                   <svg
                     className="w-5 h-5 ml-2 transition-transform group-hover:translate-x-1"
                     fill="none"
@@ -58,12 +52,13 @@ export default function Home() {
                       d="M9 5l7 7-7 7"
                     />
                   </svg>
-                </button></Link>
-              <Link href='/user-page' >
+                </button>
+              </Link>
+              <Link href='/user-page'>
                 <button className="border-2 border-white text-white px-8 py-3.5 rounded-full font-medium 
                      hover:bg-white hover:text-teal-700 hover:shadow-lg hover:scale-105 
                      transition-all duration-300 inline-flex items-center group cursor-pointer">
-                  Book an Appointment
+                  Đặt Lịch Khám
                   <svg
                     className="w-5 h-5 ml-2 transition-transform group-hover:translate-x-1"
                     fill="none"
@@ -81,13 +76,6 @@ export default function Home() {
               </Link>
             </div>
           </div>
-
-          {/* <div className="absolute bottom-8 left-8 z-10">
-            <div className="flex flex-col items-start">
-              <span className="text-white text-xs mb-2">Cái gì đây phúc ơi? Cần để lại không?</span>
-              <div className="w-px h-20 bg-white/40"></div>
-            </div>
-          </div> */}
         </div>
       </section>
 
@@ -95,8 +83,8 @@ export default function Home() {
       <section ref={servicesRef} className="py-20 bg-gradient-to-b from-teal-100 to-white">
         <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
           <div className="text-center mb-16">
-            <h2 className="text-4xl font-bold text-gray-900 mb-4">Our Services</h2>
-            <p className="text-xl text-gray-600">We offer comprehensive veterinary services to keep your pets healthy from nose to tail.</p>
+            <h2 className="text-4xl font-bold text-gray-900 mb-4">Dịch Vụ Của Chúng Tôi</h2>
+            <p className="text-xl text-gray-600">Chúng tôi cung cấp đầy đủ các dịch vụ thú y để giữ cho thú cưng khỏe mạnh từ đầu đến đuôi.</p>
           </div>
 
           <div className="grid md:grid-cols-4 gap-6 relative">
@@ -117,10 +105,10 @@ export default function Home() {
                 animate={isInView ? { opacity: 1 } : { opacity: 0 }}
                 transition={{ delay: 0.9 }}
               >
-                <h3 className="text-xl font-semibold mb-3">Wellness Exams</h3>
-                <p className="text-gray-600 text-sm mb-4">Regular check-ups to ensure your pet is healthy and to catch any issues early.</p>
+                <h3 className="text-xl font-semibold mb-3">Khám Sức Khỏe Tổng Quát</h3>
+                <p className="text-gray-600 text-sm mb-4">Kiểm tra định kỳ để đảm bảo thú cưng khỏe mạnh và phát hiện sớm các vấn đề.</p>
                 <a href="#" className="text-teal-600 text-sm font-medium hover:text-teal-700 inline-flex items-center">
-                  Learn more →
+                  Tìm hiểu thêm →
                 </a>
               </motion.div>
             </div>
@@ -142,10 +130,10 @@ export default function Home() {
                 animate={isInView ? { opacity: 1 } : { opacity: 0 }}
                 transition={{ delay: 1.0 }}
               >
-                <h3 className="text-xl font-semibold mb-3">Vaccinations</h3>
-                <p className="text-gray-600 text-sm mb-4">Keep your pets protected against common and serious diseases with our vaccination programs.</p>
+                <h3 className="text-xl font-semibold mb-3">Tiêm Phòng</h3>
+                <p className="text-gray-600 text-sm mb-4">Bảo vệ thú cưng khỏi các bệnh phổ biến và nguy hiểm với chương trình tiêm chủng đầy đủ.</p>
                 <a href="#" className="text-teal-600 text-sm font-medium hover:text-teal-700 inline-flex items-center">
-                  Learn more →
+                  Tìm hiểu thêm →
                 </a>
               </motion.div>
             </div>
@@ -167,10 +155,10 @@ export default function Home() {
                 animate={isInView ? { opacity: 1 } : { opacity: 0 }}
                 transition={{ delay: 1.1 }}
               >
-                <h3 className="text-xl font-semibold mb-3">Surgery</h3>
-                <p className="text-gray-600 text-sm mb-4">From routine spay/neuter to complex procedures, our surgical team provides expert care.</p>
+                <h3 className="text-xl font-semibold mb-3">Phẫu Thuật</h3>
+                <p className="text-gray-600 text-sm mb-4">Từ triệt sản đến phẫu thuật phức tạp, đội ngũ phẫu thuật của chúng tôi luôn đảm bảo an toàn.</p>
                 <a href="#" className="text-teal-600 text-sm font-medium hover:text-teal-700 inline-flex items-center">
-                  Learn more →
+                  Tìm hiểu thêm →
                 </a>
               </motion.div>
             </div>
@@ -192,10 +180,10 @@ export default function Home() {
                 animate={isInView ? { opacity: 1 } : { opacity: 0 }}
                 transition={{ delay: 1.2 }}
               >
-                <h3 className="text-xl font-semibold mb-3">Dental Care</h3>
-                <p className="text-gray-600 text-sm mb-4">Comprehensive dental services to maintain your pet's oral health and prevent disease.</p>
+                <h3 className="text-xl font-semibold mb-3">Chăm Sóc Răng Miệng</h3>
+                <p className="text-gray-600 text-sm mb-4">Dịch vụ nha khoa toàn diện để duy trì sức khỏe răng miệng và phòng ngừa bệnh tật.</p>
                 <a href="#" className="text-teal-600 text-sm font-medium hover:text-teal-700 inline-flex items-center">
-                  Learn more →
+                  Tìm hiểu thêm →
                 </a>
               </motion.div>
             </div>
@@ -203,7 +191,7 @@ export default function Home() {
 
           <div className="text-center mt-12">
             <button className="bg-teal-600 text-white px-8 py-3 rounded-full font-semibold hover:bg-teal-700 transition transform hover:-translate-y-2 hover:scale-105 duration-300 cursor-pointer">
-              View All Services
+              Xem Tất Cả Dịch Vụ
             </button>
           </div>
         </div>
@@ -217,7 +205,7 @@ export default function Home() {
               <div className="bg-gradient-to-br from-teal-400 to-cyan-500 rounded-3xl overflow-hidden shadow-2xl">
                 <img
                   src="/sampleimg/sampleimg.jpg"
-                  alt="French Bulldog in yellow sweater"
+                  alt="Chú chó Bulldog Pháp mặc áo len vàng"
                   className="w-full h-auto"
                 />
               </div>
@@ -225,7 +213,7 @@ export default function Home() {
 
             <div>
               <h2 className="text-4xl font-bold text-gray-900 mb-8">
-                Why Choose Pettopia?
+                Tại Sao Chọn Pettopia?
               </h2>
 
               <div className="space-y-6">
@@ -249,11 +237,38 @@ export default function Home() {
                   </div>
                   <div className="ml-4">
                     <h3 className="text-xl font-semibold text-gray-900 mb-2">
-                      Experienced Veterinarians
+                      Bác Sĩ Thú Y Giàu Kinh Nghiệm
                     </h3>
                     <p className="text-gray-600">
-                      Our team of veterinarians has decades of combined
-                      experience in all aspects of pet health.
+                      Đội ngũ bác sĩ của chúng tôi có hàng chục năm kinh nghiệm trong mọi lĩnh vực chăm sóc sức khỏe thú cưng.
+                    </p>
+                  </div>
+                </div>
+
+                <div className="flex items-start">
+                  <div className="flex-shrink-0">
+                    <div className="w-8 h-8 bg-gradient-to-br from-teal-100 to-cyan-100 rounded-full flex items-center justify-center">
+                      <svg
+                        className="w-5 h-5 text-teal-600"
+                        fill="none"
+                        stroke="currentColor"
+                        viewBox="0 0 24 24"
+                      >
+                        <path
+                          stroke цукLinecap="round"
+                          strokeLinejoin="round"
+                          strokeWidth={2}
+                          d="M5 13l4 4L19 7"
+                        />
+                      </svg>
+                    </div>
+                  </div>
+                  <div className="ml-4">
+                    <h3 className="text-xl font-semibold text-gray-900 mb-2">
+                      Cơ Sở Vật Chất Hiện Đại
+                    </h3>
+                    <p className="text-gray-600">
+                      Bệnh viện được trang bị công nghệ tiên tiến nhất để chẩn đoán và điều trị.
                     </p>
                   </div>
                 </div>
@@ -278,11 +293,10 @@ export default function Home() {
                   </div>
                   <div className="ml-4">
                     <h3 className="text-xl font-semibold text-gray-900 mb-2">
-                      State-of-the-Art Facility
+                      Chăm Sóc Từ Tâm
                     </h3>
                     <p className="text-gray-600">
-                      Our hospital is equipped with the latest technology for
-                      diagnosis and treatment.
+                      Chúng tôi đối xử với mỗi thú cưng như thành viên gia đình, với sự dịu dàng và quan tâm cá nhân.
                     </p>
                   </div>
                 </div>
@@ -307,40 +321,10 @@ export default function Home() {
                   </div>
                   <div className="ml-4">
                     <h3 className="text-xl font-semibold text-gray-900 mb-2">
-                      Compassionate Care
+                      Dịch Vụ Cấp Cứu
                     </h3>
                     <p className="text-gray-600">
-                      We treat each pet as if they were our own, with gentle
-                      handling and personalized attention.
-                    </p>
-                  </div>
-                </div>
-
-                <div className="flex items-start">
-                  <div className="flex-shrink-0">
-                    <div className="w-8 h-8 bg-gradient-to-br from-teal-100 to-cyan-100 rounded-full flex items-center justify-center">
-                      <svg
-                        className="w-5 h-5 text-teal-600"
-                        fill="none"
-                        stroke="currentColor"
-                        viewBox="0 0 24 24"
-                      >
-                        <path
-                          strokeLinecap="round"
-                          strokeLinejoin="round"
-                          strokeWidth={2}
-                          d="M5 13l4 4L19 7"
-                        />
-                      </svg>
-                    </div>
-                  </div>
-                  <div className="ml-4">
-                    <h3 className="text-xl font-semibold text-gray-900 mb-2">
-                      Emergency Services
-                    </h3>
-                    <p className="text-gray-600">
-                      We offer emergency care during business hours and have
-                      partnerships with 24/7 emergency clinics.
+                      Chúng tôi cung cấp dịch vụ cấp cứu trong giờ hành chính và hợp tác với các phòng khám cấp cứu 24/7.
                     </p>
                   </div>
                 </div>
@@ -348,7 +332,7 @@ export default function Home() {
 
               <div className="mt-8">
                 <button className="bg-teal-600 text-white px-8 py-3 rounded-full font-semibold hover:bg-teal-700 transition shadow-lg">
-                  Learn More About Us
+                  Tìm Hiểu Thêm Về Chúng Tôi
                 </button>
               </div>
             </div>
@@ -361,11 +345,10 @@ export default function Home() {
         <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
           <div className="text-center mb-16">
             <h2 className="text-4xl font-bold text-gray-900 mb-4">
-              What Pet Parents Say
+              Phụ Huynh Thú Cưng Nói Gì
             </h2>
             <p className="text-xl text-gray-600">
-              Don't just take our word for it. Here's what our clients have to
-              say about their experience with Pettopia
+              Đừng chỉ tin lời chúng tôi. Đây là những gì khách hàng nói về trải nghiệm tại Pettopia.
             </p>
           </div>
 
@@ -383,13 +366,11 @@ export default function Home() {
                 ))}
               </div>
               <p className="text-gray-700 mb-6">
-                "The team at Pettopia is amazing! They took such good care of our
-                dog Max during his surgery. The follow-up care was exceptional,
-                and they were always available to answer our questions."
+                "Đội ngũ tại Pettopia thật tuyệt vời! Họ đã chăm sóc chú chó Max của chúng tôi rất chu đáo trong quá trình phẫu thuật. Dịch vụ hậu phẫu cực kỳ tốt, luôn sẵn sàng giải đáp thắc mắc."
               </p>
               <div>
                 <p className="font-semibold text-gray-900">Sarah Johnson</p>
-                <p className="text-gray-500 text-sm">Dog Owner</p>
+                <p className="text-gray-500 text-sm">Chủ chó</p>
               </div>
             </div>
 
@@ -406,14 +387,11 @@ export default function Home() {
                 ))}
               </div>
               <p className="text-gray-700 mb-6">
-                "I've been bringing my cats to Pettopia for years. Dr. Martinez
-                is so gentle with them, and they're always much less stressed than
-                at other vets we've tried. The entire staff genuinely cares about
-                animals."
+                "Tôi đã đưa mấy bé mèo đến Pettopia nhiều năm nay. Bác sĩ Martinez rất nhẹ nhàng, các bé ít căng thẳng hơn hẳn so với các phòng khám khác. Toàn bộ nhân viên đều thực sự yêu động vật."
               </p>
               <div>
                 <p className="font-semibold text-gray-900">Michael Thompson</p>
-                <p className="text-gray-500 text-sm">Cat Owner</p>
+                <p className="text-gray-500 text-sm">Chủ mèo</p>
               </div>
             </div>
 
@@ -430,47 +408,41 @@ export default function Home() {
                 ))}
               </div>
               <p className="text-gray-700 mb-6">
-                "When our rabbit needed emergency care on a weekend, Pettopia
-                connected us with their emergency partner clinic and followed up
-                first thing Monday morning. The coordination of care was
-                impressive!"
+                "Khi chú thỏ của chúng tôi cần cấp cứu vào cuối tuần, Pettopia đã kết nối ngay với phòng khám đối tác và gọi theo dõi vào sáng thứ Hai. Sự phối hợp chăm sóc thật sự ấn tượng!"
               </p>
               <div>
                 <p className="font-semibold text-gray-900">Emily Wilson</p>
-                <p className="text-gray-500 text-sm">Rabbit Owner</p>
+                <p className="text-gray-500 text-sm">Chủ thỏ</p>
               </div>
             </div>
           </div>
         </div>
       </section>
+
       {/* Sample Image Section */}
-      <section >
+      <section>
         <img
           src="./sampleimg/samplebg.jpg"
-          alt="Sample oge?👌"
+          alt="Hình ảnh mẫu"
           className="mx-auto rounded-xl shadow-lg"
         />
       </section>
-
-
 
       {/* CTA Section */}
       <section className="bg-gradient-to-r from-teal-600 to-cyan-600 py-16">
         <div className="max-w-4xl mx-auto px-4 sm:px-6 lg:px-8 text-center">
           <h2 className="text-4xl font-bold text-white mb-4">
-            Chốt phần kết ở đây đặt lịch, chăm sóc,....
+            Đặt Lịch Ngay Hôm Nay – Chăm Sóc Toàn Diện Cho Thú Cưng
           </h2>
           <p className="text-xl text-cyan-50 mb-8">
-            Whether it's time for a check-up or your pet needs special care, our
-            team is here to help.
+            Dù là khám định kỳ hay cần chăm sóc đặc biệt, đội ngũ của chúng tôi luôn sẵn sàng hỗ trợ.
           </p>
           <button className="bg-white text-teal-700 px-8 py-4 rounded-full font-semibold text-lg hover:bg-cyan-50 transition shadow-xl">
-            Book an Appointment Today
+            Đặt Lịch Khám Ngay
           </button>
         </div>
       </section>
       <Footer />
     </div>
-
   );
 }
