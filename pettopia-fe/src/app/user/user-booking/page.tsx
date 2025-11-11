@@ -62,6 +62,7 @@ export default function AppointmentBooking() {
   const [selectedServices, setSelectedServices] = useState<string[]>([]);
   const [petServiceMap, setPetServiceMap] = useState<PetServiceMap>({});
   const [showSuccess, setShowSuccess] = useState(false);
+  const [isSubmitting, setIsSubmitting] = useState(false); // ✅ THÊM DÒNG NÀY
 
   const [clinics, setClinics] = useState<Clinic[]>([]);
   const [services, setServices] = useState<Service[]>([]);
@@ -240,6 +241,20 @@ export default function AppointmentBooking() {
     return m ? `${h}h${m}ph` : `${h}h`;
   };
 
+  const formatShiftName = (shift: string) => {
+    const shiftMap: Record<string, string> = {
+      'morning': 'Sáng',
+      'afternoon': 'Chiều',
+      'evening': 'Tối',
+      'night': 'Đêm',
+      'Morning': 'Sáng',
+      'Afternoon': 'Chiều',
+      'Evening': 'Tối',
+      'Night': 'Đêm',
+    };
+    return shiftMap[shift] || shift;
+  };
+
   const getMinDate = () => new Date().toISOString().split('T')[0];
 
   const toggleService = (serviceId: string) => {
@@ -300,6 +315,7 @@ export default function AppointmentBooking() {
     };
 
     try {
+      setIsSubmitting(true); // ✅ BẬT LOADING
       const res = await fetch(`${API_BASE_URL}/healthcare/appointment`, {
         method: 'POST',
         headers: getAuthHeaders(),
@@ -317,16 +333,19 @@ export default function AppointmentBooking() {
           setSelectedShift('');
           setSelectedServices([]);
           setPetServiceMap({});
+          setIsSubmitting(false); // ✅ TẮT LOADING
         }, 3000);
       } else {
         const errorData = await res.json().catch(() => ({}));
         const errorMsg = errorData?.message || `Đặt lịch thất bại (${res.status})`;
         alert(errorMsg);
         console.error('Appointment booking error:', errorData);
+        setIsSubmitting(false); // ✅ TẮT LOADING KHI LỖI
       }
     } catch (err) {
       alert('Lỗi kết nối. Vui lòng kiểm tra mạng!');
       console.error('Submit error:', err);
+      setIsSubmitting(false); // ✅ TẮT LOADING KHI LỖI
     }
   };
 
@@ -450,7 +469,7 @@ export default function AppointmentBooking() {
                         onClick={() => setSelectedShift(shift.id)}
                         className={`p-5 rounded-xl border-2 text-center cursor-pointer transition-all ${selectedShift === shift.id ? 'border-teal-600 bg-teal-50 shadow-md' : 'border-gray-300 hover:border-gray-400'}`}
                       >
-                        <h4 className="text-lg font-bold text-gray-700">{shift.shift}</h4>
+                        <h4 className="text-lg font-bold text-gray-700">{formatShiftName(shift.shift)}</h4>
                         <p className="text-xl font-bold mt-2">{shift.start_time} - {shift.end_time}</p>
                       </div>
                     ))}
@@ -486,7 +505,7 @@ export default function AppointmentBooking() {
                         {selectedServices.includes(service.id) && (
                           <svg className="w-8 h-8 text-teal-600" fill="currentColor" viewBox="0 0 20 20">
                             <path fillRule="evenodd" d="M10 18a8 8 0 100-16 8 8 0 000 16zm3.707-9.293a1 1 0 00-1.414-1.414L9 10.586 7.707 9.293a1 1 0 00-1.414 1.414l2 2a1 1 0 001.414 0l4-4z" clipRule="evenodd" />
-                          </svg>
+                        </svg>
                         )}
                       </div>
                     </div>
@@ -558,7 +577,7 @@ export default function AppointmentBooking() {
                   </p>
                   <p className="text-base mt-2">
                     Ca: <span className="font-bold text-teal-600">
-                      {shifts.find(s => s.id === selectedShift)?.shift}
+                      {formatShiftName(shifts.find(s => s.id === selectedShift)?.shift || '')}
                     </span>
                     {' '}({shifts.find(s => s.id === selectedShift)?.start_time} - {shifts.find(s => s.id === selectedShift)?.end_time})
                   </p>
@@ -612,11 +631,12 @@ export default function AppointmentBooking() {
         <div className="flex justify-between mt-12">
           <button
             onClick={() => setCurrentStep(s => Math.max(1, s - 1))}
-            disabled={currentStep === 1}
-            className={`px-8 py-4 rounded-xl font-medium transition ${currentStep === 1
+            disabled={currentStep === 1 || isSubmitting} // ✅ DISABLE KHI ĐANG LOADING
+            className={`px-8 py-4 rounded-xl font-medium transition ${
+              currentStep === 1 || isSubmitting
                 ? 'bg-gray-200 text-gray-400 cursor-not-allowed'
                 : 'bg-gray-100 hover:bg-gray-200 text-gray-700'
-              }`}
+            }`}
           >
             Quay lại
           </button>
@@ -624,20 +644,33 @@ export default function AppointmentBooking() {
           {currentStep < 5 ? (
             <button
               onClick={() => setCurrentStep(s => s + 1)}
-              disabled={!canProceed()}
-              className={`px-8 py-4 rounded-xl font-medium transition ${canProceed()
+              disabled={!canProceed() || isSubmitting} // ✅ DISABLE KHI ĐANG LOADING
+              className={`px-8 py-4 rounded-xl font-medium transition ${
+                canProceed() && !isSubmitting
                   ? 'bg-teal-600 text-white hover:bg-teal-700 shadow-lg'
                   : 'bg-gray-200 text-gray-400 cursor-not-allowed'
-                }`}
+              }`}
             >
               Tiếp theo
             </button>
           ) : (
             <button
               onClick={handleSubmit}
-              className="px-12 py-5 bg-teal-600 text-white rounded-xl font-bold text-xl hover:bg-teal-700 transition shadow-xl transform hover:scale-105"
+              disabled={isSubmitting} // ✅ DISABLE KHI ĐANG LOADING
+              className={`px-12 py-5 rounded-xl font-bold text-xl transition shadow-xl transform ${
+                isSubmitting
+                  ? 'bg-gray-400 text-gray-600 cursor-not-allowed'
+                  : 'bg-teal-600 text-white hover:bg-teal-700 hover:scale-105'
+              }`}
             >
-              Xác nhận đặt lịch ngay
+              {isSubmitting ? (
+                <div className="flex items-center justify-center gap-3">
+                  <div className="animate-spin rounded-full h-5 w-5 border-b-2 border-white"></div>
+                  <span>Đang xử lý...</span>
+                </div>
+              ) : (
+                'Xác nhận đặt lịch ngay'
+              )}
             </button>
           )}
         </div>
