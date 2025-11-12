@@ -1,6 +1,6 @@
 'use client'
 import React, { useEffect, useMemo, useState } from 'react';
-import { getClinicServices, createClinicService, updateClinicService } from '@/services/partner/clinicService';
+import { getClinicServices, createClinicService, updateClinicService, deleteClinicService } from '@/services/partner/clinicService';
 
 interface Service {
   _id?: string;
@@ -25,6 +25,7 @@ export default function ClinicService() {
   const [hoveredService, setHoveredService] = useState<string | null>(null);
   const [searchTerm, setSearchTerm] = useState('');
   const [debouncedSearch, setDebouncedSearch] = useState('');
+  const [deleteConfirm, setDeleteConfirm] = useState<string | null>(null);
 
   const [form, setForm] = useState<Service>({
     name: '',
@@ -48,31 +49,30 @@ export default function ClinicService() {
   }, [searchTerm]);
 
   async function load(pageToLoad = page, search = debouncedSearch) {
-  setLoading(true);
-  setError(null);
-  try {
-    const res = await getClinicServices(pageToLoad, limit, search);
-    
-    // API trả về: { status: "success", data: { items: [...], total: 2, page: 1, limit: 10, totalPages: 1 } }
-    if (res.status === 'success' && res.data) {
-      setServices(res.data.items || []);
-      setTotal(res.data.total || 0);
-    } else {
+    setLoading(true);
+    setError(null);
+    try {
+      const res = await getClinicServices(pageToLoad, limit, search);
+      
+      if (res.status === 'success' && res.data) {
+        setServices(res.data.items || []);
+        setTotal(res.data.total || 0);
+      } else {
+        setServices([]);
+        setTotal(0);
+      }
+    } catch (e: any) {
+      setError(e?.message || 'Failed to load services');
       setServices([]);
       setTotal(0);
+    } finally {
+      setLoading(false);
     }
-  } catch (e: any) {
-    setError(e?.message || 'Failed to load services');
-    setServices([]);
-    setTotal(0);
-  } finally {
-    setLoading(false);
   }
-}
+
   useEffect(() => {
     load(page, debouncedSearch);
   }, [page, debouncedSearch]);
-
 
   async function handleSubmit() {
     if (!form.name.trim()) {
@@ -92,6 +92,27 @@ export default function ClinicService() {
       setIsModalOpen(false);
     } catch (e: any) {
       setError(e?.response?.data?.message || e?.message || 'Failed to save service');
+    } finally {
+      setLoading(false);
+    }
+  }
+
+  async function handleDelete(id: string) {
+    setLoading(true);
+    setError(null);
+    try {
+      await deleteClinicService(id);
+      
+      // Nếu xóa item cuối cùng của trang và không phải trang 1
+      if (services.length === 1 && page > 1) {
+        setPage(page - 1);
+      } else {
+        await load(page, debouncedSearch);
+      }
+      
+      setDeleteConfirm(null);
+    } catch (e: any) {
+      setError(e?.response?.data?.message || e?.message || 'Failed to delete service');
     } finally {
       setLoading(false);
     }
@@ -140,7 +161,7 @@ export default function ClinicService() {
 
   return (
     <div className="min-h-screen">
-      <div className="max-w-7xl mx-auto ">
+      <div className="max-w-7xl mx-auto">
         {/* Header */}
         <div className="mb-8 flex flex-col gap-4 md:flex-row md:items-center md:justify-between">
           <div>
@@ -162,7 +183,6 @@ export default function ClinicService() {
                 onChange={(e) => {
                   const value = e.target.value;
                   setSearchTerm(value);
-                  // Reset về trang 1 khi tìm kiếm
                   setPage(1);
                 }}
               />
@@ -293,12 +313,20 @@ export default function ClinicService() {
                           </span>
                         </td>
                         <td className="px-6 py-4 whitespace-nowrap text-center">
-                          <button
-                            className="text-teal-600 hover:text-teal-900 font-medium text-sm transition"
-                            onClick={() => openModal(s)}
-                          >
-                            Chỉnh sửa
-                          </button>
+                          <div className="flex items-center justify-center gap-3">
+                            <button
+                              className="text-teal-600 hover:text-teal-900 font-medium text-sm transition"
+                              onClick={() => openModal(s)}
+                            >
+                              Chỉnh sửa
+                            </button>
+                            <button
+                              className="text-red-600 hover:text-red-900 font-medium text-sm transition"
+                              onClick={() => setDeleteConfirm(s.id || s._id || '')}
+                            >
+                              Xóa
+                            </button>
+                          </div>
                         </td>
                       </tr>
                     );
@@ -363,11 +391,10 @@ export default function ClinicService() {
         </div>
       </div>
 
-      {/* Modal */}
+      {/* Edit/Create Modal */}
       {isModalOpen && (
         <div className="fixed inset-0 bg-black/30 backdrop-blur-sm flex items-center justify-center z-50 p-4">
           <div className="bg-white rounded-xl shadow-xl max-w-2xl w-full max-h-[90vh] overflow-y-auto">
-            {/* Modal Header */}
             <div className="border-b border-gray-200 px-6 py-4 flex items-center justify-between sticky top-0 bg-white z-10">
               <h2 className="text-xl font-semibold text-gray-900">
                 {editingId ? 'Chỉnh sửa dịch vụ' : 'Thêm dịch vụ mới'}
@@ -382,9 +409,7 @@ export default function ClinicService() {
               </button>
             </div>
 
-            {/* Modal Body */}
             <div className="p-6">
-              {/* Error Alert in Modal */}
               {error && (
                 <div className="mb-6 rounded-lg bg-red-50 border border-red-200 p-4">
                   <div className="flex items-start">
@@ -401,21 +426,19 @@ export default function ClinicService() {
               )}
 
               <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
-                {/* Service Name */}
                 <div className="md:col-span-2">
                   <label className="block text-sm font-medium text-gray-700 mb-2">
                     Tên dịch vụ <span className="text-red-500">*</span>
                   </label>
                   <input
                     type="text"
-                    className="w-full border border-gray-300 rounded-lg px-4 py-2.5 focus:ring-2 focus:ring-teal-500 focus:border-transparent transition pointer-events-auto"
+                    className="w-full border border-gray-300 rounded-lg px-4 py-2.5 focus:ring-2 focus:ring-teal-500 focus:border-transparent transition"
                     value={form.name}
                     onChange={(e) => setForm({ ...form, name: e.target.value })}
                     placeholder="VD: Khám tổng quát"
                   />
                 </div>
 
-                {/* Description */}
                 <div className="md:col-span-2">
                   <label className="block text-sm font-medium text-gray-700 mb-2">
                     Mô tả
@@ -429,7 +452,6 @@ export default function ClinicService() {
                   />
                 </div>
 
-                {/* Price */}
                 <div>
                   <label className="block text-sm font-medium text-gray-700 mb-2">
                     Giá tiền (VND) <span className="text-red-500">*</span>
@@ -447,7 +469,6 @@ export default function ClinicService() {
                   </div>
                 </div>
 
-                {/* Duration */}
                 <div>
                   <label className="block text-sm font-medium text-gray-700 mb-2">
                     Thời gian (phút) <span className="text-red-500">*</span>
@@ -465,7 +486,6 @@ export default function ClinicService() {
                   </div>
                 </div>
 
-                {/* Active Status */}
                 <div className="md:col-span-2">
                   <label className="flex items-center cursor-pointer">
                     <input
@@ -480,7 +500,6 @@ export default function ClinicService() {
               </div>
             </div>
 
-            {/* Modal Footer */}
             <div className="border-t border-gray-200 px-6 py-4 flex gap-3 justify-end bg-gray-50 sticky bottom-0">
               <button
                 type="button"
@@ -505,6 +524,51 @@ export default function ClinicService() {
                     Đang lưu...
                   </span>
                 ) : editingId ? 'Cập nhật' : 'Thêm mới'}
+              </button>
+            </div>
+          </div>
+        </div>
+      )}
+
+      {/* Delete Confirmation Modal */}
+      {deleteConfirm && (
+        <div className="fixed inset-0 bg-black/30 backdrop-blur-sm flex items-center justify-center z-50 p-4">
+          <div className="bg-white rounded-xl shadow-xl max-w-md w-full p-6">
+            <div className="flex items-center justify-center w-12 h-12 mx-auto bg-red-100 rounded-full mb-4">
+              <svg className="h-6 w-6 text-red-600" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 9v2m0 4h.01m-6.938 4h13.856c1.54 0 2.502-1.667 1.732-3L13.732 4c-.77-1.333-2.694-1.333-3.464 0L3.34 16c-.77 1.333.192 3 1.732 3z" />
+              </svg>
+            </div>
+            
+            <h3 className="text-lg font-semibold text-gray-900 text-center mb-2">
+              Xác nhận xóa dịch vụ
+            </h3>
+            <p className="text-sm text-gray-600 text-center mb-6">
+              Bạn có chắc chắn muốn xóa dịch vụ này? Hành động này không thể hoàn tác.
+            </p>
+
+            <div className="flex gap-3">
+              <button
+                onClick={() => setDeleteConfirm(null)}
+                className="flex-1 bg-white text-gray-700 border border-gray-300 rounded-lg px-4 py-2.5 font-medium hover:bg-gray-50 transition"
+                disabled={loading}
+              >
+                Hủy
+              </button>
+              <button
+                onClick={() => handleDelete(deleteConfirm)}
+                className="flex-1 bg-red-600 text-white rounded-lg px-4 py-2.5 font-medium hover:bg-red-700 focus:ring-4 focus:ring-red-200 disabled:opacity-60 disabled:cursor-not-allowed transition"
+                disabled={loading}
+              >
+                {loading ? (
+                  <span className="flex items-center justify-center">
+                    <svg className="animate-spin -ml-1 mr-2 h-4 w-4 text-white" fill="none" viewBox="0 0 24 24">
+                      <circle className="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" strokeWidth="4"></circle>
+                      <path className="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4zm2 5.291A7.962 7.962 0 014 12H0c0 3.042 1.135 5.824 3 7.938l3-2.647z"></path>
+                    </svg>
+                    Đang xóa...
+                  </span>
+                ) : 'Xóa'}
               </button>
             </div>
           </div>

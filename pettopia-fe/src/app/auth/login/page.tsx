@@ -6,17 +6,21 @@ export default function LoginPage() {
     <div className="min-h-screen flex">
       {/* Left half: Form */}
       <div className="w-full lg:w-1/2 flex items-center justify-center">
-        <LoginForm />
+        <div className="w-full max-w-md">
+          <LoginForm />
+        </div>
       </div>
-      {/* Right half: Image */}
-      <div className="hidden lg:block lg:w-1/2 relative">
-        <Image
-          src="/assets/img/Dog-Vet.jpg" // Place your image in public/
-          alt="Login background"
-          fill
-          style={{ objectFit: 'cover' }}
-          priority
-        />
+      {/* Right half: Image with frame */}
+      <div className="hidden lg:flex lg:w-1/2 items-center justify-center">
+        <div className="relative w-4/5 h-4/5 rounded-lg overflow-hidden shadow-2xl">
+          <Image
+            src="/assets/img/Dog-Vet.jpg"
+            alt="Login background"
+            fill
+            style={{ objectFit: 'cover' }}
+            priority
+          />
+        </div>
       </div>
     </div>
   );

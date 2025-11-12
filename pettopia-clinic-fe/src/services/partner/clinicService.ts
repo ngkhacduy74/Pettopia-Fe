@@ -139,7 +139,6 @@ export const updateClinicFormStatus = async (formId: string, status: string, not
   }
 };
 
-// Lấy danh sách service (GET /service)
 // Lấy danh sách service (GET /service/all)
 export const getClinicServices = async (page: number = 1, limit: number = 10, search?: string) => {
   const token = localStorage.getItem('authToken');
@@ -152,7 +151,6 @@ export const getClinicServices = async (page: number = 1, limit: number = 10, se
       params.search = search.trim();
     }
     
-    // ✅ Thêm /all vào endpoint
     const response = await axios.get(`${PARTNER_API_URL}/service/all`, {
       params,
       headers: { 'token': token }
@@ -164,14 +162,13 @@ export const getClinicServices = async (page: number = 1, limit: number = 10, se
   }
 };
 
-// Tạo mới service  (POST /service)
+// Tạo mới service (POST /service)
 export const createClinicService = async (serviceData: any) => {
   const token = localStorage.getItem('authToken');
   if (!token) {
     throw new Error('No authentication token found');
   }
   try {
-    // Sử dụng axios toàn cục với URL đầy đủ để tránh lỗi baseURL
     const response = await axios.post(`${PARTNER_API_URL}/service`, serviceData, {
       headers: { 'token': token }
     });
@@ -196,5 +193,23 @@ export const updateClinicService = async (serviceId: string, serviceData: any) =
   } catch (error) {
     console.error("Lỗi khi cập nhật service:", error);
     throw error;
+  }
+};
+
+// Xóa service (DELETE /service/:id)
+export const deleteClinicService = async (serviceId: string) => {
+  const token = localStorage.getItem('authToken');
+  if (!token) {
+    throw new Error('No authentication token found');
+  }
+  try {
+    const response = await axios.delete(`${PARTNER_API_URL}/service/${serviceId}`, {
+      headers: { 'token': token }
+    });
+    return response.data;
+  } catch (error: any) {
+    console.error("Lỗi khi xóa service:", error);
+    // Throw error với message từ API nếu có
+    throw new Error(error.response?.data?.message || 'Không thể xóa dịch vụ');
   }
 };
