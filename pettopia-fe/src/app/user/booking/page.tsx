@@ -2,7 +2,7 @@
 
 import React from 'react';
 import Head from 'next/head';
-import UpcomingMeetings from '@/components/UpcomingMeetings'; // Đường dẫn tới component bạn đã gửi
+import UpcomingMeetings from '@/components/UpcomingMeetings';
 
 export default function LichHenPage() {
   return (
