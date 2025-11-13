@@ -1,6 +1,15 @@
 'use client'
 import React, { useState } from 'react';
-import RequestTable from '@/components/staff/RequestTable';
+import dynamic from 'next/dynamic';
+
+const RequestTable = dynamic(() => import('@/components/staff/RequestTable'), {
+  loading: () => (
+    <div className="flex items-center justify-center h-screen text-gray-500">
+      Loading...
+    </div>
+  ),
+  ssr: false,
+});
 
 export default function ClinicHomePage() {
 

@@ -1,6 +1,14 @@
-import UserList from '@/components/admin/ManagerUser';
+import dynamic from 'next/dynamic';
 
+const ManagerUser = dynamic(() => import('@/components/admin/ManagerUser'), {
+  loading: () => (
+    <div className="flex items-center justify-center h-screen text-gray-500">
+      Loading...
+    </div>
+  ),
+  ssr: false,
+});
 
 export default function ClinicFormDetailPage() {
-  return <UserList title="Quản lí người dùng" />;
+  return <ManagerUser title="Quản lí người dùng" />;
 }
