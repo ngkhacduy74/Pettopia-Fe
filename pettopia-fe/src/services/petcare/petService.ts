@@ -1,6 +1,14 @@
 import axios from 'axios';
 
-// Use relative path to work with Next.js rewrite proxy
+function getAuthToken(): string | null {
+    return localStorage.getItem('authToken');
+}
+function authHeaders() {
+    const token = getAuthToken();
+    if (!token) return {};
+    return { headers: { token } };
+}
+
 const PET_API_URL = '/api/v1/pet/create';
 
 export interface CreatePetPayload {
@@ -10,39 +18,17 @@ export interface CreatePetPayload {
     gender?: string;
     color?: string;
     weight?: number;
-    dateOfBirth?: string; // ISO string
+    dateOfBirth?: string; 
     avatar_url?: string;
-    owner?: unknown; // backend may infer from auth; keep flexible
+    owner?: string | Record<string, unknown>; // changed from unknown
 }
 
 export async function createPet(payload: CreatePetPayload) {
     try {
-        // withCredentials is not needed when proxying same-origin; remove to avoid cookie/SameSite issues
         const response = await axios.post(PET_API_URL, payload);
         return response.data;
     } catch (error) {
-        // Log rich diagnostics for easier debugging in the browser
-        // eslint-disable-next-line no-console
-        if ((axios as any).isAxiosError?.(error)) {
-            const err = error as any;
-            try {
-                // eslint-disable-next-line no-console
-                console.error('createPet axios error (toJSON)', err.toJSON?.());
-            } catch {}
-            // eslint-disable-next-line no-console
-            console.error('createPet axios error (fields)', {
-                message: err.message,
-                code: err.code,
-                status: err.response?.status,
-                statusText: err.response?.statusText,
-                url: err.config?.url,
-                method: err.config?.method,
-                data: err.response?.data,
-            });
-        } else {
-            // eslint-disable-next-line no-console
-            console.error('createPet non-axios error', error);
-        }
+        logAxiosError('createPet', error);
         throw error;
     }
 }
@@ -73,7 +59,7 @@ export interface UpdatePetPayload {
     gender?: string;
     color?: string;
     weight?: number;
-    dateOfBirth?: string; // ISO string
+    dateOfBirth?: string; 
     avatar_url?: string;
 }
 
@@ -83,20 +69,7 @@ export async function updatePet(petId: string, payload: UpdatePetPayload) {
         const response = await axios.patch(url, payload);
         return response.data;
     } catch (error) {
-        if ((axios as any).isAxiosError?.(error)) {
-            const err = error as any;
-            console.error('updatePet axios error', {
-                message: err.message,
-                code: err.code,
-                status: err.response?.status,
-                statusText: err.response?.statusText,
-                url: err.config?.url,
-                method: err.config?.method,
-                data: err.response?.data,
-            });
-        } else {
-            console.error('updatePet non-axios error', error);
-        }
+        logAxiosError('updatePet', error);
         throw error;
     }
 }
@@ -107,22 +80,76 @@ export async function deletePet(petId: string) {
         const response = await axios.delete(url);
         return response.data;
     } catch (error) {
-        if ((axios as any).isAxiosError?.(error)) {
-            const err = error as any;
-            console.error('deletePet axios error', {
-                message: err.message,
-                code: err.code,
-                status: err.response?.status,
-                statusText: err.response?.statusText,
-                url: err.config?.url,
-                method: err.config?.method,
-                data: err.response?.data,
-            });
-        } else {
-            console.error('deletePet non-axios error', error);
-        }
+        logAxiosError('deletePet', error);
         throw error;
     }
 }
 
+// Healthcare Appointments
+export interface Appointment {
+    _id: string;
+    user_id: string;
+    pet_ids: string[];
+    clinic_id: string;
+    service_ids: string[];
+    date: string;
+    shift: 'Morning' | 'Afternoon' | 'Evening';
+    status: 'Pending_Confirmation' | 'Confirmed' | 'Cancelled' | 'Completed';
+    id: string;
+    createdAt: string;
+    updatedAt: string;
+}
 
+export interface AppointmentsResponse {
+    status: string;
+    message: string;
+    data: Appointment[];
+    pagination: {
+        total: number;
+        page: number;
+        limit: number;
+        totalPages: number;
+    };
+}
+
+export interface GetAppointmentsParams {
+    page?: number;
+    limit?: number;
+}
+
+export async function getAppointments(params?: GetAppointmentsParams): Promise<AppointmentsResponse> {
+    try {
+        const { page = 1, limit = 10 } = params || {};
+        const url = `/api/v1/healthcare/appointments`;
+        const response = await axios.get(url, { params: { page, limit }, ...authHeaders() });
+        return response.data;
+    } catch (error) {
+        logAxiosError('getAppointments', error);
+        throw error;
+    }
+}
+
+// Helper: axios error checking / logging
+function isAxiosError(err: unknown): err is import('axios').AxiosError {
+    return (axios as any).isAxiosError?.(err) === true;
+}
+
+function logAxiosError(context: string, error: unknown) {
+    if (isAxiosError(error)) {
+        const err = error as import('axios').AxiosError;
+        try {
+            console.error(`${context} axios error (toJSON)`, (err as any).toJSON?.());
+        } catch {}
+        console.error(`${context} axios error (fields)`, {
+            message: err.message,
+            code: (err as any).code,
+            status: err.response?.status,
+            statusText: err.response?.statusText,
+            url: err.config?.url,
+            method: err.config?.method,
+            data: err.response?.data,
+        });
+    } else {
+        console.error(`${context} non-axios error`, error);
+    }
+}

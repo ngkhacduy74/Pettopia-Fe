@@ -1,6 +1,7 @@
 'use client';
 
-import React, { useState } from 'react';
+import React, { useState, useEffect } from 'react';
+import { getAppointments, Appointment } from '@/services/petcare/petService'; // Adjust path as needed
 
 // Heroicons as inline SVG components
 const ChevronLeftIcon = ({ className }: { className?: string }) => (
@@ -16,17 +17,98 @@ const ChevronRightIcon = ({ className }: { className?: string }) => (
 );
 
 const UpcomingMeetings = () => {
-  const [currentDate, setCurrentDate] = useState(new Date(2022, 0, 22)); // January 22, 2022
+  const [currentDate, setCurrentDate] = useState(new Date());
+  const [appointments, setAppointments] = useState<Appointment[]>([]);
+  const [loading, setLoading] = useState(true);
+  const [error, setError] = useState<string | null>(null);
 
   const daysOfWeek = ['M', 'T', 'W', 'T', 'F', 'S', 'S'];
   const monthNames = ['January', 'February', 'March', 'April', 'May', 'June', 
                       'July', 'August', 'September', 'October', 'November', 'December'];
 
-  const upcomingAppointments = [
-    { id: 1, date: '10/01/2022', time: '09:00 AM', title: 'Khám định kỳ cho Milu', type: 'Khám sức khỏe' },
-    { id: 2, date: '12/01/2022', time: '02:30 PM', title: 'Tiêm phòng cho Buddy', type: 'Tiêm phòng' },
-    { id: 3, date: '19/01/2022', time: '11:00 AM', title: 'Grooming cho Max', type: 'Chăm sóc' },
-  ];
+  // Fetch appointments from API
+  useEffect(() => {
+    const fetchAppointments = async () => {
+      try {
+        setLoading(true);
+        const response = await getAppointments({ page: 1, limit: 100 });
+        setAppointments(response.data);
+        setError(null);
+      } catch (err) {
+        console.error('Error fetching appointments:', err);
+        setError('Không thể tải lịch hẹn');
+      } finally {
+        setLoading(false);
+      }
+    };
+
+    fetchAppointments();
+  }, []);
+
+  // Format shift to Vietnamese
+  const formatShift = (shift: string) => {
+    const shifts: Record<string, string> = {
+      'Morning': 'Sáng',
+      'Afternoon': 'Chiều',
+      'Evening': 'Tối'
+    };
+    return shifts[shift] || shift;
+  };
+
+  // Format status to Vietnamese
+  const formatStatus = (status: string) => {
+    const statuses: Record<string, string> = {
+      'Pending_Confirmation': 'Chờ xác nhận',
+      'Confirmed': 'Đã xác nhận',
+      'Cancelled': 'Đã hủy',
+      'Completed': 'Hoàn thành'
+    };
+    return statuses[status] || status;
+  };
+
+  // Get status color
+  const getStatusColor = (status: string) => {
+    const colors: Record<string, string> = {
+      'Pending_Confirmation': 'bg-yellow-600',
+      'Confirmed': 'bg-teal-600',
+      'Cancelled': 'bg-red-600',
+      'Completed': 'bg-gray-600'
+    };
+    return colors[status] || 'bg-gray-600';
+  };
+
+  // Format date to DD/MM/YYYY
+  const formatDate = (dateString: string) => {
+    const date = new Date(dateString);
+    const day = String(date.getDate()).padStart(2, '0');
+    const month = String(date.getMonth() + 1).padStart(2, '0');
+    const year = date.getFullYear();
+    return `${day}/${month}/${year}`;
+  };
+
+  // Get upcoming appointments (sorted by date)
+  const getUpcomingAppointments = () => {
+    const now = new Date();
+    return appointments
+      .filter(apt => new Date(apt.date) >= now)
+      .sort((a, b) => new Date(a.date).getTime() - new Date(b.date).getTime())
+      .slice(0, 5); // Show only 5 upcoming appointments
+  };
+
+  // Get appointments for current month view
+  const getAppointmentsForMonth = () => {
+    return appointments.filter(apt => {
+      const aptDate = new Date(apt.date);
+      return aptDate.getMonth() === currentDate.getMonth() && 
+             aptDate.getFullYear() === currentDate.getFullYear();
+    });
+  };
+
+  // Check if a day has appointments
+  const hasAppointment = (day: number) => {
+    const monthAppointments = getAppointmentsForMonth();
+    return monthAppointments.some(apt => new Date(apt.date).getDate() === day);
+  };
 
   const getDaysInMonth = (date: Date) => {
     const year = date.getFullYear();
@@ -34,23 +116,20 @@ const UpcomingMeetings = () => {
     const firstDay = new Date(year, month, 1);
     const lastDay = new Date(year, month + 1, 0);
     const daysInMonth = lastDay.getDate();
-    const startingDayOfWeek = (firstDay.getDay() + 6) % 7; // Convert to Monday-first
+    const startingDayOfWeek = (firstDay.getDay() + 6) % 7;
 
     const days = [];
     
-    // Previous month days
     const prevMonthLastDay = new Date(year, month, 0).getDate();
     for (let i = startingDayOfWeek - 1; i >= 0; i--) {
       days.push({ day: prevMonthLastDay - i, isCurrentMonth: false });
     }
     
-    // Current month days
     for (let i = 1; i <= daysInMonth; i++) {
       days.push({ day: i, isCurrentMonth: true });
     }
     
-    // Next month days
-    const remainingDays = 42 - days.length; // 6 rows * 7 days
+    const remainingDays = 42 - days.length;
     for (let i = 1; i <= remainingDays; i++) {
       days.push({ day: i, isCurrentMonth: false });
     }
@@ -63,14 +142,14 @@ const UpcomingMeetings = () => {
   };
 
   const isToday = (day: number) => {
-    return currentDate.getMonth() === 0 && day === 22;
-  };
-
-  const hasEvent = (day: number) => {
-    return [10, 12, 19].includes(day);
+    const today = new Date();
+    return currentDate.getMonth() === today.getMonth() && 
+           currentDate.getFullYear() === today.getFullYear() && 
+           day === today.getDate();
   };
 
   const days = getDaysInMonth(currentDate);
+  const upcomingAppointments = getUpcomingAppointments();
 
   return (
     <div className="w-full bg-transparent">
@@ -110,7 +189,7 @@ const UpcomingMeetings = () => {
             <div className="grid grid-cols-7 gap-1">
               {days.map((dayObj, index) => {
                 const isCurrentDay = isToday(dayObj.day) && dayObj.isCurrentMonth;
-                const hasEventDay = hasEvent(dayObj.day) && dayObj.isCurrentMonth;
+                const hasEvent = hasAppointment(dayObj.day) && dayObj.isCurrentMonth;
                 
                 return (
                   <button
@@ -119,11 +198,11 @@ const UpcomingMeetings = () => {
                       aspect-square flex items-center justify-center rounded-lg text-sm font-medium transition-all relative
                       ${!dayObj.isCurrentMonth ? 'text-gray-400' : 'text-gray-700'}
                       ${isCurrentDay ? 'bg-teal-600 text-white font-bold shadow-md hover:bg-teal-700' : 'hover:bg-teal-50'}
-                      ${hasEventDay && !isCurrentDay ? 'text-teal-600 font-semibold bg-teal-50' : ''}
+                      ${hasEvent && !isCurrentDay ? 'text-teal-600 font-semibold bg-teal-50' : ''}
                     `}
                   >
                     {dayObj.day}
-                    {hasEventDay && !isCurrentDay && (
+                    {hasEvent && !isCurrentDay && (
                       <div className="absolute bottom-1 w-1.5 h-1.5 bg-teal-600 rounded-full"></div>
                     )}
                   </button>
@@ -143,28 +222,42 @@ const UpcomingMeetings = () => {
           {/* Upcoming Appointments */}
           <div className="bg-white rounded-xl p-4 border border-teal-100 shadow-sm">
             <h3 className="text-lg font-bold text-gray-900 mb-4">Lịch hẹn sắp tới</h3>
-            <div className="space-y-3">
-              {upcomingAppointments.map((appointment) => (
-                <div
-                  key={appointment.id}
-                  className="p-3 bg-teal-50 rounded-lg border border-teal-100 hover:shadow-md transition-shadow"
-                >
-                  <div className="flex justify-between items-start mb-2">
-                    <h4 className="font-semibold text-gray-900 text-sm">{appointment.title}</h4>
-                    <span className="text-xs bg-teal-600 text-white px-2 py-1 rounded-full">
-                      {appointment.type}
-                    </span>
-                  </div>
-                  <div className="flex items-center text-sm text-gray-600">
-                    <span>{appointment.date}</span>
-                    <span className="mx-2">•</span>
-                    <span>{appointment.time}</span>
-                  </div>
-                </div>
-              ))}
-            </div>
             
-            {upcomingAppointments.length === 0 && (
+            {loading ? (
+              <div className="text-center py-8 text-gray-500">
+                <p>Đang tải...</p>
+              </div>
+            ) : error ? (
+              <div className="text-center py-8 text-red-500">
+                <p>{error}</p>
+              </div>
+            ) : upcomingAppointments.length > 0 ? (
+              <div className="space-y-3">
+                {upcomingAppointments.map((appointment) => (
+                  <div
+                    key={appointment.id}
+                    className="p-3 bg-teal-50 rounded-lg border border-teal-100 hover:shadow-md transition-shadow"
+                  >
+                    <div className="flex justify-between items-start mb-2">
+                      <h4 className="font-semibold text-gray-900 text-sm">
+                        Lịch hẹn - {formatShift(appointment.shift)}
+                      </h4>
+                      <span className={`text-xs ${getStatusColor(appointment.status)} text-white px-2 py-1 rounded-full`}>
+                        {formatStatus(appointment.status)}
+                      </span>
+                    </div>
+                    <div className="flex items-center text-sm text-gray-600 mb-1">
+                      <span>{formatDate(appointment.date)}</span>
+                      <span className="mx-2">•</span>
+                      <span>Ca {formatShift(appointment.shift)}</span>
+                    </div>
+                    <div className="text-xs text-gray-500">
+                      {appointment.pet_ids.length} thú cưng • {appointment.service_ids.length} dịch vụ
+                    </div>
+                  </div>
+                ))}
+              </div>
+            ) : (
               <div className="text-center py-8 text-gray-500">
                 <p>Chưa có lịch hẹn nào</p>
               </div>

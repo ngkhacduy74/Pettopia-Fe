@@ -103,16 +103,19 @@ export default function Sidebar({
       { label: 'System Logs', href: '#', icon: <ClipboardDocumentListIcon className="w-4 h-4" /> },
     ],
     Staff: [
-      { label: 'Dashboard', href: '/staff/dashboard', icon: <HomeIcon className="w-4 h-4" /> },
-      { label: 'Appointments', href: '/staff/appointments', icon: <ClipboardDocumentListIcon className="w-4 h-4" /> },
-      { label: 'Clinic Request', href: '/staff/request-clinic-list', icon: <ClipboardDocumentListIcon className="w-4 h-4" /> },
-      { label: 'Veterianrian Request', href: '/staff/request-vet-list', icon: <ClipboardDocumentListIcon className="w-4 h-4" /> },
+      { label: 'Trang chủ', href: '/staff/dashboard', icon: <HomeIcon className="w-4 h-4" /> },
+      { label: 'Quản lí lịch khám', href: '/staff/appointments', icon: <ClipboardDocumentListIcon className="w-4 h-4" /> },
+      { label: 'Xét duyệt Phòng khám', href: '/staff/request-clinic-list', icon: <ClipboardDocumentListIcon className="w-4 h-4" /> },
+      { label: 'Xét duyệt Bác Sĩ', href: '/staff/request-vet-list', icon: <ClipboardDocumentListIcon className="w-4 h-4" /> },
+      { label: 'Quản lí bài viết', href: '/staff/post-report', icon: <ClipboardDocumentListIcon className="w-4 h-4" />},
+      { label: 'Cộng đồng', href: '#', icon: <ClipboardDocumentListIcon className="w-4 h-4" />}
     ],
     Clinic: [
       { label: 'Trang tổng quan', href: '/clinic/dashboard', icon: <HomeIcon className="w-4 h-4" /> },
       { label: 'Danh sách yêu cầu', href: '/clinic/request-list', icon: <DocumentCheckIcon className="w-4 h-4" /> },
       { label: 'Ca làm', href: '/clinic/shift', icon: <ClipboardDocumentListIcon className="w-4 h-4" /> },
       { label: 'Dịch vụ', href: '/clinic/service', icon: <ClipboardDocumentListIcon className="w-4 h-4" /> },
+      { label: 'Lịch khám', href: '/clinic/appointment', icon: <ClipboardDocumentListIcon className="w-4 h-4" /> },
     ],
     Vet: [
       { label: 'Dashboard', href: '/vet/dashboard', icon: <HomeIcon className="w-4 h-4" /> },
