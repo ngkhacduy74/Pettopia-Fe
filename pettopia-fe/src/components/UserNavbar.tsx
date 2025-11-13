@@ -449,7 +449,6 @@ export default function UserNavbar({ setShowSearch, showSearch }: UserNavbarProp
                       <path d="M7 11h2v2H7v-2zm4 0h2v2h-2v-2zm4 0h2v2h-2v-2z" />
                     </svg>
                     <span>Quản lý post</span>
-                    <span className="ml-auto text-xs bg-gray-100 text-gray-500 px-2 py-0.5 rounded">Sắp có</span>
                   </button>
                 </Link>
               </div>

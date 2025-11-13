@@ -267,19 +267,19 @@ export default function ManagePostsPage() {
 
           {/* Stats Cards */}
           <div className="grid grid-cols-1 md:grid-cols-4 gap-4 mb-6">
-            <div className="bg-gradient-to-br from-teal-500 to-teal-600 rounded-xl shadow-lg p-5 text-white">
+            <div className="bg-gradient-to-br from-teal-600 to-cyan-600 rounded-xl shadow-lg p-3 text-white">
               <div className="text-teal-100 text-sm font-medium mb-1">Bài viết của bạn</div>
               <div className="text-3xl font-bold">{posts.length}</div>
             </div>
-            <div className="bg-gradient-to-br from-green-500 to-green-600 rounded-xl shadow-lg p-5 text-white">
+            <div className="bg-gradient-to-br from-teal-600 to-cyan-600 rounded-xl shadow-lg p-3 text-white">
               <div className="text-green-100 text-sm font-medium mb-1">Đang hiển thị</div>
               <div className="text-3xl font-bold">{posts.filter(p => !p.isHidden).length}</div>
             </div>
-            <div className="bg-gradient-to-br from-orange-500 to-orange-600 rounded-xl shadow-lg p-5 text-white">
+            <div className="bg-gradient-to-br from-teal-600 to-cyan-600 rounded-xl shadow-lg p-3 text-white">
               <div className="text-orange-100 text-sm font-medium mb-1">Đã ẩn</div>
               <div className="text-3xl font-bold">{posts.filter(p => p.isHidden).length}</div>
             </div>
-            <div className="bg-gradient-to-br from-red-500 to-red-600 rounded-xl shadow-lg p-5 text-white">
+            <div className="bg-gradient-to-br from-teal-600 to-cyan-600 rounded-xl shadow-lg p-3 text-white">
               <div className="text-red-100 text-sm font-medium mb-1">Có báo cáo</div>
               <div className="text-3xl font-bold">{posts.filter(p => p.reportCount > 0).length}</div>
             </div>

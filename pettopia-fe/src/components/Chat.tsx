@@ -1,5 +1,5 @@
 'use client';
-import React from 'react';
+import React, { useState } from 'react';
 
 export default function Chat({
   showChat,
@@ -14,7 +14,104 @@ export default function Chat({
   setChatMessage: (v: string) => void;
   chatSuggestions: { icon: string; text: string; tag?: string }[];
 }) {
+  const [messages, setMessages] = useState<{ role: string; content: string }[]>(
+    [{ role: 'assistant', content: 'Chào bạn! Tôi có thể giúp gì?' }]
+  );
+  const [isLoading, setIsLoading] = useState(false);
+
   if (!showChat) return null;
+
+  const [userId] = React.useState<string>(() => {
+    try {
+      if (typeof window === 'undefined') return 'anonymous';
+      const key = 'pettopia_chat_userId';
+      let id = localStorage.getItem(key) || '';
+      if (!id) {
+        id = (crypto as any)?.randomUUID?.() ?? `uid-${Math.random().toString(36).slice(2, 10)}`;
+        localStorage.setItem(key, id);
+      }
+      return id;
+    } catch {
+      return 'anonymous';
+    }
+  });
+
+  const sendMessage = async (overrideMessage?: string) => {
+    const content = (overrideMessage ?? chatMessage).trim();
+    if (!content) return;
+    const userMsg = { role: 'user', content };
+    // cập nhật UI ngay lập tức
+    const nextMessages = [...messages, userMsg];
+    setMessages(nextMessages);
+    setChatMessage('');
+    setIsLoading(true);
+
+    try {
+      const res = await fetch('http://localhost:3000/api/v1/ai/gemini/chat', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({
+          userId,
+          messages: nextMessages.map(m => ({ role: m.role, content: m.content }))
+        })
+      });
+
+      const data = await (res.headers.get('content-type')?.includes('application/json') ? res.json() : res.text());
+
+      // --- mới: chuẩn hóa nhiều cấu trúc response và unquote nếu cần ---
+      let aiText: string = '';
+
+      if (typeof data === 'string') {
+        aiText = data;
+        // nếu server trả 1 string được JSON.stringify (ví dụ: "\"...\""), thử parse để unquote
+        try {
+          const parsed = JSON.parse(data);
+          if (typeof parsed === 'string') aiText = parsed;
+          else if (parsed?.content) aiText = parsed.content;
+        } catch (e) {
+          // ignore parse error
+        }
+      } else if (data && typeof data === 'object') {
+        aiText =
+          // các trường phổ biến
+          (data.content as any) ||
+          (data.reply as any) ||
+          (data.message as any) ||
+          // danh sách messages
+         
+          // danh sách messages
+          (data.messages && data.messages[0]?.content) ||
+          // cấu trúc có candidates -> content.parts[].text (ví dụ response bạn dán)
+          (data.candidates && data.candidates[0]?.content?.parts && data.candidates[0].content.parts[0]?.text) ||
+          // fallback khác
+          (data.candidates && data.candidates[0]?.content?.text) ||
+          (data.choices && data.choices[0]?.message?.content) ||
+          JSON.stringify(data);
+
+        if (typeof aiText !== 'string') aiText = String(aiText);
+        // nếu chuỗi được bọc bởi dấu ngoặc kép (JSON-stringified), thử unquote
+        const t = aiText.trim();
+        if ((t.startsWith('"') && t.endsWith('"')) || (t.startsWith("'") && t.endsWith("'"))) {
+          try {
+            const unq = JSON.parse(t);
+            if (typeof unq === 'string') aiText = unq;
+          } catch (e) {
+            // ignore
+          }
+        }
+      } else {
+        aiText = String(data);
+      }
+      // --- kết thúc phần mới ---
+
+      setMessages(prev => [...prev, { role: 'assistant', content: aiText }]);
+    } catch (e) {
+      setMessages(prev => [...prev, { role: 'assistant', content: 'Lỗi: không thể kết nối tới API' }]);
+    } finally {
+      setIsLoading(false);
+    }
+  };
+
   return (
     <div className="fixed bottom-4 right-4 w-full max-w-md h-[90vh] max-h-[600px] bg-white rounded-2xl shadow-2xl flex flex-col z-50 border border-teal-100 sm:bottom-6 sm:right-6 sm:w-96 m-4 sm:m-0">
       {/* Chat Header */}
@@ -53,21 +150,37 @@ export default function Chat({
       {/* Chat Content */}
       <div className="flex-1 overflow-y-auto p-3 sm:p-4 bg-gradient-to-b from-teal-50/30 to-white min-h-0">
         <div className="mb-4">
-          <div className="flex items-start gap-2 sm:gap-3 mb-4">
-            <div className="w-7 h-7 sm:w-8 sm:h-8 rounded-full bg-gradient-to-br from-teal-500 to-cyan-600 flex items-center justify-center flex-shrink-0">
-              🐾
+          {messages.map((m, i) => (
+            <div key={i} className={`flex items-start gap-2 sm:gap-3 mb-4 ${m.role === 'user' ? 'justify-end' : ''}`}>
+              {m.role === 'assistant' ? (
+                <>
+                  <div className="w-7 h-7 sm:w-8 sm:h-8 rounded-full bg-gradient-to-br from-teal-500 to-cyan-600 flex items-center justify-center flex-shrink-0">
+                    🐾
+                  </div>
+                  <div className="bg-white rounded-2xl rounded-tl-sm p-3 sm:p-4 max-w-[85%] shadow-sm border border-teal-100">
+                    <p className="text-xs sm:text-sm font-semibold mb-2 text-gray-900">Pet Care AI</p>
+                    <p className="text-xs sm:text-sm text-gray-600">{m.content}</p>
+                  </div>
+                </>
+              ) : (
+                <>
+                  <div className="bg-teal-50 rounded-2xl rounded-tr-sm p-3 sm:p-4 max-w-[85%] shadow-sm border border-teal-100 ml-auto">
+                    <p className="text-xs sm:text-sm text-gray-700">{m.content}</p>
+                  </div>
+                </>
+              )}
             </div>
-            <div className="bg-white rounded-2xl rounded-tl-sm p-3 sm:p-4 max-w-[85%] shadow-sm border border-teal-100">
-              <p className="text-xs sm:text-sm font-semibold mb-2 text-gray-900">Chào bạn! Tôi có thể giúp gì?</p>
-              <p className="text-xs sm:text-sm text-gray-600">Hãy chọn một trong các gợi ý bên dưới hoặc đặt câu hỏi của bạn</p>
-            </div>
-          </div>
+          ))}
 
           {/* Suggestions */}
           <div className="space-y-2">
             {chatSuggestions.map((suggestion, index) => (
               <button 
                 key={index}
+                onClick={() => {
+                  setChatMessage(suggestion.text);
+                  sendMessage(suggestion.text);
+                }}
                 className="w-full flex items-center gap-2 sm:gap-3 px-3 sm:px-4 py-2.5 sm:py-3 bg-white hover:bg-teal-50 rounded-xl text-left transition-colors border border-teal-100 shadow-sm"
               >
                 <span className="text-lg sm:text-xl flex-shrink-0">{suggestion.icon}</span>
@@ -104,16 +217,26 @@ export default function Chat({
               placeholder="Hỏi, tìm kiếm..."
               value={chatMessage}
               onChange={(e) => setChatMessage(e.target.value)}
+              onKeyDown={(e) => {
+                if (e.key === 'Enter' && !e.shiftKey) {
+                  e.preventDefault();
+                  sendMessage();
+                }
+              }}
               className="w-full bg-transparent outline-none text-xs sm:text-sm text-gray-900 placeholder:text-gray-500"
             />
           </div>
-          <button className="p-1.5 sm:p-2 bg-gradient-to-r from-teal-500 to-cyan-600 hover:from-teal-600 hover:to-cyan-700 rounded-lg transition-all shadow-sm hover:shadow-md flex-shrink-0">
+          <button
+            onClick={() => sendMessage()}
+            disabled={isLoading}
+            className="p-1.5 sm:p-2 bg-gradient-to-r from-teal-500 to-cyan-600 hover:from-teal-600 hover:to-cyan-700 rounded-lg transition-all shadow-sm hover:shadow-md flex-shrink-0 disabled:opacity-60"
+          >
             <svg className="w-4 h-4 sm:w-5 sm:h-5 text-white" fill="none" stroke="currentColor" viewBox="0 0 24 24">
               <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 19l9 2-9-18-9 18 9-2zm0 0v-8" />
             </svg>
           </button>
         </div>
-        <p className="text-xs text-gray-500 text-center mt-2">Hãy nhập tin nhắn để bắt đầu</p>
+        <p className="text-xs text-gray-500 text-center mt-2">{isLoading ? 'Đang gửi...' : 'Hãy nhập tin nhắn để bắt đầu'}</p>
       </div>
     </div>
   );
