@@ -188,20 +188,14 @@ export default function PostDetailPage() {
     return () => window.removeEventListener('keydown', handleKeyDown);
   }, [lightbox.isOpen, post?.images]);
 
-  if (loading) {
-    return (
-      <div className="container mx-auto px-4 py-10">
-        <div className="flex justify-center items-center py-12">
-          <div className="animate-spin rounded-full h-12 w-12 border-b-2 border-blue-600"></div>
-        </div>
-      </div>
-    );
-  }
+
 
   if (error) {
     return (
-      <div className="container mx-auto px-4 py-10">
-        <div className="bg-red-50 border border-red-200 text-red-700 px-4 py-3 rounded-lg">{error}</div>
+      <div className="min-h-screen bg-gradient-to-br from-teal-  to-cyan-50">
+        <div className="container mx-auto px-4 py-10">
+          <div className="bg-red-50 border border-red-200 text-red-700 px-4 py-3 rounded-lg">{error}</div>
+        </div>
       </div>
     );
   }
@@ -209,21 +203,18 @@ export default function PostDetailPage() {
   if (!post) return null;
 
   return (
-    <>
-      {/* Header */}
-      <div className="bg-white border-b border-gray-200">
-        <div className="container mx-auto px-4 py-4">
-          <div className="flex items-center justify-between">
-            <div>
-            </div>
-            <button
-              onClick={() => window.history.back()}
-              className="px-4 py-2 text-gray-600 hover:text-gray-900 hover:bg-gray-100 rounded-lg transition-colors"
-            >
-              ← Quay lại
-            </button>
-          </div>
-        </div>
+    <div className="min-h-screen bg-gradient-to-br from-teal-50 to-cyan-50">
+      {/* Back button - floating */}
+      <div className="container mx-auto px-4 pt-6">
+        <button
+          onClick={() => window.history.back()}
+          className="inline-flex items-center gap-2 px-5 py-2.5 bg-white text-teal-700 hover:bg-teal-50 rounded-lg transition-all shadow-sm hover:shadow-md font-medium"
+        >
+          <svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+            <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M10 19l-7-7m0 0l7-7m-7 7h18" />
+          </svg>
+          Quay lại
+        </button>
       </div>
 
       <div className="container mx-auto px-4 py-6">
@@ -231,13 +222,13 @@ export default function PostDetailPage() {
           {/* Main Content Area */}
           <main className="flex-1 min-w-0">
             {/* Post Card */}
-            <div className="bg-white rounded-lg border border-gray-200 p-6 mb-4">
+            <div className="bg-white rounded-xl shadow-lg border border-teal-100 p-6 mb-4">
               <div className="flex gap-4">
                 {/* User Info Sidebar */}
                 <div className="flex-shrink-0 w-48 hidden md:block">
                   <div className="flex flex-col items-center text-center">
                     {/* Avatar */}
-                    <div className="w-20 h-20 rounded-full bg-gray-100 mb-3 overflow-hidden">
+                    <div className="w-20 h-20 rounded-full bg-gradient-to-br from-teal-100 to-cyan-100 mb-3 overflow-hidden border-2 border-teal-200">
                       <img
                         src={post.author.avatar || `https://api.dicebear.com/7.x/avataaars/svg?seed=${post.author.user_id}`}
                         alt={post.author.fullname}
@@ -255,7 +246,7 @@ export default function PostDetailPage() {
                     <p className="text-xs text-gray-500 mb-3">Member</p>
 
                     {/* Custom badge */}
-                    <span className="text-xs bg-blue-100 text-blue-700 px-3 py-1 rounded font-medium">
+                    <span className="text-xs bg-gradient-to-r from-teal-100 to-cyan-100 text-teal-700 px-3 py-1 rounded-full font-medium border border-teal-200">
                       tayto
                     </span>
                   </div>
@@ -268,7 +259,7 @@ export default function PostDetailPage() {
                     <img
                       src={post.author.avatar || `https://api.dicebear.com/7.x/avataaars/svg?seed=${post.author.user_id}`}
                       alt={post.author.fullname}
-                      className="w-10 h-10 rounded-full object-cover"
+                      className="w-10 h-10 rounded-full object-cover border-2 border-teal-200"
                       onError={(e) => {
                         e.currentTarget.src = `https://api.dicebear.com/7.x/avataaars/svg?seed=${post.author.user_id}`;
                       }}
@@ -281,9 +272,9 @@ export default function PostDetailPage() {
 
                   <div className="flex justify-between items-start mb-3">
                     {/* Date */}
-                    <span className="text-sm text-gray-600">{formatDate(post.createdAt)}</span>
+                    <span className="text-sm text-teal-600 font-medium">{formatDate(post.createdAt)}</span>
 
-                    {/* Share icon and Post number */}
+                    {/* Share icon */}
                     <div className="flex items-center gap-3">
                       <button
                         onClick={() => {
@@ -297,24 +288,23 @@ export default function PostDetailPage() {
                             alert('Đã copy link!');
                           }
                         }}
-                        className="text-gray-500 hover:text-gray-700 transition-colors"
+                        className="text-teal-600 hover:text-teal-700 transition-colors"
                       >
                         <svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                           <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M8.684 13.342C8.886 12.938 9 12.482 9 12c0-.482-.114-.938-.316-1.342m0 2.684a3 3 0 110-2.684m0 2.684l6.632 3.316m-6.632-6l6.632-3.316m0 0a3 3 0 105.367-2.684 3 3 0 00-5.367 2.684zm0 9.316a3 3 0 105.368 2.684 3 3 0 00-5.368-2.684z" />
                         </svg>
                       </button>
-                      <span className="text-sm text-gray-500">#{post.post_id || post._id}</span>
                     </div>
                   </div>
 
-                  {/* Title - Large, Red, Bold */}
-                  <h2 className="text-3xl font-bold text-red-600 mb-4 break-words">{post.title}</h2>
+                  {/* Title - Large, Teal, Bold */}
+                  <h2 className="text-3xl font-bold bg-gradient-to-r from-teal-600 to-cyan-600 bg-clip-text text-transparent mb-4 break-words">{post.title}</h2>
 
                   {/* Tags */}
                   {parsedTags.length > 0 && (
                     <div className="flex flex-wrap gap-2 mb-4">
                       {parsedTags.map((tag, idx) => (
-                        <span key={idx} className="text-xs bg-gray-100 text-gray-700 px-2 py-1 rounded">
+                        <span key={idx} className="text-xs bg-teal-50 text-teal-700 px-3 py-1 rounded-full border border-teal-200">
                           {tag}
                         </span>
                       ))}
@@ -334,51 +324,32 @@ export default function PostDetailPage() {
                           key={i}
                           src={img}
                           alt={`image-${i}`}
-                          className="w-full rounded-lg object-cover cursor-pointer hover:opacity-90 transition-opacity"
+                          className="w-full rounded-lg object-cover cursor-pointer hover:opacity-90 transition-all hover:shadow-lg border border-teal-100"
                           onClick={() => openLightbox(i)}
                         />
                       ))}
                     </div>
                   )}
 
-                  {/* Thread link */}
-                  {/* {post.thread_url && (
-                    <div className="mb-4 p-3 bg-blue-50 rounded-lg border border-blue-100">
-                      <p className="text-sm text-gray-700">
-                        Thread cũ{" "}
-                        <a 
-                          href={post.thread_url} 
-                          target="_blank" 
-                          rel="noopener noreferrer"
-                          className="text-blue-600 hover:text-blue-800 hover:underline font-medium"
-                        >
-                          Xem tại đây
-                        </a>
-                      </p>
-                    </div>
-                  )} */}
-
                   {/* Reactions Footer */}
                   {post.likeCount > 0 && (
-                    <div className="pt-3 border-t border-gray-200">
+                    <div className="pt-3 border-t border-teal-100">
                       <div className="flex items-center gap-2 text-sm text-gray-600">
-
                         <span>
-                          <span className="font-semibold text-gray-900">{getLikedUsersText()} đã thích bài viết này</span>
+                          <span className="font-semibold text-teal-700">{getLikedUsersText()} đã thích bài viết này</span>
                         </span>
-
                       </div>
                     </div>
                   )}
 
                   {/* Action buttons */}
-                  <div className="flex items-center gap-4 mt-4 pt-4 border-t border-gray-200">
+                  <div className="flex items-center gap-4 mt-4 pt-4 border-t border-teal-100">
                     <button
                       onClick={handleToggleLike}
                       disabled={liking}
-                      className={`flex items-center gap-2 px-4 py-2 rounded-lg transition-colors ${isLikedByCurrentUser
-                        ? 'bg-red-50 text-red-600 hover:bg-red-100'
-                        : 'bg-gray-100 text-gray-700 hover:bg-gray-200'
+                      className={`flex items-center gap-2 px-4 py-2 rounded-lg transition-all ${isLikedByCurrentUser
+                        ? 'bg-gradient-to-r from-teal-500 to-cyan-500 text-white hover:from-teal-600 hover:to-cyan-600 shadow-md'
+                        : 'bg-teal-50 text-teal-700 hover:bg-teal-100 border border-teal-200'
                         } disabled:opacity-60`}
                     >
                       <svg className="w-5 h-5" fill={isLikedByCurrentUser ? 'currentColor' : 'none'} stroke="currentColor" viewBox="0 0 24 24">
@@ -386,7 +357,7 @@ export default function PostDetailPage() {
                       </svg>
                       <span className="font-medium">{isLikedByCurrentUser ? 'Đã thích' : 'Thích'}</span>
                     </button>
-                    <span className="flex items-center gap-1 text-sm text-gray-600">
+                    <span className="flex items-center gap-2 text-sm text-teal-600 font-medium">
                       <svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                         <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M15 12a3 3 0 11-6 0 3 3 0 016 0z" />
                         <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M2.458 12C3.732 7.943 7.523 5 12 5c4.478 0 8.268 2.943 9.542 7-1.274 4.057-5.064 7-9.542 7-4.477 0-8.268-2.943-9.542-7z" />
@@ -399,8 +370,8 @@ export default function PostDetailPage() {
             </div>
 
             {/* Comments Section */}
-            <div className="bg-white rounded-lg border border-gray-200 p-6 mb-4">
-              <h3 className="text-xl font-bold text-gray-900 mb-4">Bình luận ({post.commentCount})</h3>
+            <div className="bg-white rounded-xl shadow-lg border border-teal-100 p-6 mb-4">
+              <h3 className="text-xl font-bold text-teal-700 mb-4">Bình luận ({post.commentCount})</h3>
 
               {/* Comment input */}
               <div className="mb-6">
@@ -409,15 +380,15 @@ export default function PostDetailPage() {
                   onChange={(e) => setCommentInput(e.target.value)}
                   placeholder="Viết bình luận của bạn..."
                   rows={3}
-                  className="w-full px-4 py-3 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-transparent resize-none"
+                  className="w-full px-4 py-3 border border-teal-200 rounded-lg focus:outline-none focus:ring-2 focus:ring-teal-500 focus:border-transparent resize-none bg-teal-50/30"
                 />
                 <div className="flex justify-end mt-2">
                   <button
                     onClick={handleSubmitComment}
                     disabled={submittingComment || !commentInput.trim()}
-                    className={`px-5 py-2 rounded-lg font-semibold text-white transition-colors ${submittingComment || !commentInput.trim()
-                      ? "bg-blue-400 cursor-not-allowed"
-                      : "bg-blue-600 hover:bg-blue-700"
+                    className={`px-5 py-2 rounded-lg font-semibold text-white transition-all shadow-md ${submittingComment || !commentInput.trim()
+                      ? "bg-teal-600 cursor-not-allowed"
+                      : "bg-gradient-to-r from-teal-600 to-cyan-50 hover:from-teal-600 hover:to-cyan-50"
                       }`}
                   >
                     {submittingComment ? "Đang gửi..." : "Gửi bình luận"}
@@ -429,7 +400,7 @@ export default function PostDetailPage() {
               <div className="space-y-4">
                 {post.comments && post.comments.length > 0 ? (
                   post.comments.map((c) => (
-                    <div key={c.comment_id} className="border-b border-gray-200 pb-4 last:border-b-0">
+                    <div key={c.comment_id} className="border-b border-teal-100 pb-4 last:border-b-0">
                       <div className="flex gap-4">
                         {/* Comment author avatar (desktop) */}
                         <div className="flex-shrink-0 w-32 hidden md:block">
@@ -437,7 +408,7 @@ export default function PostDetailPage() {
                             <img
                               src={c.author?.avatar || `https://api.dicebear.com/7.x/avataaars/svg?seed=${c.author?.user_id || 'user'}`}
                               alt={c.author?.fullname || "user"}
-                              className="w-12 h-12 rounded-full object-cover mb-2"
+                              className="w-12 h-12 rounded-full object-cover mb-2 border-2 border-teal-200"
                               onError={(e) => {
                                 e.currentTarget.src = `https://api.dicebear.com/7.x/avataaars/svg?seed=${c.author?.user_id || 'user'}`;
                               }}
@@ -445,7 +416,7 @@ export default function PostDetailPage() {
                             <span className="font-semibold text-sm text-gray-900">
                               {c.author?.fullname || "Người dùng"}
                             </span>
-                            <span className="text-xs text-gray-500">Member</span>
+                            <span className="text-xs text-teal-600">Member</span>
                           </div>
                         </div>
 
@@ -456,7 +427,7 @@ export default function PostDetailPage() {
                             <img
                               src={c.author?.avatar || `https://api.dicebear.com/7.x/avataaars/svg?seed=${c.author?.user_id || 'user'}`}
                               alt={c.author?.fullname || "user"}
-                              className="w-8 h-8 rounded-full object-cover"
+                              className="w-8 h-8 rounded-full object-cover border-2 border-teal-200"
                               onError={(e) => {
                                 e.currentTarget.src = `https://api.dicebear.com/7.x/avataaars/svg?seed=${c.author?.user_id || 'user'}`;
                               }}
@@ -467,7 +438,7 @@ export default function PostDetailPage() {
                           </div>
 
                           <div className="flex justify-between items-start mb-2">
-                            <span className="text-sm text-gray-600">{communicationService.formatTimeAgo(c.createdAt)}</span>
+                            <span className="text-sm text-teal-600 font-medium">{communicationService.formatTimeAgo(c.createdAt)}</span>
                           </div>
                           <p className="text-gray-800 text-sm leading-relaxed whitespace-pre-wrap">{c.content}</p>
                         </div>
@@ -475,7 +446,7 @@ export default function PostDetailPage() {
                     </div>
                   ))
                 ) : (
-                  <div className="text-center py-8 text-gray-500 text-sm">
+                  <div className="text-center py-8 text-teal-600 text-sm">
                     Chưa có bình luận nào. Hãy là người đầu tiên bình luận!
                   </div>
                 )}
@@ -494,7 +465,7 @@ export default function PostDetailPage() {
           {/* Close button */}
           <button
             onClick={closeLightbox}
-            className="absolute top-4 right-4 text-white hover:text-gray-300 transition-colors z-10"
+            className="absolute top-4 right-4 text-white hover:text-teal-300 transition-colors z-10"
           >
             <svg className="w-8 h-8" fill="none" stroke="currentColor" viewBox="0 0 24 24">
               <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M6 18L18 6M6 6l12 12" />
@@ -502,7 +473,7 @@ export default function PostDetailPage() {
           </button>
 
           {/* Image counter */}
-          <div className="absolute top-4 left-1/2 transform -translate-x-1/2 text-white text-sm font-semibold bg-black bg-opacity-50 px-4 py-2 rounded-full">
+          <div className="absolute top-4 left-1/2 transform -translate-x-1/2 text-white text-sm font-semibold bg-teal-600 bg-opacity-80 px-4 py-2 rounded-full">
             {lightbox.currentIndex + 1} / {post.images.length}
           </div>
 
@@ -513,7 +484,7 @@ export default function PostDetailPage() {
                 e.stopPropagation();
                 goToPrevImage();
               }}
-              className="absolute left-4 text-white hover:text-gray-300 transition-colors z-10"
+              className="absolute left-4 text-white hover:text-teal-300 transition-colors z-10"
             >
               <svg className="w-10 h-10" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                 <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M15 19l-7-7 7-7" />
@@ -536,7 +507,7 @@ export default function PostDetailPage() {
                 e.stopPropagation();
                 goToNextImage();
               }}
-              className="absolute right-4 text-white hover:text-gray-300 transition-colors z-10"
+              className="absolute right-4 text-white hover:text-teal-300 transition-colors z-10"
             >
               <svg className="w-10 h-10" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                 <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M9 5l7 7-7 7" />
@@ -545,6 +516,6 @@ export default function PostDetailPage() {
           )}
         </div>
       )}
-    </>
+    </div>
   );
 }
