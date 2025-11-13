@@ -6,6 +6,7 @@ import { useRouter } from 'next/navigation';
 import { loginUser } from '@/services/auth/authService';
 import { parseJwt } from '@/utils/jwt';
 import Image from 'next/image';
+import { EyeIcon, EyeSlashIcon } from '@heroicons/react/24/outline';
 
 type FormData = {
   username: string;
@@ -16,6 +17,7 @@ export default function LoginForm() {
   const { register, handleSubmit, formState: { errors } } = useForm<FormData>();
   const [serverError, setServerError] = useState('');
   const [isSuccess, setIsSuccess] = useState(false);
+  const [showPassword, setShowPassword] = useState(false);
   const router = useRouter();
 
   const onSubmit = async (data: FormData) => {
@@ -23,20 +25,17 @@ export default function LoginForm() {
     try {
       const response = await loginUser(data);
 
-      // ✅ Bắt lỗi dựa trên response.message
       if (!response || !response.status) {
         setServerError(response?.message || 'Đăng nhập thất bại');
         return;
       }
 
       if (response.token) {
-        // Lưu token vào localStorage và cookie (an toàn với môi trường dev)
         localStorage.setItem('authToken', response.token);
         const isSecure = typeof window !== 'undefined' && window.location.protocol === 'https:';
         const secureFlag = isSecure ? '; Secure' : '';
         document.cookie = `authToken=${encodeURIComponent(response.token)}; path=/; max-age=3600; SameSite=Lax${secureFlag}`;
 
-        // Giải mã token để lấy role
         const decoded = parseJwt(response.token);
         let userRole: string[] = [];
 
@@ -45,7 +44,6 @@ export default function LoginForm() {
           if (Array.isArray(rawRole)) {
             userRole = rawRole.filter((role) => typeof role === 'string' && role);
           } else if (typeof rawRole === 'string') {
-            // rawRole có thể là JSON-stringified array hoặc chuỗi phân cách bằng dấu phẩy
             try {
               const parsed = JSON.parse(rawRole);
               if (Array.isArray(parsed)) {
@@ -57,7 +55,6 @@ export default function LoginForm() {
               userRole = (rawRole as string).split(',').map((r: string) => r.trim()).filter(Boolean);
             }
           } else {
-            // chuyển đổi bất kỳ giá trị khác thành chuỗi
             userRole = [String(rawRole)];
           }
 
@@ -66,21 +63,13 @@ export default function LoginForm() {
             return;
           }
 
-          // Lưu một cookie userRole đơn (primary role) để middleware server có thể đọc dễ dàng
           const primaryRole = userRole[0];
           document.cookie = `userRole=${encodeURIComponent(primaryRole)}; path=/; max-age=3600; SameSite=Lax${secureFlag}`;
+          localStorage.setItem('userRole', JSON.stringify(userRole));
 
-          // Vẫn lưu mảng roles vào localStorage cho UI nếu cần
-          const rolesJson = JSON.stringify(userRole);
-          localStorage.setItem('userRole', rolesJson);
-
-          // ✅ Hiện animation thành công
           setIsSuccess(true);
-
-          // ✅ Sau 2 giây chuyển hướng
           setTimeout(() => {
-            const target = '/user/home';
-            router.push(target);
+            router.push('/user/home');
           }, 1500);
         } else {
           setServerError('Không thể lấy thông tin vai trò từ token');
@@ -89,18 +78,26 @@ export default function LoginForm() {
         setServerError(response?.message || 'Đăng nhập thất bại');
       }
     } catch (err: any) {
-      // ✅ Nếu backend trả về lỗi dạng { message: '...' }
       const errorMessage = err?.response?.data?.message || 'Lỗi kết nối hoặc server không phản hồi';
       setServerError(errorMessage);
     }
   };
 
-  // ✅ Nếu đăng nhập thành công → hiển thị animation mèo
+  // Animation thành công
   if (isSuccess) {
     return (
       <div className="flex flex-col items-center justify-center min-h-screen bg-white text-center">
         <h2 className="text-2xl font-semibold text-teal-600 mb-4">Đăng nhập thành công!</h2>
-        <div style={{ width: "200px", height: "100px", margin: "20px auto", backgroundImage: "url(./sampleimg/cat.gif)", backgroundSize: "cover", borderRadius: "12px", }} ></div>
+        <div
+          style={{
+            width: "200px",
+            height: "100px",
+            margin: "20px auto",
+            backgroundImage: "url(./sampleimg/cat.gif)",
+            backgroundSize: "cover",
+            borderRadius: "12px",
+          }}
+        ></div>
         <p className="text-gray-500 text-sm mt-3">Đang chuyển hướng...</p>
       </div>
     );
@@ -156,14 +153,26 @@ export default function LoginForm() {
                 </a>
               </div>
             </div>
-            <div className="mt-2">
+            <div className="mt-2 relative">
               <input
                 id="password"
                 {...register('password', { required: true, minLength: 6 })}
-                type="password"
+                type={showPassword ? 'text' : 'password'}
                 placeholder="*******"
-                className="block w-full bg-white px-3 py-1.5 border-b border-gray-300 text-gray-900 placeholder:text-gray-500 focus:border-teal-600 focus:outline-none sm:text-sm"
+                className="block w-full bg-white px-3 py-1.5 pr-10 border-b border-gray-300 text-gray-900 placeholder:text-gray-500 focus:border-teal-600 focus:outline-none sm:text-sm"
               />
+              <button
+                type="button"
+                onClick={() => setShowPassword(!showPassword)}
+                className="absolute right-2 top-1/2 -translate-y-1/2 text-gray-500 hover:text-teal-500"
+                tabIndex={-1}
+              >
+                {showPassword ? (
+                  <EyeSlashIcon className="h-5 w-5" />
+                ) : (
+                  <EyeIcon className="h-5 w-5" />
+                )}
+              </button>
               {errors.password && (
                 <p className="text-sm text-red-400 mt-1">
                   Mật khẩu là bắt buộc (tối thiểu 6 ký tự)

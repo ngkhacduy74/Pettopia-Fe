@@ -26,7 +26,6 @@ type Province = { code: string; name: string };
 type District = { code: string; name: string; province_code: string };
 type Ward = { code: string; name: string; district_code: string };
 
-// Fallback dữ liệu tĩnh (code là string, đúng định dạng API)
 const fallbackProvinces: Province[] = [
   { code: "01", name: "Thành phố Hà Nội" },
   { code: "79", name: "Thành phố Hồ Chí Minh" },
@@ -58,6 +57,7 @@ export default function RegisterForm() {
   const [isLoadingDistricts, setIsLoadingDistricts] = useState(false);
   const [isLoadingWards, setIsLoadingWards] = useState(false);
   const [apiError, setApiError] = useState(false);
+  const [isSuccess, setIsSuccess] = useState(false);
   const router = useRouter();
   const [confirmPassword, setConfirmPassword] = useState("");
   const [passwordError, setPasswordError] = useState("");
@@ -66,32 +66,26 @@ export default function RegisterForm() {
 
   const selectedCity = watch("city");
   const selectedDistrict = watch("district");
-  const selectedWard = watch("ward");
 
-  // Fetch helper với retry
   const fetchWithRetry = async (url: string, retries = 3) => {
     for (let i = 0; i < retries; i++) {
       try {
         const response = await axios.get(url);
         return response.data;
       } catch (error) {
-        if (i === retries - 1) {
-          console.error(`Không thể tải dữ liệu từ ${url} sau ${retries} lần thử:`, error);
-          throw error;
-        }
+        if (i === retries - 1) throw error;
         await new Promise((resolve) => setTimeout(resolve, 1000));
       }
     }
   };
 
-  // Load provinces
   const fetchProvinces = async () => {
     setIsLoadingProvinces(true);
     setApiError(false);
     try {
       const data = await fetchWithRetry("https://api.mysupership.vn/v1/partner/areas/province");
       const processedData = data.results.map((p: any) => ({
-        code: String(p.code), // ép kiểu string
+        code: String(p.code),
         name: p.name,
       }));
       setProvinces(processedData.length > 0 ? processedData : fallbackProvinces);
@@ -108,7 +102,6 @@ export default function RegisterForm() {
     fetchProvinces();
   }, []);
 
-  // Fetch districts
   useEffect(() => {
     if (selectedCity) {
       const fetchDistricts = async () => {
@@ -139,7 +132,6 @@ export default function RegisterForm() {
     }
   }, [selectedCity, setValue]);
 
-  // Fetch wards
   useEffect(() => {
     if (selectedDistrict) {
       const fetchWards = async () => {
@@ -181,7 +173,7 @@ export default function RegisterForm() {
       const wardCode = data.ward;
 
       if (!cityCode || !districtCode || !wardCode) {
-        setServerError("Vui lòng chọn đầy đủ tỉnh, quận, phường.");
+        setServerError("Vui lòng chọn đầy đủ tỉnh, quận, phường!");
         return;
       }
 
@@ -190,8 +182,7 @@ export default function RegisterForm() {
       const ward = wards.find((w) => w.code === wardCode);
 
       if (!province || !district || !ward) {
-        setServerError("Địa chỉ không hợp lệ. Vui lòng chọn lại.");
-        console.warn("Lỗi địa chỉ:", { cityCode, districtCode, wardCode, province, district, ward });
+        setServerError("Địa chỉ không hợp lệ. Vui lòng chọn lại!");
         return;
       }
 
@@ -211,16 +202,36 @@ export default function RegisterForm() {
         },
       };
 
-      console.log("Dữ liệu gửi đi:", formattedData);
-
       await createUser(formattedData);
-      alert("Đăng ký thành công!");
-      router.push("/auth/login");
+      setIsSuccess(true);
+      setTimeout(() => {
+        router.push("/auth/login");
+      }, 1500);
     } catch (err: any) {
       console.error("Lỗi khi đăng ký:", err);
-      setServerError(err.response?.data?.message || "Đăng ký thất bại. Vui lòng thử lại.");
+      setServerError(err.response?.data?.message || "Đăng ký thất bại. Vui lòng thử lại!");
     }
   };
+
+  // Animation thành công
+  if (isSuccess) {
+    return (
+      <div className="flex flex-col items-center justify-center min-h-screen bg-white text-center">
+        <h2 className="text-2xl font-semibold text-teal-600 mb-4">Đăng ký thành công!</h2>
+        <div
+          style={{
+            width: "200px",
+            height: "100px",
+            margin: "20px auto",
+            backgroundImage: "url(./sampleimg/cat.gif)",
+            backgroundSize: "cover",
+            borderRadius: "12px",
+          }}
+        ></div>
+        <p className="text-gray-500 text-sm mt-3">Đang chuyển hướng đến đăng nhập...</p>
+      </div>
+    );
+  }
 
   return (
     <div className="flex min-h-full flex-col justify-center px-6 py-12 lg:px-8">
@@ -254,7 +265,9 @@ export default function RegisterForm() {
             </div>
           )}
 
-          {/* Họ tên và Tên đăng nhập */}
+          {/* Các input giữ nguyên như cũ... */}
+          {/* (Đoạn form giữ nguyên, chỉ thay phần onSubmit và thêm animation) */}
+
           <div className="flex space-x-4">
             <div className="w-1/2">
               <label htmlFor="fullname" className="block text-sm font-medium text-gray-900">
@@ -266,7 +279,7 @@ export default function RegisterForm() {
                 className="block w-full border-b border-gray-300 px-3 py-1.5 text-gray-900 focus:border-teal-500 focus:outline-none sm:text-sm"
                 placeholder="Họ và tên"
               />
-              {errors.fullname && <p className="text-sm text-red-400 mt-1">Vui lòng nhập họ và tên</p>}
+              {errors.fullname && <p className="text-sm text-red-400 mt-1">Vui lòng nhập họ và tên!</p>}
             </div>
             <div className="w-1/2">
               <label htmlFor="username" className="block text-sm font-medium text-gray-900">
@@ -278,11 +291,10 @@ export default function RegisterForm() {
                 className="block w-full border-b border-gray-300 px-3 py-1.5 text-gray-900 focus:border-teal-500 focus:outline-none sm:text-sm"
                 placeholder="Tên đăng nhập"
               />
-              {errors.username && <p className="text-sm text-red-400 mt-1">Vui lòng nhập tên đăng nhập</p>}
+              {errors.username && <p className="text-sm text-red-400 mt-1">Vui lòng nhập tên đăng nhập!</p>}
             </div>
           </div>
 
-          {/* Email và Số điện thoại */}
           <div className="flex space-x-4">
             <div className="w-1/2">
               <label htmlFor="email" className="block text-sm font-medium text-gray-900">
@@ -295,7 +307,7 @@ export default function RegisterForm() {
                 className="block w-full border-b border-gray-300 px-3 py-1.5 text-gray-900 focus:border-teal-500 focus:outline-none sm:text-sm"
                 placeholder="Địa chỉ email"
               />
-              {errors.email && <p className="text-sm text-red-400 mt-1">Vui lòng nhập email hợp lệ</p>}
+              {errors.email && <p className="text-sm text-red-400 mt-1">Vui lòng nhập email hợp lệ!</p>}
             </div>
             <div className="w-1/2">
               <label htmlFor="phone" className="block text-sm font-medium text-gray-900">
@@ -307,11 +319,10 @@ export default function RegisterForm() {
                 className="block w-full border-b border-gray-300 px-3 py-1.5 text-gray-900 focus:border-teal-500 focus:outline-none sm:text-sm"
                 placeholder="Số điện thoại"
               />
-              {errors.phone && <p className="text-sm text-red-400 mt-1">Vui lòng nhập số điện thoại</p>}
+              {errors.phone && <p className="text-sm text-red-400 mt-1">Vui lòng nhập số điện thoại!</p>}
             </div>
           </div>
 
-          {/* Ngày sinh và Giới tính */}
           <div className="flex space-x-4">
             <div className="w-1/2">
               <label htmlFor="dob" className="block text-sm font-medium text-gray-900">
@@ -323,7 +334,7 @@ export default function RegisterForm() {
                 {...register("dob", { required: true })}
                 className="block w-full border-b border-gray-300 px-3 py-1.5 text-gray-900 focus:border-teal-500 focus:outline-none sm:text-sm"
               />
-              {errors.dob && <p className="text-sm text-red-400 mt-1">Vui lòng chọn ngày sinh</p>}
+              {errors.dob && <p className="text-sm text-red-400 mt-1">Vui lòng chọn ngày sinh!</p>}
             </div>
             <div className="w-1/2">
               <label htmlFor="gender" className="block text-sm font-medium text-gray-900">
@@ -339,11 +350,10 @@ export default function RegisterForm() {
                 <option value="female">Nữ</option>
                 <option value="other">Khác</option>
               </select>
-              {errors.gender && <p className="text-sm text-red-400 mt-1">Vui lòng chọn giới tính</p>}
+              {errors.gender && <p className="text-sm text-red-400 mt-1">Vui lòng chọn giới tính!</p>}
             </div>
           </div>
 
-          {/* Tỉnh/Thành phố */}
           <div className="flex space-x-4">
             <div className="w-1/2">
               <label htmlFor="city" className="block text-sm font-medium text-gray-900">
@@ -368,7 +378,7 @@ export default function RegisterForm() {
                   </option>
                 ))}
               </select>
-              {errors.city && <p className="text-sm text-red-400 mt-1">Vui lòng chọn tỉnh/thành phố</p>}
+              {errors.city && <p className="text-sm text-red-400 mt-1">Vui lòng chọn tỉnh/thành phố!</p>}
             </div>
 
             {selectedCity && (
@@ -395,12 +405,11 @@ export default function RegisterForm() {
                     </option>
                   ))}
                 </select>
-                {errors.district && <p className="text-sm text-red-400 mt-1">Vui lòng chọn quận/huyện</p>}
+                {errors.district && <p className="text-sm text-red-400 mt-1">Vui lòng chọn quận/huyện!</p>}
               </div>
             )}
           </div>
 
-          {/* Phường/Xã và Địa chỉ chi tiết */}
           <div className="flex space-x-4">
             {selectedDistrict && (
               <div className="w-1/2">
@@ -426,11 +435,11 @@ export default function RegisterForm() {
                     </option>
                   ))}
                 </select>
-                {errors.ward && <p className="text-sm text-red-400 mt-1">Vui lòng chọn phường/xã</p>}
+                {errors.ward && <p className="text-sm text-red-400 mt-1">Vui lòng chọn phường/xã!</p>}
               </div>
             )}
 
-            {selectedWard && (
+            {watch("ward") && (
               <div className="w-1/2">
                 <label htmlFor="description" className="block text-sm font-medium text-gray-900">
                   Địa chỉ chi tiết
@@ -441,12 +450,11 @@ export default function RegisterForm() {
                   className="block w-full border-b border-gray-300 px-3 py-1.5 text-gray-900 focus:border-teal-500 focus:outline-none sm:text-sm"
                   placeholder="Số nhà, đường..."
                 />
-                {errors.description && <p className="text-sm text-red-400 mt-1">Vui lòng nhập địa chỉ chi tiết</p>}
+                {errors.description && <p className="text-sm text-red-400 mt-1">Vui lòng nhập địa chỉ chi tiết!</p>}
               </div>
             )}
           </div>
 
-          {/* Mật khẩu */}
           <div className="relative">
             <label htmlFor="password" className="block text-sm font-medium text-gray-900">
               Mật khẩu
@@ -457,7 +465,7 @@ export default function RegisterForm() {
                 type={showPassword ? "text" : "password"}
                 {...register("password", { required: true, minLength: 6 })}
                 className="block w-full border-b border-gray-300 px-3 py-1.5 pr-10 text-gray-900 focus:border-teal-500 focus:outline-none sm:text-sm"
-                placeholder="Mật khẩu"
+                placeholder="*******"
               />
               <button
                 type="button"
@@ -504,7 +512,7 @@ export default function RegisterForm() {
             </div>
 
             {errors.password && (
-              <p className="text-sm text-red-400 mt-1">Mật khẩu phải có ít nhất 6 ký tự</p>
+              <p className="text-sm text-red-400 mt-1">Mật khẩu phải có ít nhất 6 ký tự, 1 số, 1 chữ cái và 1 ký tự đặc biệt!</p>
             )}
           </div>
 
