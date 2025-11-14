@@ -460,7 +460,7 @@ export default function AppointmentBooking() {
                 {shiftsLoading ? (
                   <p className="text-center py-8 text-gray-500">Đang tải ca làm việc...</p>
                 ) : shifts.length === 0 ? (
-                  <p className="text-center py-8 text-orange-600">Phòng khám chưa có ca làm việc</p>
+                  <p className="text-center py-8 text-orange-600">Phòng khám chưa có ca làm việc - Tính năng hỗ trợ ca đang phát triển liên hệ sau</p>
                 ) : (
                   <div className="grid md:grid-cols-3 gap-4">
                     {shifts.map(shift => (
