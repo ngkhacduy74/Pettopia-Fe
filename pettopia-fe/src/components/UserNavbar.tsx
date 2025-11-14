@@ -73,10 +73,10 @@ export default function UserNavbar({ setShowSearch, showSearch }: UserNavbarProp
       keywords: ['trang chủ', 'home', 'dashboard', 'tổng quan']
     },
     {
-      id: 'pet-list',
+      id: 'list',
       name: 'Danh sách thú cưng',
       icon: <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 20 20" fill="currentColor" className="size-5"><path d="M10 9a3 3 0 100-6 3 3 0 000 6zM6 8a2 2 0 11-4 0 2 2 0 014 0zM1.49 15.326a.78.78 0 01-.358-.442 3 3 0 014.308-3.516 6.484 6.484 0 00-1.905 3.959c-.023.222-.014.442.025.654a4.97 4.97 0 01-2.07-.655zM16.44 15.98a4.97 4.97 0 002.07-.654.78.78 0 00.357-.442 3 3 0 00-4.308-3.517 6.484 6.484 0 011.907 3.96 2.32 2.32 0 01-.026.654zM18 8a2 2 0 11-4 0 2 2 0 014 0zM5.304 16.19a.844.844 0 01-.277-.71 5 5 0 019.947 0 .843.843 0 01-.277.71A6.975 6.975 0 0110 18a6.974 6.974 0 01-4.696-1.81z" /></svg>,
-      path: '/user/pet-list',
+      path: '/user/pet/list',
       category: 'Thú cưng',
       keywords: ['thú cưng', 'pet', 'danh sách', 'list', 'quản lý pet']
     },
@@ -84,7 +84,7 @@ export default function UserNavbar({ setShowSearch, showSearch }: UserNavbarProp
       id: 'register-pet',
       name: 'Đăng ký thú cưng mới',
       icon: <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 20 20" fill="currentColor" className="size-5"><path d="M10.75 4.75a.75.75 0 00-1.5 0v4.5h-4.5a.75.75 0 000 1.5h4.5v4.5a.75.75 0 001.5 0v-4.5h4.5a.75.75 0 000-1.5h-4.5v-4.5z" /></svg>,
-      path: '/user/register-pet',
+      path: '/user/pet/new',
       category: 'Thú cưng',
       keywords: ['đăng ký', 'thêm', 'register', 'add', 'pet mới', 'thú cưng mới']
     },
@@ -396,9 +396,9 @@ export default function UserNavbar({ setShowSearch, showSearch }: UserNavbarProp
             <div>
               <div className="text-xs text-teal-600 font-semibold px-3 mb-2 uppercase tracking-wide">Thú cưng của tôi</div>
               <div className="space-y-1">
-                <Link href="/user/pet-list">
+                <Link href="/user/pet/list">
                   <button className={`w-full flex items-center gap-3 px-3 py-2 rounded-lg text-sm transition-colors cursor-pointer
-                    ${pathname === '/user/pet-list'
+                    ${pathname === '/user/pet/list'
                       ? 'bg-gradient-to-r from-teal-500 to-cyan-600 text-white shadow-sm'
                       : 'hover:bg-teal-50 text-gray-700'}`}>
                     <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 20 20" fill="currentColor" className="size-5">
@@ -408,9 +408,9 @@ export default function UserNavbar({ setShowSearch, showSearch }: UserNavbarProp
                   </button>
                 </Link>
 
-                <Link href="/user/register-pet">
+                <Link href="/user/pet/new">
                   <button className={`w-full flex items-center gap-3 px-3 py-2 rounded-lg text-sm transition-colors cursor-pointer
-                    ${pathname === '/user/register-pet'
+                    ${pathname === '/user/pet/new'
                       ? 'bg-gradient-to-r from-teal-500 to-cyan-600 text-white shadow-sm'
                       : 'hover:bg-teal-50 text-gray-700'}`}>
                     <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 20 20" fill="currentColor" className="size-5">
@@ -458,7 +458,7 @@ export default function UserNavbar({ setShowSearch, showSearch }: UserNavbarProp
             <div>
               <div className="text-xs text-teal-600 font-semibold px-3 mb-2 uppercase tracking-wide">Đặt lịch & Y tế</div>
               <div className="space-y-1">
-                <Link href="/user/user-booking">
+                <Link href="/user/appointments/booking">
                   <button className={`w-full flex items-center gap-3 px-3 py-2 rounded-lg text-sm transition-colors cursor-pointer
                     ${pathname === '/user/user-booking'
                       ? 'bg-gradient-to-r from-teal-500 to-indigo-600 text-white shadow-sm'
@@ -470,7 +470,7 @@ export default function UserNavbar({ setShowSearch, showSearch }: UserNavbarProp
                   </button>
                 </Link>
 
-                <Link href="/user/view-appointments">
+                <Link href="/user/appointments/list">
                   <button className={`w-full flex items-center gap-3 px-3 py-2 rounded-lg text-sm transition-colors cursor-pointer
                     ${pathname === '/user/view-appointments'
                       ? 'bg-gradient-to-r from-teal-500 to-indigo-600 text-white shadow-sm'
@@ -521,7 +521,7 @@ export default function UserNavbar({ setShowSearch, showSearch }: UserNavbarProp
                       </Link>
                     ))}
                     {pets.length >= 5 && (
-                      <Link href="/user/pet-list">
+                      <Link href="/user/pet/list">
                         <button className="w-full flex items-center gap-3 px-3 py-2 rounded-lg hover:bg-teal-50 text-teal-600 text-sm transition-colors font-medium">
                           <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 20 20" fill="currentColor" className="size-5">
                             <path d="M10.75 4.75a.75.75 0 00-1.5 0v4.5h-4.5a.75.75 0 000 1.5h4.5v4.5a.75.75 0 001.5 0v-4.5h4.5a.75.75 0 000-1.5h-4.5v-4.5z" />
@@ -535,7 +535,7 @@ export default function UserNavbar({ setShowSearch, showSearch }: UserNavbarProp
                   <div className="px-3 py-4 text-center">
                     <div className="text-2xl mb-2">🐾</div>
                     <p className="text-xs text-gray-500 mb-2">Chưa có thú cưng</p>
-                    <Link href="/user/register-pet">
+                    <Link href="/user/pet/new">
                       <button className="text-xs text-teal-600 hover:text-teal-700 font-medium">+ Thêm thú cưng</button>
                     </Link>
                   </div>
