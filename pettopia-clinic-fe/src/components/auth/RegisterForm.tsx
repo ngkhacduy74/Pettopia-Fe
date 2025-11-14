@@ -523,13 +523,6 @@ export default function RegisterForm() {
             Đăng ký
           </button>
         </form>
-
-        <p className="mt-10 text-center text-sm text-gray-400">
-          Đã có tài khoản?{" "}
-          <a href="/auth/login" className="font-semibold text-teal-500 hover:text-teal-300">
-            Đăng nhập
-          </a>
-        </p>
       </div>
     </div>
   );
