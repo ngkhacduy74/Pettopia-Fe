@@ -7,7 +7,8 @@ function getAuthToken(): string | null {
 
 function authHeaders() {
     const token = getAuthToken();
-     if (!token) return {};
+    return token ? { headers: { Authorization: `Bearer ${token}` } } : {};
+      if (!token) return {};
     return { headers: { token } };
 }
 
