@@ -2,7 +2,7 @@ import axios from "axios";
 
 const API_URL = "http://localhost:3000/api/v1/partner/clinic";
 const PARTNER_API_URL = "http://localhost:3000/api/v1/partner";
-
+const HEALTHCARE_API_URL = "http://localhost:3000/api/v1/healthcare";
 
 // Tạo instance Axios
 const axiosInstance = axios.create({
@@ -78,6 +78,38 @@ interface ClinicData {
   };
 }
 
+// Interface cho Appointment
+export interface AppointmentData {
+  _id: string;
+  user_id: string;
+  customer?: string;
+  partner?: string;
+  pet_ids: string[];
+  clinic_id: string;
+  service_ids: string[];
+  date: string;
+  shift: string;
+  status: string;
+  created_by?: string;
+  id: string;
+  createdAt: string;
+  updatedAt: string;
+  cancelled_by?: string;
+}
+
+export interface AppointmentsResponse {
+  status: string;
+  message: string;
+  data: AppointmentData[];
+  pagination: PaginationResponse;
+}
+
+export interface AppointmentDetailResponse {
+  status: string;
+  message: string;
+  data: AppointmentData;
+}
+
 export const registerClinic = async (clinicData: ClinicData) => {
   const token = localStorage.getItem('authToken');
   if (!token) {
@@ -90,7 +122,7 @@ export const registerClinic = async (clinicData: ClinicData) => {
         'token': token,
       },
     });
-    console.log("API response:", response.data); // Debug
+    console.log("API response:", response.data);
     return response.data;
   } catch (error: any) {
     console.error("Lỗi khi đăng ký phòng khám:", error.response?.data || error.message);
@@ -209,7 +241,82 @@ export const deleteClinicService = async (serviceId: string) => {
     return response.data;
   } catch (error: any) {
     console.error("Lỗi khi xóa service:", error);
-    // Throw error với message từ API nếu có
     throw new Error(error.response?.data?.message || 'Không thể xóa dịch vụ');
+  }
+};
+
+// ===== APPOINTMENT FUNCTIONS =====
+
+// Lấy danh sách lịch hẹn (GET /healthcare/appointments)
+export const getAppointments = async (page: number = 1, limit: number = 10) => {
+  const token = localStorage.getItem('authToken');
+  if (!token) {
+    throw new Error('No authentication token found');
+  }
+  try {
+    const response = await axios.get(`${HEALTHCARE_API_URL}/appointments`, {
+      params: { page, limit },
+      headers: {
+        'Content-Type': 'application/json',
+        'token': token
+      }
+    });
+    return response.data as AppointmentsResponse;
+  } catch (error) {
+    console.error("Lỗi khi lấy danh sách lịch hẹn:", error);
+    throw error;
+  }
+};
+
+// Lấy chi tiết lịch hẹn (GET /healthcare/appointments/:id)
+export const getAppointmentDetail = async (appointmentId: string) => {
+  const token = localStorage.getItem('authToken');
+  if (!token) {
+    throw new Error('No authentication token found');
+  }
+  try {
+    const response = await axios.get(`${HEALTHCARE_API_URL}/appointments/${appointmentId}`, {
+      headers: {
+        'Content-Type': 'application/json',
+        'token': token
+      }
+    });
+    return response.data as AppointmentDetailResponse;
+  } catch (error) {
+    console.error("Lỗi khi lấy chi tiết lịch hẹn:", error);
+    throw error;
+  }
+};
+
+// Cập nhật trạng thái lịch hẹn (POST /healthcare/appointments/:id/status)
+export const updateAppointmentStatus = async (
+  appointmentId: string, 
+  status: string, 
+  cancel_reason?: string
+) => {
+  const token = localStorage.getItem('authToken');
+  if (!token) {
+    throw new Error('No authentication token found');
+  }
+  try {
+    const body: any = { status };
+    if (cancel_reason) {
+      body.cancel_reason = cancel_reason;
+    }
+    
+    const response = await axios.post(
+      `${HEALTHCARE_API_URL}/appointments/${appointmentId}/status`,
+      body,
+      {
+        headers: {
+          'Content-Type': 'application/json',
+          'token': token
+        }
+      }
+    );
+    return response.data;
+  } catch (error) {
+    console.error("Lỗi khi cập nhật trạng thái lịch hẹn:", error);
+    throw error;
   }
 };
