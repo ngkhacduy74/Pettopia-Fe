@@ -1,16 +1,8 @@
-'use client'
 import React, { useState } from 'react';
 import Sidebar from '@/components/sidebar/Sidebar';
 import dynamic from 'next/dynamic';
 
-const ClinicInviteVet = dynamic(() => import('@/components/clinic/Clinic-InviteVet'), {
-  loading: () => (
-    <div className="flex items-center justify-center h-screen text-gray-500">
-      Loading...
-    </div>
-  ),
-  ssr: false,
-});
+const ClinicInviteVet = dynamic(() => import('@/components/clinic/Clinic-InviteVet'));
 
 export default function VetListPage() {
     const [showSearch, setShowSearch] = useState(false);
