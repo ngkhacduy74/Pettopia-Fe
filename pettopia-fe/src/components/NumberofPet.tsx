@@ -146,14 +146,7 @@ export default function PetCards({ userId, onPetsLoaded }: PetCardsProps) {
     if (pets.length === 0) {
         return (
             <div className="w-full">
-                <div className="text-center py-20">
-                    <div className="text-6xl mb-4">🐾</div>
-                    <h3 className="text-2xl font-bold text-gray-900 mb-2">Chưa có thú cưng nào</h3>
-                    <p className="text-gray-600 mb-6">Hãy đăng ký thú cưng đầu tiên của bạn!</p>
-                    <button className="bg-gradient-to-r from-teal-600 to-cyan-600 text-white px-8 py-3 rounded-full font-semibold hover:shadow-lg transition-all">
-                        Đăng ký thú cưng
-                    </button>
-                </div>
+
             </div>
         );
     }
