@@ -9,13 +9,18 @@ import {
   HomeIcon,
   BeakerIcon,
   CheckCircleIcon,
-  UserIcon,
-  BuildingStorefrontIcon
+  XMarkIcon,
+  EnvelopeIcon,
 } from '@heroicons/react/24/outline';
 
 export default function ClinicDashboardPage() {
   const [selectedPeriod, setSelectedPeriod] = useState<'week' | 'month' | 'year'>('month');
   const [clinicId, setClinicId] = useState<string | null>(null);
+
+  // Modal state
+  const [showInviteForm, setShowInviteForm] = useState(false);
+  const [inviteEmails, setInviteEmails] = useState('');
+  const [inviteMessage, setInviteMessage] = useState('');
 
   useEffect(() => {
     if (typeof window === 'undefined') return;
@@ -23,7 +28,17 @@ export default function ClinicDashboardPage() {
     if (id) setClinicId(id);
   }, []);
 
-  // Dữ liệu dành riêng cho Clinic
+  // Xử lý gửi lời mời
+  const handleInvite = () => {
+    console.log('Sending invites to:', inviteEmails);
+    console.log('Message:', inviteMessage);
+    alert(`Đã gửi lời mời đến: ${inviteEmails}`);
+    setShowInviteForm(false);
+    setInviteEmails('');
+    setInviteMessage('');
+  };
+
+  // Dữ liệu dashboard
   const statsCards = [
     {
       id: 1,
@@ -123,19 +138,103 @@ export default function ClinicDashboardPage() {
     },
   ];
 
+  // NÚT MỜI THÀNH VIÊN + MODAL TRONG PAGE
+  const InviteSection = (
+    <>
+      {/* Nút */}
+      <button
+        onClick={() => setShowInviteForm(true)}
+        className="px-4 py-2 bg-gradient-to-r from-teal-600 to-cyan-600 text-white rounded-lg hover:shadow-lg transition-all text-sm font-medium flex items-center gap-2"
+      >
+        <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 20 20" fill="currentColor" className="w-4 h-4">
+          <path d="M10.75 4.75a.75.75 0 0 0-1.5 0v4.5h-4.5a.75.75 0 0 0 0 1.5h4.5v4.5a.75.75 0 0 0 1.5 0v-4.5h4.5a.75.75 0 0 0 0-1.5h-4.5v-4.5Z" />
+        </svg>
+        Mời thành viên
+      </button>
+
+      {/* Modal */}
+      {showInviteForm && (
+        <div className="fixed inset-0 bg-black/40 backdrop-blur-sm flex items-center justify-center z-50 p-4">
+          <div className="bg-white rounded-2xl shadow-2xl max-w-lg w-full p-6 relative">
+            <button
+              onClick={() => setShowInviteForm(false)}
+              className="absolute top-4 right-4 text-gray-400 hover:text-gray-600"
+            >
+              <XMarkIcon className="w-5 h-5" />
+            </button>
+
+            <div className="flex items-center gap-3 mb-5">
+              <div className="w-10 h-10 bg-gradient-to-br from-teal-600 to-cyan-600 rounded-lg flex items-center justify-center">
+                <EnvelopeIcon className="w-5 h-5 text-white" />
+              </div>
+              <div>
+                <h3 className="text-xl font-bold text-gray-900">Mời thành viên</h3>
+                <p className="text-xs text-gray-500">Gửi lời mời tham gia đội ngũ</p>
+              </div>
+            </div>
+
+            <div className="space-y-4">
+              <div>
+                <label className="block text-sm font-semibold text-gray-700 mb-2">
+                  Email (cách nhau bởi dấu phẩy)
+                </label>
+                <input
+                  type="text"
+                  value={inviteEmails}
+                  onChange={(e) => setInviteEmails(e.target.value)}
+                  placeholder="user1@email.com, user2@email.com"
+                  className="w-full px-4 py-2.5 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-teal-500 text-sm"
+                />
+              </div>
+
+              <div>
+                <label className="block text-sm font-semibold text-gray-700 mb-2">
+                  Lời nhắn (tùy chọn)
+                </label>
+                <textarea
+                  value={inviteMessage}
+                  onChange={(e) => setInviteMessage(e.target.value)}
+                  placeholder="Chào mừng bạn tham gia..."
+                  rows={3}
+                  className="w-full px-4 py-2.5 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-teal-500 resize-none text-sm"
+                />
+              </div>
+
+              <div className="flex gap-3 pt-2">
+                <button
+                  onClick={handleInvite}
+                  className="flex-1 px-5 py-2.5 bg-gradient-to-r from-teal-600 to-cyan-600 text-white rounded-lg font-semibold hover:shadow-lg transition-all text-sm"
+                >
+                  Gửi lời mời
+                </button>
+                <button
+                  onClick={() => setShowInviteForm(false)}
+                  className="px-5 py-2.5 border border-gray-300 text-gray-700 rounded-lg font-semibold hover:bg-gray-50 text-sm"
+                >
+                  Hủy
+                </button>
+              </div>
+            </div>
+          </div>
+        </div>
+      )}
+    </>
+  );
+
   return (
-    <Dashboard
-      title="Dashboard Phòng khám"
-      subtitle="Tổng quan hoạt động phòng khám thú y"
-      statsCards={statsCards}
-      revenueData={revenueData}
-      serviceData={serviceData}
-      quickActions={quickActions}
-      recentActivities={recentActivities}
-      showInviteButton={true}
-      selectedPeriod={selectedPeriod}
-      onPeriodChange={setSelectedPeriod}
-      onInvite={() => console.log('Mời bác sĩ từ page')}
-    />
+    <>
+      <Dashboard
+        title="Dashboard Phòng khám"
+        subtitle="Tổng quan hoạt động phòng khám thú y"
+        statsCards={statsCards}
+        revenueData={revenueData}
+        serviceData={serviceData}
+        quickActions={quickActions}
+        recentActivities={recentActivities}
+        inviteButton={InviteSection} // ← Toàn bộ nút + modal
+        selectedPeriod={selectedPeriod}
+        onPeriodChange={setSelectedPeriod}
+      />
+    </>
   );
 }

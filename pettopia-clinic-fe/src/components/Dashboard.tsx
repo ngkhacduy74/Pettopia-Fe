@@ -11,8 +11,6 @@ import {
   CheckCircleIcon,
   XMarkIcon,
   EnvelopeIcon,
-  BuildingStorefrontIcon,
-  UserIcon
 } from '@heroicons/react/24/outline';
 
 interface StatCard {
@@ -65,8 +63,7 @@ interface DashboardProps {
   serviceData?: ServiceData[];
   quickActions: QuickAction[];
   recentActivities: Activity[];
-  showInviteButton?: boolean;
-  onInvite?: () => void;
+  inviteButton?: React.ReactNode; // ← Chỉ nhận nút từ page
   selectedPeriod?: string;
   onPeriodChange?: (period: 'week' | 'month' | 'year') => void;
 }
@@ -79,31 +76,18 @@ export default function Dashboard({
   serviceData = [],
   quickActions,
   recentActivities,
-  showInviteButton = false,
-  onInvite,
+  inviteButton,
   selectedPeriod = 'month',
   onPeriodChange,
 }: DashboardProps) {
-  const [showInviteForm, setShowInviteForm] = useState(false);
-  const [inviteEmails, setInviteEmails] = useState('');
-  const [inviteMessage, setInviteMessage] = useState('');
   const [hoveredCard, setHoveredCard] = useState<number | null>(null);
-
-  const handleInvite = () => {
-    console.log('Sending invites to:', inviteEmails);
-    console.log('Message:', inviteMessage);
-    setShowInviteForm(false);
-    setInviteEmails('');
-    setInviteMessage('');
-    onInvite?.();
-  };
 
   const handlePeriodClick = (period: 'week' | 'month' | 'year') => {
     onPeriodChange?.(period);
   };
 
   return (
-    <div className="p-6 max-w-full">
+    <div className="max-w-full">
       {/* Header */}
       <div className="flex items-center justify-between mb-6">
         <div>
@@ -111,17 +95,9 @@ export default function Dashboard({
           <p className="text-gray-500 text-sm">{subtitle}</p>
         </div>
         <div className="flex items-center gap-3">
-          {showInviteButton && (
-            <button
-              onClick={() => setShowInviteForm(true)}
-              className="px-4 py-2 bg-gradient-to-r from-teal-600 to-cyan-600 text-white rounded-lg hover:shadow-lg transition-all text-sm font-medium flex items-center gap-2"
-            >
-              <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 20 20" fill="currentColor" className="w-4 h-4">
-                <path d="M10.75 4.75a.75.75 0 0 0-1.5 0v4.5h-4.5a.75.75 0 0 0 0 1.5h4.5v4.5a.75.75 0 0 0 1.5 0v-4.5h4.5a.75.75 0 0 0 0-1.5h-4.5v-4.5Z" />
-              </svg>
-              Mời thành viên
-            </button>
-          )}
+          {/* Chỉ hiện nếu page truyền inviteButton */}
+          {inviteButton}
+
           <button className="p-2 rounded-lg hover:bg-gray-100 text-gray-600 transition-colors relative">
             <svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
               <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M15 17h5l-1.405-1.405A2.032 2.032 0 0118 14.158V11a6.002 6.002 0 00-4-5.659V5a2 2 0 10-4 0v.341C7.67 6.165 6 8.388 6 11v3.159c0 .538-.214 1.055-.595 1.436L4 17h5m6 0v1a3 3 0 11-6 0v-1m6 0H9" />
@@ -163,7 +139,6 @@ export default function Dashboard({
       {/* Charts */}
       <section className="mb-6">
         <div className="grid grid-cols-1 lg:grid-cols-3 gap-4">
-          {/* Revenue Chart */}
           <div className="lg:col-span-2 bg-white rounded-xl p-6 shadow-md border border-gray-100">
             <div className="flex items-center justify-between mb-4">
               <div>
@@ -211,7 +186,6 @@ export default function Dashboard({
             </ResponsiveContainer>
           </div>
 
-          {/* Service Pie Chart */}
           {serviceData.length > 0 && (
             <div className="bg-white rounded-xl p-6 shadow-md border border-gray-100">
               <h2 className="text-xl font-bold text-gray-900 mb-1">Phân bố dịch vụ</h2>
@@ -300,73 +274,6 @@ export default function Dashboard({
           </div>
         </div>
       </section>
-
-      {/* Invite Modal */}
-      {showInviteForm && (
-        <div className="fixed inset-0 bg-black/40 backdrop-blur-sm flex items-center justify-center z-50 p-4">
-          <div className="bg-white rounded-2xl shadow-2xl max-w-lg w-full p-6 relative">
-            <button
-              onClick={() => setShowInviteForm(false)}
-              className="absolute top-4 right-4 text-gray-400 hover:text-gray-600"
-            >
-              <XMarkIcon className="w-5 h-5" />
-            </button>
-
-            <div className="flex items-center gap-3 mb-5">
-              <div className="w-10 h-10 bg-gradient-to-br from-teal-600 to-cyan-600 rounded-lg flex items-center justify-center">
-                <EnvelopeIcon className="w-5 h-5 text-white" />
-              </div>
-              <div>
-                <h3 className="text-xl font-bold text-gray-900">Mời thành viên</h3>
-                <p className="text-xs text-gray-500">Gửi lời mời tham gia đội ngũ</p>
-              </div>
-            </div>
-
-            <div className="space-y-4">
-              <div>
-                <label className="block text-sm font-semibold text-gray-700 mb-2">
-                  Email (cách nhau bởi dấu phẩy)
-                </label>
-                <input
-                  type="text"
-                  value={inviteEmails}
-                  onChange={(e) => setInviteEmails(e.target.value)}
-                  placeholder="user1@email.com, user2@email.com"
-                  className="w-full px-4 py-2.5 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-teal-500 text-sm"
-                />
-              </div>
-
-              <div>
-                <label className="block text-sm font-semibold text-gray-700 mb-2">
-                  Lời nhắn (tùy chọn)
-                </label>
-                <textarea
-                  value={inviteMessage}
-                  onChange={(e) => setInviteMessage(e.target.value)}
-                  placeholder="Chào mừng bạn tham gia..."
-                  rows={3}
-                  className="w-full px-4 py-2.5 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-teal-500 resize-none text-sm"
-                />
-              </div>
-
-              <div className="flex gap-3 pt-2">
-                <button
-                  onClick={handleInvite}
-                  className="flex-1 px-5 py-2.5 bg-gradient-to-r from-teal-600 to-cyan-600 text-white rounded-lg font-semibold hover:shadow-lg transition-all text-sm"
-                >
-                  Gửi lời mời
-                </button>
-                <button
-                  onClick={() => setShowInviteForm(false)}
-                  className="px-5 py-2.5 border border-gray-300 text-gray-700 rounded-lg font-semibold hover:bg-gray-50 text-sm"
-                >
-                  Hủy
-                </button>
-              </div>
-            </div>
-          </div>
-        </div>
-      )}
     </div>
   );
 }
