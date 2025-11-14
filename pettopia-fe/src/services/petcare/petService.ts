@@ -1,15 +1,18 @@
 import axios from 'axios';
 
+// ================ AUTH HELPER ================
 function getAuthToken(): string | null {
     return localStorage.getItem('authToken');
 }
+
 function authHeaders() {
     const token = getAuthToken();
-    if (!token) return {};
+     if (!token) return {};
     return { headers: { token } };
 }
 
-const PET_API_URL = '/api/v1/pet/create';
+// ================ PET APIs ================
+const PET_API_URL = '/api/v1/pet';
 
 export interface CreatePetPayload {
     name: string;
@@ -18,19 +21,14 @@ export interface CreatePetPayload {
     gender?: string;
     color?: string;
     weight?: number;
-    dateOfBirth?: string; 
+    dateOfBirth?: string;
     avatar_url?: string;
-    owner?: string | Record<string, unknown>; // changed from unknown
+    owner?: string | Record<string, unknown>;
 }
 
 export async function createPet(payload: CreatePetPayload) {
-    try {
-        const response = await axios.post(PET_API_URL, payload);
-        return response.data;
-    } catch (error) {
-        logAxiosError('createPet', error);
-        throw error;
-    }
+    const response = await axios.post(PET_API_URL + '/create', payload, authHeaders());
+    return response.data;
 }
 
 export interface PetDetailResponse {
@@ -44,12 +42,14 @@ export interface PetDetailResponse {
     dateOfBirth?: string;
     avatar_url?: string;
     owner?: any;
+    createdAt?: string;
+    updatedAt?: string;
 }
 
 export async function getPetById(petId: string): Promise<PetDetailResponse> {
     const url = `/api/v1/pet/${encodeURIComponent(petId)}`;
-    const res = await axios.get(url);
-    return res.data;
+    const res = await axios.get(url, authHeaders());
+    return res.data?.data || res.data;
 }
 
 export interface UpdatePetPayload {
@@ -59,33 +59,23 @@ export interface UpdatePetPayload {
     gender?: string;
     color?: string;
     weight?: number;
-    dateOfBirth?: string; 
+    dateOfBirth?: string;
     avatar_url?: string;
 }
 
 export async function updatePet(petId: string, payload: UpdatePetPayload) {
-    try {
-        const url = `/api/v1/pet/${encodeURIComponent(petId)}`;
-        const response = await axios.patch(url, payload);
-        return response.data;
-    } catch (error) {
-        logAxiosError('updatePet', error);
-        throw error;
-    }
+    const url = `/api/v1/pet/${encodeURIComponent(petId)}`;
+    const response = await axios.patch(url, payload, authHeaders());
+    return response.data;
 }
 
 export async function deletePet(petId: string) {
-    try {
-        const url = `/api/v1/pet/${encodeURIComponent(petId)}`;
-        const response = await axios.delete(url);
-        return response.data;
-    } catch (error) {
-        logAxiosError('deletePet', error);
-        throw error;
-    }
+    const url = `/api/v1/pet/${encodeURIComponent(petId)}`;
+    const response = await axios.delete(url, authHeaders());
+    return response.data;
 }
 
-// Healthcare Appointments
+// ================ HEALTHCARE - APPOINTMENTS ================
 export interface Appointment {
     _id: string;
     user_id: string;
@@ -118,18 +108,89 @@ export interface GetAppointmentsParams {
 }
 
 export async function getAppointments(params?: GetAppointmentsParams): Promise<AppointmentsResponse> {
+    const { page = 1, limit = 10 } = params || {};
+    const url = `/api/v1/healthcare/appointments`;
+    const response = await axios.get(url, {
+        params: { page, limit },
+        ...authHeaders(),
+    });
+    return response.data;
+}
+
+export interface AppointmentDetailResponse {
+    status: string;
+    message: string;
+    data: {
+        _id: string;
+        user_id: string;
+        customer: string;
+        pet_ids: string[];
+        clinic_id: string;
+        service_ids: string[];
+        date: string;
+        shift: 'Morning' | 'Afternoon' | 'Evening';
+        status: 'Pending_Confirmation' | 'Confirmed' | 'Cancelled' | 'Completed';
+        created_by: string;
+        id: string;
+        createdAt: string;
+        updatedAt: string;
+    };
+}
+
+export async function getAppointmentDetail(appointmentId: string): Promise<AppointmentDetailResponse['data']> {
+    const token = getAuthToken();
+    const url = `/api/v1/healthcare/appointments/${encodeURIComponent(appointmentId)}`;
+    const response = await axios.get(url, {
+        headers: {
+            ...(token && { 'token': token }),
+        },
+    });
+    return response.data?.data || response.data;
+}
+
+// ================ MỚI: SERVICE DETAIL ================
+export interface ServiceDetail {
+    id: string;
+    name: string;
+    description?: string;
+    price?: number;
+    duration?: number; // phút
+    clinic_id?: string;
+    category?: string;
+    createdAt?: string;
+    updatedAt?: string;
+}
+
+export async function getServiceDetail(serviceId: string): Promise<ServiceDetail> {
     try {
-        const { page = 1, limit = 10 } = params || {};
-        const url = `/api/v1/healthcare/appointments`;
-        const response = await axios.get(url, { params: { page, limit }, ...authHeaders() });
-        return response.data;
+        const url = `/api/v1/healthcare/services/${encodeURIComponent(serviceId)}`;
+        const response = await axios.get(url, authHeaders());
+        // Một số API trả về { data: {...} }, nên lấy linh hoạt
+        return response.data?.data || response.data;
     } catch (error) {
-        logAxiosError('getAppointments', error);
+        logAxiosError('getServiceDetail', error);
         throw error;
     }
 }
 
-// Helper: axios error checking / logging
+// (Tương lai) Nếu cần lấy chi tiết phòng khám
+export interface ClinicDetail {
+    id: string;
+    name: string;
+    address?: string;
+    phone?: string;
+    email?: string;
+    open_hours?: string;
+    avatar_url?: string;
+}
+
+export async function getClinicDetail(clinicId: string): Promise<ClinicDetail> {
+    const url = `/api/v1/healthcare/clinics/${encodeURIComponent(clinicId)}`;
+    const response = await axios.get(url, authHeaders());
+    return response.data?.data || response.data;
+}
+
+// ================ ERROR LOGGING ================
 function isAxiosError(err: unknown): err is import('axios').AxiosError {
     return (axios as any).isAxiosError?.(err) === true;
 }
@@ -137,12 +198,8 @@ function isAxiosError(err: unknown): err is import('axios').AxiosError {
 function logAxiosError(context: string, error: unknown) {
     if (isAxiosError(error)) {
         const err = error as import('axios').AxiosError;
-        try {
-            console.error(`${context} axios error (toJSON)`, (err as any).toJSON?.());
-        } catch {}
-        console.error(`${context} axios error (fields)`, {
+        console.error(`[${context}] Axios Error:`, {
             message: err.message,
-            code: (err as any).code,
             status: err.response?.status,
             statusText: err.response?.statusText,
             url: err.config?.url,
@@ -150,6 +207,6 @@ function logAxiosError(context: string, error: unknown) {
             data: err.response?.data,
         });
     } else {
-        console.error(`${context} non-axios error`, error);
+        console.error(`[${context}] Unknown Error:`, error);
     }
 }
