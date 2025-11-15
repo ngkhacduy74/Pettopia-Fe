@@ -1,8 +1,7 @@
 import axios from "axios";
 
-const API_URL = process.env.NEXT_PUBLIC_API_URL
-  ? `${process.env.PETTOPIA_API_URL}/customer`
-  : "http://localhost:3000/api/v1/customer";
+// Lấy base URL từ .env
+const API_URL = `${process.env.PETTOPIA_API_URL}/customer`;
 
 export async function getCustomerData(page: number, limit: number) {
   const token = localStorage.getItem("authToken");
@@ -45,7 +44,6 @@ export async function getCustomerById(id: string | number) {
   }
 }
 
-// THÊM HÀM MỚI: Lấy tổng số user theo role
 export async function getCustomerTotalDetail() {
   const token = localStorage.getItem("authToken");
   if (!token) {

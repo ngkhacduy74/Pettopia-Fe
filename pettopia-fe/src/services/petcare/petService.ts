@@ -13,7 +13,7 @@ function authHeaders() {
 }
 
 // ================ PET APIs ================
-const PET_API_URL = '/api/v1/pet';
+const PET_API_URL = `${process.env.PETTOPIA_API_URL}/pet`; // ĐÃ SỬA: DÙNG .env
 
 export interface CreatePetPayload {
     name: string;
@@ -48,7 +48,7 @@ export interface PetDetailResponse {
 }
 
 export async function getPetById(petId: string): Promise<PetDetailResponse> {
-    const url = `/api/v1/pet/${encodeURIComponent(petId)}`;
+    const url = `${process.env.PETTOPIA_API_URL}/pet/${encodeURIComponent(petId)}`; // ĐÃ SỬA
     const res = await axios.get(url, authHeaders());
     return res.data?.data || res.data;
 }
@@ -65,13 +65,13 @@ export interface UpdatePetPayload {
 }
 
 export async function updatePet(petId: string, payload: UpdatePetPayload) {
-    const url = `/api/v1/pet/${encodeURIComponent(petId)}`;
+    const url = `${process.env.PETTOPIA_API_URL}/pet/${encodeURIComponent(petId)}`; // ĐÃ SỬA
     const response = await axios.patch(url, payload, authHeaders());
     return response.data;
 }
 
 export async function deletePet(petId: string) {
-    const url = `/api/v1/pet/${encodeURIComponent(petId)}`;
+    const url = `${process.env.PETTOPIA_API_URL}/pet/${encodeURIComponent(petId)}`; // ĐÃ SỬA
     const response = await axios.delete(url, authHeaders());
     return response.data;
 }
@@ -110,7 +110,7 @@ export interface GetAppointmentsParams {
 
 export async function getAppointments(params?: GetAppointmentsParams): Promise<AppointmentsResponse> {
     const { page = 1, limit = 10 } = params || {};
-    const url = `/api/v1/healthcare/appointments`;
+    const url = `${process.env.PETTOPIA_API_URL}/healthcare/appointments`; // ĐÃ SỬA
     const response = await axios.get(url, {
         params: { page, limit },
         ...authHeaders(),
@@ -140,7 +140,7 @@ export interface AppointmentDetailResponse {
 
 export async function getAppointmentDetail(appointmentId: string): Promise<AppointmentDetailResponse['data']> {
     const token = getAuthToken();
-    const url = `/api/v1/healthcare/appointments/${encodeURIComponent(appointmentId)}`;
+    const url = `${process.env.PETTOPIA_API_URL}/healthcare/appointments/${encodeURIComponent(appointmentId)}`; // ĐÃ SỬA
     const response = await axios.get(url, {
         headers: {
             ...(token && { 'token': token }),
@@ -164,7 +164,7 @@ export interface ServiceDetail {
 
 export async function getServiceDetail(serviceId: string): Promise<ServiceDetail> {
     try {
-        const url = `/api/v1/healthcare/services/${encodeURIComponent(serviceId)}`;
+        const url = `${process.env.PETTOPIA_API_URL}/healthcare/services/${encodeURIComponent(serviceId)}`; // ĐÃ SỬA
         const response = await axios.get(url, authHeaders());
         // Một số API trả về { data: {...} }, nên lấy linh hoạt
         return response.data?.data || response.data;
@@ -186,7 +186,7 @@ export interface ClinicDetail {
 }
 
 export async function getClinicDetail(clinicId: string): Promise<ClinicDetail> {
-    const url = `/api/v1/healthcare/clinics/${encodeURIComponent(clinicId)}`;
+    const url = `${process.env.PETTOPIA_API_URL}/healthcare/clinics/${encodeURIComponent(clinicId)}`; // ĐÃ SỬA
     const response = await axios.get(url, authHeaders());
     return response.data?.data || response.data;
 }

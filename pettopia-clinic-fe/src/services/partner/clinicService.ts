@@ -1,8 +1,9 @@
 import axios from "axios";
 
-const API_URL = "http://localhost:3000/api/v1/partner/clinic";
-const PARTNER_API_URL = "http://localhost:3000/api/v1/partner";
-const HEALTHCARE_API_URL = "http://localhost:3000/api/v1/healthcare";
+// Lấy base URL từ .env
+const API_URL = `${process.env.PETTOPIA_API_URL}/partner/clinic`;
+const PARTNER_API_URL = `${process.env.PETTOPIA_API_URL}/partner`;
+const HEALTHCARE_API_URL = `${process.env.PETTOPIA_API_URL}/healthcare`;
 
 // Tạo instance Axios
 const axiosInstance = axios.create({
@@ -78,7 +79,6 @@ interface ClinicData {
   };
 }
 
-// Interface cho Appointment
 export interface AppointmentData {
   _id: string;
   user_id: string;
@@ -112,15 +112,11 @@ export interface AppointmentDetailResponse {
 
 export const registerClinic = async (clinicData: ClinicData) => {
   const token = localStorage.getItem('authToken');
-  if (!token) {
-    throw new Error('No authentication token found');
-  }
+  if (!token) throw new Error('No authentication token found');
+
   try {
     const response = await axiosInstance.post("/register", clinicData, {
-      headers: {
-        'Content-Type': 'application/json',
-        'token': token,
-      },
+      headers: { 'token': token },
     });
     console.log("API response:", response.data);
     return response.data;
@@ -132,15 +128,11 @@ export const registerClinic = async (clinicData: ClinicData) => {
 
 export const getClinicForms = async (page: number = 1, limit: number = 10) => {
   const token = localStorage.getItem('authToken');
-  if (!token) {
-    throw new Error('No authentication token found');
-  }
+  if (!token) throw new Error('No authentication token found');
+
   try {
     const response = await axiosInstance.get(`/form?page=${page}&limit=${limit}`, {
-      headers: {
-        'Content-Type': 'application/json',
-        'token': token,
-      },
+      headers: { 'token': token },
     });
     return response.data as ClinicFormsResponse;
   } catch (error) {
@@ -151,18 +143,14 @@ export const getClinicForms = async (page: number = 1, limit: number = 10) => {
 
 export const updateClinicFormStatus = async (formId: string, status: string, note?: string) => {
   const token = localStorage.getItem('authToken');
-  if (!token) {
-    throw new Error('No authentication token found');
-  }
+  if (!token) throw new Error('No authentication token found');
+
   try {
     const response = await axiosInstance.post(`/status/${formId}`, {
       status,
       note: note || (status === 'approved' ? 'Phòng khám đủ điều kiện hoạt động' : 'Phòng khám không đủ điều kiện hoạt động')
     }, {
-      headers: {
-        'Content-Type': 'application/json',
-        'token': token,
-      },
+      headers: { 'token': token },
     });
     return response.data;
   } catch (error) {
@@ -171,18 +159,14 @@ export const updateClinicFormStatus = async (formId: string, status: string, not
   }
 };
 
-// Lấy danh sách service (GET /service/all)
 export const getClinicServices = async (page: number = 1, limit: number = 10, search?: string) => {
   const token = localStorage.getItem('authToken');
-  if (!token) {
-    throw new Error('No authentication token found');
-  }
+  if (!token) throw new Error('No authentication token found');
+
   try {
     const params: Record<string, any> = { page, limit };
-    if (search && search.trim()) {
-      params.search = search.trim();
-    }
-    
+    if (search?.trim()) params.search = search.trim();
+
     const response = await axios.get(`${PARTNER_API_URL}/service/all`, {
       params,
       headers: { 'token': token }
@@ -194,12 +178,10 @@ export const getClinicServices = async (page: number = 1, limit: number = 10, se
   }
 };
 
-// Tạo mới service (POST /service)
 export const createClinicService = async (serviceData: any) => {
   const token = localStorage.getItem('authToken');
-  if (!token) {
-    throw new Error('No authentication token found');
-  }
+  if (!token) throw new Error('No authentication token found');
+
   try {
     const response = await axios.post(`${PARTNER_API_URL}/service`, serviceData, {
       headers: { 'token': token }
@@ -211,12 +193,10 @@ export const createClinicService = async (serviceData: any) => {
   }
 };
 
-// Cập nhật service (PUT /service/:id)
 export const updateClinicService = async (serviceId: string, serviceData: any) => {
   const token = localStorage.getItem('authToken');
-  if (!token) {
-    throw new Error('No authentication token found');
-  }
+  if (!token) throw new Error('No authentication token found');
+
   try {
     const response = await axios.put(`${PARTNER_API_URL}/service/${serviceId}`, serviceData, {
       headers: { 'token': token }
@@ -228,12 +208,10 @@ export const updateClinicService = async (serviceId: string, serviceData: any) =
   }
 };
 
-// Xóa service (DELETE /service/:id)
 export const deleteClinicService = async (serviceId: string) => {
   const token = localStorage.getItem('authToken');
-  if (!token) {
-    throw new Error('No authentication token found');
-  }
+  if (!token) throw new Error('No authentication token found');
+
   try {
     const response = await axios.delete(`${PARTNER_API_URL}/service/${serviceId}`, {
       headers: { 'token': token }
@@ -245,21 +223,14 @@ export const deleteClinicService = async (serviceId: string) => {
   }
 };
 
-// ===== APPOINTMENT FUNCTIONS =====
-
-// Lấy danh sách lịch hẹn (GET /healthcare/appointments)
 export const getAppointments = async (page: number = 1, limit: number = 10) => {
   const token = localStorage.getItem('authToken');
-  if (!token) {
-    throw new Error('No authentication token found');
-  }
+  if (!token) throw new Error('No authentication token found');
+
   try {
     const response = await axios.get(`${HEALTHCARE_API_URL}/appointments`, {
       params: { page, limit },
-      headers: {
-        'Content-Type': 'application/json',
-        'token': token
-      }
+      headers: { 'token': token }
     });
     return response.data as AppointmentsResponse;
   } catch (error) {
@@ -268,18 +239,13 @@ export const getAppointments = async (page: number = 1, limit: number = 10) => {
   }
 };
 
-// Lấy chi tiết lịch hẹn (GET /healthcare/appointments/:id)
 export const getAppointmentDetail = async (appointmentId: string) => {
   const token = localStorage.getItem('authToken');
-  if (!token) {
-    throw new Error('No authentication token found');
-  }
+  if (!token) throw new Error('No authentication token found');
+
   try {
     const response = await axios.get(`${HEALTHCARE_API_URL}/appointments/${appointmentId}`, {
-      headers: {
-        'Content-Type': 'application/json',
-        'token': token
-      }
+      headers: { 'token': token }
     });
     return response.data as AppointmentDetailResponse;
   } catch (error) {
@@ -288,31 +254,22 @@ export const getAppointmentDetail = async (appointmentId: string) => {
   }
 };
 
-// Cập nhật trạng thái lịch hẹn (POST /healthcare/appointments/:id/status)
 export const updateAppointmentStatus = async (
-  appointmentId: string, 
-  status: string, 
+  appointmentId: string,
+  status: string,
   cancel_reason?: string
 ) => {
   const token = localStorage.getItem('authToken');
-  if (!token) {
-    throw new Error('No authentication token found');
-  }
+  if (!token) throw new Error('No authentication token found');
+
   try {
     const body: any = { status };
-    if (cancel_reason) {
-      body.cancel_reason = cancel_reason;
-    }
-    
+    if (cancel_reason) body.cancel_reason = cancel_reason;
+
     const response = await axios.post(
       `${HEALTHCARE_API_URL}/appointments/${appointmentId}/status`,
       body,
-      {
-        headers: {
-          'Content-Type': 'application/json',
-          'token': token
-        }
-      }
+      { headers: { 'token': token } }
     );
     return response.data;
   } catch (error) {

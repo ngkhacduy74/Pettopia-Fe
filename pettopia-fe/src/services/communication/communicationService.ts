@@ -1,13 +1,12 @@
 import axios from "axios";
 
-const API_BASE_URL = process.env.NEXT_PUBLIC_API_URL || 'http://localhost:3000/api/v1';
+const API_BASE_URL = process.env.PETTOPIA_API_URL || 'http://localhost:3000/api/v1'; // SỬA: chỉ dùng .env, bỏ fallback sau
 
 export interface Author {
   user_id: string;
   fullname: string;
   avatar: string | null;
 }
-
 
 export interface Post {
     _id: string;
@@ -104,7 +103,6 @@ class CommunicationService {
 
     return headers;
   }
-
 
   private async handleResponse<T>(response: Response): Promise<T> {
     if (!response.ok) {
@@ -214,19 +212,17 @@ class CommunicationService {
   /**
    * Hide/Unhide a post (soft delete)
    */
-  async toggleHidePost(postId: string): Promise<Post> {
-    const response = await fetch(`${this.baseUrl}/hide/${postId}`, {
+  async toggleHidePost(postId: string, isHidden: boolean): Promise<Post> {
+    const response = await fetch(`${this.baseUrl}/${postId}/hide`, {
       method: 'PATCH',
       headers: this.getHeaders(),
+      body: JSON.stringify({ isHidden }),
     });
     return this.handleResponse<Post>(response);
   }
 
-  // ==================== LIKE OPERATIONS ====================
-
   /**
    * Like a post
-   * Endpoint: POST /api/v1/communication/:id/like
    */
   async likePost(postId: string): Promise<{ message: string; likeCount: number }> {
     const response = await fetch(`${this.baseUrl}/${postId}/like`, {
@@ -238,7 +234,6 @@ class CommunicationService {
 
   /**
    * Unlike a post
-   * Endpoint: DELETE /api/v1/communication/:id/like
    */
   async unlikePost(postId: string): Promise<{ message: string; likeCount: number }> {
     const response = await fetch(`${this.baseUrl}/${postId}/like`, {
@@ -248,25 +243,13 @@ class CommunicationService {
     return this.handleResponse<{ message: string; likeCount: number }>(response);
   }
 
-  /**
-   * Check if user liked a post
-   */
-  async checkLikeStatus(postId: string): Promise<{ isLiked: boolean }> {
-    const response = await fetch(`${this.baseUrl}/${postId}/like/check`, {
-      method: 'GET',
-      headers: this.getHeaders(),
-    });
-    return this.handleResponse<{ isLiked: boolean }>(response);
-  }
-
   // ==================== COMMENT OPERATIONS ====================
 
   /**
    * Get comments for a post
-   * Endpoint: GET /api/v1/communication/:id/comment
    */
   async getComments(postId: string): Promise<Comment[]> {
-    const response = await fetch(`${this.baseUrl}/${postId}/comment`, {
+    const response = await fetch(`${this.baseUrl}/${postId}/comments`, {
       method: 'GET',
       headers: this.getHeaders(),
     });
@@ -274,24 +257,21 @@ class CommunicationService {
   }
 
   /**
-   * Create a comment
+   * Create a comment or reply
    * Endpoint: POST /api/v1/communication/:id/comment
    */
   async createComment(data: CommentData): Promise<Comment> {
     const response = await fetch(`${this.baseUrl}/${data.post_id}/comment`, {
       method: 'POST',
       headers: this.getHeaders(),
-      body: JSON.stringify({
-        user_id: data.user_id,
-        content: data.content,
-        ...(data.parent_comment_id !== undefined ? { parent_comment_id: data.parent_comment_id } : {}),
-      }),
+      body: JSON.stringify(data),
     });
     return this.handleResponse<Comment>(response);
   }
 
   /**
    * Update a comment
+   * Endpoint: PATCH /api/v1/communication/:id/comment/:comment_id
    */
   async updateComment(postId: string, commentId: string, content: string): Promise<Comment> {
     const response = await fetch(`${this.baseUrl}/${postId}/comment/${commentId}`, {
