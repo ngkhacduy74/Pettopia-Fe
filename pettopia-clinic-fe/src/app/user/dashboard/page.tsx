@@ -132,10 +132,8 @@ export default function ClinicDashboardPage() {
       serviceData={serviceData}
       quickActions={quickActions}
       recentActivities={recentActivities}
-      showInviteButton={true}
       selectedPeriod={selectedPeriod}
       onPeriodChange={setSelectedPeriod}
-      onInvite={() => console.log('Mời bác sĩ từ page')}
     />
   );
 }

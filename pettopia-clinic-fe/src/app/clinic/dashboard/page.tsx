@@ -231,7 +231,7 @@ export default function ClinicDashboardPage() {
         serviceData={serviceData}
         quickActions={quickActions}
         recentActivities={recentActivities}
-        inviteButton={InviteSection} // ← Toàn bộ nút + modal
+       
         selectedPeriod={selectedPeriod}
         onPeriodChange={setSelectedPeriod}
       />

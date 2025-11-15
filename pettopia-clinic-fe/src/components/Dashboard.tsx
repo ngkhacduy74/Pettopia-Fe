@@ -63,7 +63,6 @@ interface DashboardProps {
   serviceData?: ServiceData[];
   quickActions: QuickAction[];
   recentActivities: Activity[];
-  inviteButton?: React.ReactNode; // ← Chỉ nhận nút từ page
   selectedPeriod?: string;
   onPeriodChange?: (period: 'week' | 'month' | 'year') => void;
 }
@@ -76,7 +75,7 @@ export default function Dashboard({
   serviceData = [],
   quickActions,
   recentActivities,
-  inviteButton,
+
   selectedPeriod = 'month',
   onPeriodChange,
 }: DashboardProps) {
@@ -96,7 +95,7 @@ export default function Dashboard({
         </div>
         <div className="flex items-center gap-3">
           {/* Chỉ hiện nếu page truyền inviteButton */}
-          {inviteButton}
+
 
           <button className="p-2 rounded-lg hover:bg-gray-100 text-gray-600 transition-colors relative">
             <svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
