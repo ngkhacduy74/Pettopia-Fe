@@ -5,11 +5,14 @@ import { Calendar, Filter, ChevronLeft, ChevronRight, X, CheckCircle, XCircle, C
 import { getAppointments, updateAppointmentStatus, type AppointmentData } from '@/services/partner/clinicService';
 import { getCustomerById } from '@/services/customer/customerService';
 
-// Helper: chuẩn hóa ngày về YYYY-MM-DD (không bị lệch múi giờ)
+// Helper: chuẩn hóa ngày về YYYY-MM-DD (dùng local time để tránh lệch múi giờ)
 const toDateKey = (date: Date) => {
     const d = new Date(date);
     d.setHours(0, 0, 0, 0);
-    return d.toISOString().split('T')[0];
+    const year = d.getFullYear();
+    const month = String(d.getMonth() + 1).padStart(2, '0');
+    const day = String(d.getDate()).padStart(2, '0');
+    return `${year}-${month}-${day}`;
 };
 
 // Interface mở rộng cho appointment với thông tin customer
@@ -114,6 +117,19 @@ export default function AppointmentsPage() {
         // eslint-disable-next-line react-hooks/exhaustive-deps
     }, [page, viewMode]);
 
+    // Reset page và reload khi filters thay đổi trong table view
+    useEffect(() => {
+        if (viewMode === 'table') {
+            if (page !== 1) {
+                setPage(1); // Reset về trang 1 sẽ trigger reload qua useEffect trên
+            } else {
+                // Nếu đã ở trang 1, reload trực tiếp
+                loadAppointments();
+            }
+        }
+        // eslint-disable-next-line react-hooks/exhaustive-deps
+    }, [filters, viewMode]);
+
     // Lọc dữ liệu
     const filteredAppointments = useMemo(() => {
         let filtered = [...appointments];
@@ -123,18 +139,30 @@ export default function AppointmentsPage() {
         }
         if (filters.dateFrom) {
             filtered = filtered.filter(a => {
-                const aptDate = toDateKey(new Date(a.date));
-                return aptDate >= filters.dateFrom;
+                try {
+                    const aptDate = toDateKey(new Date(a.date));
+                    return aptDate >= filters.dateFrom;
+                } catch {
+                    return false;
+                }
             });
         }
         if (filters.dateTo) {
             filtered = filtered.filter(a => {
-                const aptDate = toDateKey(new Date(a.date));
-                return aptDate <= filters.dateTo;
+                try {
+                    const aptDate = toDateKey(new Date(a.date));
+                    return aptDate <= filters.dateTo;
+                } catch {
+                    return false;
+                }
             });
         }
         if (filters.createdBy !== 'all') {
-            filtered = filtered.filter(a => a.created_by === filters.createdBy);
+            filtered = filtered.filter(a => {
+                // Xử lý cả trường hợp undefined/null và so sánh chính xác
+                const createdBy = a.created_by || '';
+                return createdBy === filters.createdBy;
+            });
         }
         return filtered;
     }, [appointments, filters]);
@@ -196,15 +224,21 @@ export default function AppointmentsPage() {
     // Icon cho ca làm việc
     const getShiftIcon = (shift: string) => {
         switch (shift?.toLowerCase()) {
-            case 'morning': return <Sun className="w-3 h-3" />;
-            case 'afternoon': return <Sunset className="w-3 h-3" />;
-            case 'evening': return <Moon className="w-3 h-3" />;
-            default: return <Clock className="w-3 h-3" />;
+            case 'morning': return <Sun className="w-5 h-5" />;
+            case 'afternoon': return <Sunset className="w-5 h-5" />;
+            case 'evening': return <Moon className="w-5 h-5" />;
+            default: return <Clock className="w-5 h-5" />;
         }
     };
 
     const formatDate = (dateStr: string) => {
         try {
+            // Nếu là định dạng YYYY-MM-DD từ date input, format trực tiếp
+            if (/^\d{4}-\d{2}-\d{2}$/.test(dateStr)) {
+                const [year, month, day] = dateStr.split('-');
+                return `${day}/${month}/${year}`;
+            }
+            // Nếu là date string khác, dùng Date object
             return new Date(dateStr).toLocaleDateString('vi-VN');
         } catch {
             return dateStr;
@@ -246,6 +280,7 @@ export default function AppointmentsPage() {
     const setDateFilterAndSwitchToTable = (date: Date) => {
         const dateKey = toDateKey(date);
         setFilters(prev => ({ ...prev, dateFrom: dateKey, dateTo: dateKey }));
+        setPage(1); // Reset về trang 1 khi chuyển từ calendar view
         setViewMode('table');
     };
 
@@ -406,7 +441,8 @@ export default function AppointmentsPage() {
                                     {displayed.map(apt => (
                                         <div
                                             key={apt._id || apt.id}
-                                            className={`${getCustomerColor(apt.customer || apt.user_id, apt.customer_name)} text-white p-2 rounded-lg text-xs cursor-pointer transition-colors flex items-center gap-2`}
+                                            onClick={() => setDateFilterAndSwitchToTable(date)}
+                                            className={`${getCustomerColor(apt.customer || apt.user_id, apt.customer_name)} text-white p-2 rounded-lg text-xs cursor-pointer transition-colors flex items-center gap-2 hover:opacity-90`}
                                         >
                                             <span className="flex-shrink-0">{getShiftIcon(apt.shift)}</span>
                                             <div className="font-medium truncate">{apt.customer_name || 'Khách hàng'}</div>
@@ -852,24 +888,80 @@ export default function AppointmentsPage() {
                         </div>
                     </div>
 
+                    {/* Hiển thị các bộ lọc đang áp dụng */}
+                    {(filters.status !== 'all' || filters.dateFrom || filters.dateTo || filters.createdBy !== 'all') && (
+                        <div className="mt-4 p-3 bg-teal-50 border border-teal-200 rounded-lg">
+                            <div className="flex items-start gap-2 mb-2">
+                                <Filter className="w-4 h-4 text-teal-600 mt-0.5" />
+                                <span className="text-sm font-medium text-teal-900">Đang lọc theo:</span>
+                            </div>
+                            <div className="flex flex-wrap gap-2">
+                                {filters.status !== 'all' && (
+                                    <span className="inline-flex items-center gap-1 px-2.5 py-1 bg-teal-100 text-teal-800 rounded-full text-xs font-medium">
+                                        Trạng thái: {getStatusLabel(filters.status)}
+                                        <button
+                                            onClick={() => setFilters(prev => ({ ...prev, status: 'all' }))}
+                                            className="hover:text-teal-900"
+                                        >
+                                            <X size={12} />
+                                        </button>
+                                    </span>
+                                )}
+                                {filters.dateFrom && (
+                                    <span className="inline-flex items-center gap-1 px-2.5 py-1 bg-teal-100 text-teal-800 rounded-full text-xs font-medium">
+                                        Từ: {formatDate(filters.dateFrom)}
+                                        <button
+                                            onClick={() => setFilters(prev => ({ ...prev, dateFrom: '' }))}
+                                            className="hover:text-teal-900"
+                                        >
+                                            <X size={12} />
+                                        </button>
+                                    </span>
+                                )}
+                                {filters.dateTo && (
+                                    <span className="inline-flex items-center gap-1 px-2.5 py-1 bg-teal-100 text-teal-800 rounded-full text-xs font-medium">
+                                        Đến: {formatDate(filters.dateTo)}
+                                        <button
+                                            onClick={() => setFilters(prev => ({ ...prev, dateTo: '' }))}
+                                            className="hover:text-teal-900"
+                                        >
+                                            <X size={12} />
+                                        </button>
+                                    </span>
+                                )}
+                                {filters.createdBy !== 'all' && (
+                                    <span className="inline-flex items-center gap-1 px-2.5 py-1 bg-teal-100 text-teal-800 rounded-full text-xs font-medium">
+                                        Người tạo: {filters.createdBy === 'customer' ? 'Khách hàng' : 'Đối tác'}
+                                        <button
+                                            onClick={() => setFilters(prev => ({ ...prev, createdBy: 'all' }))}
+                                            className="hover:text-teal-900"
+                                        >
+                                            <X size={12} />
+                                        </button>
+                                    </span>
+                                )}
+                            </div>
+                        </div>
+                    )}
+
                     <div className="mt-4 pt-4 border-t border-gray-200 text-sm text-gray-600">
                         <div className="flex flex-col gap-3">
                             <div>
                                 Hiển thị <strong className="text-gray-900">{filteredAppointments.length}</strong> / <strong className="text-gray-900">{total}</strong> lịch hẹn
                             </div>
-                            <div className="flex flex-col sm:flex-row sm:items-center gap-3 text-xs text-gray-500">
+                            <div className="flex flex-col sm:flex-row sm:items-center gap-3 text-xs">
                                 <div className="flex items-center gap-2 flex-wrap">
-                                    <span className="font-medium text-gray-700">Chú thích:</span>
+                                    <span className="font-medium text-black-700">Chú thích:</span>
                                     <div className="flex items-center gap-1">
-                                        <Sun className="w-3 h-3 text-amber-500" />
-                                        <span className="text-gray-700">Sáng</span>
+                                        <Sun className="w-5 h-5 text-black-500" />
+                                        <span className="text-black-500">Sáng</span>
                                     </div>
                                     <div className="flex items-center gap-1 text-gray-700">
-                                        <Sunset className="w-3 h-3 text-orange-500" />
+                                        <Sunset className="w-5 h-5 text-black-500" />
                                         <span>Chiều</span>
                                     </div>
                                     <div className="flex items-center gap-1 text-gray-700">
-                                        <Moon className="w-3 h-3 text-purple-500" />
+                                        <Moon className="w-5 h-5 text-black-500" />
                                         <span>Tối</span>
                                     </div>
                                     <span className="mx-1">•</span>

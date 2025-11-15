@@ -1,8 +1,8 @@
 'use client';
 
 import React, { useState, useEffect } from 'react';
-import type { Appointment, AppointmentsResponse } from '../../../../services/petcare/petService';
-import { getAppointments } from '../../../../services/petcare/petService';
+import type { Appointment, AppointmentsResponse } from '@/services/petcare/petService';
+import { getAppointments } from '@/services/petcare/petService';
 import Link from 'next/link';
 import axios from 'axios';
 
