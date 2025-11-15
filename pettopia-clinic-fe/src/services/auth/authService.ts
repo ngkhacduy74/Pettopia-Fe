@@ -3,8 +3,8 @@ import { parseJwt } from "@/utils/jwt";
 
 // ✅ Lấy base URL từ biến môi trường
 const API_URL = process.env.NEXT_PUBLIC_API_URL
-  ? `${process.env.NEXT_PUBLIC_API_URL}/auth`
-  : "http://localhost:3000/api/v1/auth"; 
+  ? `${process.env.PETTOPIA_API_URL}/auth`
+  : "http://localhost:3000/api/v1/auth";
 
 // ✅ Tạo instance Axios
 const axiosInstance = axios.create({
@@ -29,7 +29,10 @@ axiosInstance.interceptors.request.use(
 );
 
 // ✅ Hàm đăng nhập
-export const loginUser = async (loginData: { username: string; password: string }) => {
+export const loginUser = async (loginData: {
+  username: string;
+  password: string;
+}) => {
   try {
     const response = await axiosInstance.post("/login", loginData);
     const { token } = response.data;
