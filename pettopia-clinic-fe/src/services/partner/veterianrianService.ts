@@ -1,9 +1,8 @@
 import axios from 'axios';
 
-// Lấy base URL từ biến môi trường
-const API_URL = `${process.env.NEXT_PUBLIC_API_URL}/partner/vet`;
+const API_URL = 'http://localhost:3000/api/v1/partner/vet';
 
-// Định nghĩa interface
+// Định nghĩa interface cho dữ liệu trả về
 export interface VeterinarianForm {
   _id: string;
   id: string;
@@ -68,7 +67,7 @@ export async function submitVeterinarianData(data: {
   }
 }
 
-// Lấy danh sách hồ sơ bác sĩ thú y
+// Hàm mới: Lấy danh sách hồ sơ bác sĩ thú y
 export async function getVeterinarianForms(page: number = 1, limit: number = 10): Promise<VeterinarianFormResponse> {
   const token = localStorage.getItem('authToken');
   if (!token) {
@@ -91,6 +90,7 @@ export async function getVeterinarianForms(page: number = 1, limit: number = 10)
     throw new Error('Failed to fetch veterinarian forms');
   }
 }
+
 
 export async function updateVeterinarianFormStatus(
   formId: string,

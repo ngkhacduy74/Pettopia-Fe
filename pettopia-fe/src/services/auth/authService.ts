@@ -1,9 +1,7 @@
-// authService.ts (Đã sửa)
-
 import axios from "axios";
 import { parseJwt } from "@/utils/jwt"; // Import parseJwt từ jwt.ts
 
-const API_URL = `${process.env.NEXT_PUBLIC_API_URL}/auth`;
+const API_URL = "http://localhost:3000/api/v1/auth";
 
 // Tạo instance Axios
 const axiosInstance = axios.create({

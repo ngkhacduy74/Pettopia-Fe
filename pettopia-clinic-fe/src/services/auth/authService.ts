@@ -1,10 +1,12 @@
 import axios from "axios";
 import { parseJwt } from "@/utils/jwt";
 
-// Lấy base URL từ biến môi trường - không fallback
-const API_URL = `${process.env.NEXT_PUBLIC_API_URL}/auth`;
+// ✅ Lấy base URL từ biến môi trường
+const API_URL = process.env.PETTOPIA_API_URL;
+// ? `${process.env.PETTOPIA_API_URL}/auth`
+// : "http://localhost:3000/api/v1/auth";
 
-// Tạo instance Axios
+// ✅ Tạo instance Axios
 const axiosInstance = axios.create({
   baseURL: API_URL,
   headers: {
@@ -12,7 +14,7 @@ const axiosInstance = axios.create({
   },
 });
 
-// Interceptor để thêm token vào Authorization header
+// ✅ Interceptor để thêm token vào Authorization header
 axiosInstance.interceptors.request.use(
   (config) => {
     if (typeof window !== "undefined") {
@@ -26,8 +28,11 @@ axiosInstance.interceptors.request.use(
   (error) => Promise.reject(error)
 );
 
-// Hàm đăng nhập
-export const loginUser = async (loginData: { username: string; password: string }) => {
+// ✅ Hàm đăng nhập
+export const loginUser = async (loginData: {
+  username: string;
+  password: string;
+}) => {
   try {
     const response = await axiosInstance.post("/login", loginData);
     const { token } = response.data;
@@ -79,7 +84,7 @@ export const createUser = async (userData: {
   }
 };
 
-// Hàm đăng xuất
+// ✅ Hàm đăng xuất
 export const logoutUser = () => {
   localStorage.removeItem("authToken");
   document.cookie = "userRole=; path=/; expires=Thu, 01 Jan 1970 00:00:01 GMT;";
