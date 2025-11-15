@@ -1,6 +1,7 @@
 import axios from 'axios';
 
-const SHIFT_API_URL = 'http://localhost:3000/api/v1/partner/clinic/shift';
+// Lấy base URL từ biến môi trường
+const API_URL = `${process.env.NEXT_PUBLIC_API_URL}/partner/clinic/shift`;
 
 export interface ClinicShift {
   _id?: string;
@@ -25,7 +26,7 @@ export async function getClinicShifts(page: number = 1, limit: number = 10): Pro
   const token = localStorage.getItem('authToken');
   if (!token) throw new Error('No authentication token found');
 
-  const response = await axios.get(SHIFT_API_URL, {
+  const response = await axios.get(API_URL, {
     params: { page, limit },
     headers: {
       'Content-Type': 'application/json',
@@ -40,17 +41,17 @@ export async function getClinicShifts(page: number = 1, limit: number = 10): Pro
 export async function upsertClinicShift(payload: ClinicShift): Promise<ClinicShift> {
   const token = localStorage.getItem('authToken');
   if (!token) throw new Error('No authentication token found');
-  // Nếu có _id thì update, không thì tạo mới
+
   let response;
   if (payload._id) {
-    response = await axios.put(`${SHIFT_API_URL}/${payload._id}`, payload, {
+    response = await axios.put(`${API_URL}/${payload._id}`, payload, {
       headers: {
         'Content-Type': 'application/json',
         token,
       },
     });
   } else {
-    response = await axios.post(SHIFT_API_URL, payload, {
+    response = await axios.post(API_URL, payload, {
       headers: {
         'Content-Type': 'application/json',
         token,
@@ -59,5 +60,3 @@ export async function upsertClinicShift(payload: ClinicShift): Promise<ClinicShi
   }
   return response.data as ClinicShift;
 }
-
-

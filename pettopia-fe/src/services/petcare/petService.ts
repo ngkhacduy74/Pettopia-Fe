@@ -1,3 +1,5 @@
+// petService.ts (Đã sửa)
+
 import axios from 'axios';
 
 // ================ AUTH HELPER ================
@@ -13,7 +15,7 @@ function authHeaders() {
 }
 
 // ================ PET APIs ================
-const PET_API_URL = '/api/v1/pet';
+const API_URL = process.env.NEXT_PUBLIC_API_URL;
 
 export interface CreatePetPayload {
     name: string;
@@ -28,7 +30,7 @@ export interface CreatePetPayload {
 }
 
 export async function createPet(payload: CreatePetPayload) {
-    const response = await axios.post(PET_API_URL + '/create', payload, authHeaders());
+    const response = await axios.post(`${API_URL}/pet/create`, payload, authHeaders());
     return response.data;
 }
 
@@ -48,7 +50,7 @@ export interface PetDetailResponse {
 }
 
 export async function getPetById(petId: string): Promise<PetDetailResponse> {
-    const url = `/api/v1/pet/${encodeURIComponent(petId)}`;
+    const url = `${API_URL}/pet/${encodeURIComponent(petId)}`;
     const res = await axios.get(url, authHeaders());
     return res.data?.data || res.data;
 }
@@ -65,13 +67,13 @@ export interface UpdatePetPayload {
 }
 
 export async function updatePet(petId: string, payload: UpdatePetPayload) {
-    const url = `/api/v1/pet/${encodeURIComponent(petId)}`;
+    const url = `${API_URL}/pet/${encodeURIComponent(petId)}`;
     const response = await axios.patch(url, payload, authHeaders());
     return response.data;
 }
 
 export async function deletePet(petId: string) {
-    const url = `/api/v1/pet/${encodeURIComponent(petId)}`;
+    const url = `${API_URL}/pet/${encodeURIComponent(petId)}`;
     const response = await axios.delete(url, authHeaders());
     return response.data;
 }
@@ -110,7 +112,7 @@ export interface GetAppointmentsParams {
 
 export async function getAppointments(params?: GetAppointmentsParams): Promise<AppointmentsResponse> {
     const { page = 1, limit = 10 } = params || {};
-    const url = `/api/v1/healthcare/appointments`;
+    const url = `${API_URL}/healthcare/appointments`;
     const response = await axios.get(url, {
         params: { page, limit },
         ...authHeaders(),
@@ -140,7 +142,7 @@ export interface AppointmentDetailResponse {
 
 export async function getAppointmentDetail(appointmentId: string): Promise<AppointmentDetailResponse['data']> {
     const token = getAuthToken();
-    const url = `/api/v1/healthcare/appointments/${encodeURIComponent(appointmentId)}`;
+    const url = `${API_URL}/healthcare/appointments/${encodeURIComponent(appointmentId)}`;
     const response = await axios.get(url, {
         headers: {
             ...(token && { 'token': token }),
@@ -164,7 +166,7 @@ export interface ServiceDetail {
 
 export async function getServiceDetail(serviceId: string): Promise<ServiceDetail> {
     try {
-        const url = `/api/v1/healthcare/services/${encodeURIComponent(serviceId)}`;
+        const url = `${API_URL}/healthcare/services/${encodeURIComponent(serviceId)}`;
         const response = await axios.get(url, authHeaders());
         // Một số API trả về { data: {...} }, nên lấy linh hoạt
         return response.data?.data || response.data;
@@ -186,7 +188,7 @@ export interface ClinicDetail {
 }
 
 export async function getClinicDetail(clinicId: string): Promise<ClinicDetail> {
-    const url = `/api/v1/healthcare/clinics/${encodeURIComponent(clinicId)}`;
+    const url = `${API_URL}/healthcare/clinics/${encodeURIComponent(clinicId)}`;
     const response = await axios.get(url, authHeaders());
     return response.data?.data || response.data;
 }
