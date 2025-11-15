@@ -2,8 +2,8 @@ import axios from "axios";
 import { parseJwt } from "@/utils/jwt";
 
 // ✅ Lấy base URL từ biến môi trường
-const API_URL = process.env.NEXT_PUBLIC_PETTOPIA_API_URL;
-// ? `${process.env.PETTOPIA_API_URL}/auth`
+// const API_URL = process.env.NEXT_PUBLIC_API_URL
+`${process.env.NEXT_PUBLIC_PETTOPIA_API_URL}/auth`;
 // : "http://localhost:3000/api/v1/auth";
 
 // ✅ Tạo instance Axios
