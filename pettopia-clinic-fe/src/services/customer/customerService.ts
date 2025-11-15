@@ -1,7 +1,7 @@
 import axios from "axios";
 
-const API_URL = process.env.NEXT_PUBLIC_API_URL
-  ? `${process.env.PETTOPIA_API_URL}/customer`
+const API_URL = process.env.NEXT_PUBLIC_PETTOPIA_API_URL
+  ? `${process.env.NEXT_PUBLIC_PETTOPIA_API_URL}/customer`
   : "http://localhost:3000/api/v1/customer";
 
 export async function getCustomerData(page: number, limit: number) {
