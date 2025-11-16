@@ -120,7 +120,7 @@ export default function PetListPage() {
     };
 
     const handleEditPet = (petId: string | number) => {
-        router.push(`/user/edit-pet/${petId}`);
+        router.push(`/user/pet/edit/${petId}`);
     };
 
     const handleDeleteClick = (pet: Pet, e: React.MouseEvent) => {

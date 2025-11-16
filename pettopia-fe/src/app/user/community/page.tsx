@@ -299,7 +299,7 @@ export default function CommunityPage() {
   };
 
   const handleCreatePost = () => {
-    router.push('/user/community/createPost');
+    router.push('/user/community/create');
   };
 
   return (
