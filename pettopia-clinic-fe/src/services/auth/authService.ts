@@ -111,6 +111,7 @@ interface CookieOptions {
  * XÓA HOÀN TOÀN MỌI DỮ LIỆU ĐĂNG NHẬP
  * - localStorage: authToken, userRole, userRoles, refreshToken, userId, ...
  * - Cookie: authToken, userRole, userRoles, ... (dù path nào)
+ * - Xóa history và clear cache
  */
 export const logoutUser = (): void => {
   console.log('Bắt đầu đăng xuất...');
@@ -191,5 +192,24 @@ export const logoutUser = (): void => {
     console.warn('Lỗi khi xóa cookie fallback:', err);
   }
 
-  console.log('✅ Đăng xuất thành công! Đã xóa hết localStorage & cookie.');
+  // ================== 4. NGĂN CHẶN QUAY LẠI (BACK BUTTON) ==================
+  // Xóa history khỏi browser history stack
+  if (typeof window !== 'undefined') {
+    // Cách 1: Thay thế history state để không thể quay lại
+    window.history.replaceState(null, '', '/auth/login');
+    
+    // Cách 2: Push state mới để đẩy logout page vào history stack
+    // Điều này ngăn browser quay lại trang trước
+    window.history.pushState(null, '', '/auth/login');
+    
+    console.log('✓ Đã xóa history khỏi browser stack');
+  }
+
+  // ================== 5. CLEAR CACHE & SESSION STORAGE ==================
+  if (typeof sessionStorage !== 'undefined') {
+    sessionStorage.clear();
+    console.log('✓ Đã xóa sessionStorage');
+  }
+
+  console.log('✅ Đăng xuất thành công! Đã xóa hết localStorage, cookie, history & cache.');
 };

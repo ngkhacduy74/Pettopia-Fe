@@ -169,8 +169,13 @@ export default function Sidebar({
   const handleLogoutClick = () => {
     logoutUser();
     // Redirect về trang login sau 500ms để đảm bảo logout xong
+    // Redirect dùng window.location.href để full page reload (tránh cache)
     setTimeout(() => {
       window.location.href = '/auth/login';
+      // Ngăn chặn quay lại bằng cách push state mới
+      if (window.history && window.history.length > 1) {
+        window.history.forward();
+      }
     }, 500);
   };
 
