@@ -189,7 +189,7 @@ export default function PetListPage() {
                             <h1 className="text-4xl font-bold mb-2 text-gray-900">Danh sách thú cưng</h1>
                             <p className="text-gray-600">Quản lý và theo dõi tất cả thú cưng của bạn ({pets.length} thú cưng)</p>
                         </div>
-                        <Link href="/user/register-pet">
+                        <Link href="/user/pet/new">
                             <button className="bg-gradient-to-r from-teal-600 to-cyan-600 text-white px-6 py-3 rounded-xl font-semibold hover:shadow-lg transition-all duration-300 hover:scale-105">
                                 Thêm thú cưng mới
                             </button>
