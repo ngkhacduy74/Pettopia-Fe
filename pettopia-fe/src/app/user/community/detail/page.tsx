@@ -131,6 +131,10 @@ export default function PostDetailPage() {
     if (!postId) return;
     const content = commentInput.trim();
     if (!content) return;
+    if (content.length > 450) {
+      alert("Bình luận không được vượt quá 450 ký tự.");
+      return;
+    }
     if (!currentUserId) {
       alert("Bạn cần đăng nhập để bình luận.");
       return;
@@ -188,11 +192,20 @@ export default function PostDetailPage() {
     return () => window.removeEventListener('keydown', handleKeyDown);
   }, [lightbox.isOpen, post?.images]);
 
-
+  if (loading) {
+    return (
+      <div className="min-h-screen bg-gradient-to-br from-teal-50 to-cyan-50 flex items-center justify-center">
+        <div className="text-center">
+          <div className="animate-spin rounded-full h-12 w-12 border-b-2 border-teal-600 mx-auto mb-4"></div>
+          <p className="text-teal-600 font-medium">Đang tải...</p>
+        </div>
+      </div>
+    );
+  }
 
   if (error) {
     return (
-      <div className="min-h-screen bg-gradient-to-br from-teal-  to-cyan-50">
+      <div className="min-h-screen bg-gradient-to-br from-teal-50 to-cyan-50">
         <div className="container mx-auto px-4 py-10">
           <div className="bg-red-50 border border-red-200 text-red-700 px-4 py-3 rounded-lg">{error}</div>
         </div>
@@ -380,15 +393,19 @@ export default function PostDetailPage() {
                   onChange={(e) => setCommentInput(e.target.value)}
                   placeholder="Viết bình luận của bạn..."
                   rows={3}
+                  maxLength={450}
                   className="w-full px-4 py-3 border border-teal-200 rounded-lg focus:outline-none focus:ring-2 focus:ring-teal-500 focus:border-transparent resize-none bg-teal-50/30"
                 />
-                <div className="flex justify-end mt-2">
+                <div className="flex justify-between items-center mt-2">
+                  <span className={`text-sm ${commentInput.length > 400 ? 'text-orange-600 font-semibold' : 'text-gray-500'}`}>
+                    {commentInput.length}/450 ký tự
+                  </span>
                   <button
                     onClick={handleSubmitComment}
                     disabled={submittingComment || !commentInput.trim()}
                     className={`px-5 py-2 rounded-lg font-semibold text-white transition-all shadow-md ${submittingComment || !commentInput.trim()
-                      ? "bg-teal-600 cursor-not-allowed"
-                      : "bg-gradient-to-r from-teal-600 to-cyan-50 hover:from-teal-600 hover:to-cyan-50"
+                      ? "bg-gray-400 cursor-not-allowed"
+                      : "bg-gradient-to-r from-teal-600 to-cyan-600 hover:from-teal-700 hover:to-cyan-700"
                       }`}
                   >
                     {submittingComment ? "Đang gửi..." : "Gửi bình luận"}

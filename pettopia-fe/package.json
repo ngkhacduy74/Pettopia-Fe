@@ -8,11 +8,13 @@
     "start": "next start --port=4001"
   },
   "dependencies": {
-    "@heroicons/react": "^2.2.0",
     "@clerk/nextjs": "^6.33.2",
+    "@heroicons/react": "^2.2.0",
     "@next/font": "^14.2.15",
     "axios": "^1.12.2",
-    "framer-motion": "^12.23.22",
+    "clsx": "^2.1.1",
+    "date-fns": "^4.1.0",
+    "framer-motion": "^12.23.24",
     "jsonwebtoken": "^9.0.2",
     "jwt-decode": "^4.0.0",
     "mongoose": "^8.19.0",
