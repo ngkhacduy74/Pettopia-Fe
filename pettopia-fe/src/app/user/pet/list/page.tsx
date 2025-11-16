@@ -116,7 +116,7 @@ export default function PetListPage() {
     });
 
     const handleViewDetails = (petId: string | number) => {
-        router.push(`/user/user-pet/${petId}`);
+        router.push(`/user/pet/${petId}`);
     };
 
     const handleEditPet = (petId: string | number) => {
