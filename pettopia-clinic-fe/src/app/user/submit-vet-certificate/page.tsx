@@ -1,7 +1,7 @@
 'use client';
 
 import { useState } from 'react';
-import VetCreateForm from '../../../components/user/VetCreateForm';
+import VetCreateForm from '@/components/user/VetCreateForm';
 
 
 

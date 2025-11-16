@@ -4,7 +4,7 @@ import { useState } from 'react';
 import { useForm, useFieldArray, Controller } from 'react-hook-form';
 import { ChevronDownIcon } from '@heroicons/react/24/outline';
 import { useRouter } from 'next/navigation';
-import { submitVeterinarianData } from '../../services/partner/veterianrianService';
+import { submitVeterinarianData } from '@/services/partner/veterianrianService';
 
 interface Certification {
   name: string;
