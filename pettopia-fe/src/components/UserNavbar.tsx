@@ -1,5 +1,5 @@
 import { useState, useEffect, useRef, JSX } from 'react';
-import { parseJwt, isTokenExpired } from '../utils/jwt';
+import { parseJwt, isTokenExpired } from '@/utils/jwt';
 import Link from 'next/link';
 import { usePathname, useRouter } from 'next/navigation';
 
