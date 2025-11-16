@@ -1,9 +1,9 @@
 import axios from "axios";
 
 // Lấy base URL từ .env
-const API_URL = `${process.env.PETTOPIA_API_URL}/partner/clinic`;
-const PARTNER_API_URL = `${process.env.PETTOPIA_API_URL}/partner`;
-const HEALTHCARE_API_URL = `${process.env.PETTOPIA_API_URL}/healthcare`;
+const API_URL = `${process.env.NEXT_PUBLIC_PETTOPIA_API_URL}/partner/clinic`;
+const PARTNER_API_URL = `${process.env.NEXT_PUBLIC_PETTOPIA_API_URL}/partner`;
+const HEALTHCARE_API_URL = `${process.env.NEXT_PUBLIC_PETTOPIA_API_URL}/healthcare`;
 
 // Tạo instance Axios
 const axiosInstance = axios.create({

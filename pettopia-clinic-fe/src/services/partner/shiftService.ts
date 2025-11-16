@@ -1,7 +1,7 @@
 import axios from 'axios';
 
 // Lấy base URL từ .env
-const SHIFT_API_URL = `${process.env.PETTOPIA_API_URL}/partner/clinic/shift`;
+const SHIFT_API_URL = `${process.env.NEXT_PUBLIC_PETTOPIA_API_URL}/partner/clinic/shift`;
 
 export interface ClinicShift {
   _id?: string;

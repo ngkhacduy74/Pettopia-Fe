@@ -1,7 +1,7 @@
 import axios from 'axios';
 
 // Lấy base URL từ .env
-const API_URL = `${process.env.PETTOPIA_API_URL}/partner/vet`;
+const API_URL = `${process.env.NEXT_PUBLIC_PETTOPIA_API_URL}/partner/vet`;
 
 export interface VeterinarianForm {
   _id: string;

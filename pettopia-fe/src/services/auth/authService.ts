@@ -2,7 +2,7 @@ import axios from "axios";
 import { parseJwt } from "@/utils/jwt"; // Import parseJwt từ jwt.ts
 
 // LẤY ĐỘNG TỪ .env.local — KHÔNG FALLBACK
-const API_URL = `${process.env.PETTOPIA_API_URL}/auth`;
+const API_URL = `${process.env.NEXT_PUBLIC_PETTOPIA_API_URL}/auth`;
 
 // Tạo instance Axios
 const axiosInstance = axios.create({

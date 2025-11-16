@@ -1,7 +1,7 @@
 import axios from "axios";
 
 // Lấy base URL từ .env
-const API_URL = `${process.env.PETTOPIA_API_URL}/customer`;
+const API_URL = `${process.env.NEXT_PUBLIC_PETTOPIA_API_URL}/customer`;
 
 export async function getCustomerData(page: number, limit: number) {
   const token = localStorage.getItem("authToken");
