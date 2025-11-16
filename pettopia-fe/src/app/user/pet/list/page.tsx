@@ -1,5 +1,5 @@
 'use client'
-import React, { useState, useEffect } from 'react';
+import React, { useState, useEffect, useCallback, useMemo } from 'react';
 import Link from 'next/link';
 import { useRouter } from 'next/navigation';
 import { deletePet } from '@/services/petcare/petService';
@@ -29,13 +29,18 @@ export default function PetListPage() {
     const router = useRouter();
     const [filterStatus, setFilterStatus] = useState<'all' | 'Khỏe mạnh' | 'Cần kiểm tra' | 'Đang điều trị'>('all');
     const [pets, setPets] = useState<Pet[]>([]);
-    const [loading, setLoading] = useState(true);
+    const [loading, setLoading] = useState(false);
     const [error, setError] = useState<string | null>(null);
     const [userId, setUserId] = useState<string | null>(null);
     const [deleteModalOpen, setDeleteModalOpen] = useState(false);
     const [petToDelete, setPetToDelete] = useState<Pet | null>(null);
     const [isDeleting, setIsDeleting] = useState(false);
+    const [hasFetched, setHasFetched] = useState(false);
+    
+    // Tính toán loading state: đang loading hoặc chưa fetch lần đầu
+    const isLoading = loading || (!hasFetched && !!userId);
 
+    // Parse JWT và lấy userId - chỉ chạy một lần
     useEffect(() => {
         const parseJwt = (token: string | null) => {
             if (!token) return null;
@@ -63,11 +68,11 @@ export default function PetListPage() {
 
         if (id) {
             setUserId(id);
-            fetchPets(id);
         }
     }, []);
 
-    const fetchPets = async (uid: string) => {
+    // Fetch pets - chỉ gọi khi cần (reload hoặc lần đầu)
+    const fetchPets = useCallback(async (uid: string) => {
         try {
             setLoading(true);
             const apiUrl = `http://localhost:3000/api/v1/pet/owner/${uid}`;
@@ -83,53 +88,72 @@ export default function PetListPage() {
             const petsData = Array.isArray(data.data) ? data.data : Array.isArray(data) ? data : [];
             setPets(petsData);
             setError(null);
+            setHasFetched(true);
         } catch (err) {
             setPets([]);
             setError(err instanceof Error ? err.message : 'Có lỗi xảy ra');
             console.error('Error fetching pets:', err);
+            setHasFetched(true);
         } finally {
             setLoading(false);
         }
-    };
+    }, []);
 
-    const getStatusColor = (status?: string) => {
+    // Fetch lần đầu khi có userId - chỉ fetch một lần
+    useEffect(() => {
+        if (userId && !hasFetched) {
+            fetchPets(userId);
+        }
+    }, [userId, hasFetched, fetchPets]);
+
+    // Handler reload
+    const handleReload = useCallback(() => {
+        if (userId) {
+            setHasFetched(false);
+            fetchPets(userId);
+        }
+    }, [userId, fetchPets]);
+
+    const getStatusColor = useCallback((status?: string) => {
         if (!status) return 'bg-gray-500/20 text-gray-700 border-gray-500/30';
         const s = status.toLowerCase();
         if (s.includes('healthy') || s.includes('khỏe')) return 'bg-green-500/20 text-green-700 border-green-500/30';
         if (s.includes('checkup') || s.includes('kiểm tra')) return 'bg-blue-500/20 text-blue-700 border-blue-500/30';
         if (s.includes('treatment') || s.includes('điều trị') || s.includes('sick')) return 'bg-red-500/20 text-red-700 border-red-500/30';
         return 'bg-gray-500/20 text-gray-700 border-gray-500/30';
-    };
+    }, []);
 
-    const getStatusText = (status?: string) => {
+    const getStatusText = useCallback((status?: string) => {
         if (!status) return 'Chưa rõ';
         const s = status.toLowerCase();
         if (s.includes('healthy') || s.includes('active')) return 'Khỏe mạnh';
         if (s.includes('checkup')) return 'Cần kiểm tra';
         if (s.includes('treatment') || s.includes('sick')) return 'Đang điều trị';
         return status;
-    };
+    }, []);
 
-    const filteredPets = pets.filter((pet) => {
-        if (filterStatus === 'all') return true;
-        return getStatusText(pet.status) === filterStatus;
-    });
+    const filteredPets = useMemo(() => {
+        return pets.filter((pet) => {
+            if (filterStatus === 'all') return true;
+            return getStatusText(pet.status) === filterStatus;
+        });
+    }, [pets, filterStatus, getStatusText]);
 
-    const handleViewDetails = (petId: string | number) => {
+    const handleViewDetails = useCallback((petId: string | number) => {
         router.push(`/user/pet/${petId}`);
-    };
+    }, [router]);
 
-    const handleEditPet = (petId: string | number) => {
+    const handleEditPet = useCallback((petId: string | number) => {
         router.push(`/user/pet/edit/${petId}`);
-    };
+    }, [router]);
 
-    const handleDeleteClick = (pet: Pet, e: React.MouseEvent) => {
+    const handleDeleteClick = useCallback((pet: Pet, e: React.MouseEvent) => {
         e.stopPropagation();
         setPetToDelete(pet);
         setDeleteModalOpen(true);
-    };
+    }, []);
 
-    const handleDeleteConfirm = async () => {
+    const handleDeleteConfirm = useCallback(async () => {
         if (!petToDelete) return;
         setIsDeleting(true);
         try {
@@ -144,14 +168,14 @@ export default function PetListPage() {
         } finally {
             setIsDeleting(false);
         }
-    };
+    }, [petToDelete]);
 
-    const handleDeleteCancel = () => {
+    const handleDeleteCancel = useCallback(() => {
         setDeleteModalOpen(false);
         setPetToDelete(null);
-    };
+    }, []);
 
-    if (loading) {
+    if (isLoading) {
         return (
             <div className="flex items-center justify-center p-10">
                 <div className="text-center">
@@ -171,8 +195,8 @@ export default function PetListPage() {
                     </svg>
                     <h3 className="text-lg font-semibold text-red-900 mb-2">Có lỗi xảy ra</h3>
                     <p className="text-red-700 mb-4">{error}</p>
-                    <button onClick={() => userId && fetchPets(userId)} className="bg-red-600 text-white px-6 py-2 rounded-lg hover:bg-red-700 transition-colors">
-                        Thử lại
+                    <button onClick={handleReload} disabled={isLoading} className="bg-red-600 text-white px-6 py-2 rounded-lg hover:bg-red-700 transition-colors disabled:opacity-50 disabled:cursor-not-allowed">
+                        {isLoading ? 'Đang tải...' : 'Thử lại'}
                     </button>
                 </div>
             </div>
@@ -189,11 +213,28 @@ export default function PetListPage() {
                             <h1 className="text-4xl font-bold mb-2 text-gray-900">Danh sách thú cưng</h1>
                             <p className="text-gray-600">Quản lý và theo dõi tất cả thú cưng của bạn ({pets.length} thú cưng)</p>
                         </div>
-                        <Link href="/user/pet/new">
-                            <button className="bg-gradient-to-r from-teal-600 to-cyan-600 text-white px-6 py-3 rounded-xl font-semibold hover:shadow-lg transition-all duration-300 hover:scale-105">
-                                Thêm thú cưng mới
+                        <div className="flex items-center gap-3">
+                            <button
+                                onClick={handleReload}
+                                disabled={isLoading}
+                                className="p-2 rounded-lg hover:bg-teal-50 transition-colors disabled:opacity-50 disabled:cursor-not-allowed group"
+                                title="Làm mới danh sách"
+                            >
+                                <svg 
+                                    className={`w-5 h-5 text-teal-600 ${isLoading ? 'animate-spin' : 'group-hover:rotate-180'} transition-transform duration-500`} 
+                                    fill="none" 
+                                    stroke="currentColor" 
+                                    viewBox="0 0 24 24"
+                                >
+                                    <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M4 4v5h.582m15.356 2A8.001 8.001 0 004.582 9m0 0H9m11 11v-5h-.581m0 0a8.003 8.003 0 01-15.357-2m15.357 2H15" />
+                                </svg>
                             </button>
-                        </Link>
+                            <Link href="/user/pet/new">
+                                <button className="bg-gradient-to-r from-teal-600 to-cyan-600 text-white px-6 py-3 rounded-xl font-semibold hover:shadow-lg transition-all duration-300 hover:scale-105">
+                                    Thêm thú cưng mới
+                                </button>
+                            </Link>
+                        </div>
                     </div>
 
                     {/* Filters */}

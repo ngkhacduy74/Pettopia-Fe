@@ -15,24 +15,22 @@ interface Suggestion {
 interface ChatProps {
   showChat: boolean;
   setShowChat: (v: boolean) => void;
-  chatMessage: string;
-  setChatMessage: (v: string) => void;
   chatSuggestions: Suggestion[];
 }
 
 const Chat = memo(function Chat({
   showChat,
   setShowChat,
-  chatMessage,
-  setChatMessage,
   chatSuggestions
 }: ChatProps) {
   const [messages, setMessages] = useState<Message[]>([
     { role: 'assistant', content: 'Chào bạn! Tôi có thể giúp gì?' }
   ]);
+  const [chatMessage, setChatMessage] = useState('');
   const [isLoading, setIsLoading] = useState(false);
   const messagesEndRef = useRef<HTMLDivElement>(null);
   const inputRef = useRef<HTMLInputElement>(null);
+  const chatMessageRef = useRef('');
 
   const [userId] = useState<string>(() => {
   try {
@@ -54,66 +52,78 @@ const Chat = memo(function Chat({
     messagesEndRef.current?.scrollIntoView({ behavior: 'smooth' });
   }, [messages, isLoading]);
 
+  // Sync ref with state
+  useEffect(() => {
+    chatMessageRef.current = chatMessage;
+  }, [chatMessage]);
+
   const sendMessage = useCallback(async (overrideMessage?: string) => {
-    const content = (overrideMessage ?? chatMessage).trim();
+    const content = (overrideMessage ?? chatMessageRef.current).trim();
     if (!content || isLoading) return;
 
     const userMsg: Message = { role: 'user', content };
-    setMessages(prev => [...prev, userMsg]);
-    setChatMessage('');
-    setIsLoading(true);
-
-    try {
-      const res = await fetch('http://localhost:3000/api/v1/ai/gemini/chat', {
+    
+    setMessages(prev => {
+      const allMessages = [...prev, userMsg];
+      
+      // Fetch API với messages đã được cập nhật
+      setIsLoading(true);
+      fetch('http://localhost:3000/api/v1/ai/gemini/chat', {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({
           userId,
-          messages: [...messages, userMsg].map(m => ({ role: m.role, content: m.content }))
+          messages: allMessages.map(m => ({ role: m.role, content: m.content }))
         })
+      })
+      .then(async (res) => {
+        const data = await (res.headers.get('content-type')?.includes('application/json') ? res.json() : res.text());
+        let aiText = '';
+
+        if (typeof data === 'string') {
+          aiText = data;
+          try {
+            const parsed = JSON.parse(data);
+            if (typeof parsed === 'string') aiText = parsed;
+            else if (parsed?.content) aiText = parsed.content;
+          } catch {}
+        } else if (data && typeof data === 'object') {
+          aiText =
+            data.content ||
+            data.reply ||
+            data.message ||
+            (data.messages?.[0]?.content) ||
+            (data.candidates?.[0]?.content?.parts?.[0]?.text) ||
+            (data.candidates?.[0]?.content?.text) ||
+            (data.choices?.[0]?.message?.content) ||
+            JSON.stringify(data);
+        }
+
+        const t = String(aiText).trim();
+        if ((t.startsWith('"') && t.endsWith('"')) || (t.startsWith("'") && t.endsWith("'"))) {
+          try { aiText = JSON.parse(t); } catch {}
+        }
+
+        setMessages(prev => [...prev, { role: 'assistant', content: String(aiText) }]);
+        setIsLoading(false);
+      })
+      .catch(() => {
+        setMessages(prev => [...prev, { role: 'assistant', content: 'Lỗi: không thể kết nối tới API' }]);
+        setIsLoading(false);
       });
 
-      const data = await (res.headers.get('content-type')?.includes('application/json') ? res.json() : res.text());
-      let aiText = '';
+      return allMessages;
+    });
+    
+    setChatMessage('');
+  }, [isLoading, userId]);
 
-      if (typeof data === 'string') {
-        aiText = data;
-        try {
-          const parsed = JSON.parse(data);
-          if (typeof parsed === 'string') aiText = parsed;
-          else if (parsed?.content) aiText = parsed.content;
-        } catch {}
-      } else if (data && typeof data === 'object') {
-        aiText =
-          data.content ||
-          data.reply ||
-          data.message ||
-          (data.messages?.[0]?.content) ||
-          (data.candidates?.[0]?.content?.parts?.[0]?.text) ||
-          (data.candidates?.[0]?.content?.text) ||
-          (data.choices?.[0]?.message?.content) ||
-          JSON.stringify(data);
-      }
-
-      const t = String(aiText).trim();
-      if ((t.startsWith('"') && t.endsWith('"')) || (t.startsWith("'") && t.endsWith("'"))) {
-        try { aiText = JSON.parse(t); } catch {}
-      }
-
-      setMessages(prev => [...prev, { role: 'assistant', content: String(aiText) }]);
-    } catch {
-      setMessages(prev => [...prev, { role: 'assistant', content: 'Lỗi: không thể kết nối tới API' }]);
-    } finally {
-      setIsLoading(false);
-    }
-  }, [chatMessage, messages, isLoading, userId]);
-
-  const handleKeyDown = (e: React.KeyboardEvent) => {
+  const handleKeyDown = useCallback((e: React.KeyboardEvent) => {
     if (e.key === 'Enter' && !e.shiftKey) {
       e.preventDefault();
       sendMessage();
     }
-  };
+  }, [sendMessage]);
 
   if (!showChat) return null;
 
