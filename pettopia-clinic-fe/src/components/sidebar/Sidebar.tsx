@@ -11,6 +11,8 @@ import {
 } from '@heroicons/react/24/outline';
 import { usePathname } from 'next/navigation';
 import { parseJwt, isTokenExpired } from '@/utils/jwt';
+import { useRouter } from 'next/navigation';
+import { logoutUser } from '@/services/auth/authService';
 
 interface UserData {
   userId: string;
@@ -72,8 +74,8 @@ export default function Sidebar({
       const roles = Array.isArray(decoded.role)
         ? decoded.role
         : decoded.role
-        ? [decoded.role]
-        : [];
+          ? [decoded.role]
+          : [];
 
       setUserRoles(roles);
       setUserData(user);
@@ -107,8 +109,8 @@ export default function Sidebar({
       { label: 'Quản lí lịch khám', href: '/staff/appointments', icon: <ClipboardDocumentListIcon className="w-4 h-4" /> },
       { label: 'Xét duyệt Phòng khám', href: '/staff/request-clinic-list', icon: <ClipboardDocumentListIcon className="w-4 h-4" /> },
       { label: 'Xét duyệt Bác Sĩ', href: '/staff/request-vet-list', icon: <ClipboardDocumentListIcon className="w-4 h-4" /> },
-      { label: 'Quản lí bài viết', href: '/staff/post-report', icon: <ClipboardDocumentListIcon className="w-4 h-4" />},
-      { label: 'Cộng đồng', href: '#', icon: <ClipboardDocumentListIcon className="w-4 h-4" />}
+      { label: 'Quản lí bài viết', href: '/staff/post-report', icon: <ClipboardDocumentListIcon className="w-4 h-4" /> },
+      { label: 'Cộng đồng', href: '#', icon: <ClipboardDocumentListIcon className="w-4 h-4" /> }
     ],
     Clinic: [
       { label: 'Trang tổng quan', href: '/clinic/dashboard', icon: <HomeIcon className="w-4 h-4" /> },
@@ -142,14 +144,14 @@ export default function Sidebar({
     pathname.includes('/admin/')
       ? 'Admin'
       : pathname.includes('/staff/')
-      ? 'Staff'
-      : pathname.includes('/clinic/')
-      ? 'Clinic'
-      : pathname.includes('/vet/')
-      ? 'Vet'
-      : pathname.includes('/user/')
-      ? 'User'
-      : userRoles[0] || '';
+        ? 'Staff'
+        : pathname.includes('/clinic/')
+          ? 'Clinic'
+          : pathname.includes('/vet/')
+            ? 'Vet'
+            : pathname.includes('/user/')
+              ? 'User'
+              : userRoles[0] || '';
 
   const navItems = roleMenus[detectedRole] || [];
 
@@ -163,6 +165,19 @@ export default function Sidebar({
   };
 
   const roleTitle = roleTitleMap[detectedRole] || '';
+
+  const handleLogoutClick = () => {
+    logoutUser();
+    // Redirect về trang login sau 500ms để đảm bảo logout xong
+    // Redirect dùng window.location.href để full page reload (tránh cache)
+    setTimeout(() => {
+      window.location.href = '/auth/login';
+      // Ngăn chặn quay lại bằng cách push state mới
+      if (window.history && window.history.length > 1) {
+        window.history.forward();
+      }
+    }, 500);
+  };
 
   return (
     <>
@@ -209,9 +224,8 @@ export default function Sidebar({
               </>
             )}
             <svg
-              className={`w-4 h-4 text-gray-400 transition-transform flex-shrink-0 ${
-                isDropdownOpen ? 'rotate-180' : ''
-              }`}
+              className={`w-4 h-4 text-gray-400 transition-transform flex-shrink-0 ${isDropdownOpen ? 'rotate-180' : ''
+                }`}
               fill="none"
               stroke="currentColor"
               viewBox="0 0 24 24"
@@ -299,24 +313,11 @@ export default function Sidebar({
               {/* Đăng xuất */}
               <div className="border-t border-gray-100 my-1"></div>
               <button
-                onClick={() => {
-                  localStorage.removeItem('authToken');
-                  window.location.href = '/auth/login';
-                }}
+                onClick={handleLogoutClick}
                 className="w-full flex items-center gap-3 px-4 py-3 hover:bg-red-50 transition-colors text-left"
               >
-                <svg
-                  className="w-5 h-5 text-red-600"
-                  fill="none"
-                  stroke="currentColor"
-                  viewBox="0 0 24 24"
-                >
-                  <path
-                    strokeLinecap="round"
-                    strokeLinejoin="round"
-                    strokeWidth={2}
-                    d="M17 16l4-4m0 0l-4-4m4 4H7m6 4v1a3 3 0 01-3 3H6a3 3 0 01-3-3V7a3 3 0 013-3h4a3 3 0 013 3v1"
-                  />
+                <svg className="w-5 h-5 text-red-600" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                  <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M17 16l4-4m0 0l-4-4m4 4H7m6 4v1a3 3 0 01-3 3H6a3 3 0 01-3-3V7a3 3 0 013-3h4a3 3 0 013 3v1" />
                 </svg>
                 <span className="text-sm font-medium text-red-600">Đăng xuất</span>
               </button>
@@ -338,11 +339,10 @@ export default function Sidebar({
               <a
                 key={item.href}
                 href={item.href}
-                className={`w-full flex items-center gap-3 px-3 py-2 rounded-lg text-sm transition-colors ${
-                  isActive
-                    ? 'bg-gradient-to-r from-teal-500 to-cyan-600 text-white font-semibold shadow-sm'
-                    : 'text-gray-700 hover:bg-teal-50'
-                }`}
+                className={`w-full flex items-center gap-3 px-3 py-2 rounded-lg text-sm transition-colors ${isActive
+                  ? 'bg-gradient-to-r from-teal-500 to-cyan-600 text-white font-semibold shadow-sm'
+                  : 'text-gray-700 hover:bg-teal-50'
+                  }`}
               >
                 {item.icon}
                 <span>{item.label}</span>

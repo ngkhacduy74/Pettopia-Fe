@@ -1,6 +1,6 @@
 import axios from "axios";
 
-const API_BASE_URL = process.env.NEXT_PUBLIC_PETTOPIA_API_URL || 'http://localhost:3000/api/v1'; // SỬA: chỉ dùng .env, bỏ fallback sau
+const API_BASE_URL = process.env.NEXT_PUBLIC_PETTOPIA_API_URL; // SỬA: chỉ dùng .env, bỏ fallback sau
 
 export interface Author {
   user_id: string;

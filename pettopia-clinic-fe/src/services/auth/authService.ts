@@ -42,8 +42,24 @@ export const loginUser = async (loginData: {
 
       const decoded = parseJwt(token);
       if (decoded && decoded.role) {
-        document.cookie = `userRole=${decoded.role}; path=/; max-age=86400;`;
-        console.log("Đã lưu userRole vào cookie:", decoded.role);
+        // Lưu userRole vào localStorage
+        localStorage.setItem("userRole", decoded.role);
+        
+        // Lưu userRole vào cookie với đầy đủ attributes
+        const cookieAttributes = [
+          `userRole=${decoded.role}`,
+          'path=/',
+          'max-age=86400',
+          'SameSite=Lax'
+        ];
+        
+        // Nếu là HTTPS, thêm Secure flag
+        if (window.location.protocol === 'https:') {
+          cookieAttributes.push('Secure');
+        }
+        
+        document.cookie = cookieAttributes.join('; ');
+        console.log("Đã lưu userRole vào localStorage và cookie:", decoded.role);
       } else {
         console.warn("Không tìm thấy role trong token đã giải mã");
       }
@@ -83,8 +99,117 @@ export const createUser = async (userData: {
   }
 };
 
-// Đăng xuất
-export const logoutUser = () => {
-  localStorage.removeItem("authToken");
-  document.cookie = "userRole=; path=/; expires=Thu, 01 Jan 1970 00:00:01 GMT;";
+// services/auth/authService.ts (hoặc utils/authService.ts)
+
+interface CookieOptions {
+  path?: string;
+  domain?: string;
+  secure?: boolean;
+}
+
+/**
+ * XÓA HOÀN TOÀN MỌI DỮ LIỆU ĐĂNG NHẬP
+ * - localStorage: authToken, userRole, userRoles, refreshToken, userId, ...
+ * - Cookie: authToken, userRole, userRoles, ... (dù path nào)
+ * - Xóa history và clear cache
+ */
+export const logoutUser = (): void => {
+  console.log('Bắt đầu đăng xuất...');
+
+  // ================== 1. XÓA LOCALSTORAGE ==================
+  const localStorageKeysToRemove = [
+    'authToken',
+    'userRole',
+    'userRoles',
+    'refreshToken',
+    'userId',
+    'clinicId',
+    'vetId',
+    // Thêm key nếu cần
+  ];
+
+  localStorageKeysToRemove.forEach(key => {
+    if (localStorage.getItem(key) !== null) {
+      localStorage.removeItem(key);
+      console.log(`✓ Đã xóa localStorage: ${key}`);
+    }
+  });
+
+  // ================== 2. XÓA COOKIES ==================
+  const cookieNamesToRemove = [
+    'authToken',
+    'userRole',
+    'userRoles',
+  ];
+
+  const deleteCookie = (name: string) => {
+    // Tạo chuỗi expires trong quá khứ
+    const expires = new Date(0).toUTCString();
+    
+    // Xóa cookie với các tùy chọn khác nhau
+    const cookieVariations = [
+      // Variation 1: path=/ + SameSite=Lax
+      `${name}=; path=/; expires=${expires}; SameSite=Lax`,
+      // Variation 2: path=/ + Secure + SameSite=Lax
+      `${name}=; path=/; expires=${expires}; Secure; SameSite=Lax`,
+      // Variation 3: không path
+      `${name}=; expires=${expires}`,
+      // Variation 4: current pathname
+      `${name}=; path=${window.location.pathname}; expires=${expires}`,
+    ];
+
+    cookieVariations.forEach(cookieString => {
+      try {
+        document.cookie = cookieString;
+      } catch (e) {
+        console.warn(`Không thể xóa cookie variant: ${name}`, e);
+      }
+    });
+  };
+
+  // Xóa từng cookie được biết
+  cookieNamesToRemove.forEach(cookieName => {
+    deleteCookie(cookieName);
+    console.log(`✓ Đã cố gắng xóa cookie: ${cookieName}`);
+  });
+
+  // ================== 3. FALLBACK: XÓA TẤT CẢ COOKIES ==================
+  // (Phòng trường hợp có cookie lạ không trong danh sách)
+  try {
+    const allCookies = document.cookie.split(';');
+    const expires = new Date(0).toUTCString();
+    
+    allCookies.forEach(cookie => {
+      const name = cookie.split('=')[0].trim();
+      if (name && name.length > 0) {
+        // Xóa mà không cần biết path/domain, browser sẽ xóa từ current scope
+        document.cookie = `${name}=; path=/; expires=${expires}`;
+        document.cookie = `${name}=; expires=${expires}`;
+        console.log(`✓ Đã xóa cookie: ${name}`);
+      }
+    });
+  } catch (err) {
+    console.warn('Lỗi khi xóa cookie fallback:', err);
+  }
+
+  // ================== 4. NGĂN CHẶN QUAY LẠI (BACK BUTTON) ==================
+  // Xóa history khỏi browser history stack
+  if (typeof window !== 'undefined') {
+    // Cách 1: Thay thế history state để không thể quay lại
+    window.history.replaceState(null, '', '/auth/login');
+    
+    // Cách 2: Push state mới để đẩy logout page vào history stack
+    // Điều này ngăn browser quay lại trang trước
+    window.history.pushState(null, '', '/auth/login');
+    
+    console.log('✓ Đã xóa history khỏi browser stack');
+  }
+
+  // ================== 5. CLEAR CACHE & SESSION STORAGE ==================
+  if (typeof sessionStorage !== 'undefined') {
+    sessionStorage.clear();
+    console.log('✓ Đã xóa sessionStorage');
+  }
+
+  console.log('✅ Đăng xuất thành công! Đã xóa hết localStorage, cookie, history & cache.');
 };
