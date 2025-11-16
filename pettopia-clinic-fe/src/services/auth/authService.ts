@@ -85,6 +85,18 @@ export const createUser = async (userData: {
 
 // Đăng xuất
 export const logoutUser = () => {
-  localStorage.removeItem("authToken");
-  document.cookie = "userRole=; path=/; expires=Thu, 01 Jan 1970 00:00:01 GMT;";
+  // Danh sách các key cần xóa
+  const keysToRemove = ["authToken", "userRole", "refreshToken", "userId"];
+
+  keysToRemove.forEach(key => localStorage.removeItem(key));
+
+  // Xóa tất cả cookie liên quan
+  document.cookie.split(";").forEach(cookie => {
+    const name = cookie.split("=")[0].trim();
+    if (["userRole", "authToken"].includes(name)) {
+      document.cookie = `${name}=; path=/; expires=Thu, 01 Jan 1970 00:00:01 GMT;`;
+    }
+  });
+
+  console.log("Đã đăng xuất hoàn toàn!");
 };
