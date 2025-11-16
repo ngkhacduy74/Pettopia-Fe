@@ -166,7 +166,7 @@ export default function ManagePostsPage() {
   };
 
   const handleGoToDetailPage = (postId: string) => {
-    router.push(`/user/community/detailPost?id=${postId}`);
+    router.push(`/user/community/detail?id=${postId}`);
   };
 
   const handleDeleteClick = (post: Post, e: React.MouseEvent) => {

@@ -114,7 +114,7 @@ export default function CreatePostPage() {
       });
 
       alert('Đăng bài thành công');
-      router.push('/user/community/mainPage');
+      router.push('/user/community');
     } catch (e: any) {
       console.error('Create post error:', e);
       alert(e?.message || 'Không thể tạo bài viết. Vui lòng thử lại.');

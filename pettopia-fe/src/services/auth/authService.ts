@@ -82,6 +82,36 @@ export const createUser = async (userData: {
   }
 };
 
+// API gửi OTP đến email để reset password
+export const forgotPassword = async (email: string) => {
+  try {
+    const response = await axiosInstance.post("/forgot-password", {
+      email,
+    });
+    console.log("OTP đã được gửi đến email:", email);
+    return response.data;
+  } catch (error) {
+    console.error("Lỗi khi gửi yêu cầu forgot password:", error);
+    throw error;
+  }
+};
+
+// API reset password với OTP
+export const resetPassword = async (resetData: {
+  email: string;
+  otp: string;
+  newPassword: string;
+}) => {
+  try {
+    const response = await axiosInstance.post("/reset-password", resetData);
+    console.log("Mật khẩu đã được reset thành công");
+    return response.data;
+  } catch (error) {
+    console.error("Lỗi khi reset password:", error);
+    throw error;
+  }
+};
+
 export const logoutUser = () => {
   // Danh sách các key cần xóa
   const keysToRemove = ["authToken", "userRole", "refreshToken", "userId"];

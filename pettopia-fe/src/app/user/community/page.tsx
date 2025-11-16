@@ -295,7 +295,7 @@ export default function CommunityPage() {
   };
 
   const handleViewPostDetail = (postId: string) => {
-    router.push(`/user/community/detailPost?id=${postId}`);
+    router.push(`/user/community/detail?id=${postId}`);
   };
 
   const handleCreatePost = () => {

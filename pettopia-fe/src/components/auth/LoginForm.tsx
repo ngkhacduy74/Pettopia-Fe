@@ -223,7 +223,7 @@ export default function LoginForm() {
           {/* Quên mật khẩu */}
           <div className="mt-4 text-center">
             <a
-              href="#"
+               href="http://localhost:4001/auth/forgot"
               className="text-sm text-gray-500 hover:text-teal-500 transition-colors inline-flex items-center gap-1"
             >
               <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
