@@ -150,6 +150,13 @@ class CommunicationService {
   }
 
   /**
+   * Backwards compatible alias for getPostsByUserId used by legacy screens
+   */
+  async getUserPosts(userId: string): Promise<Post[]> {
+    return this.getPostsByUserId(userId);
+  }
+
+  /**
    * Create a new post
    * Endpoint: POST /api/v1/communication/create
    */
@@ -201,12 +208,12 @@ class CommunicationService {
    * Delete a post
    * Endpoint: DELETE /api/v1/communication/:id
    */
-  async deletePost(postId: string): Promise<{ message: string }> {
-    const response = await fetch(`${this.baseUrl}/${postId}`, {
+  async deletePost(postId: string): Promise<void> {
+    const response = await fetch(`${this.baseUrl}/communication/posts/${postId}`, {
       method: 'DELETE',
       headers: this.getHeaders(),
     });
-    return this.handleResponse<{ message: string }>(response);
+    if (!response.ok) throw new Error('Failed to delete post');
   }
 
   /**
@@ -219,6 +226,22 @@ class CommunicationService {
       body: JSON.stringify({ isHidden }),
     });
     return this.handleResponse<Post>(response);
+  }
+
+  async hidePost(postId: string): Promise<void> {
+    const response = await fetch(`${this.baseUrl}/communication/posts/${postId}/hide`, {
+      method: 'PATCH',
+      headers: this.getHeaders(),
+    });
+    if (!response.ok) throw new Error('Failed to hide post');
+  }
+
+  async unhidePost(postId: string): Promise<void> {
+    const response = await fetch(`${this.baseUrl}/communication/posts/${postId}/unhide`, {
+      method: 'PATCH',
+      headers: this.getHeaders(),
+    });
+    if (!response.ok) throw new Error('Failed to unhide post');
   }
 
   /**
@@ -421,20 +444,28 @@ class CommunicationService {
     }
   }
 
-  /**
-   * Format time ago
-   */
-  formatTimeAgo(dateString: string): string {
-    const date = new Date(dateString);
-    const now = new Date();
-    const diffInSeconds = Math.floor((now.getTime() - date.getTime()) / 1000);
+  formatDate(date: string | Date): string {
+    const d = new Date(date);
+    return d.toLocaleDateString('vi-VN', {
+      year: 'numeric',
+      month: 'long',
+      day: 'numeric'
+    });
+  }
 
-    if (diffInSeconds < 60) return `${diffInSeconds} giây trước`;
-    if (diffInSeconds < 3600) return `${Math.floor(diffInSeconds / 60)} phút trước`;
-    if (diffInSeconds < 86400) return `${Math.floor(diffInSeconds / 3600)} giờ trước`;
-    if (diffInSeconds < 2592000) return `${Math.floor(diffInSeconds / 86400)} ngày trước`;
+  formatTimeAgo(date: string | Date): string {
+    const now = new Date();
+    const d = new Date(date);
+    const seconds = Math.floor((now.getTime() - d.getTime()) / 1000);
     
-    return date.toLocaleDateString('vi-VN');
+    if (seconds < 60) return 'Vừa xong';
+    const minutes = Math.floor(seconds / 60);
+    if (minutes < 60) return `${minutes}m trước`;
+    const hours = Math.floor(minutes / 60);
+    if (hours < 24) return `${hours}h trước`;
+    const days = Math.floor(hours / 24);
+    if (days < 7) return `${days}d trước`;
+    return d.toLocaleDateString('vi-VN');
   }
 
   /**

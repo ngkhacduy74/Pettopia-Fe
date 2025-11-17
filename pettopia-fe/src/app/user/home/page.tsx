@@ -7,7 +7,7 @@ import { getAppointments } from '@/services/petcare/petService';
 import type { Appointment, AppointmentsResponse } from '@/services/petcare/petService';
 import axios from 'axios';
 
-// Timeline Component
+// Timeline Component - Simplified without Calendar
 const AppointmentTimeline = memo(function AppointmentTimeline() {
   const [appointments, setAppointments] = useState<Appointment[]>([]);
   const [loading, setLoading] = useState(true);
@@ -86,14 +86,14 @@ const AppointmentTimeline = memo(function AppointmentTimeline() {
 
   if (loading) {
     return (
-      <div className="mb-8 bg-white rounded-2xl shadow-sm border border-gray-200 p-3">
+      <div className="mb-8 bg-white rounded-2xl shadow-sm border border-gray-200 p-6">
         <div className="flex items-center gap-2 mb-4">
-          <div className="w-6 h-6 bg-teal-100 rounded-lg animate-pulse"></div>
+          <div className="w-8 h-8 bg-teal-100 rounded-lg animate-pulse"></div>
           <div className="h-6 w-40 bg-gray-200 rounded animate-pulse"></div>
         </div>
         <div className="flex gap-3 overflow-hidden">
           {[1, 2, 3, 4, 5].map(i => (
-            <div key={i} className="min-w-[140px] h-36 bg-gray-100 rounded-xl animate-pulse"></div>
+            <div key={i} className="min-w-[140px] h-40 bg-gray-100 rounded-xl animate-pulse"></div>
           ))}
         </div>
       </div>
@@ -107,7 +107,7 @@ const AppointmentTimeline = memo(function AppointmentTimeline() {
   return (
     <section className="mb-8" aria-labelledby="timeline-heading">
       <div className="bg-white rounded-2xl shadow-sm border border-gray-200 p-6">
-        <div className="flex items-center justify-between mb-5">
+        <div className="flex items-center justify-between mb-6">
           <div className="flex items-center gap-2">
             <div className="w-8 h-8 bg-gradient-to-br from-teal-500 to-cyan-500 rounded-lg flex items-center justify-center">
               <svg className="w-5 h-5 text-white" fill="none" viewBox="0 0 24 24" strokeWidth={2} stroke="currentColor">
@@ -119,12 +119,13 @@ const AppointmentTimeline = memo(function AppointmentTimeline() {
             </h2>
           </div>
           <Link href="/user/appointments/list">
-            <button className="text-teal-600 hover:text-teal-700 font-medium text-sm hover:underline transition-colors">
+            <button className="text-teal-600 hover:text-teal-700 font-medium text-sm hover:underline transition-colors px-4 py-2">
               Xem chi tiết →
             </button>
           </Link>
         </div>
 
+        {/* Timeline View */}
         <div className="relative group">
           {/* Scroll buttons */}
           {appointments.length > 4 && (
@@ -164,14 +165,14 @@ const AppointmentTimeline = memo(function AppointmentTimeline() {
                 <Link key={apt.id} href={`/user/appointments/${apt.id}`}>
                   <div 
                     className={`
-                      min-w-[140px] p-5 rounded-xl border-2 cursor-pointer
-                      transition-all duration-300 hover:scale-101 hover:shadow-lg
+                      min-w-[120px] p-5 rounded-xl border-2 cursor-pointer
+                      transition-all duration-300 hover:scale-101 hover:shadow-xl
                       ${getStatusColor(apt.status)}
                       ${today ? 'ring-2 ring-orange-400 ring-offset-2' : ''}
                     `}
                   >
                     {/* Date display */}
-                    <div className="text-center mb-3">
+                    <div className="text-center mb-4">
                       <div className="text-xs font-semibold text-gray-500 uppercase mb-1">
                         {dayName}
                       </div>
@@ -187,7 +188,7 @@ const AppointmentTimeline = memo(function AppointmentTimeline() {
                     <div className="w-full h-px bg-gray-300 my-3"></div>
 
                     {/* Appointment info */}
-                    <div className="space-y-2">
+                    <div className="space-y-2.5">
                       <div className="flex items-center gap-2">
                         <svg className="w-4 h-4 text-teal-600 flex-shrink-0" fill="none" viewBox="0 0 24 24" strokeWidth={2} stroke="currentColor">
                           <path strokeLinecap="round" strokeLinejoin="round" d="M12 6v6h4.5m4.5 0a9 9 0 11-18 0 9 9 0 0118 0z" />
@@ -198,7 +199,7 @@ const AppointmentTimeline = memo(function AppointmentTimeline() {
                       </div>
 
                       <div className="flex items-center gap-2">
-                        <div className={`w-2 h-2 rounded-full ${getStatusDot(apt.status)}`}></div>
+                        <div className={`w-2.5 h-2.5 rounded-full ${getStatusDot(apt.status)}`}></div>
                         <span className="text-xs text-gray-600">
                           {apt.pet_ids.length} pet • {apt.service_ids.length} dịch vụ
                         </span>
@@ -208,15 +209,10 @@ const AppointmentTimeline = memo(function AppointmentTimeline() {
                     {/* Today badge */}
                     {today && (
                       <div className="mt-3 pt-3 border-t border-gray-300">
-                        <span className="inline-block px-2 py-1 bg-orange-500 text-white text-xs font-bold rounded-full">
+                        <span className="inline-block px-3 py-1 bg-orange-500 text-white text-xs font-bold rounded-full">
                           HÔM NAY
                         </span>
                       </div>
-                    )}
-
-                    {/* Timeline connector */}
-                    {index < appointments.length - 1 && (
-                      <div className="absolute top-1/2 -right-4 w-4 h-0.5 bg-gray-300 hidden sm:block"></div>
                     )}
                   </div>
                 </Link>
@@ -226,7 +222,7 @@ const AppointmentTimeline = memo(function AppointmentTimeline() {
         </div>
 
         {/* Quick stats */}
-        <div className="mt-5 pt-5 border-t border-gray-200 flex gap-6 text-sm">
+        <div className="mt-6 pt-5 border-t border-gray-200 flex gap-6 text-sm">
           <div className="flex items-center gap-2">
             <div className="w-3 h-3 bg-yellow-500 rounded-full"></div>
             <span className="text-gray-600">
@@ -271,18 +267,18 @@ const ChatWidget = memo(function ChatWidget({
       />
 
       {/* Chat Button */}
-<button
-  onClick={() => setShowChat(true)}
-  className={`fixed bottom-4 right-4 w-14 h-14 sm:w-16 sm:h-16 sm:bottom-6 sm:right-6 bg-gradient-to-br from-teal-600 to-cyan-400 rounded-full shadow-lg flex items-center justify-center text-xl sm:text-2xl hover:scale-110 transition-all duration-200 z-40 hover:shadow-xl group ${showChat ? 'opacity-0 pointer-events-none' : 'opacity-100'}`}
-  aria-label="Mở chat"
->
-  <span className="group-hover:hidden">
-    <img src="/sampleimg/AiCat-static.gif" alt="Chat Icon" className="w-full h-full object-cover" />
-  </span>
-  <span className="hidden group-hover:inline">
-    <img src="/sampleimg/AiCat.gif" alt="Chat Icon" className="w-full h-full object-cover" />
-  </span>
-</button>
+      <button
+        onClick={() => setShowChat(true)}
+        className={`fixed bottom-4 right-4 w-14 h-14 sm:w-16 sm:h-16 sm:bottom-6 sm:right-6 bg-gradient-to-br from-teal-600 to-cyan-400 rounded-full shadow-lg flex items-center justify-center text-xl sm:text-2xl hover:scale-110 transition-all duration-200 z-40 hover:shadow-xl group ${showChat ? 'opacity-0 pointer-events-none' : 'opacity-100'}`}
+        aria-label="Mở chat"
+      >
+        <span className="group-hover:hidden">
+          <img src="/sampleimg/AiCat-static.gif" alt="Chat Icon" className="w-full h-full object-cover" />
+        </span>
+        <span className="hidden group-hover:inline">
+          <img src="/sampleimg/AiCat.gif" alt="Chat Icon" className="w-full h-full object-cover" />
+        </span>
+      </button>
     </>
   );
 });
@@ -307,7 +303,7 @@ const PetRegistrationBanner = memo(function PetRegistrationBanner() {
               Đăng ký hồ sơ để theo dõi sức khỏe và chăm sóc thú cưng của bạn tốt hơn
             </p>
             <Link href="/user/pet/new">
-              <button className="bg-white text-teal-700 px-8 py-4 rounded-full font-semibold hover:bg-teal-50 transition-all duration-300 shadow-md hover:shadow-lg hover:scale-105 focus:outline-none focus:ring-2 focus:ring-white focus:ring-offset-2 focus:ring-offset-teal-600">
+              <button className="bg-white text-teal-700 px-8 py-4 rounded-full font-semibold hover:bg-teal-50 transition-all duration-300 shadow-md hover:shadow-lg hover:scale-101 focus:outline-none focus:ring-2 focus:ring-white focus:ring-offset-2 focus:ring-offset-teal-600">
                 Đăng ký ngay →
               </button>
             </Link>
@@ -554,7 +550,7 @@ export default function PetCareApp() {
         Trang chính
       </h1>
 
-      {/* Timeline Lịch Hẹn - THÊM MỚI */}
+      {/* Timeline Lịch Hẹn - Simplified */}
       <AppointmentTimeline />
 
       {/* Pet Registration Banner - Chỉ hiện khi chưa có thú cưng */}

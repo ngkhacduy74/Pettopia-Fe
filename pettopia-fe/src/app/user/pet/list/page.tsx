@@ -2,7 +2,7 @@
 import React, { useState, useEffect, useCallback, useMemo } from 'react';
 import Link from 'next/link';
 import { useRouter } from 'next/navigation';
-import { deletePet } from '@/services/petcare/petService';
+import { deletePet, getPetsByOwner } from '@/services/petcare/petService';
 
 interface Pet {
     id: string | number;
@@ -36,7 +36,7 @@ export default function PetListPage() {
     const [petToDelete, setPetToDelete] = useState<Pet | null>(null);
     const [isDeleting, setIsDeleting] = useState(false);
     const [hasFetched, setHasFetched] = useState(false);
-    
+
     // Tính toán loading state: đang loading hoặc chưa fetch lần đầu
     const isLoading = loading || (!hasFetched && !!userId);
 
@@ -75,17 +75,7 @@ export default function PetListPage() {
     const fetchPets = useCallback(async (uid: string) => {
         try {
             setLoading(true);
-            const apiUrl = `http://localhost:3000/api/v1/pet/owner/${uid}`;
-            const response = await fetch(apiUrl, {
-                headers: { 'Accept': 'application/json' },
-            });
-
-            if (!response.ok) {
-                throw new Error(`Không thể tải danh sách thú cưng (HTTP ${response.status})`);
-            }
-
-            const data = await response.json();
-            const petsData = Array.isArray(data.data) ? data.data : Array.isArray(data) ? data : [];
+            const petsData = await getPetsByOwner(uid);
             setPets(petsData);
             setError(null);
             setHasFetched(true);
@@ -220,10 +210,10 @@ export default function PetListPage() {
                                 className="p-2 rounded-lg hover:bg-teal-50 transition-colors disabled:opacity-50 disabled:cursor-not-allowed group"
                                 title="Làm mới danh sách"
                             >
-                                <svg 
-                                    className={`w-5 h-5 text-teal-600 ${isLoading ? 'animate-spin' : 'group-hover:rotate-180'} transition-transform duration-500`} 
-                                    fill="none" 
-                                    stroke="currentColor" 
+                                <svg
+                                    className={`w-5 h-5 text-teal-600 ${isLoading ? 'animate-spin' : 'group-hover:rotate-180'} transition-transform duration-500`}
+                                    fill="none"
+                                    stroke="currentColor"
                                     viewBox="0 0 24 24"
                                 >
                                     <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M4 4v5h.582m15.356 2A8.001 8.001 0 004.582 9m0 0H9m11 11v-5h-.581m0 0a8.003 8.003 0 01-15.357-2m15.357 2H15" />
@@ -244,11 +234,10 @@ export default function PetListPage() {
                                 <button
                                     key={status}
                                     onClick={() => setFilterStatus(status as any)}
-                                    className={`px-4 py-2 rounded-lg font-medium transition-all ${
-                                        filterStatus === status
-                                            ? 'bg-teal-600 text-white shadow-md'
-                                            : 'bg-white text-gray-600 hover:bg-teal-50'
-                                    }`}
+                                    className={`px-4 py-2 rounded-lg font-medium transition-all ${filterStatus === status
+                                        ? 'bg-teal-600 text-white shadow-md'
+                                        : 'bg-white text-gray-600 hover:bg-teal-50'
+                                        }`}
                                 >
                                     {status === 'all' ? 'Tất cả' : status}
                                 </button>
@@ -375,8 +364,12 @@ export default function PetListPage() {
                                         <div className="flex items-center gap-3">
                                             <div className="w-12 h-12 bg-white/20 rounded-full flex items-center justify-center flex-shrink-0">
                                                 <svg className="w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                                                    <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 9v2m0 4h.01m-6.938 4h13.856c1.54 0 2.502-1.667 1.732-3L13.732 4c-.77-1.333-2.694-1.333-3.464 0L3.34 16c-.77 1.333.192 3 1.732 3z" />
+                                                    <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2}
+                                                        d="M12 9v2m0 4h.01m-6.938 4h13.856c1.54 0 2.502-1.667 1.732-3L13.732 4c-.77-1.333-2.694-1.333-3.464 0L3.34 16c-.77 1.333.192 3 1.732 3zM11 13a1 1 0 11-2 0 1 1 0 012 0zm-1-8a1 1 0 00-1 1v3a1 1 0 002 0V6a1 1 0 00-1-1z"
+                                                        clipRule="evenodd"
+                                                    />
                                                 </svg>
+
                                             </div>
                                             <div>
                                                 <h3 className="text-xl font-bold">Xác nhận xóa thú cưng</h3>

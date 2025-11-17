@@ -76,6 +76,18 @@ export async function deletePet(petId: string) {
     return response.data;
 }
 
+export async function getPetsByOwner(userId: string): Promise<PetDetailResponse[]> {
+  try {
+    const url = `${PET_API_URL}/owner/${userId}`;
+    const response = await axios.get(url, authHeaders());
+    const petsData = response.data?.data || response.data || [];
+    return Array.isArray(petsData) ? petsData : [];
+  } catch (error) {
+    logAxiosError('getPetsByOwner', error);
+    throw error;
+  }
+}
+
 // ================ HEALTHCARE - APPOINTMENTS ================
 export interface Appointment {
     _id: string;
@@ -189,6 +201,125 @@ export async function getClinicDetail(clinicId: string): Promise<ClinicDetail> {
     const url = `${process.env.NEXT_PUBLIC_PETTOPIA_API_URL}/healthcare/clinics/${encodeURIComponent(clinicId)}`; // ĐÃ SỬA
     const response = await axios.get(url, authHeaders());
     return response.data?.data || response.data;
+}
+
+// ================ CLINIC APIs ================
+export interface Clinic {
+  _id: string;
+  id: string;
+  clinic_name: string;
+  address: {
+    city: string;
+    district: string;
+    ward: string;
+    detail: string;
+  };
+  phone: { phone_number: string; verified: boolean };
+  email: { email_address: string; verified: boolean };
+  license_number: string;
+  is_active: boolean;
+}
+
+export interface ClinicsResponse {
+  status: string;
+  data: {
+    items: Clinic[];
+  };
+}
+
+export async function getClinics(page = 1, limit = 100): Promise<Clinic[]> {
+  try {
+    const url = `${process.env.NEXT_PUBLIC_PETTOPIA_API_URL}/partner/clinic?page=${page}&limit=${limit}`;
+    const response = await axios.get(url, authHeaders());
+    return response.data?.data?.items || response.data?.data || [];
+  } catch (error) {
+    logAxiosError('getClinics', error);
+    throw error;
+  }
+}
+
+// ================ SERVICE APIs ================
+export interface Service {
+  id: string;
+  name: string;
+  price: number;
+  duration: number;
+  description?: string;
+  is_active?: boolean;
+}
+
+export interface ServicesResponse {
+  status: string;
+  data: {
+    items: Service[];
+  };
+}
+
+export async function getServicesByClinic(clinicId: string): Promise<Service[]> {
+  try {
+    const url = `${process.env.NEXT_PUBLIC_PETTOPIA_API_URL}/partner/service/${encodeURIComponent(clinicId)}`;
+    const response = await axios.get(url, authHeaders());
+    const services = response.data?.data?.items || response.data?.data || [];
+    return services.filter((s: any) => s.is_active).map((s: any) => ({
+      id: s.id,
+      name: s.name,
+      price: s.price,
+      duration: s.duration,
+      description: s.description,
+    }));
+  } catch (error) {
+    logAxiosError('getServicesByClinic', error);
+    throw error;
+  }
+}
+
+// ================ SHIFT APIs ================
+export interface Shift {
+  id: string;
+  shift: string;
+  start_time: string;
+  end_time: string;
+  max_slot: number;
+  is_active: boolean;
+}
+
+export async function getShiftsByClinic(clinicId: string): Promise<Shift[]> {
+  try {
+    const url = `${process.env.NEXT_PUBLIC_PETTOPIA_API_URL}/partner/clinic/shift/${encodeURIComponent(clinicId)}`;
+    const response = await axios.get(url, authHeaders());
+    const shifts = response.data?.data || [];
+    return shifts.filter((s: any) => s.is_active).map((s: any) => ({
+      id: s.id,
+      shift: s.shift,
+      start_time: s.start_time,
+      end_time: s.end_time,
+      max_slot: s.max_slot,
+      is_active: s.is_active,
+    }));
+  } catch (error) {
+    logAxiosError('getShiftsByClinic', error);
+    throw error;
+  }
+}
+
+// ================ APPOINTMENT BOOKING ================
+export interface BookingPayload {
+  clinic_id: string;
+  pet_ids: string[];
+  service_ids: string[];
+  date: string;
+  shift_id: string;
+}
+
+export async function bookAppointment(payload: BookingPayload) {
+  try {
+    const url = `${process.env.NEXT_PUBLIC_PETTOPIA_API_URL}/healthcare/appointment`;
+    const response = await axios.post(url, payload, authHeaders());
+    return response.data;
+  } catch (error) {
+    logAxiosError('bookAppointment', error);
+    throw error;
+  }
 }
 
 // ================ ERROR LOGGING ================

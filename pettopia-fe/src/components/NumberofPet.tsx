@@ -1,5 +1,6 @@
 import React, { useEffect, useState, useCallback } from 'react';
 import { useRouter } from 'next/navigation';
+import { getPetsByOwner } from '@/services/petcare/petService';
 
 interface Pet {
     id: string | number;
@@ -35,31 +36,7 @@ export default function PetCards({ userId, onPetsLoaded }: PetCardsProps) {
         try {
             setLoading(true);
             setError(null);
-            const apiUrl = `http://localhost:3000/api/v1/pet/owner/${userId}`;
-            const response = await fetch(apiUrl, {
-                headers: { Accept: 'application/json' },
-                signal,
-            });
-
-            if (!response.ok) {
-                const contentType = response.headers.get('content-type') || '';
-                let errorDetail = '';
-                try {
-                    errorDetail = contentType.includes('application/json')
-                        ? JSON.stringify(await response.json())
-                        : await response.text();
-                } catch { /* ignore */ }
-                console.error('Failed to fetch pets', {
-                    status: response.status,
-                    statusText: response.statusText,
-                    url: apiUrl,
-                    body: errorDetail,
-                });
-                throw new Error(`Không thể tải danh sách thú cưng (HTTP ${response.status})`);
-            }
-
-            const data = await response.json();
-            const petsData = Array.isArray(data.data) ? data.data : Array.isArray(data) ? data : [];
+            const petsData = await getPetsByOwner(userId);
             setPets(petsData);
             onPetsLoaded?.(petsData.length);
         } catch (err: any) {
