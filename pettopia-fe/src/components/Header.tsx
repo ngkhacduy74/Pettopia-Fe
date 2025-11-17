@@ -45,40 +45,32 @@ export default function Header() {
 
           <div className="hidden md:flex items-center space-x-8">
             <Link
-              href="/"
+              href="/home#services"
               className={`transition ${scrolled
                 ? 'text-gray-700 hover:text-teal-600'
                 : 'text-white hover:text-white/80'
                 }`}
             >
-              Home
+              Dịch Vụ
+            </Link>
+
+            <Link
+              href="/home/qr"
+              className={`transition ${scrolled
+                ? 'text-gray-700 hover:text-teal-600'
+                : 'text-white hover:text-white/80'
+                }`}
+            >
+              QR Code
             </Link>
             <Link
-              href="/services"
+              href="/home/contact"
               className={`transition ${scrolled
                 ? 'text-gray-700 hover:text-teal-600'
                 : 'text-white hover:text-white/80'
                 }`}
             >
-              Services
-            </Link>
-            <Link
-              href="/about"
-              className={`transition ${scrolled
-                ? 'text-gray-700 hover:text-teal-600'
-                : 'text-white hover:text-white/80'
-                }`}
-            >
-              About Us
-            </Link>
-            <Link
-              href="/contact"
-              className={`transition ${scrolled
-                ? 'text-gray-700 hover:text-teal-600'
-                : 'text-white hover:text-white/80'
-                }`}
-            >
-              Contact
+              Liên Hệ
             </Link>
           </div>
 
