@@ -143,7 +143,7 @@ const Chat = memo(function Chat({
         try {
           const parsed = JSON.parse(data);
           aiText = typeof parsed === 'string' ? parsed : (parsed?.content || JSON.stringify(parsed));
-        } catch {}
+        } catch { }
       } else if (data && typeof data === 'object') {
         aiText = data.content || data.reply || data.message || JSON.stringify(data);
       }
@@ -251,7 +251,7 @@ const Chat = memo(function Chat({
 
       {/* Input Area */}
       <div className="p-4 bg-white border-t border-teal-100 flex-shrink-0">
-        <div className="flex items-end gap-2 bg-teal-50/70 rounded-xl p-2.5 border border-teal-200">
+        <div className="flex items-center gap-2 bg-teal-50/70 rounded-xl p-1 border border-teal-200">
           <input
             ref={inputRef}
             type="text"
@@ -259,7 +259,7 @@ const Chat = memo(function Chat({
             value={chatMessage}
             onChange={(e) => setChatMessage(e.target.value)}
             onKeyDown={handleKeyDown}
-            className="flex-1 bg-transparent outline-none text-sm text-gray-800 placeholder:text-gray-500"
+            className="flex-1 bg-transparent outline-none text-sm text-gray-800 placeholder:text-gray-500 py-2"
             disabled={isLoading}
           />
           <button
@@ -272,6 +272,7 @@ const Chat = memo(function Chat({
             </svg>
           </button>
         </div>
+
         <p className="text-xs text-center text-gray-500 mt-2">
           {isLoading ? 'Đang suy nghĩ...' : 'Nhấn Enter để gửi'}
         </p>

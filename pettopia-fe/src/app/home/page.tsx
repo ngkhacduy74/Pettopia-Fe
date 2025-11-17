@@ -442,9 +442,9 @@ export default function Home() {
           <p className="text-xl text-cyan-50 mb-8">
             Hãy đăng ký ngay hôm nay để trở thành một phần của đội ngũ chăm sóc thú cưng tận tâm và chuyên nghiệp của chúng tôi.
           </p>
-          <Link href="/auth/register" className="mr-4">
+          <Link href="/join-us" className="mr-4">
             <button className="bg-white text-teal-700 px-8 py-4 rounded-full font-semibold text-lg hover:bg-cyan-50 transition shadow-xl">
-              Đăng ký form ngay tại đây
+              Tham gia ngay?
             </button>
           </Link>
         </div>
