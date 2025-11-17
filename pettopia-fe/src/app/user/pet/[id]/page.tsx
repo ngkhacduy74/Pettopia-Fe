@@ -4,6 +4,7 @@ import { useState, useRef, useEffect } from 'react';
 import { motion, useInView } from 'framer-motion';
 import { useParams, useRouter } from 'next/navigation';
 import UpcomingMeetings from '@/components/UpcomingMeetings';
+import { getPetById, getAppointments } from '@/services/petcare/petService';
 
 interface Owner {
   user_id: string;
@@ -88,66 +89,50 @@ export default function UserPetPage() {
 
     useEffect(() => {
         if (!petId) return;
-        const fetchPet = async () => {
+        
+        const fetchPetData = async () => {
             setLoading(true);
             setError(null);
             try {
-                const token = typeof window !== 'undefined' ? localStorage.getItem('authToken') : null;
-                const res = await fetch(`http://localhost:3000/api/v1/pet/${petId}`, {
-                    headers: {
-                        'Content-Type': 'application/json',
-                        ...(token ? { 'Authorization': `Bearer ${token}` } : {})
-                    }
-                });
-
-                if (!res.ok) {
-                    if (res.status === 404) {
-                        setError('Không tìm thấy thú cưng');
-                    } else {
-                        setError(`Lỗi khi lấy dữ liệu: ${res.status}`);
-                    }
-                    setPetData(null);
-                    setUpcomingAppointments([]);
-                    setLoading(false);
-                    return;
-                }
-
-                const data = await res.json();
+                // Gọi petService để lấy thông tin thú cưng
+                const data = await getPetById(petId as string);
+                const apiData = data as Record<string, any>;
 
                 setPetData({
-                    id: data.id ?? data.pet_id ?? petId,
+                    id: data.id ?? apiData.pet_id ?? petId,
                     name: data.name ?? '',
                     species: data.species,
                     gender: data.gender,
                     breed: data.breed,
                     color: data.color,
                     weight: data.weight,
-                    dateOfBirth: data.dateOfBirth ?? data.dob,
-                    age: data.age,
-                    avatar_url: data.avatar_url ?? data.avatar,
-                    owner: data.owner ?? data.owner_info ?? data.customer ?? null,
-                    medical_record: data.medical_record ?? null
+                    dateOfBirth: data.dateOfBirth ?? apiData.dob,
+                    age: apiData.age,
+                    avatar_url: data.avatar_url ?? apiData.avatar,
+                    owner: data.owner ?? apiData.owner_info ?? apiData.customer ?? null,
+                    medical_record: apiData.medical_record ?? null
                 });
 
-                if (Array.isArray(data.upcomingAppointments)) {
-                    setUpcomingAppointments(data.upcomingAppointments);
-                } else {
-                    try {
-                        const aptRes = await fetch(`http://localhost:3000/api/v1/pet/${petId}/appointments`, {
-                            headers: {
-                                'Content-Type': 'application/json',
-                                ...(token ? { 'Authorization': `Bearer ${token}` } : {})
-                            }
-                        });
-                        if (aptRes.ok) {
-                            const aptData = await aptRes.json();
-                            setUpcomingAppointments(Array.isArray(aptData) ? aptData : aptData.items ?? []);
-                        }
-                    } catch { /* ignore */ }
+                // Lấy danh sách lịch hẹn sắp tới
+                try {
+                    const appointmentsData = await getAppointments({ page: 1, limit: 10 });
+                    const appointments = appointmentsData.data || [];
+                    // Filter appointments của pet này nếu cần
+                    const petAppointments = appointments.filter((apt: any) => 
+                        apt.pet_ids?.includes(petId as string)
+                    );
+                    setUpcomingAppointments(petAppointments.length > 0 ? petAppointments : appointments);
+                } catch {
+                    // Nếu lấy appointments thất bại, để trống danh sách
+                    setUpcomingAppointments([]);
                 }
             } catch (e) {
-                console.error(e);
-                setError('Lỗi khi kết nối tới server');
+                console.error('Error fetching pet data:', e);
+                if ((e as any)?.response?.status === 404) {
+                    setError('Không tìm thấy thú cưng');
+                } else {
+                    setError('Lỗi khi kết nối tới server');
+                }
                 setPetData(null);
                 setUpcomingAppointments([]);
             } finally {
@@ -155,7 +140,7 @@ export default function UserPetPage() {
             }
         };
 
-        fetchPet();
+        fetchPetData();
     }, [petId]);
 
     const formatDate = (iso?: string) => {
@@ -358,7 +343,7 @@ export default function UserPetPage() {
                                 <div className="space-y-4">
                                     <h3 className="text-xl font-semibold text-gray-900 mb-4">Lịch đã đặt</h3>
                                     {upcomingAppointments.map((apt) => (
-                                        <div key={apt.appointment_id ?? apt.id} className="flex items-center justify-between p-4 bg-teal-50 rounded-lg">
+                                        <div key={apt.appointment_id ?? apt.id ?? apt._id} className="flex items-center justify-between p-4 bg-teal-50 rounded-lg">
                                             <div className="flex items-center gap-4">
                                                 <div className="w-12 h-12 bg-teal-600 rounded-full flex items-center justify-center">
                                                     <svg className="w-6 h-6 text-white" fill="none" stroke="currentColor" viewBox="0 0 24 24">
@@ -366,8 +351,8 @@ export default function UserPetPage() {
                                                     </svg>
                                                 </div>
                                                 <div>
-                                                    <h4 className="font-semibold text-gray-900">{apt.service ?? apt.title}</h4>
-                                                    <p className="text-sm text-gray-600">{new Date(apt.checkout_time ?? apt.time).toLocaleDateString('vi-VN', { year: 'numeric', month: 'long', day: 'numeric', hour: '2-digit', minute: '2-digit' })}</p>
+                                                    <h4 className="font-semibold text-gray-900">{apt.service ?? apt.title ?? 'Dịch vụ'}</h4>
+                                                    <p className="text-sm text-gray-600">{new Date(apt.checkout_time ?? apt.date ?? apt.time).toLocaleDateString('vi-VN', { year: 'numeric', month: 'long', day: 'numeric', hour: '2-digit', minute: '2-digit' })}</p>
                                                 </div>
                                             </div>
                                             <span className="px-3 py-1 bg-yellow-100 text-yellow-800 rounded-full text-sm font-medium">{apt.status}</span>
@@ -442,7 +427,7 @@ export default function UserPetPage() {
                                                 </div>
                                                 <div className="flex justify-between">
                                                     <span className="text-gray-600">Khám gần nhất:</span>
-                                                    <span className="font-medium">{petData.medical_record?.last_visit_date || 'Chưa có'}</span>
+                                                    <span className="font-medium">{formatDate(petData.medical_record?.last_visit_date)}</span>
                                                 </div>
                                                 <div>
                                                     <span className="text-gray-600 block mb-2">Chẩn đoán:</span>

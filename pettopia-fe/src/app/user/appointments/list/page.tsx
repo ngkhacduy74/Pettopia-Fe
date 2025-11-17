@@ -64,30 +64,63 @@ const ViewAppointmentsPage = () => {
     fetchAppointments();
   }, []);
 
+  // Helper - Xử lý múi giờ Việt Nam
+  const parseLocalDate = (dateStr: string): Date => {
+    // Tạo date từ string YYYY-MM-DD theo múi giờ local (tránh UTC conversion)
+    const [year, month, day] = dateStr.split('T')[0].split('-').map(Number);
+    return new Date(year, month - 1, day);
+  };
+
+  const getDateString = (date: Date): string => {
+    // Trả về YYYY-MM-DD từ Date object
+    const year = date.getFullYear();
+    const month = String(date.getMonth() + 1).padStart(2, '0');
+    const day = String(date.getDate()).padStart(2, '0');
+    return `${year}-${month}-${day}`;
+  };
+
   // Lọc theo ngày chọn hoặc bộ lọc thường
   useEffect(() => {
     let filtered = [...appointments];
 
     if (selectedDate) {
-      const selectedStr = selectedDate.toISOString().split('T')[0];
-      filtered = filtered.filter(apt => new Date(apt.date).toISOString().split('T')[0] === selectedStr);
+      const selectedStr = getDateString(selectedDate);
+      filtered = filtered.filter(apt => {
+        const aptDateStr = apt.date.split('T')[0];
+        return aptDateStr === selectedStr;
+      });
     } else {
       const now = new Date();
-      if (viewMode === 'upcoming') filtered = filtered.filter(a => new Date(a.date) >= now);
-      if (viewMode === 'past') filtered = filtered.filter(a => new Date(a.date) < now);
+      now.setHours(0, 0, 0, 0);
+      
+      if (viewMode === 'upcoming') {
+        filtered = filtered.filter(a => {
+          const aptDate = parseLocalDate(a.date);
+          aptDate.setHours(0, 0, 0, 0);
+          return aptDate >= now;
+        });
+      }
+      if (viewMode === 'past') {
+        filtered = filtered.filter(a => {
+          const aptDate = parseLocalDate(a.date);
+          aptDate.setHours(0, 0, 0, 0);
+          return aptDate < now;
+        });
+      }
       if (statusFilter !== 'all') filtered = filtered.filter(a => a.status === statusFilter);
       if (shiftFilter !== 'all') filtered = filtered.filter(a => a.shift === shiftFilter);
     }
 
-    filtered.sort((a, b) => selectedDate || viewMode === 'past'
-      ? new Date(b.date).getTime() - new Date(a.date).getTime()
-      : new Date(a.date).getTime() - new Date(b.date).getTime()
-    );
+    filtered.sort((a, b) => {
+      const dateA = parseLocalDate(a.date).getTime();
+      const dateB = parseLocalDate(b.date).getTime();
+      return selectedDate || viewMode === 'past' ? dateB - dateA : dateA - dateB;
+    });
 
     setFilteredAppointments(filtered);
   }, [appointments, selectedDate, statusFilter, shiftFilter, viewMode]);
 
-  // Helper
+  // Helper functions
   const formatShift = (s: string) => ({ Morning: 'Sáng', Afternoon: 'Chiều', Evening: 'Tối' }[s] || s);
   const formatStatus = (s: string) => ({
     Pending_Confirmation: 'Chờ xác nhận',
@@ -103,17 +136,23 @@ const ViewAppointmentsPage = () => {
     Completed: 'bg-blue-500'
   }[s] || 'bg-gray-500');
 
-  const formatDate = (d: string) => new Date(d).toLocaleDateString('vi-VN');
+  const formatDate = (d: string) => {
+    const date = parseLocalDate(d);
+    return `${date.getDate()}/${date.getMonth() + 1}/${date.getFullYear()}`;
+  };
+
   const formatLongDate = (d: string) => {
-    const date = new Date(d);
+    const date = parseLocalDate(d);
     const dow = ['Chủ nhật', 'Thứ hai', 'Thứ ba', 'Thứ tư', 'Thứ năm', 'Thứ sáu', 'Thứ bảy'][date.getDay()];
     return `${dow}, ${date.getDate()} ${monthNames[date.getMonth()]} ${date.getFullYear()}`;
   };
 
   // Xác định màu CHẤM NHỎ theo ưu tiên cao nhất
   const getDotColor = (day: number): string | null => {
-    const dateStr = new Date(currentDate.getFullYear(), currentDate.getMonth(), day).toISOString().split('T')[0];
-    const dayAppts = appointments.filter(a => new Date(a.date).toISOString().split('T')[0] === dateStr);
+    const checkDate = new Date(currentDate.getFullYear(), currentDate.getMonth(), day);
+    const dateStr = getDateString(checkDate);
+    
+    const dayAppts = appointments.filter(a => a.date.split('T')[0] === dateStr);
     if (dayAppts.length === 0) return null;
     if (dayAppts.some(a => a.status === 'Cancelled')) return 'bg-red-500';
     if (dayAppts.some(a => a.status === 'Pending_Confirmation')) return 'bg-yellow-500';
@@ -139,11 +178,18 @@ const ViewAppointmentsPage = () => {
   };
 
   const changeMonth = (dir: number) => setCurrentDate(new Date(currentDate.getFullYear(), currentDate.getMonth() + dir, 1));
+  
   const isToday = (day: number) => {
     const t = new Date();
     return day === t.getDate() && currentDate.getMonth() === t.getMonth() && currentDate.getFullYear() === t.getFullYear();
   };
-  const isSelected = (day: number) => selectedDate?.getDate() === day && selectedDate?.getMonth() === currentDate.getMonth() && selectedDate?.getFullYear() === currentDate.getFullYear();
+  
+  const isSelected = (day: number) => {
+    if (!selectedDate) return false;
+    return selectedDate.getDate() === day && 
+           selectedDate.getMonth() === currentDate.getMonth() && 
+           selectedDate.getFullYear() === currentDate.getFullYear();
+  };
 
   const days = getDaysInMonth();
 
@@ -207,8 +253,8 @@ const ViewAppointmentsPage = () => {
               </div>
 
               <div className="mt-6 flex flex-wrap gap-3 text-xs text-gray-600">
-                <span className="flex items-center gap-2"><div className="w-3 h-3 bg-red-500 rounded-full"></div>Lỡ hẹn</span>
-                <span className="flex items-center gap-2"><div className="w-3 h-3 bg-yellow-500 rounded-full"></div>Chưa xác nhận</span>
+                <span className="flex items-center gap-2"><div className="w-3 h-3 bg-red-500 rounded-full"></div>Đã hủy</span>
+                <span className="flex items-center gap-2"><div className="w-3 h-3 bg-yellow-500 rounded-full"></div>Chờ xác nhận</span>
                 <span className="flex items-center gap-2"><div className="w-3 h-3 bg-emerald-500 rounded-full"></div>Đã xác nhận</span>
                 <span className="flex items-center gap-2"><div className="w-3 h-3 bg-blue-500 rounded-full"></div>Hoàn thành</span>
               </div>

@@ -20,7 +20,7 @@ const AppointmentTimeline = memo(function AppointmentTimeline() {
         const token = typeof window !== 'undefined' ? localStorage.getItem('authToken') : null;
         if (token) axios.defaults.headers.common['Authorization'] = `Bearer ${token}`;
         const response: AppointmentsResponse = await getAppointments({ page: 1, limit: 50 });
-        
+
         // Lọc chỉ lấy lịch hẹn sắp tới (chưa qua và chưa hủy)
         const upcoming = response.data
           .filter(apt => {
@@ -31,7 +31,7 @@ const AppointmentTimeline = memo(function AppointmentTimeline() {
           })
           .sort((a, b) => new Date(a.date).getTime() - new Date(b.date).getTime())
           .slice(0, 10); // Lấy tối đa 10 lịch hẹn gần nhất
-        
+
         setAppointments(upcoming);
       } catch (err) {
         console.error('Không thể tải lịch hẹn:', err);
@@ -50,10 +50,10 @@ const AppointmentTimeline = memo(function AppointmentTimeline() {
     return { day, month, dayName };
   };
 
-  const formatShift = (s: string) => ({ 
-    Morning: 'Sáng', 
-    Afternoon: 'Chiều', 
-    Evening: 'Tối' 
+  const formatShift = (s: string) => ({
+    Morning: 'Sáng',
+    Afternoon: 'Chiều',
+    Evening: 'Tối'
   }[s] || s);
 
   const getStatusColor = (s: string) => ({
@@ -152,7 +152,7 @@ const AppointmentTimeline = memo(function AppointmentTimeline() {
           )}
 
           {/* Timeline scroll container */}
-          <div 
+          <div
             ref={scrollRef}
             className="flex gap-4 overflow-x-auto scrollbar-hide pb-2"
             style={{ scrollbarWidth: 'none', msOverflowStyle: 'none' }}
@@ -160,10 +160,10 @@ const AppointmentTimeline = memo(function AppointmentTimeline() {
             {appointments.map((apt, index) => {
               const { day, month, dayName } = formatShortDate(apt.date);
               const today = isToday(apt.date);
-              
+
               return (
                 <Link key={apt.id} href={`/user/appointments/${apt.id}`}>
-                  <div 
+                  <div
                     className={`
                       min-w-[120px] p-5 rounded-xl border-2 cursor-pointer
                       transition-all duration-300 hover:scale-101 hover:shadow-xl
@@ -269,7 +269,7 @@ const ChatWidget = memo(function ChatWidget({
       {/* Chat Button */}
       <button
         onClick={() => setShowChat(true)}
-        className={`fixed bottom-4 right-4 w-14 h-14 sm:w-16 sm:h-16 sm:bottom-6 sm:right-6 bg-gradient-to-br from-teal-600 to-cyan-400 rounded-full shadow-lg flex items-center justify-center text-xl sm:text-2xl hover:scale-110 transition-all duration-200 z-40 hover:shadow-xl group ${showChat ? 'opacity-0 pointer-events-none' : 'opacity-100'}`}
+        className={`fixed bottom-4 right-4 w-15 h-15 sm:w-16 sm:h-16 sm:bottom-6 sm:right-6 bg-gradient-to-br from-teal-500 to-cyan-700 rounded-full shadow-lg flex items-center justify-center text-xl sm:text-2xl hover:scale-110 transition-all duration-200 z-40 hover:shadow-xl group ${showChat ? 'opacity-0 pointer-events-none' : 'opacity-100'}`}
         aria-label="Mở chat"
       >
         <span className="group-hover:hidden">
@@ -439,29 +439,36 @@ const QuickActions = memo(function QuickActions() {
 
   return (
     <div>
-      <div className="flex items-center gap-2 mb-6">
-        <svg className="w-5 h-5 text-teal-600" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-          <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M13 10V3L4 14h7v7l9-11h-7z" />
-        </svg>
+      <div className="mb-6">
         <h2 className="text-2xl font-bold text-gray-900">Thao tác nhanh</h2>
       </div>
+
       <div className="grid grid-cols-3 gap-6">
         {quickActions.map((item) => (
           <div
             key={item.id}
             className="rounded-2xl p-8 cursor-pointer hover:scale-105 transition-all duration-300 shadow-lg hover:shadow-2xl relative overflow-hidden"
-            style={item.image ? { backgroundImage: `url(${item.image})`, backgroundSize: 'cover', backgroundPosition: 'center' } : {}}
+            style={
+              item.image
+                ? {
+                  backgroundImage: `url(${item.image})`,
+                  backgroundSize: "cover",
+                  backgroundPosition: "center",
+                }
+                : {}
+            }
           >
-            <div className="relative z-10">
-              <div className="text-5xl mb-4">{item.icon}</div>
+            <div className="relative z-10 text-left">
               <h3 className="font-bold text-xl mb-2 text-white">{item.title}</h3>
               <p className="text-sm text-cyan-50">{item.description}</p>
             </div>
+
             <div className="absolute inset-0 bg-gradient-to-br from-teal-600 to-cyan-600 opacity-40 rounded-2xl"></div>
           </div>
         ))}
       </div>
     </div>
+
   );
 });
 
@@ -482,7 +489,7 @@ const PetCardsSection = memo(function PetCardsSection({
   return (
     <div className="mb-12">
       <div className="flex items-center justify-between mb-6">
-        
+
       </div>
       <PetCards key={refreshKey} userId={userId} onPetsLoaded={onPetsLoaded} />
     </div>
