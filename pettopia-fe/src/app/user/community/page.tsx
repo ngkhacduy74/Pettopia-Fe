@@ -1,30 +1,13 @@
 'use client'
 import React, { useState, useEffect } from 'react';
 import { useRouter } from 'next/navigation';
-
-// Import từ service thực tế
-const API_BASE_URL = process.env.NEXT_PUBLIC_API_URL || 'http://localhost:3000/api/v1';
+import { communicationService } from '@/services/communication/communicationService';
+import type { Post } from '@/services/communication/communicationService';
 
 interface Author {
   user_id: string;
   fullname: string;
   avatar: string | null;
-}
-
-interface Post {
-  post_id: string;
-  author: Author;
-  title: string;
-  content: string;
-  tags: string[];
-  images: string[];
-  isHidden: boolean;
-  likeCount: number;
-  commentCount: number;
-  viewCount: number;
-  reportCount: number;
-  createdAt: string;
-  updatedAt: string;
 }
 
 interface Category {
@@ -33,97 +16,13 @@ interface Category {
   color: string;
 }
 
-class CommunicationService {
-  private baseUrl: string;
-  private token: string | null;
-
-  constructor() {
-    this.baseUrl = `${API_BASE_URL}/communication`;
-    this.token = null;
-  }
-
-  setToken(token: string) {
-    this.token = token;
-  }
-
-  private getHeaders(contentType: string = 'application/json'): HeadersInit {
-    const headers: HeadersInit = {
-      'Content-Type': contentType,
-    };
-    if (this.token) {
-      headers['Authorization'] = `Bearer ${this.token}`;
-    }
-    return headers;
-  }
-
-  private async handleResponse<T>(response: Response): Promise<T> {
-    if (!response.ok) {
-      const errorData = await response.json().catch(() => ({}));
-      throw new Error(errorData.message || `HTTP error! status: ${response.status}`);
-    }
-    return response.json();
-  }
-
-  async getAllPosts(): Promise<Post[]> {
-    const response = await fetch(`${this.baseUrl}/all`, {
-      method: 'GET',
-      headers: this.getHeaders(),
-    });
-    return this.handleResponse<Post[]>(response);
-  }
-
-  async getTrendingPosts(limit: number): Promise<Post[]> {
-    const response = await fetch(`${this.baseUrl}/trending?limit=${limit}`, {
-        method: 'GET',
-        headers: this.getHeaders(),
-    });
-    return this.handleResponse<Post[]>(response);
-  }
-
-  formatTimeAgo(dateString: string): string {
-    const date = new Date(dateString);
-    const now = new Date();
-    const diffInSeconds = Math.floor((now.getTime() - date.getTime()) / 1000);
-
-    if (diffInSeconds < 60) return `${diffInSeconds} giây trước`;
-    if (diffInSeconds < 3600) return `${Math.floor(diffInSeconds / 60)} phút trước`;
-    if (diffInSeconds < 86400) return `${Math.floor(diffInSeconds / 3600)} giờ trước`;
-    if (diffInSeconds < 2592000) return `${Math.floor(diffInSeconds / 86400)} ngày trước`;
-    
-    return date.toLocaleDateString('vi-VN');
-  }
-
-  formatDate(dateString: string): string {
-    const date = new Date(dateString);
-    return date.toLocaleDateString('vi-VN', { 
-      year: 'numeric', 
-      month: 'short', 
-      day: 'numeric' 
-    });
-  }
-
-  // Parse tags that may arrive as JSON strings like "[\"thongbao\"]"
-  parseTags(tags: string[]): string[] {
-    if (!tags || tags.length === 0) return [];
-    try {
-      return tags
-        .map(tag => (typeof tag === 'string' && tag.startsWith('[') ? JSON.parse(tag) : tag))
-        .flat();
-    } catch {
-      return tags;
-    }
-  }
-}
-
-const communicationService = new CommunicationService();
-
 export default function CommunityPage() {
   const router = useRouter();
   
   const [activeTab, setActiveTab] = useState<string>('all');
   const [searchQuery, setSearchQuery] = useState<string>('');
   const [posts, setPosts] = useState<Post[]>([]);
-  const [allPosts, setAllPosts] = useState<Post[]>([]); // Store all posts for local search
+  const [allPosts, setAllPosts] = useState<Post[]>([]);
   const [trendingPosts, setTrendingPosts] = useState<Post[]>([]);
   const [loading, setLoading] = useState<boolean>(true);
   const [error, setError] = useState<string>('');
@@ -139,8 +38,12 @@ export default function CommunityPage() {
     { id: 'tuvan', name: 'Tư vấn', color: 'bg-pink-100 text-pink-600' }
   ];
 
-  // Load posts khi component mount
+  // Initialize service with token on mount
   useEffect(() => {
+    const token = localStorage.getItem('authToken');
+    if (token) {
+      communicationService.setToken(token);
+    }
     loadPosts();
     loadTrendingPosts();
   }, []);
@@ -182,7 +85,7 @@ export default function CommunityPage() {
       const normalized = (data || [])
         .filter(p => !p.isHidden)
         .map(p => ({ ...p, tags: communicationService.parseTags(p.tags) }));
-      setAllPosts(normalized); // Store all posts
+      setAllPosts(normalized);
       setPosts(normalized);
     } catch (err) {
       setError('Không thể tải bài viết. Vui lòng thử lại sau.');
@@ -196,24 +99,13 @@ export default function CommunityPage() {
 
   const loadTrendingPosts = async () => {
     try {
-        const response = await communicationService.getTrendingPosts(5);
-        const postsArray = (Array.isArray(response) ? response : [])
-          .map(p => ({ ...p, tags: communicationService.parseTags(p.tags) }));
-
-        // Weekly trending by like count
-        const oneWeekAgo = new Date();
-        oneWeekAgo.setDate(oneWeekAgo.getDate() - 7);
-
-        const weeklyTrending = postsArray
-          .filter(p => !p.isHidden)
-          .filter(p => new Date(p.createdAt) >= oneWeekAgo)
-          .sort((a, b) => b.likeCount - a.likeCount)
-          .slice(0, 5);
-
-        setTrendingPosts(weeklyTrending);
+      const response = await communicationService.getTrendingPosts(5);
+      const postsArray = (Array.isArray(response) ? response : [])
+        .map(p => ({ ...p, tags: communicationService.parseTags(p.tags) }));
+      setTrendingPosts(postsArray);
     } catch (err) {
-        console.error('Error loading trending posts:', err);
-        setTrendingPosts([]);
+      console.error('Error loading trending posts:', err);
+      setTrendingPosts([]);
     }
   };
 

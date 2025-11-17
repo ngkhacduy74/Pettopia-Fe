@@ -1,7 +1,10 @@
+'use client'
+
 import { useState, useEffect, useRef, JSX } from 'react';
 import { parseJwt, isTokenExpired } from '@/utils/jwt';
 import Link from 'next/link';
 import { usePathname, useRouter } from 'next/navigation';
+import { getPetsByOwner, type PetDetailResponse } from '@/services/petcare/petService';
 
 interface UserData {
   userId: string;
@@ -22,17 +25,13 @@ interface UserData {
   };
 }
 
-interface Pet {
-  id: string | number;
-  name: string;
-  species?: string;
-  type?: string;
-  breed?: string;
+type Pet = PetDetailResponse & {
   image?: string;
   imageUrl?: string;
   photo?: string;
-  avatar_url?: string;
-}
+  avatar?: string;
+  type?: string;
+};
 
 interface UserNavbarProps {
   setShowSearch: (v: boolean) => void;
@@ -62,8 +61,6 @@ export default function UserNavbar({ setShowSearch, showSearch }: UserNavbarProp
   const searchInputRef = useRef<HTMLInputElement>(null);
 
   const menuItems: MenuItem[] = [
-
-
     {
       id: 'home',
       name: 'Trang chủ',
@@ -96,8 +93,7 @@ export default function UserNavbar({ setShowSearch, showSearch }: UserNavbarProp
       category: 'Cộng đồng',
       keywords: ['cộng đồng', 'community', 'pettopia', 'social', 'bạn bè']
     },
-
-        {
+    {
       id: 'manage',
       name: 'Quản lý bài viết',
       icon: <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 20 20" fill="currentColor" className="size-5">
@@ -114,7 +110,7 @@ export default function UserNavbar({ setShowSearch, showSearch }: UserNavbarProp
       icon: <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 20 20" fill="currentColor" className="size-5"><path fillRule="evenodd" d="M5.75 2a.75.75 0 01.75.75V4h7V2.75a.75.75 0 011.5 0V4h.25A2.75 2.75 0 0118 6.75v8.5A2.75 2.75 0 0115.25 18H4.75A2.75 2.75 0 012 15.25v-8.5A2.75 2.75 0 014.75 4H5V2.75A.75.75 0 015.75 2zm-1 5.5c-.69 0-1.25.56-1.25 1.25v6.5c0 .69.56 1.25 1.25 1.25h10.5c.69 0 1.25-.56 1.25-1.25v-6.5c0-.69-.56-1.25-1.25-1.25H4.75z" clipRule="evenodd" /></svg>,
       path: '/user/appointments/booking',
       category: 'Đặt lịch',
-      keywords: ['lịch khám', 'booking', 'appointment', 'đặt lịch', 'khám bệnh', 'veterinary', 'bác sĩ thú y', 'đặt lịch', 'khám']
+      keywords: ['lịch khám', 'booking', 'appointment', 'đặt lịch', 'khám bệnh', 'veterinary', 'bác sĩ thú y']
     },
     {
       id: 'view-appointments',
@@ -219,26 +215,16 @@ export default function UserNavbar({ setShowSearch, showSearch }: UserNavbarProp
     loadUserDataFromToken();
   }, []);
 
+  // ✅ Load pets từ service
   useEffect(() => {
     const fetchPets = async () => {
       if (!userData?.userId) return;
 
       try {
         setLoadingPets(true);
-        const apiUrl = `http://localhost:3000/api/v1/pet/owner/${userData.userId}`;
-        const response = await fetch(apiUrl, {
-          headers: {
-            'Accept': 'application/json',
-          },
-        });
-
-        if (!response.ok) {
-          throw new Error(`Không thể tải danh sách thú cưng`);
-        }
-
-        const data = await response.json();
-        const petsData = Array.isArray(data.data) ? data.data : Array.isArray(data) ? data : [];
-        setPets(petsData.slice(0, 5));
+        // ✅ Sử dụng service thay vì fetch trực tiếp
+        const data = await getPetsByOwner(userData.userId);
+        setPets(data.slice(0, 5));
       } catch (error) {
         console.error('Error fetching pets:', error);
         setPets([]);

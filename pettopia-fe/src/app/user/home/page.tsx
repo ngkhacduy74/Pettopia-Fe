@@ -1,21 +1,16 @@
 'use client'
-import React, { useState, useEffect, useMemo, useCallback, memo } from 'react';
+import React, { useState, useEffect, useMemo, useCallback, memo, useRef } from 'react';
 import Chat from '@/components/Chat';
 import Link from "next/link";
 import PetCards from '@/components/NumberofPet';
-<<<<<<< Updated upstream
-=======
 import { getAppointments } from '@/services/petcare/petService';
 import type { Appointment, AppointmentsResponse } from '@/services/petcare/petService';
 import axios from 'axios';
 
-// Timeline Component with Calendar
+// Timeline Component - Simplified without Calendar
 const AppointmentTimeline = memo(function AppointmentTimeline() {
   const [appointments, setAppointments] = useState<Appointment[]>([]);
   const [loading, setLoading] = useState(true);
-  const [showCalendar, setShowCalendar] = useState(false);
-  const [selectedDate, setSelectedDate] = useState(new Date());
-  const [currentMonth, setCurrentMonth] = useState(new Date());
   const scrollRef = useRef<HTMLDivElement>(null);
 
   useEffect(() => {
@@ -89,64 +84,16 @@ const AppointmentTimeline = memo(function AppointmentTimeline() {
     return date.toDateString() === today.toDateString();
   };
 
-  const isSameDay = (date1: Date, date2: Date) => {
-    return date1.getDate() === date2.getDate() &&
-           date1.getMonth() === date2.getMonth() &&
-           date1.getFullYear() === date2.getFullYear();
-  };
-
-  const hasAppointmentOnDate = (date: Date) => {
-    return appointments.some(apt => isSameDay(new Date(apt.date), date));
-  };
-
-  const getAppointmentsForDate = (date: Date) => {
-    return appointments.filter(apt => isSameDay(new Date(apt.date), date));
-  };
-
-  // Calendar helpers
-  const getDaysInMonth = (date: Date) => {
-    const year = date.getFullYear();
-    const month = date.getMonth();
-    const firstDay = new Date(year, month, 1);
-    const lastDay = new Date(year, month + 1, 0);
-    const daysInMonth = lastDay.getDate();
-    const startingDayOfWeek = firstDay.getDay();
-    
-    const days = [];
-    // Add empty cells for days before month starts
-    for (let i = 0; i < startingDayOfWeek; i++) {
-      days.push(null);
-    }
-    // Add all days in month
-    for (let i = 1; i <= daysInMonth; i++) {
-      days.push(new Date(year, month, i));
-    }
-    return days;
-  };
-
-  const previousMonth = () => {
-    setCurrentMonth(new Date(currentMonth.getFullYear(), currentMonth.getMonth() - 1));
-  };
-
-  const nextMonth = () => {
-    setCurrentMonth(new Date(currentMonth.getFullYear(), currentMonth.getMonth() + 1));
-  };
-
-  const monthNames = ['Tháng 1', 'Tháng 2', 'Tháng 3', 'Tháng 4', 'Tháng 5', 'Tháng 6',
-                       'Tháng 7', 'Tháng 8', 'Tháng 9', 'Tháng 10', 'Tháng 11', 'Tháng 12'];
-  
-  const dayNames = ['CN', 'T2', 'T3', 'T4', 'T5', 'T6', 'T7'];
-
   if (loading) {
     return (
-      <div className="mb-8 bg-white rounded-2xl shadow-sm border border-gray-200 p-3">
+      <div className="mb-8 bg-white rounded-2xl shadow-sm border border-gray-200 p-6">
         <div className="flex items-center gap-2 mb-4">
-          <div className="w-6 h-6 bg-teal-100 rounded-lg animate-pulse"></div>
+          <div className="w-8 h-8 bg-teal-100 rounded-lg animate-pulse"></div>
           <div className="h-6 w-40 bg-gray-200 rounded animate-pulse"></div>
         </div>
         <div className="flex gap-3 overflow-hidden">
           {[1, 2, 3, 4, 5].map(i => (
-            <div key={i} className="min-w-[140px] h-36 bg-gray-100 rounded-xl animate-pulse"></div>
+            <div key={i} className="min-w-[140px] h-40 bg-gray-100 rounded-xl animate-pulse"></div>
           ))}
         </div>
       </div>
@@ -160,7 +107,7 @@ const AppointmentTimeline = memo(function AppointmentTimeline() {
   return (
     <section className="mb-8" aria-labelledby="timeline-heading">
       <div className="bg-white rounded-2xl shadow-sm border border-gray-200 p-6">
-        <div className="flex items-center justify-between mb-5">
+        <div className="flex items-center justify-between mb-6">
           <div className="flex items-center gap-2">
             <div className="w-8 h-8 bg-gradient-to-br from-teal-500 to-cyan-500 rounded-lg flex items-center justify-center">
               <svg className="w-5 h-5 text-white" fill="none" viewBox="0 0 24 24" strokeWidth={2} stroke="currentColor">
@@ -171,246 +118,111 @@ const AppointmentTimeline = memo(function AppointmentTimeline() {
               Lịch hẹn sắp tới <span className="text-teal-600">({appointments.length})</span>
             </h2>
           </div>
-          <div className="flex gap-2">
-            <button
-              onClick={() => setShowCalendar(!showCalendar)}
-              className={`px-4 py-2 rounded-lg font-medium text-sm transition-all ${
-                showCalendar 
-                  ? 'bg-teal-600 text-white' 
-                  : 'bg-gray-100 text-gray-700 hover:bg-gray-200'
-              }`}
-            >
-              <svg className="w-5 h-5 inline mr-2" fill="none" viewBox="0 0 24 24" strokeWidth={2} stroke="currentColor">
-                <path strokeLinecap="round" strokeLinejoin="round" d="M6.75 3v2.25M17.25 3v2.25M3 18.75V7.5a2.25 2.25 0 012.25-2.25h13.5A2.25 2.25 0 0121 7.5v11.25m-18 0A2.25 2.25 0 005.25 21h13.5A2.25 2.25 0 0021 18.75m-18 0v-7.5A2.25 2.25 0 015.25 9h13.5A2.25 2.25 0 0121 11.25v7.5" />
-              </svg>
-              Lịch
+          <Link href="/user/appointments/list">
+            <button className="text-teal-600 hover:text-teal-700 font-medium text-sm hover:underline transition-colors px-4 py-2">
+              Xem chi tiết →
             </button>
-            <Link href="/user/appointments/list">
-              <button className="text-teal-600 hover:text-teal-700 font-medium text-sm hover:underline transition-colors px-4 py-2">
-                Xem chi tiết →
-              </button>
-            </Link>
-          </div>
+          </Link>
         </div>
 
-        {/* Calendar View */}
-        {showCalendar && (
-          <div className="mb-6 p-5 bg-gradient-to-br from-gray-50 to-gray-100 rounded-xl border border-gray-200">
-            {/* Calendar Header */}
-            <div className="flex items-center justify-between mb-4">
+        {/* Timeline View */}
+        <div className="relative group">
+          {/* Scroll buttons */}
+          {appointments.length > 4 && (
+            <>
               <button
-                onClick={previousMonth}
-                className="p-2 hover:bg-white rounded-lg transition-colors"
-                aria-label="Tháng trước"
+                onClick={() => scrollTimeline('left')}
+                className="absolute left-0 top-1/2 -translate-y-1/2 z-10 w-10 h-10 bg-white hover:bg-gray-50 rounded-full shadow-lg flex items-center justify-center opacity-0 group-hover:opacity-100 transition-opacity border border-gray-200"
+                aria-label="Cuộn trái"
               >
                 <svg className="w-5 h-5 text-gray-700" fill="none" viewBox="0 0 24 24" strokeWidth={2} stroke="currentColor">
                   <path strokeLinecap="round" strokeLinejoin="round" d="M15.75 19.5L8.25 12l7.5-7.5" />
                 </svg>
               </button>
-              <h3 className="text-lg font-bold text-gray-900">
-                {monthNames[currentMonth.getMonth()]} {currentMonth.getFullYear()}
-              </h3>
               <button
-                onClick={nextMonth}
-                className="p-2 hover:bg-white rounded-lg transition-colors"
-                aria-label="Tháng sau"
+                onClick={() => scrollTimeline('right')}
+                className="absolute right-0 top-1/2 -translate-y-1/2 z-10 w-10 h-10 bg-white hover:bg-gray-50 rounded-full shadow-lg flex items-center justify-center opacity-0 group-hover:opacity-100 transition-opacity border border-gray-200"
+                aria-label="Cuộn phải"
               >
                 <svg className="w-5 h-5 text-gray-700" fill="none" viewBox="0 0 24 24" strokeWidth={2} stroke="currentColor">
                   <path strokeLinecap="round" strokeLinejoin="round" d="M8.25 4.5l7.5 7.5-7.5 7.5" />
                 </svg>
               </button>
-            </div>
+            </>
+          )}
 
-            {/* Day names */}
-            <div className="grid grid-cols-7 gap-2 mb-2">
-              {dayNames.map(day => (
-                <div key={day} className="text-center text-xs font-semibold text-gray-600 py-2">
-                  {day}
-                </div>
-              ))}
-            </div>
-
-            {/* Calendar days */}
-            <div className="grid grid-cols-7 gap-2">
-              {getDaysInMonth(currentMonth).map((day, index) => {
-                if (!day) {
-                  return <div key={`empty-${index}`} className="aspect-square" />;
-                }
-                
-                const hasApt = hasAppointmentOnDate(day);
-                const isSelected = isSameDay(day, selectedDate);
-                const isCurrentDay = isSameDay(day, new Date());
-                const dayAppointments = getAppointmentsForDate(day);
-                
-                return (
-                  <button
-                    key={day.toISOString()}
-                    onClick={() => setSelectedDate(day)}
+          {/* Timeline scroll container */}
+          <div 
+            ref={scrollRef}
+            className="flex gap-4 overflow-x-auto scrollbar-hide pb-2"
+            style={{ scrollbarWidth: 'none', msOverflowStyle: 'none' }}
+          >
+            {appointments.map((apt, index) => {
+              const { day, month, dayName } = formatShortDate(apt.date);
+              const today = isToday(apt.date);
+              
+              return (
+                <Link key={apt.id} href={`/user/appointments/${apt.id}`}>
+                  <div 
                     className={`
-                      aspect-square rounded-lg p-2 text-sm font-medium transition-all relative
-                      ${isSelected ? 'bg-teal-600 text-white shadow-lg scale-105' : 'hover:bg-white'}
-                      ${isCurrentDay && !isSelected ? 'bg-orange-100 text-orange-900' : ''}
-                      ${!isSelected && !isCurrentDay ? 'text-gray-700' : ''}
+                      min-w-[120px] p-5 rounded-xl border-2 cursor-pointer
+                      transition-all duration-300 hover:scale-101 hover:shadow-xl
+                      ${getStatusColor(apt.status)}
+                      ${today ? 'ring-2 ring-orange-400 ring-offset-2' : ''}
                     `}
                   >
-                    <div className="relative">
-                      {day.getDate()}
-                      {hasApt && (
-                        <div className="absolute -bottom-1 left-1/2 -translate-x-1/2 flex gap-0.5">
-                          {dayAppointments.map((apt, i) => (
-                            <div
-                              key={i}
-                              className={`w-1.5 h-1.5 rounded-full ${
-                                isSelected ? 'bg-white' : getStatusDot(apt.status)
-                              }`}
-                            />
-                          ))}
-                        </div>
-                      )}
+                    {/* Date display */}
+                    <div className="text-center mb-4">
+                      <div className="text-xs font-semibold text-gray-500 uppercase mb-1">
+                        {dayName}
+                      </div>
+                      <div className="text-3xl font-bold text-gray-900 leading-none">
+                        {day}
+                      </div>
+                      <div className="text-sm font-medium text-gray-600 mt-1">
+                        Tháng {month}
+                      </div>
                     </div>
-                  </button>
-                );
-              })}
-            </div>
 
-            {/* Selected date appointments */}
-            {getAppointmentsForDate(selectedDate).length > 0 && (
-              <div className="mt-4 pt-4 border-t border-gray-300">
-                <h4 className="font-semibold text-gray-900 mb-3">
-                  Lịch hẹn ngày {selectedDate.getDate()}/{selectedDate.getMonth() + 1}:
-                </h4>
-                <div className="space-y-2">
-                  {getAppointmentsForDate(selectedDate).map(apt => (
-                    <Link key={apt.id} href={`/user/appointments/${apt.id}`}>
-                      <div className={`p-3 rounded-lg border-2 ${getStatusColor(apt.status)} hover:shadow-md transition-all cursor-pointer`}>
-                        <div className="flex items-center justify-between">
-                          <div className="flex items-center gap-3">
-                            <div className={`w-3 h-3 rounded-full ${getStatusDot(apt.status)}`} />
-                            <div>
-                              <div className="font-semibold text-gray-900">{formatShift(apt.shift)}</div>
-                              <div className="text-xs text-gray-600">
-                                {apt.pet_ids.length} pet • {apt.service_ids.length} dịch vụ
-                              </div>
-                            </div>
-                          </div>
-                          <svg className="w-5 h-5 text-gray-400" fill="none" viewBox="0 0 24 24" strokeWidth={2} stroke="currentColor">
-                            <path strokeLinecap="round" strokeLinejoin="round" d="M8.25 4.5l7.5 7.5-7.5 7.5" />
-                          </svg>
-                        </div>
-                      </div>
-                    </Link>
-                  ))}
-                </div>
-              </div>
-            )}
-          </div>
-        )}
+                    {/* Divider */}
+                    <div className="w-full h-px bg-gray-300 my-3"></div>
 
-        {/* Timeline View */}
-        {!showCalendar && (
-          <div className="relative group">
-            {/* Scroll buttons */}
-            {appointments.length > 4 && (
-              <>
-                <button
-                  onClick={() => scrollTimeline('left')}
-                  className="absolute left-0 top-1/2 -translate-y-1/2 z-10 w-10 h-10 bg-white hover:bg-gray-50 rounded-full shadow-lg flex items-center justify-center opacity-0 group-hover:opacity-100 transition-opacity border border-gray-200"
-                  aria-label="Cuộn trái"
-                >
-                  <svg className="w-5 h-5 text-gray-700" fill="none" viewBox="0 0 24 24" strokeWidth={2} stroke="currentColor">
-                    <path strokeLinecap="round" strokeLinejoin="round" d="M15.75 19.5L8.25 12l7.5-7.5" />
-                  </svg>
-                </button>
-                <button
-                  onClick={() => scrollTimeline('right')}
-                  className="absolute right-0 top-1/2 -translate-y-1/2 z-10 w-10 h-10 bg-white hover:bg-gray-50 rounded-full shadow-lg flex items-center justify-center opacity-0 group-hover:opacity-100 transition-opacity border border-gray-200"
-                  aria-label="Cuộn phải"
-                >
-                  <svg className="w-5 h-5 text-gray-700" fill="none" viewBox="0 0 24 24" strokeWidth={2} stroke="currentColor">
-                    <path strokeLinecap="round" strokeLinejoin="round" d="M8.25 4.5l7.5 7.5-7.5 7.5" />
-                  </svg>
-                </button>
-              </>
-            )}
-
-            {/* Timeline scroll container */}
-            <div 
-              ref={scrollRef}
-              className="flex gap-4 overflow-x-auto scrollbar-hide pb-2"
-              style={{ scrollbarWidth: 'none', msOverflowStyle: 'none' }}
-            >
-              {appointments.map((apt, index) => {
-                const { day, month, dayName } = formatShortDate(apt.date);
-                const today = isToday(apt.date);
-                
-                return (
-                  <Link key={apt.id} href={`/user/appointments/${apt.id}`}>
-                    <div 
-                      className={`
-                        min-w-[140px] p-5 rounded-xl border-2 cursor-pointer
-                        transition-all duration-300 hover:scale-105 hover:shadow-lg
-                        ${getStatusColor(apt.status)}
-                        ${today ? 'ring-2 ring-orange-400 ring-offset-2' : ''}
-                      `}
-                    >
-                      {/* Date display */}
-                      <div className="text-center mb-3">
-                        <div className="text-xs font-semibold text-gray-500 uppercase mb-1">
-                          {dayName}
-                        </div>
-                        <div className="text-3xl font-bold text-gray-900 leading-none">
-                          {day}
-                        </div>
-                        <div className="text-sm font-medium text-gray-600 mt-1">
-                          Tháng {month}
-                        </div>
+                    {/* Appointment info */}
+                    <div className="space-y-2.5">
+                      <div className="flex items-center gap-2">
+                        <svg className="w-4 h-4 text-teal-600 flex-shrink-0" fill="none" viewBox="0 0 24 24" strokeWidth={2} stroke="currentColor">
+                          <path strokeLinecap="round" strokeLinejoin="round" d="M12 6v6h4.5m4.5 0a9 9 0 11-18 0 9 9 0 0118 0z" />
+                        </svg>
+                        <span className="text-sm font-medium text-gray-700">
+                          {formatShift(apt.shift)}
+                        </span>
                       </div>
 
-                      {/* Divider */}
-                      <div className="w-full h-px bg-gray-300 my-3"></div>
-
-                      {/* Appointment info */}
-                      <div className="space-y-2">
-                        <div className="flex items-center gap-2">
-                          <svg className="w-4 h-4 text-teal-600 flex-shrink-0" fill="none" viewBox="0 0 24 24" strokeWidth={2} stroke="currentColor">
-                            <path strokeLinecap="round" strokeLinejoin="round" d="M12 6v6h4.5m4.5 0a9 9 0 11-18 0 9 9 0 0118 0z" />
-                          </svg>
-                          <span className="text-sm font-medium text-gray-700">
-                            {formatShift(apt.shift)}
-                          </span>
-                        </div>
-
-                        <div className="flex items-center gap-2">
-                          <div className={`w-2 h-2 rounded-full ${getStatusDot(apt.status)}`}></div>
-                          <span className="text-xs text-gray-600">
-                            {apt.pet_ids.length} pet • {apt.service_ids.length} dịch vụ
-                          </span>
-                        </div>
+                      <div className="flex items-center gap-2">
+                        <div className={`w-2.5 h-2.5 rounded-full ${getStatusDot(apt.status)}`}></div>
+                        <span className="text-xs text-gray-600">
+                          {apt.pet_ids.length} pet • {apt.service_ids.length} dịch vụ
+                        </span>
                       </div>
-
-                      {/* Today badge */}
-                      {today && (
-                        <div className="mt-3 pt-3 border-t border-gray-300">
-                          <span className="inline-block px-2 py-1 bg-orange-500 text-white text-xs font-bold rounded-full">
-                            HÔM NAY
-                          </span>
-                        </div>
-                      )}
-
-                      {/* Timeline connector */}
-                      {index < appointments.length - 1 && (
-                        <div className="absolute top-1/2 -right-4 w-4 h-0.5 bg-gray-300 hidden sm:block"></div>
-                      )}
                     </div>
-                  </Link>
-                );
-              })}
-            </div>
+
+                    {/* Today badge */}
+                    {today && (
+                      <div className="mt-3 pt-3 border-t border-gray-300">
+                        <span className="inline-block px-3 py-1 bg-orange-500 text-white text-xs font-bold rounded-full">
+                          HÔM NAY
+                        </span>
+                      </div>
+                    )}
+                  </div>
+                </Link>
+              );
+            })}
           </div>
-        )}
+        </div>
 
         {/* Quick stats */}
-        <div className="mt-5 pt-5 border-t border-gray-200 flex gap-6 text-sm">
+        <div className="mt-6 pt-5 border-t border-gray-200 flex gap-6 text-sm">
           <div className="flex items-center gap-2">
             <div className="w-3 h-3 bg-yellow-500 rounded-full"></div>
             <span className="text-gray-600">
@@ -434,7 +246,6 @@ const AppointmentTimeline = memo(function AppointmentTimeline() {
     </section>
   );
 });
->>>>>>> Stashed changes
 
 // Tách Chat widget và button thành component riêng để tránh re-render
 const ChatWidget = memo(function ChatWidget({
@@ -458,10 +269,15 @@ const ChatWidget = memo(function ChatWidget({
       {/* Chat Button */}
       <button
         onClick={() => setShowChat(true)}
-        className={`fixed bottom-4 right-4 w-14 h-14 sm:w-16 sm:h-16 sm:bottom-6 sm:right-6 bg-gradient-to-br from-teal-600 to-cyan-400 rounded-full shadow-lg flex items-center justify-center text-xl sm:text-2xl hover:scale-110 transition-all duration-200 z-40 hover:shadow-xl ${showChat ? 'opacity-0 pointer-events-none' : 'opacity-100'}`}
+        className={`fixed bottom-4 right-4 w-14 h-14 sm:w-16 sm:h-16 sm:bottom-6 sm:right-6 bg-gradient-to-br from-teal-600 to-cyan-400 rounded-full shadow-lg flex items-center justify-center text-xl sm:text-2xl hover:scale-110 transition-all duration-200 z-40 hover:shadow-xl group ${showChat ? 'opacity-0 pointer-events-none' : 'opacity-100'}`}
         aria-label="Mở chat"
       >
-        💬
+        <span className="group-hover:hidden">
+          <img src="/sampleimg/AiCat-static.gif" alt="Chat Icon" className="w-full h-full object-cover" />
+        </span>
+        <span className="hidden group-hover:inline">
+          <img src="/sampleimg/AiCat.gif" alt="Chat Icon" className="w-full h-full object-cover" />
+        </span>
       </button>
     </>
   );
@@ -486,8 +302,8 @@ const PetRegistrationBanner = memo(function PetRegistrationBanner() {
             <p className="text-cyan-50 text-lg mb-6">
               Đăng ký hồ sơ để theo dõi sức khỏe và chăm sóc thú cưng của bạn tốt hơn
             </p>
-            <Link href="/user/register-pet">
-              <button className="bg-white text-teal-700 px-8 py-4 rounded-full font-semibold hover:bg-teal-50 transition-all duration-300 shadow-md hover:shadow-lg hover:scale-105 focus:outline-none focus:ring-2 focus:ring-white focus:ring-offset-2 focus:ring-offset-teal-600">
+            <Link href="/user/pet/new">
+              <button className="bg-white text-teal-700 px-8 py-4 rounded-full font-semibold hover:bg-teal-50 transition-all duration-300 shadow-md hover:shadow-lg hover:scale-101 focus:outline-none focus:ring-2 focus:ring-white focus:ring-offset-2 focus:ring-offset-teal-600">
                 Đăng ký ngay →
               </button>
             </Link>
@@ -598,7 +414,8 @@ const QuickActions = memo(function QuickActions() {
       title: 'Quản lí hồ sơ Pet',
       description: 'Thông tin, sức khỏe, lịch sử khám',
       icon: '',
-      image: 'https://images.unsplash.com/photo-1450778869180-41d0601e046e?w=400&h=200&fit=crop'
+      image: 'https://images.unsplash.com/photo-1450778869180-41d0601e046e?w=400&h=200&fit=crop',
+      href: '/user/pet/list'
     },
     {
       id: 2,
@@ -606,15 +423,17 @@ const QuickActions = memo(function QuickActions() {
       description: 'Đặt hẹn với bác sĩ thú y',
       icon: '',
       color: 'from-teal-600 to-cyan-600',
-      image: 'https://images.unsplash.com/photo-1503256207526-0d5d80fa2f47?w=800&auto=format&fit=crop&q=60&ixlib=rb-4.1.0&ixid=M3wxMjA3fDB8MHxzZWFyY2h8M3x8ZG9nfGVufDB8fDB8fHww'
+      image: 'https://images.unsplash.com/photo-1503256207526-0d5d80fa2f47?w=800&auto=format&fit=crop&q=60&ixlib=rb-4.1.0&ixid=M3wxMjA3fDB8MHxzZWFyY2h8M3x8ZG9nfGVufDB8fDB8fHww',
+      href: '/user/appointments/booking'
     },
     {
       id: 3,
-      title: 'Pet Hotel & Services',
-      description: 'Dịch vụ ký gửi và chăm sóc',
+      title: 'Bạn & Cộng đồng',
+      description: 'Kết nối với các chủ pet và bác sĩ',
       icon: '',
       color: 'from-cyan-600 to-teal-600',
-      image: 'https://images.unsplash.com/photo-1561037404-61cd46aa615b?w=800&auto=format&fit=crop&q=60&ixlib=rb-4.1.0&ixid=M3wxMjA3fDB8MHxzZWFyY2h8N3x8ZG9nfGVufDB8fDB8fHww'
+      image: 'https://images.unsplash.com/photo-1561037404-61cd46aa615b?w=800&auto=format&fit=crop&q=60&ixlib=rb-4.1.0&ixid=M3wxMjA3fDB8MHxzZWFyY2h8N3x8ZG9nfGVufDB8fDB8fHww',
+      href: '/user/community'
     }
   ], []);
 
@@ -728,15 +547,12 @@ export default function PetCareApp() {
     <div className="max-w-6xl mx-auto p-12">
       {/* Header */}
       <h1 className="text-5xl font-extrabold mb-12 text-teal-800 tracking-tight whitespace-nowrap">
-        Community
+        Trang chính
       </h1>
 
-<<<<<<< Updated upstream
-=======
-      {/* Timeline Lịch Hẹn với Calendar */}
+      {/* Timeline Lịch Hẹn - Simplified */}
       <AppointmentTimeline />
 
->>>>>>> Stashed changes
       {/* Pet Registration Banner - Chỉ hiện khi chưa có thú cưng */}
       {(!petsLoading && !hasPets) && <PetRegistrationBanner />}
 

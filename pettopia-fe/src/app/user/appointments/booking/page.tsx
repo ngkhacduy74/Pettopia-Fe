@@ -1,46 +1,21 @@
 'use client'
 
 import { useState, useEffect } from 'react';
+import { useRouter } from 'next/navigation';
+import {
+  getClinics,
+  getServicesByClinic,
+  getShiftsByClinic,
+  getPetsByOwner,
+  bookAppointment,
+  type Clinic,
+  type Service,
+  type Shift,
+  type PetDetailResponse,
+} from '@/services/petcare/petService';
 
-type Address = { city: string; district: string; ward: string; detail: string };
-type Clinic = {
-  _id: string;
-  id: string;
-  clinic_name: string;
-  address: Address;
-  phone: { phone_number: string; verified: boolean };
-  email: { email_address: string; verified: boolean };
-  license_number: string;
-  is_active: boolean;
-};
-type Service = {
-  id: string;
-  name: string;
-  price: number;
-  duration: number;
-  description?: string;
-  is_active?: boolean;
-};
-type Shift = {
-  id: string;
-  shift: string;
-  start_time: string;
-  end_time: string;
-  max_slot: number;
-  is_active: boolean;
-};
-type Pet = { id: string; name: string; species: string; breed: string; avatar: string };
+type Pet = PetDetailResponse;
 type PetServiceMap = Record<string, string[]>;
-
-const API_BASE_URL = 'http://localhost:3000/api/v1';
-
-const getAuthHeaders = () => {
-  const token = localStorage.getItem('authToken');
-  return {
-    'Content-Type': 'application/json',
-    ...(token && { 'token': token }),
-  };
-};
 
 const parseJwt = (token: string | null) => {
   if (!token) return null;
@@ -54,6 +29,7 @@ const parseJwt = (token: string | null) => {
 };
 
 export default function AppointmentBooking() {
+  const router = useRouter();
   const [currentStep, setCurrentStep] = useState(1);
   const [selectedClinic, setSelectedClinic] = useState('');
   const [selectedCity, setSelectedCity] = useState('all');
@@ -62,7 +38,7 @@ export default function AppointmentBooking() {
   const [selectedServices, setSelectedServices] = useState<string[]>([]);
   const [petServiceMap, setPetServiceMap] = useState<PetServiceMap>({});
   const [showSuccess, setShowSuccess] = useState(false);
-  const [isSubmitting, setIsSubmitting] = useState(false); // ✅ THÊM DÒNG NÀY
+  const [isSubmitting, setIsSubmitting] = useState(false);
 
   const [clinics, setClinics] = useState<Clinic[]>([]);
   const [services, setServices] = useState<Service[]>([]);
@@ -75,106 +51,72 @@ export default function AppointmentBooking() {
   const [petsLoading, setPetsLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
 
+  // Load clinics
   useEffect(() => {
-    const fetchClinics = async () => {
+    const loadClinics = async () => {
       try {
         setLoading(true);
-        const res = await fetch(`${API_BASE_URL}/partner/clinic?page=1&limit=100`, {
-          headers: getAuthHeaders(),
-        });
-        if (!res.ok) throw new Error('Không thể tải phòng khám');
-        const result = await res.json();
-        if (result.status === 'success') {
-          setClinics(result.data.items || result.data || []);
-        }
+        const data = await getClinics();
+        setClinics(data);
       } catch (err) {
         setError('Không tải được danh sách phòng khám');
+        console.error('Error loading clinics:', err);
       } finally {
         setLoading(false);
       }
     };
-    fetchClinics();
+    loadClinics();
   }, []);
 
+  // Load services khi chọn clinic
   useEffect(() => {
     if (!selectedClinic) {
       setServices([]);
       return;
     }
 
-    const fetchServices = async () => {
+    const loadServices = async () => {
       try {
         setServicesLoading(true);
-        const res = await fetch(`${API_BASE_URL}/partner/service/${selectedClinic}`, {
-          headers: getAuthHeaders(),
-        });
-        if (!res.ok) throw new Error('Không tải được dịch vụ');
-        const result = await res.json();
-
-        if (result.status === 'success' && result.data?.items) {
-          const activeServices: Service[] = result.data.items
-            .filter((s: any) => s.is_active)
-            .map((s: any) => ({
-              id: s.id,
-              name: s.name,
-              price: s.price,
-              duration: s.duration,
-              description: s.description,
-            }));
-          setServices(activeServices);
-        }
+        const data = await getServicesByClinic(selectedClinic);
+        setServices(data);
       } catch (err) {
-        console.error(err);
+        console.error('Error loading services:', err);
+        setServices([]);
       } finally {
         setServicesLoading(false);
       }
     };
-    fetchServices();
+    loadServices();
   }, [selectedClinic]);
 
+  // Load shifts khi chọn clinic
   useEffect(() => {
     if (!selectedClinic) {
       setShifts([]);
       return;
     }
 
-    const fetchShifts = async () => {
+    const loadShifts = async () => {
       try {
         setShiftsLoading(true);
-        const res = await fetch(`${API_BASE_URL}/partner/clinic/shift/${selectedClinic}`, {
-          headers: getAuthHeaders(),
-        });
-        if (!res.ok) throw new Error('Không tải được ca làm việc');
-        const result = await res.json();
-
-        if (result.status === 'success') {
-          const activeShifts: Shift[] = result.data
-            .filter((s: any) => s.is_active)
-            .map((s: any) => ({
-              id: s.id,
-              shift: s.shift,
-              start_time: s.start_time,
-              end_time: s.end_time,
-              max_slot: s.max_slot,
-              is_active: s.is_active,
-            }));
-          setShifts(activeShifts);
-        }
+        const data = await getShiftsByClinic(selectedClinic);
+        setShifts(data);
       } catch (err) {
-        console.error('Lỗi khi tải ca làm việc:', err);
+        console.error('Error loading shifts:', err);
         setShifts([]);
       } finally {
         setShiftsLoading(false);
       }
     };
-    fetchShifts();
+    loadShifts();
   }, [selectedClinic]);
 
+  // Load pets
   useEffect(() => {
-    const fetchPets = async () => {
+    const loadPets = async () => {
       try {
         setPetsLoading(true);
-
         const token = localStorage.getItem('authToken');
         let userId = localStorage.getItem('userId');
 
@@ -187,45 +129,24 @@ export default function AppointmentBooking() {
           }
         }
 
-        if (!userId) {
-          throw new Error('Không thể lấy userId');
-        }
+        if (!userId) throw new Error('Không thể lấy userId');
 
-        const res = await fetch(`${API_BASE_URL}/pet/owner/${userId}`, {
-          headers: getAuthHeaders(),
-        });
-
-        if (res.ok) {
-          const result = await res.json();
-          const petsData = Array.isArray(result.data) ? result.data : Array.isArray(result) ? result : [];
-
-          const formattedPets: Pet[] = petsData.map((p: any) => ({
-            id: p.id || p._id,
-            name: p.name,
-            species: p.species || p.type || 'Chưa rõ',
-            breed: p.breed || 'Chưa rõ giống',
-            avatar: p.avatar_url || p.imageUrl || p.image || p.photo || '/sampleimg/default-pet.jpg',
-          }));
-
-          setPets(formattedPets);
-          return;
-        }
+        const data = await getPetsByOwner(userId);
+        setPets(data);
       } catch (err) {
-        console.log('Lỗi khi tải API pets, sử dụng dữ liệu mẫu:', err);
+        console.log('Error loading pets:', err);
+        setPets([]);
+      } finally {
+        setPetsLoading(false);
       }
-
-      setPets([
-        { id: '1', name: 'Milo', species: 'Chó', breed: 'Golden Retriever', avatar: '/sampleimg/default-pet.jpg' },
-        { id: '2', name: 'Luna', species: 'Mèo', breed: 'Ba Tư', avatar: '/sampleimg/default-pet.jpg' },
-      ]);
     };
 
-    fetchPets().finally(() => setPetsLoading(false));
+    loadPets();
   }, []);
 
   const selectedClinicInfo = clinics.find(c => c.id === selectedClinic);
 
-  const formatAddress = (address: Address) =>
+  const formatAddress = (address: any) =>
     `${address.detail}, ${address.ward}, ${address.district}, ${address.city}`;
 
   const formatDate = (date: string) => {
@@ -315,37 +236,23 @@ export default function AppointmentBooking() {
     };
 
     try {
-      setIsSubmitting(true); // ✅ BẬT LOADING
-      const res = await fetch(`${API_BASE_URL}/healthcare/appointment`, {
-        method: 'POST',
-        headers: getAuthHeaders(),
-        body: JSON.stringify(payload),
-      });
-
-      if (res.ok) {
-        const result = await res.json();
-        setShowSuccess(true);
-        setTimeout(() => {
-          setShowSuccess(false);
-          setCurrentStep(1);
-          setSelectedClinic('');
-          setSelectedDate('');
-          setSelectedShift('');
-          setSelectedServices([]);
-          setPetServiceMap({});
-          setIsSubmitting(false); // ✅ TẮT LOADING
-        }, 3000);
-      } else {
-        const errorData = await res.json().catch(() => ({}));
-        const errorMsg = errorData?.message || `Đặt lịch thất bại (${res.status})`;
-        alert(errorMsg);
-        console.error('Appointment booking error:', errorData);
-        setIsSubmitting(false); // ✅ TẮT LOADING KHI LỖI
-      }
+      setIsSubmitting(true);
+      await bookAppointment(payload);
+      setShowSuccess(true);
+      setTimeout(() => {
+        setShowSuccess(false);
+        setCurrentStep(1);
+        setSelectedClinic('');
+        setSelectedDate('');
+        setSelectedShift('');
+        setSelectedServices([]);
+        setPetServiceMap({});
+        setIsSubmitting(false);
+      }, 3000);
     } catch (err) {
-      alert('Lỗi kết nối. Vui lòng kiểm tra mạng!');
+      alert('Đặt lịch thất bại. Vui lòng thử lại!');
       console.error('Submit error:', err);
-      setIsSubmitting(false); // ✅ TẮT LOADING KHI LỖI
+      setIsSubmitting(false);
     }
   };
 
@@ -539,7 +446,11 @@ export default function AppointmentBooking() {
                               onClick={() => togglePetService(pet.id, serviceId)}
                               className={`p-4 rounded-xl border-2 cursor-pointer flex items-center gap-3 transition-all ${petServiceMap[pet.id]?.includes(serviceId) ? 'border-teal-600 bg-teal-50' : 'border-gray-200 hover:border-teal-400'}`}
                             >
-                              <img src={pet.avatar} alt={pet.name} className="w-12 h-12 rounded-full object-cover flex-shrink-0" />
+                              <img
+                                src={pet.avatar_url || '/sampleimg/default-pet.jpg'}
+                                alt={pet.name}
+                                className="w-12 h-12 rounded-full object-cover flex-shrink-0"
+                              />
                               <div className="flex-1 min-w-0">
                                 <h4 className="font-bold text-base truncate">{pet.name}</h4>
                                 <p className="text-sm text-gray-600 truncate">{pet.species} • {pet.breed}</p>

@@ -1,6 +1,7 @@
 'use client'
 import React, { useState, useEffect } from 'react';
 import { useRouter } from 'next/navigation';
+import { communicationService } from '@/services/communication/communicationService';
 
 const API_BASE_URL = process.env.NEXT_PUBLIC_API_URL || 'http://localhost:3000/api/v1';
 
@@ -85,6 +86,9 @@ export default function ManagePostsPage() {
     }
     if (id) {
       setUserId(id);
+      if (token) {
+        communicationService.setToken(token);
+      }
       fetchPosts(id);
     }
   }, []);
@@ -92,16 +96,8 @@ export default function ManagePostsPage() {
   const fetchPosts = async (uid: string) => {
     try {
       setLoading(true);
-      const apiUrl = `${API_BASE_URL}/communication/user/${uid}`;
-      const response = await fetch(apiUrl, {
-        headers: { 'Accept': 'application/json' },
-      });
-      if (!response.ok) {
-        throw new Error(`Không thể tải danh sách bài viết (HTTP ${response.status})`);
-      }
-      const data = await response.json();
-      const postsData = Array.isArray(data) ? data : [];
-      setPosts(postsData);
+      const data = await communicationService.getUserPosts(uid);
+      setPosts(Array.isArray(data) ? data : []);
       setError(null);
     } catch (err) {
       setPosts([]);
@@ -179,11 +175,7 @@ export default function ManagePostsPage() {
     if (!postToDelete) return;
     setIsDeleting(true);
     try {
-      const response = await fetch(`${API_BASE_URL}/communication/posts/${postToDelete.post_id}`, {
-        method: 'DELETE',
-        headers: { 'Content-Type': 'application/json' },
-      });
-      if (!response.ok) throw new Error('Failed to delete post');
+      await communicationService.deletePost(postToDelete.post_id);
       setPosts(prev => prev.filter(post => post.post_id !== postToDelete.post_id));
       setDeleteModalOpen(false);
       setPostToDelete(null);
@@ -203,12 +195,8 @@ export default function ManagePostsPage() {
 
   const handleToggleVisibility = async (post: Post) => {
     try {
-      const endpoint = post.isHidden ? 'unhide' : 'hide';
-      const response = await fetch(`${API_BASE_URL}/communication/posts/${post.post_id}/${endpoint}`, {
-        method: 'PATCH',
-        headers: { 'Content-Type': 'application/json' },
-      });
-      if (!response.ok) throw new Error(`Failed to ${endpoint} post`);
+      const endpoint = post.isHidden ? 'unhidePost' : 'hidePost';
+      await communicationService[endpoint](post.post_id);
       if (userId) fetchPosts(userId);
     } catch (error: any) {
       console.error('Toggle visibility error:', error);
@@ -596,7 +584,7 @@ export default function ManagePostsPage() {
               <div className="flex items-center gap-3">
                 <div className="w-12 h-12 bg-white/20 rounded-full flex items-center justify-center flex-shrink-0">
                   <svg className="w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                    <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 9v2m0 4h.01m-6.938 4h13.856c1.54 0 2.502-1.667 1.732-3L13.732 4c-.77-1.333-2.694-1.333-3.464 0L3.34 16c-.77 1.333.192 3 1.732 3z" />
+                    <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 9v2m0 4h.01m-6.938 4h13.856c1.54 0 2.502-1.667 1.732-3L13.732 4c-.77-1.333-2.694-1.333-3.464 0L3.34 16c-.77 1.333.192 3 1.732 3zM11 13a1 1 0 11-2 0 1 1 0 012 0zm-1-8a1 1 0 00-1 1v3a1 1 0 002 0V6a1 1 0 00-1-1z" clipRule="evenodd" />
                   </svg>
                 </div>
                 <div>
