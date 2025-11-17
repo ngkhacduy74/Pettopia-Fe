@@ -9,23 +9,28 @@ interface RequestTableProps {
 }
 
 export default function RequestTable({ title }: RequestTableProps) {
-  const [selectedForm, setSelectedForm] = useState<any | null>(null); // Thay đổi kiểu để phù hợp với dữ liệu mới
+  const [selectedForm, setSelectedForm] = useState<any | null>(null);
   const [dropdownRow, setDropdownRow] = useState<number | null>(null);
   const [forms, setForms] = useState<any[]>([]);
   const [currentPage, setCurrentPage] = useState(1);
   const [totalPages, setTotalPages] = useState(1);
   const [isLoading, setIsLoading] = useState(true);
   const [limit] = useState(10);
+  
+  // Filter states
   const [filterRole, setFilterRole] = useState('all');
-  // NOTE: trạng thái modal edit and editable data (mới thêm, chỉ dùng bên trong modal)
+  const [filterStatus, setFilterStatus] = useState('all');
+  const [searchTerm, setSearchTerm] = useState('');
+  const [minRewardPoint, setMinRewardPoint] = useState('');
+  const [maxRewardPoint, setMaxRewardPoint] = useState('');
+  
   const [isEditing, setIsEditing] = useState(false);
   const [editableData, setEditableData] = useState<any | null>(null);
   const [showRegisterModal, setShowRegisterModal] = useState(false);
 
-
   useEffect(() => {
     fetchForms();
-  }, [currentPage, filterRole]);
+  }, [currentPage]);
 
   const fetchForms = async () => {
     try {
@@ -40,14 +45,42 @@ export default function RequestTable({ title }: RequestTableProps) {
     }
   };
 
+  // Enhanced filtering logic
   const filteredForms = forms.filter(form => {
-    const matchesFilter = filterRole === 'all' || form.role.some((r: string) => r.toLowerCase() === filterRole.toLowerCase());
-    return matchesFilter;
+    // Role filter
+    const matchesRole = filterRole === 'all' || form.role.some((r: string) => r.toLowerCase() === filterRole.toLowerCase());
+    
+    // Status filter
+    const matchesStatus = filterStatus === 'all' || 
+      (filterStatus === 'active' && form.is_active) ||
+      (filterStatus === 'inactive' && !form.is_active);
+    
+    // Search filter (name, username, email, phone)
+    const matchesSearch = searchTerm === '' || 
+      form.fullname?.toLowerCase().includes(searchTerm.toLowerCase()) ||
+      form.username?.toLowerCase().includes(searchTerm.toLowerCase()) ||
+      form.email?.email_address?.toLowerCase().includes(searchTerm.toLowerCase()) ||
+      form.phone?.phone_number?.includes(searchTerm);
+    
+    // Reward point filter
+    const rewardPoint = form.reward_point || 0;
+    const matchesMinReward = minRewardPoint === '' || rewardPoint >= Number(minRewardPoint);
+    const matchesMaxReward = maxRewardPoint === '' || rewardPoint <= Number(maxRewardPoint);
+    
+    return matchesRole && matchesStatus && matchesSearch && matchesMinReward && matchesMaxReward;
   });
+
+  // Reset all filters
+  const handleResetFilters = () => {
+    setFilterRole('all');
+    setFilterStatus('all');
+    setSearchTerm('');
+    setMinRewardPoint('');
+    setMaxRewardPoint('');
+  };
 
   const openDetailPage = (form: any) => {
     setSelectedForm(form);
-    // NOTE: khởi tạo editableData khi mở modal
     setEditableData(JSON.parse(JSON.stringify(form)));
     setIsEditing(false);
   };
@@ -62,12 +95,10 @@ export default function RequestTable({ title }: RequestTableProps) {
     setDropdownRow(dropdownRow === index ? null : index);
   };
 
-
   const handlePageChange = (newPage: number) => {
     setCurrentPage(newPage);
   };
 
-  // NOTE: modal edit handlers (chỉ ảnh hưởng modal, không chạm các phần khác)
   const handleInputChange = (field: string, value: any, nestedField?: string) => {
     if (!editableData) return;
     if (nestedField) {
@@ -85,11 +116,9 @@ export default function RequestTable({ title }: RequestTableProps) {
 
   const handleSaveEdit = () => {
     if (!editableData) return;
-    // cập nhật local list để bảng phản ánh luôn (vẫn giữ nguyên logic gốc, bạn có thể gọi API ở đây)
     setForms(prev => prev.map(f => (f.id === editableData.id ? editableData : f)));
     setSelectedForm(editableData);
     setIsEditing(false);
-    // NOTE: nếu cần, gọi API update tại đây
     console.log('Saved (local):', editableData);
   };
 
@@ -98,17 +127,15 @@ export default function RequestTable({ title }: RequestTableProps) {
     setEditableData(selectedForm ? JSON.parse(JSON.stringify(selectedForm)) : null);
   };
 
-  // --- RENDER ---
   return (
     <div className="min-h-screen">
-      <div className="max-w-7xl mx-auto px-4 sm:px-6 ">
+      <div className="max-w-7xl mx-auto px-4 sm:px-6">
         {/* Header Card */}
         <div className="bg-white rounded-xl shadow-sm border border-gray-200 mb-6">
           <div className="p-6">
             <div className="flex flex-col md:flex-row md:items-center md:justify-between">
               <div>
-                {/* NOTE: GIỮ NGUYÊN TITLE VÀ MÀU SẮC */}
-                <h1 className="text-3xl font-bold bg-gradient-to-r from-teal-500 to-teal-600 bg-clip-text text-transparent">{title}</h1>
+                <h1 className="text-3xl font-bold text-gray-900">{title}</h1>
                 <p className="text-gray-600 mt-2">Quản lý thông tin khách hàng</p>
               </div>
               <div className="mt-4 md:mt-0">
@@ -121,24 +148,100 @@ export default function RequestTable({ title }: RequestTableProps) {
                   </svg>
                   <span>Thêm mới</span>
                 </button>
-
               </div>
             </div>
 
-            {/* Filter */}
-            <div className="mt-6 flex flex-col sm:flex-row gap-4">
-              <select
-                className="px-4 py-2.5 border border-gray-300 rounded-lg focus:ring-2 focus:ring-indigo-500 focus:border-transparent transition"
-                value={filterRole}
-                onChange={(e) => setFilterRole(e.target.value)}
-              >
-                <option value="all">Tất cả vai trò</option>
-                <option value="admin">Admin</option>
-                <option value="staff">Staff</option>
-                <option value="clinic">Clinic</option>
-                <option value="vet">Vet</option>
-                <option value="user">User</option>
-              </select>
+            {/* Enhanced Filters */}
+            <div className="mt-6 space-y-4">
+              {/* Search Bar */}
+              <div className="relative">
+                <div className="absolute inset-y-0 left-0 pl-3 flex items-center pointer-events-none">
+                  <svg className="h-5 w-5 text-gray-400" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                    <path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M21 21l-6-6m2-5a7 7 0 11-14 0 7 7 0 0114 0z" />
+                  </svg>
+                </div>
+                <input
+                  type="text"
+                  className="block w-full pl-10 pr-3 py-2.5 border border-gray-300 rounded-lg focus:ring-2 focus:ring-indigo-500 focus:border-transparent transition"
+                  placeholder="Tìm kiếm theo tên, username, email, số điện thoại..."
+                  value={searchTerm}
+                  onChange={(e) => setSearchTerm(e.target.value)}
+                />
+              </div>
+
+              {/* Filter Row */}
+              <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4">
+                {/* Role Filter */}
+                <div>
+                  <label className="block text-sm font-medium text-gray-700 mb-1">Vai trò</label>
+                  <select
+                    className="w-full px-4 py-2.5 border border-gray-300 rounded-lg focus:ring-2 focus:ring-indigo-500 focus:border-transparent transition"
+                    value={filterRole}
+                    onChange={(e) => setFilterRole(e.target.value)}
+                  >
+                    <option value="all">Tất cả vai trò</option>
+                    <option value="admin">Admin</option>
+                    <option value="staff">Staff</option>
+                    <option value="clinic">Clinic</option>
+                    <option value="vet">Vet</option>
+                    <option value="user">User</option>
+                  </select>
+                </div>
+
+                {/* Status Filter */}
+                <div>
+                  <label className="block text-sm font-medium text-gray-700 mb-1">Trạng thái</label>
+                  <select
+                    className="w-full px-4 py-2.5 border border-gray-300 rounded-lg focus:ring-2 focus:ring-indigo-500 focus:border-transparent transition"
+                    value={filterStatus}
+                    onChange={(e) => setFilterStatus(e.target.value)}
+                  >
+                    <option value="all">Tất cả</option>
+                    <option value="active">Đã kích hoạt</option>
+                    <option value="inactive">Đã bị đình chỉ</option>
+                  </select>
+                </div>
+
+                {/* Min Reward Points */}
+                <div>
+                  <label className="block text-sm font-medium text-gray-700 mb-1">Điểm tối thiểu</label>
+                  <input
+                    type="number"
+                    className="w-full px-4 py-2.5 border border-gray-300 rounded-lg focus:ring-2 focus:ring-indigo-500 focus:border-transparent transition"
+                    placeholder="0"
+                    value={minRewardPoint}
+                    onChange={(e) => setMinRewardPoint(e.target.value)}
+                  />
+                </div>
+
+                {/* Max Reward Points */}
+                <div>
+                  <label className="block text-sm font-medium text-gray-700 mb-1">Điểm tối đa</label>
+                  <input
+                    type="number"
+                    className="w-full px-4 py-2.5 border border-gray-300 rounded-lg focus:ring-2 focus:ring-indigo-500 focus:border-transparent transition"
+                    placeholder="1000"
+                    value={maxRewardPoint}
+                    onChange={(e) => setMaxRewardPoint(e.target.value)}
+                  />
+                </div>
+              </div>
+
+              {/* Filter Actions */}
+              <div className="flex items-center justify-between">
+                <div className="text-sm text-gray-600">
+                  Tìm thấy <span className="font-semibold text-indigo-600">{filteredForms.length}</span> kết quả
+                </div>
+                <button
+                  onClick={handleResetFilters}
+                  className="text-sm text-indigo-600 hover:text-indigo-800 font-medium flex items-center space-x-1"
+                >
+                  <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                    <path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M4 4v5h.582m15.356 2A8.001 8.001 0 004.582 9m0 0H9m11 11v-5h-.581m0 0a8.003 8.003 0 01-15.357-2m15.357 2H15" />
+                  </svg>
+                  <span>Đặt lại bộ lọc</span>
+                </button>
+              </div>
             </div>
           </div>
         </div>
@@ -156,7 +259,7 @@ export default function RequestTable({ title }: RequestTableProps) {
                   <path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M20 13V6a2 2 0 00-2-2H6a2 2 0 00-2 2v7m16 0v5a2 2 0 01-2 2H6a2 2 0 01-2-2v-5m16 0h-2.586a1 1 0 00-.707.293l-2.414 2.414a1 1 0 01-.707.293h-3.172a1 1 0 01-.707-.293l-2.414-2.414A1 1 0 006.586 13H4" />
                 </svg>
                 <p className="text-lg font-medium">Không tìm thấy kết quả</p>
-                <p className="text-sm mt-1">Thử điều chỉnh bộ lọc vai trò</p>
+                <p className="text-sm mt-1">Thử điều chỉnh bộ lọc của bạn</p>
               </div>
             ) : (
               <table className="min-w-full divide-y divide-gray-200">
@@ -167,11 +270,11 @@ export default function RequestTable({ title }: RequestTableProps) {
                     </th>
                     <th scope="col" className="px-6 py-4 text-left text-xs font-semibold text-gray-600 uppercase tracking-wider">
                       Liên hệ
-                    </th>                    
+                    </th>
                     <th scope="col" className="px-6 py-4 text-left text-xs font-semibold text-gray-600 uppercase tracking-wider">
                       Điểm uy tín
                     </th>
-                    <th scope="col" className="px-6 py-4 text-left text-xs font-semibold text-gray-600 uppercase tracking-wider w-64 max-w-xs">
+                    <th scope="col" className="px-6 py-4 text-left text-xs font-semibold text-gray-600 uppercase tracking-wider">
                       Trạng thái
                     </th>
                     <th scope="col" className="px-6 py-4 text-left text-xs font-semibold text-gray-600 uppercase tracking-wider">
@@ -218,13 +321,13 @@ export default function RequestTable({ title }: RequestTableProps) {
                       </td>
                       <td className="px-6 py-4">
                         <span
-                      className={`px-3 py-1 inline-flex text-xs leading-5 font-semibold rounded-full ${form.is_active
-                        ? 'bg-green-100 text-green-800'
-                        : 'bg-red-100 text-red-800'
-                        }`}
-                    >
-                      {form.is_active ? 'Đã kích hoạt' : 'Đã bị đình chỉ'}
-                    </span>
+                          className={`px-3 py-1 inline-flex text-xs leading-5 font-semibold rounded-full ${form.is_active
+                            ? 'bg-green-100 text-green-800'
+                            : 'bg-red-100 text-red-800'
+                          }`}
+                        >
+                          {form.is_active ? 'Đã kích hoạt' : 'Đã bị đình chỉ'}
+                        </span>
                       </td>
                       <td className="px-6 py-4">
                         <div className="flex flex-wrap gap-2">
@@ -232,7 +335,7 @@ export default function RequestTable({ title }: RequestTableProps) {
                             form.role.map((r: string, idx: number) => (
                               <span
                                 key={idx}
-                                className={`px-3 py-1 inline-flex text-xs leading-5 font-semibold rounded-full bg-green-100 text-green-800`}
+                                className="px-3 py-1 inline-flex text-xs leading-5 font-semibold rounded-full bg-blue-100 text-blue-800"
                               >
                                 {r}
                               </span>
@@ -242,7 +345,6 @@ export default function RequestTable({ title }: RequestTableProps) {
                           )}
                         </div>
                       </td>
-
                     </tr>
                   ))}
                 </tbody>
@@ -292,7 +394,7 @@ export default function RequestTable({ title }: RequestTableProps) {
                           className={`relative inline-flex items-center px-4 py-2 border text-sm font-medium transition-all ${currentPage === pageNumber
                             ? 'z-10 bg-indigo-600 border-indigo-600 text-white shadow-md'
                             : 'bg-white border-gray-300 text-gray-700 hover:bg-gray-50'
-                            }`}
+                          }`}
                         >
                           {pageNumber}
                         </button>
@@ -316,8 +418,7 @@ export default function RequestTable({ title }: RequestTableProps) {
         </div>
       </div>
 
-      {/* NOTE: replace full-page detail view with simple modal (only this part changed) */}
-      {/* NOTE: Updated modal with blur, click-outside close, editable fields */}
+      {/* Detail Modal */}
       {selectedForm && (
         <div
           className="fixed inset-0 bg-black/30 backdrop-blur-sm flex items-center justify-center z-50 animate-fadeIn"
@@ -326,7 +427,6 @@ export default function RequestTable({ title }: RequestTableProps) {
           }}
         >
           <div className="bg-white rounded-xl shadow-2xl w-full max-w-4xl max-h-[90vh] overflow-y-auto relative">
-            {/* Close Button */}
             <button
               onClick={closeDetailPage}
               className="absolute top-4 right-4 text-gray-500 hover:text-gray-800 transition"
@@ -336,7 +436,6 @@ export default function RequestTable({ title }: RequestTableProps) {
               </svg>
             </button>
 
-            {/* Modal content */}
             <div className="p-8 space-y-6">
               <div className="flex items-start justify-between">
                 <div>
@@ -357,16 +456,16 @@ export default function RequestTable({ title }: RequestTableProps) {
                       className={`px-4 py-2 rounded-lg text-sm font-bold inline-block ${selectedForm.is_active
                         ? 'bg-green-100 text-green-800'
                         : 'bg-red-100 text-red-800'
-                        }`}
+                      }`}
                     >
                       {selectedForm.is_active ? 'Đã kích hoạt' : 'Đã bị đình chỉ'}
                     </span>
                   ) : (
                     <select
                       className="border rounded px-3 py-2 text-sm"
-                      value={editableData.is_active ? 'active' : 'inactive'}
+                      value={editableData.is_active ? 'true' : 'false'}
                       onChange={(e) =>
-                        handleInputChange('is_active', e.target.value === 'active')
+                        handleInputChange('is_active', e.target.value === 'true')
                       }
                     >
                       <option value="true">Đã kích hoạt</option>
@@ -379,7 +478,6 @@ export default function RequestTable({ title }: RequestTableProps) {
               </div>
 
               <div className="grid grid-cols-2 gap-6">
-                {/* Username */}
                 <div>
                   <label className="block text-sm font-semibold text-gray-700 mb-1">Tên đăng nhập</label>
                   {!isEditing ? (
@@ -393,7 +491,6 @@ export default function RequestTable({ title }: RequestTableProps) {
                   )}
                 </div>
 
-                {/* Email */}
                 <div>
                   <label className="block text-sm font-semibold text-gray-700 mb-1">Email</label>
                   {!isEditing ? (
@@ -409,7 +506,6 @@ export default function RequestTable({ title }: RequestTableProps) {
                   )}
                 </div>
 
-                {/* Phone */}
                 <div>
                   <label className="block text-sm font-semibold text-gray-700 mb-1">Số điện thoại</label>
                   {!isEditing ? (
@@ -425,7 +521,6 @@ export default function RequestTable({ title }: RequestTableProps) {
                   )}
                 </div>
 
-                {/* Reward Point */}
                 <div>
                   <label className="block text-sm font-semibold text-gray-700 mb-1">Điểm uy tín</label>
                   {!isEditing ? (
@@ -442,7 +537,6 @@ export default function RequestTable({ title }: RequestTableProps) {
                   )}
                 </div>
 
-                {/* DOB */}
                 <div>
                   <label className="block text-sm font-semibold text-gray-700 mb-1">Ngày sinh</label>
                   {!isEditing ? (
@@ -467,8 +561,8 @@ export default function RequestTable({ title }: RequestTableProps) {
                   )}
                 </div>
 
-                {/* Address */}
                 <div>
+                  <label className="block text-sm font-semibold text-gray-700 mb-1">Địa chỉ</label>
                   {!isEditing ? (
                     <p className="text-gray-900">
                       {selectedForm.address
@@ -482,10 +576,8 @@ export default function RequestTable({ title }: RequestTableProps) {
                     />
                   )}
                 </div>
-
               </div>
 
-              {/* Action buttons bottom-right */}
               <div className="flex justify-end space-x-3 px-6 py-4 border-t border-gray-200 bg-gray-50 sticky bottom-0">
                 {!isEditing ? (
                   <button
@@ -516,34 +608,31 @@ export default function RequestTable({ title }: RequestTableProps) {
         </div>
       )}
 
-      {/* 🟢 Modal thêm người dùng mới */}
-      {
-        showRegisterModal && (
-          <div
-            className="fixed inset-0 bg-black/40 backdrop-blur-sm flex items-center justify-center z-50 animate-fadeIn"
-            onClick={(e) => {
-              if (e.target === e.currentTarget) setShowRegisterModal(false);
-            }}
-          >
-            <div className="bg-white rounded-xl shadow-2xl w-full max-w-3xl max-h-[90vh] overflow-y-auto relative">
-              {/* Nút đóng */}
-              <button
-                onClick={() => setShowRegisterModal(false)}
-                className="absolute top-4 right-4 text-gray-500 hover:text-gray-800 transition"
-              >
-                <svg className="w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                  <path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M6 18L18 6M6 6l12 12" />
-                </svg>
-              </button>
+      {/* Register Modal */}
+      {showRegisterModal && (
+        <div
+          className="fixed inset-0 bg-black/40 backdrop-blur-sm flex items-center justify-center z-50 animate-fadeIn"
+          onClick={(e) => {
+            if (e.target === e.currentTarget) setShowRegisterModal(false);
+          }}
+        >
+          <div className="bg-white rounded-xl shadow-2xl w-full max-w-3xl max-h-[90vh] overflow-y-auto relative">
+            <button
+              onClick={() => setShowRegisterModal(false)}
+              className="absolute top-4 right-4 text-gray-500 hover:text-gray-800 transition"
+            >
+              <svg className="w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M6 18L18 6M6 6l12 12" />
+              </svg>
+            </button>
 
-              <div className="p-8">
-                <h2 className="text-2xl font-bold text-gray-800 ">Thêm người dùng mới</h2>
-                <Register />
-              </div>
+            <div className="p-8">
+              <h2 className="text-2xl font-bold text-gray-800 mb-6">Thêm người dùng mới</h2>
+              <Register />
             </div>
           </div>
-        )
-      }
+        </div>
+      )}
     </div>
   );
 }
