@@ -3,6 +3,438 @@ import React, { useState, useEffect, useMemo, useCallback, memo } from 'react';
 import Chat from '@/components/Chat';
 import Link from "next/link";
 import PetCards from '@/components/NumberofPet';
+<<<<<<< Updated upstream
+=======
+import { getAppointments } from '@/services/petcare/petService';
+import type { Appointment, AppointmentsResponse } from '@/services/petcare/petService';
+import axios from 'axios';
+
+// Timeline Component with Calendar
+const AppointmentTimeline = memo(function AppointmentTimeline() {
+  const [appointments, setAppointments] = useState<Appointment[]>([]);
+  const [loading, setLoading] = useState(true);
+  const [showCalendar, setShowCalendar] = useState(false);
+  const [selectedDate, setSelectedDate] = useState(new Date());
+  const [currentMonth, setCurrentMonth] = useState(new Date());
+  const scrollRef = useRef<HTMLDivElement>(null);
+
+  useEffect(() => {
+    const fetchAppointments = async () => {
+      try {
+        setLoading(true);
+        const token = typeof window !== 'undefined' ? localStorage.getItem('authToken') : null;
+        if (token) axios.defaults.headers.common['Authorization'] = `Bearer ${token}`;
+        const response: AppointmentsResponse = await getAppointments({ page: 1, limit: 50 });
+        
+        // Lọc chỉ lấy lịch hẹn sắp tới (chưa qua và chưa hủy)
+        const upcoming = response.data
+          .filter(apt => {
+            const aptDate = new Date(apt.date);
+            const today = new Date();
+            today.setHours(0, 0, 0, 0);
+            return aptDate >= today && apt.status !== 'Cancelled';
+          })
+          .sort((a, b) => new Date(a.date).getTime() - new Date(b.date).getTime())
+          .slice(0, 10); // Lấy tối đa 10 lịch hẹn gần nhất
+        
+        setAppointments(upcoming);
+      } catch (err) {
+        console.error('Không thể tải lịch hẹn:', err);
+      } finally {
+        setLoading(false);
+      }
+    };
+    fetchAppointments();
+  }, []);
+
+  const formatShortDate = (dateStr: string) => {
+    const date = new Date(dateStr);
+    const day = date.getDate();
+    const month = date.getMonth() + 1;
+    const dayName = ['CN', 'T2', 'T3', 'T4', 'T5', 'T6', 'T7'][date.getDay()];
+    return { day, month, dayName };
+  };
+
+  const formatShift = (s: string) => ({ 
+    Morning: 'Sáng', 
+    Afternoon: 'Chiều', 
+    Evening: 'Tối' 
+  }[s] || s);
+
+  const getStatusColor = (s: string) => ({
+    Pending_Confirmation: 'bg-yellow-50 border-yellow-300',
+    Confirmed: 'bg-emerald-50 border-emerald-300',
+    Completed: 'bg-blue-50 border-blue-300'
+  }[s] || 'bg-gray-50 border-gray-300');
+
+  const getStatusDot = (s: string) => ({
+    Pending_Confirmation: 'bg-yellow-500',
+    Confirmed: 'bg-emerald-500',
+    Completed: 'bg-blue-500'
+  }[s] || 'bg-gray-500');
+
+  const scrollTimeline = (direction: 'left' | 'right') => {
+    if (scrollRef.current) {
+      const scrollAmount = 250;
+      scrollRef.current.scrollBy({
+        left: direction === 'left' ? -scrollAmount : scrollAmount,
+        behavior: 'smooth'
+      });
+    }
+  };
+
+  const isToday = (dateStr: string) => {
+    const date = new Date(dateStr);
+    const today = new Date();
+    return date.toDateString() === today.toDateString();
+  };
+
+  const isSameDay = (date1: Date, date2: Date) => {
+    return date1.getDate() === date2.getDate() &&
+           date1.getMonth() === date2.getMonth() &&
+           date1.getFullYear() === date2.getFullYear();
+  };
+
+  const hasAppointmentOnDate = (date: Date) => {
+    return appointments.some(apt => isSameDay(new Date(apt.date), date));
+  };
+
+  const getAppointmentsForDate = (date: Date) => {
+    return appointments.filter(apt => isSameDay(new Date(apt.date), date));
+  };
+
+  // Calendar helpers
+  const getDaysInMonth = (date: Date) => {
+    const year = date.getFullYear();
+    const month = date.getMonth();
+    const firstDay = new Date(year, month, 1);
+    const lastDay = new Date(year, month + 1, 0);
+    const daysInMonth = lastDay.getDate();
+    const startingDayOfWeek = firstDay.getDay();
+    
+    const days = [];
+    // Add empty cells for days before month starts
+    for (let i = 0; i < startingDayOfWeek; i++) {
+      days.push(null);
+    }
+    // Add all days in month
+    for (let i = 1; i <= daysInMonth; i++) {
+      days.push(new Date(year, month, i));
+    }
+    return days;
+  };
+
+  const previousMonth = () => {
+    setCurrentMonth(new Date(currentMonth.getFullYear(), currentMonth.getMonth() - 1));
+  };
+
+  const nextMonth = () => {
+    setCurrentMonth(new Date(currentMonth.getFullYear(), currentMonth.getMonth() + 1));
+  };
+
+  const monthNames = ['Tháng 1', 'Tháng 2', 'Tháng 3', 'Tháng 4', 'Tháng 5', 'Tháng 6',
+                       'Tháng 7', 'Tháng 8', 'Tháng 9', 'Tháng 10', 'Tháng 11', 'Tháng 12'];
+  
+  const dayNames = ['CN', 'T2', 'T3', 'T4', 'T5', 'T6', 'T7'];
+
+  if (loading) {
+    return (
+      <div className="mb-8 bg-white rounded-2xl shadow-sm border border-gray-200 p-3">
+        <div className="flex items-center gap-2 mb-4">
+          <div className="w-6 h-6 bg-teal-100 rounded-lg animate-pulse"></div>
+          <div className="h-6 w-40 bg-gray-200 rounded animate-pulse"></div>
+        </div>
+        <div className="flex gap-3 overflow-hidden">
+          {[1, 2, 3, 4, 5].map(i => (
+            <div key={i} className="min-w-[140px] h-36 bg-gray-100 rounded-xl animate-pulse"></div>
+          ))}
+        </div>
+      </div>
+    );
+  }
+
+  if (appointments.length === 0) {
+    return null; // Không hiển thị nếu không có lịch hẹn
+  }
+
+  return (
+    <section className="mb-8" aria-labelledby="timeline-heading">
+      <div className="bg-white rounded-2xl shadow-sm border border-gray-200 p-6">
+        <div className="flex items-center justify-between mb-5">
+          <div className="flex items-center gap-2">
+            <div className="w-8 h-8 bg-gradient-to-br from-teal-500 to-cyan-500 rounded-lg flex items-center justify-center">
+              <svg className="w-5 h-5 text-white" fill="none" viewBox="0 0 24 24" strokeWidth={2} stroke="currentColor">
+                <path strokeLinecap="round" strokeLinejoin="round" d="M6.75 3v2.25M17.25 3v2.25M3 18.75V7.5a2.25 2.25 0 012.25-2.25h13.5A2.25 2.25 0 0121 7.5v11.25m-18 0A2.25 2.25 0 005.25 21h13.5A2.25 2.25 0 0021 18.75m-18 0v-7.5A2.25 2.25 0 015.25 9h13.5A2.25 2.25 0 0121 11.25v7.5" />
+              </svg>
+            </div>
+            <h2 id="timeline-heading" className="text-xl font-bold text-gray-900">
+              Lịch hẹn sắp tới <span className="text-teal-600">({appointments.length})</span>
+            </h2>
+          </div>
+          <div className="flex gap-2">
+            <button
+              onClick={() => setShowCalendar(!showCalendar)}
+              className={`px-4 py-2 rounded-lg font-medium text-sm transition-all ${
+                showCalendar 
+                  ? 'bg-teal-600 text-white' 
+                  : 'bg-gray-100 text-gray-700 hover:bg-gray-200'
+              }`}
+            >
+              <svg className="w-5 h-5 inline mr-2" fill="none" viewBox="0 0 24 24" strokeWidth={2} stroke="currentColor">
+                <path strokeLinecap="round" strokeLinejoin="round" d="M6.75 3v2.25M17.25 3v2.25M3 18.75V7.5a2.25 2.25 0 012.25-2.25h13.5A2.25 2.25 0 0121 7.5v11.25m-18 0A2.25 2.25 0 005.25 21h13.5A2.25 2.25 0 0021 18.75m-18 0v-7.5A2.25 2.25 0 015.25 9h13.5A2.25 2.25 0 0121 11.25v7.5" />
+              </svg>
+              Lịch
+            </button>
+            <Link href="/user/appointments/list">
+              <button className="text-teal-600 hover:text-teal-700 font-medium text-sm hover:underline transition-colors px-4 py-2">
+                Xem chi tiết →
+              </button>
+            </Link>
+          </div>
+        </div>
+
+        {/* Calendar View */}
+        {showCalendar && (
+          <div className="mb-6 p-5 bg-gradient-to-br from-gray-50 to-gray-100 rounded-xl border border-gray-200">
+            {/* Calendar Header */}
+            <div className="flex items-center justify-between mb-4">
+              <button
+                onClick={previousMonth}
+                className="p-2 hover:bg-white rounded-lg transition-colors"
+                aria-label="Tháng trước"
+              >
+                <svg className="w-5 h-5 text-gray-700" fill="none" viewBox="0 0 24 24" strokeWidth={2} stroke="currentColor">
+                  <path strokeLinecap="round" strokeLinejoin="round" d="M15.75 19.5L8.25 12l7.5-7.5" />
+                </svg>
+              </button>
+              <h3 className="text-lg font-bold text-gray-900">
+                {monthNames[currentMonth.getMonth()]} {currentMonth.getFullYear()}
+              </h3>
+              <button
+                onClick={nextMonth}
+                className="p-2 hover:bg-white rounded-lg transition-colors"
+                aria-label="Tháng sau"
+              >
+                <svg className="w-5 h-5 text-gray-700" fill="none" viewBox="0 0 24 24" strokeWidth={2} stroke="currentColor">
+                  <path strokeLinecap="round" strokeLinejoin="round" d="M8.25 4.5l7.5 7.5-7.5 7.5" />
+                </svg>
+              </button>
+            </div>
+
+            {/* Day names */}
+            <div className="grid grid-cols-7 gap-2 mb-2">
+              {dayNames.map(day => (
+                <div key={day} className="text-center text-xs font-semibold text-gray-600 py-2">
+                  {day}
+                </div>
+              ))}
+            </div>
+
+            {/* Calendar days */}
+            <div className="grid grid-cols-7 gap-2">
+              {getDaysInMonth(currentMonth).map((day, index) => {
+                if (!day) {
+                  return <div key={`empty-${index}`} className="aspect-square" />;
+                }
+                
+                const hasApt = hasAppointmentOnDate(day);
+                const isSelected = isSameDay(day, selectedDate);
+                const isCurrentDay = isSameDay(day, new Date());
+                const dayAppointments = getAppointmentsForDate(day);
+                
+                return (
+                  <button
+                    key={day.toISOString()}
+                    onClick={() => setSelectedDate(day)}
+                    className={`
+                      aspect-square rounded-lg p-2 text-sm font-medium transition-all relative
+                      ${isSelected ? 'bg-teal-600 text-white shadow-lg scale-105' : 'hover:bg-white'}
+                      ${isCurrentDay && !isSelected ? 'bg-orange-100 text-orange-900' : ''}
+                      ${!isSelected && !isCurrentDay ? 'text-gray-700' : ''}
+                    `}
+                  >
+                    <div className="relative">
+                      {day.getDate()}
+                      {hasApt && (
+                        <div className="absolute -bottom-1 left-1/2 -translate-x-1/2 flex gap-0.5">
+                          {dayAppointments.map((apt, i) => (
+                            <div
+                              key={i}
+                              className={`w-1.5 h-1.5 rounded-full ${
+                                isSelected ? 'bg-white' : getStatusDot(apt.status)
+                              }`}
+                            />
+                          ))}
+                        </div>
+                      )}
+                    </div>
+                  </button>
+                );
+              })}
+            </div>
+
+            {/* Selected date appointments */}
+            {getAppointmentsForDate(selectedDate).length > 0 && (
+              <div className="mt-4 pt-4 border-t border-gray-300">
+                <h4 className="font-semibold text-gray-900 mb-3">
+                  Lịch hẹn ngày {selectedDate.getDate()}/{selectedDate.getMonth() + 1}:
+                </h4>
+                <div className="space-y-2">
+                  {getAppointmentsForDate(selectedDate).map(apt => (
+                    <Link key={apt.id} href={`/user/appointments/${apt.id}`}>
+                      <div className={`p-3 rounded-lg border-2 ${getStatusColor(apt.status)} hover:shadow-md transition-all cursor-pointer`}>
+                        <div className="flex items-center justify-between">
+                          <div className="flex items-center gap-3">
+                            <div className={`w-3 h-3 rounded-full ${getStatusDot(apt.status)}`} />
+                            <div>
+                              <div className="font-semibold text-gray-900">{formatShift(apt.shift)}</div>
+                              <div className="text-xs text-gray-600">
+                                {apt.pet_ids.length} pet • {apt.service_ids.length} dịch vụ
+                              </div>
+                            </div>
+                          </div>
+                          <svg className="w-5 h-5 text-gray-400" fill="none" viewBox="0 0 24 24" strokeWidth={2} stroke="currentColor">
+                            <path strokeLinecap="round" strokeLinejoin="round" d="M8.25 4.5l7.5 7.5-7.5 7.5" />
+                          </svg>
+                        </div>
+                      </div>
+                    </Link>
+                  ))}
+                </div>
+              </div>
+            )}
+          </div>
+        )}
+
+        {/* Timeline View */}
+        {!showCalendar && (
+          <div className="relative group">
+            {/* Scroll buttons */}
+            {appointments.length > 4 && (
+              <>
+                <button
+                  onClick={() => scrollTimeline('left')}
+                  className="absolute left-0 top-1/2 -translate-y-1/2 z-10 w-10 h-10 bg-white hover:bg-gray-50 rounded-full shadow-lg flex items-center justify-center opacity-0 group-hover:opacity-100 transition-opacity border border-gray-200"
+                  aria-label="Cuộn trái"
+                >
+                  <svg className="w-5 h-5 text-gray-700" fill="none" viewBox="0 0 24 24" strokeWidth={2} stroke="currentColor">
+                    <path strokeLinecap="round" strokeLinejoin="round" d="M15.75 19.5L8.25 12l7.5-7.5" />
+                  </svg>
+                </button>
+                <button
+                  onClick={() => scrollTimeline('right')}
+                  className="absolute right-0 top-1/2 -translate-y-1/2 z-10 w-10 h-10 bg-white hover:bg-gray-50 rounded-full shadow-lg flex items-center justify-center opacity-0 group-hover:opacity-100 transition-opacity border border-gray-200"
+                  aria-label="Cuộn phải"
+                >
+                  <svg className="w-5 h-5 text-gray-700" fill="none" viewBox="0 0 24 24" strokeWidth={2} stroke="currentColor">
+                    <path strokeLinecap="round" strokeLinejoin="round" d="M8.25 4.5l7.5 7.5-7.5 7.5" />
+                  </svg>
+                </button>
+              </>
+            )}
+
+            {/* Timeline scroll container */}
+            <div 
+              ref={scrollRef}
+              className="flex gap-4 overflow-x-auto scrollbar-hide pb-2"
+              style={{ scrollbarWidth: 'none', msOverflowStyle: 'none' }}
+            >
+              {appointments.map((apt, index) => {
+                const { day, month, dayName } = formatShortDate(apt.date);
+                const today = isToday(apt.date);
+                
+                return (
+                  <Link key={apt.id} href={`/user/appointments/${apt.id}`}>
+                    <div 
+                      className={`
+                        min-w-[140px] p-5 rounded-xl border-2 cursor-pointer
+                        transition-all duration-300 hover:scale-105 hover:shadow-lg
+                        ${getStatusColor(apt.status)}
+                        ${today ? 'ring-2 ring-orange-400 ring-offset-2' : ''}
+                      `}
+                    >
+                      {/* Date display */}
+                      <div className="text-center mb-3">
+                        <div className="text-xs font-semibold text-gray-500 uppercase mb-1">
+                          {dayName}
+                        </div>
+                        <div className="text-3xl font-bold text-gray-900 leading-none">
+                          {day}
+                        </div>
+                        <div className="text-sm font-medium text-gray-600 mt-1">
+                          Tháng {month}
+                        </div>
+                      </div>
+
+                      {/* Divider */}
+                      <div className="w-full h-px bg-gray-300 my-3"></div>
+
+                      {/* Appointment info */}
+                      <div className="space-y-2">
+                        <div className="flex items-center gap-2">
+                          <svg className="w-4 h-4 text-teal-600 flex-shrink-0" fill="none" viewBox="0 0 24 24" strokeWidth={2} stroke="currentColor">
+                            <path strokeLinecap="round" strokeLinejoin="round" d="M12 6v6h4.5m4.5 0a9 9 0 11-18 0 9 9 0 0118 0z" />
+                          </svg>
+                          <span className="text-sm font-medium text-gray-700">
+                            {formatShift(apt.shift)}
+                          </span>
+                        </div>
+
+                        <div className="flex items-center gap-2">
+                          <div className={`w-2 h-2 rounded-full ${getStatusDot(apt.status)}`}></div>
+                          <span className="text-xs text-gray-600">
+                            {apt.pet_ids.length} pet • {apt.service_ids.length} dịch vụ
+                          </span>
+                        </div>
+                      </div>
+
+                      {/* Today badge */}
+                      {today && (
+                        <div className="mt-3 pt-3 border-t border-gray-300">
+                          <span className="inline-block px-2 py-1 bg-orange-500 text-white text-xs font-bold rounded-full">
+                            HÔM NAY
+                          </span>
+                        </div>
+                      )}
+
+                      {/* Timeline connector */}
+                      {index < appointments.length - 1 && (
+                        <div className="absolute top-1/2 -right-4 w-4 h-0.5 bg-gray-300 hidden sm:block"></div>
+                      )}
+                    </div>
+                  </Link>
+                );
+              })}
+            </div>
+          </div>
+        )}
+
+        {/* Quick stats */}
+        <div className="mt-5 pt-5 border-t border-gray-200 flex gap-6 text-sm">
+          <div className="flex items-center gap-2">
+            <div className="w-3 h-3 bg-yellow-500 rounded-full"></div>
+            <span className="text-gray-600">
+              {appointments.filter(a => a.status === 'Pending_Confirmation').length} chờ xác nhận
+            </span>
+          </div>
+          <div className="flex items-center gap-2">
+            <div className="w-3 h-3 bg-emerald-500 rounded-full"></div>
+            <span className="text-gray-600">
+              {appointments.filter(a => a.status === 'Confirmed').length} đã xác nhận
+            </span>
+          </div>
+        </div>
+      </div>
+
+      <style jsx>{`
+        .scrollbar-hide::-webkit-scrollbar {
+          display: none;
+        }
+      `}</style>
+    </section>
+  );
+});
+>>>>>>> Stashed changes
 
 // Tách Chat widget và button thành component riêng để tránh re-render
 const ChatWidget = memo(function ChatWidget({
@@ -299,6 +731,12 @@ export default function PetCareApp() {
         Community
       </h1>
 
+<<<<<<< Updated upstream
+=======
+      {/* Timeline Lịch Hẹn với Calendar */}
+      <AppointmentTimeline />
+
+>>>>>>> Stashed changes
       {/* Pet Registration Banner - Chỉ hiện khi chưa có thú cưng */}
       {(!petsLoading && !hasPets) && <PetRegistrationBanner />}
 

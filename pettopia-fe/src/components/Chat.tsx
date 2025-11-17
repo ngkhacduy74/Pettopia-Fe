@@ -24,7 +24,7 @@ const Chat = memo(function Chat({
   chatSuggestions
 }: ChatProps) {
   const [messages, setMessages] = useState<Message[]>([
-    { role: 'assistant', content: 'Chào bạn! Tôi có thể giúp gì?' }
+    { role: 'assistant', content: 'Meo? ngươi cần giúp gì đây?' }
   ]);
   const [chatMessage, setChatMessage] = useState('');
   const [isLoading, setIsLoading] = useState(false);
@@ -33,19 +33,19 @@ const Chat = memo(function Chat({
   const chatMessageRef = useRef('');
 
   const [userId] = useState<string>(() => {
-  try {
-    if (typeof window === 'undefined') return 'anonymous';
-    const key = 'pettopia_chat_userId';
-    let id = localStorage.getItem(key);
-    if (!id) {
-      id = crypto.randomUUID?.() ?? `uid-${Math.random().toString(36).slice(2, 10)}`;
-      localStorage.setItem(key, id);
+    try {
+      if (typeof window === 'undefined') return 'anonymous';
+      const key = 'pettopia_chat_userId';
+      let id = localStorage.getItem(key);
+      if (!id) {
+        id = crypto.randomUUID?.() ?? `uid-${Math.random().toString(36).slice(2, 10)}`;
+        localStorage.setItem(key, id);
+      }
+      return id;
+    } catch {
+      return 'anonymous';
     }
-    return id;
-  } catch {
-    return 'anonymous';
-  }
-});
+  });
 
   // Auto scroll to bottom
   useEffect(() => {
@@ -62,10 +62,10 @@ const Chat = memo(function Chat({
     if (!content || isLoading) return;
 
     const userMsg: Message = { role: 'user', content };
-    
+
     setMessages(prev => {
       const allMessages = [...prev, userMsg];
-      
+
       // Fetch API với messages đã được cập nhật
       setIsLoading(true);
       fetch('http://localhost:3000/api/v1/ai/gemini/chat', {
@@ -76,45 +76,45 @@ const Chat = memo(function Chat({
           messages: allMessages.map(m => ({ role: m.role, content: m.content }))
         })
       })
-      .then(async (res) => {
-        const data = await (res.headers.get('content-type')?.includes('application/json') ? res.json() : res.text());
-        let aiText = '';
+        .then(async (res) => {
+          const data = await (res.headers.get('content-type')?.includes('application/json') ? res.json() : res.text());
+          let aiText = '';
 
-        if (typeof data === 'string') {
-          aiText = data;
-          try {
-            const parsed = JSON.parse(data);
-            if (typeof parsed === 'string') aiText = parsed;
-            else if (parsed?.content) aiText = parsed.content;
-          } catch {}
-        } else if (data && typeof data === 'object') {
-          aiText =
-            data.content ||
-            data.reply ||
-            data.message ||
-            (data.messages?.[0]?.content) ||
-            (data.candidates?.[0]?.content?.parts?.[0]?.text) ||
-            (data.candidates?.[0]?.content?.text) ||
-            (data.choices?.[0]?.message?.content) ||
-            JSON.stringify(data);
-        }
+          if (typeof data === 'string') {
+            aiText = data;
+            try {
+              const parsed = JSON.parse(data);
+              if (typeof parsed === 'string') aiText = parsed;
+              else if (parsed?.content) aiText = parsed.content;
+            } catch { }
+          } else if (data && typeof data === 'object') {
+            aiText =
+              data.content ||
+              data.reply ||
+              data.message ||
+              (data.messages?.[0]?.content) ||
+              (data.candidates?.[0]?.content?.parts?.[0]?.text) ||
+              (data.candidates?.[0]?.content?.text) ||
+              (data.choices?.[0]?.message?.content) ||
+              JSON.stringify(data);
+          }
 
-        const t = String(aiText).trim();
-        if ((t.startsWith('"') && t.endsWith('"')) || (t.startsWith("'") && t.endsWith("'"))) {
-          try { aiText = JSON.parse(t); } catch {}
-        }
+          const t = String(aiText).trim();
+          if ((t.startsWith('"') && t.endsWith('"')) || (t.startsWith("'") && t.endsWith("'"))) {
+            try { aiText = JSON.parse(t); } catch { }
+          }
 
-        setMessages(prev => [...prev, { role: 'assistant', content: String(aiText) }]);
-        setIsLoading(false);
-      })
-      .catch(() => {
-        setMessages(prev => [...prev, { role: 'assistant', content: 'Lỗi: không thể kết nối tới API' }]);
-        setIsLoading(false);
-      });
+          setMessages(prev => [...prev, { role: 'assistant', content: String(aiText) }]);
+          setIsLoading(false);
+        })
+        .catch(() => {
+          setMessages(prev => [...prev, { role: 'assistant', content: 'Lỗi: không thể kết nối tới API' }]);
+          setIsLoading(false);
+        });
 
       return allMessages;
     });
-    
+
     setChatMessage('');
   }, [isLoading, userId]);
 
@@ -132,11 +132,9 @@ const Chat = memo(function Chat({
       {/* Header */}
       <div className="flex items-center justify-between p-3 sm:p-4 border-b border-teal-100 bg-gradient-to-r from-teal-500 to-cyan-600 rounded-t-2xl flex-shrink-0">
         <div className="flex items-center gap-3 min-w-0">
-          <div className="w-9 h-9 sm:w-10 sm:h-10 rounded-full bg-white/20 backdrop-blur-sm flex items-center justify-center text-lg sm:text-xl flex-shrink-0 shadow-md">
-            🐾
-          </div>
+
           <div className="min-w-0">
-            <h3 className="font-bold text-white text-sm sm:text-base truncate">Pet Care AI</h3>
+            <h3 className="font-bold text-white text-sm sm:text-base truncate">Trợ lí linh miêu</h3>
             <p className="text-xs text-cyan-100 opacity-90">Trợ lý chăm sóc thú cưng</p>
           </div>
         </div>
@@ -160,11 +158,20 @@ const Chat = memo(function Chat({
             >
               {m.role === 'assistant' ? (
                 <>
-                  <div className="w-8 h-8 rounded-full bg-gradient-to-br from-teal-500 to-cyan-600 flex items-center justify-center flex-shrink-0 shadow-md">
-                    <span className="text-sm">🐾</span>
+                  {/* Avatar: wrapper có class "group" để group-hover hoạt động */}
+                  <div className="w-8 h-8 overflow-hidden flex items-center justify-center flex-shrink-0 shadow-md group">
+                    {/* Ảnh tĩnh (hiển thị mặc định) */}
+                    <img
+                      src="/sampleimg/AiCatprofile.png"
+                      alt="Linh Miêu"
+                      className="w-full h-full object-cover block group-hover:hidden"
+                    />
+                  
+
                   </div>
+
                   <div className="bg-white rounded-2xl rounded-tl-sm p-3 sm:p-4 max-w-[85%] shadow-sm border border-teal-100">
-                    <p className="text-xs font-semibold text-teal-700 mb-1">Pet Care AI</p>
+                    <p className="text-xs font-semibold text-teal-700 mb-1">Linh Miêu</p>
                     <p className="text-sm text-gray-700 leading-relaxed whitespace-pre-wrap">{m.content}</p>
                   </div>
                 </>
@@ -180,7 +187,9 @@ const Chat = memo(function Chat({
           {isLoading && (
             <div className="flex items-start gap-3 animate-pulse">
               <div className="w-8 h-8 rounded-full bg-gradient-to-br from-teal-500 to-cyan-600 flex items-center justify-center flex-shrink-0 shadow-md">
-                <span className="text-sm">🐾</span>
+                <span className="group-hover:hidden">
+                  <img src="/sampleimg/AiCat-static.png" alt="Chat Icon" className="w-full h-full object-cover" />
+                </span>
               </div>
               <div className="bg-white rounded-2xl rounded-tl-sm p-3 sm:p-4 shadow-sm border border-teal-100">
                 <div className="flex gap-1">
