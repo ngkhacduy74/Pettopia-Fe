@@ -114,7 +114,6 @@ export default function Sidebar({
     ],
     Clinic: [
       { label: 'Trang tổng quan', href: '/clinic/dashboard', icon: <HomeIcon className="w-4 h-4" /> },
-      { label: 'Danh sách yêu cầu', href: '/clinic/request-list', icon: <DocumentCheckIcon className="w-4 h-4" /> },
       { label: 'Ca làm', href: '/clinic/shift', icon: <ClipboardDocumentListIcon className="w-4 h-4" /> },
       { label: 'Dịch vụ', href: '/clinic/service', icon: <ClipboardDocumentListIcon className="w-4 h-4" /> },
       { label: 'Lịch khám', href: '/clinic/appointment', icon: <ClipboardDocumentListIcon className="w-4 h-4" /> },
