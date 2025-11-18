@@ -1,5 +1,5 @@
 'use client'
-import React, { useState, useEffect } from 'react';
+import React, { useState, useEffect, useCallback } from 'react';
 import { useRouter } from 'next/navigation';
 import { communicationService } from '@/services/communication/communicationService';
 
@@ -61,21 +61,89 @@ export default function ManagePostsPage() {
   const [selectedPost, setSelectedPost] = useState<Post | null>(null);
   const [showDetailModal, setShowDetailModal] = useState(false);
 
-  useEffect(() => {
-    const parseJwt = (token: string | null) => {
-      if (!token) return null;
-      try {
-        const payload = token.split('.')[1];
-        return JSON.parse(atob(payload.replace(/-/g, '+').replace(/_/g, '/')));
-      } catch (e) {
-        console.error('Failed to parse JWT', e);
-        return null;
+  // Helper - Parse tags từ JSON string
+  const parseTags = useCallback((tags: any): string[] => {
+    if (!tags) return [];
+    if (!Array.isArray(tags)) return [];
+    
+    return tags.map(tag => {
+      if (typeof tag === 'string') {
+        if (tag.trim().startsWith('[') || tag.trim().startsWith('{')) {
+          try {
+            const parsed = JSON.parse(tag);
+            return Array.isArray(parsed) ? parsed : [parsed];
+          } catch {
+            return tag;
+          }
+        }
+        return tag;
       }
-    };
+      return tag;
+    }).flat().filter(t => t && typeof t === 'string' && t.trim().length > 0);
+  }, []);
 
+  // Parse JWT token
+  const parseJwt = useCallback((token: string | null) => {
+    if (!token) return null;
+    try {
+      const payload = token.split('.')[1];
+      if (!payload) return null;
+      return JSON.parse(atob(payload.replace(/-/g, '+').replace(/_/g, '/')));
+    } catch (e) {
+      console.error('Failed to parse JWT', e);
+      return null;
+    }
+  }, []);
+
+  // Fetch posts with error handling
+  const fetchPosts = useCallback(async (uid: string) => {
+    if (!uid) {
+      setError('User ID không hợp lệ');
+      setLoading(false);
+      return;
+    }
+
+    try {
+      setLoading(true);
+      setError(null);
+      const data = await communicationService.getUserPosts(uid);
+      
+      const normalized = (Array.isArray(data) ? data : []).map((p: any) => ({
+        ...p,
+        post_id: p?.post_id || p?.id || '',
+        author: p?.author || { user_id: uid, fullname: 'Unknown', avatar: null },
+        title: p?.title || 'Untitled',
+        content: p?.content || '',
+        isHidden: p?.isHidden === true || p?.isHidden === 'true' || p?.isHidden === 1,
+        tags: parseTags(p?.tags),
+        images: Array.isArray(p?.images) ? p.images : [],
+        comments: Array.isArray(p?.comments) ? p.comments : [],
+        reports: Array.isArray(p?.reports) ? p.reports : [],
+        commentCount: p?.commentCount || 0,
+        likeCount: p?.likeCount || 0,
+        reportCount: p?.reportCount || 0,
+        viewCount: p?.viewCount || 0,
+        createdAt: p?.createdAt || new Date().toISOString(),
+        updatedAt: p?.updatedAt || new Date().toISOString(),
+      }));
+      
+      setPosts(normalized);
+    } catch (err) {
+      setPosts([]);
+      setError(err instanceof Error ? err.message : 'Có lỗi xảy ra khi tải dữ liệu');
+      console.error('Error fetching posts:', err);
+    } finally {
+      setLoading(false);
+    }
+  }, [parseTags]);
+
+  // Initialize user and fetch posts
+  useEffect(() => {
     if (typeof window === 'undefined') return;
+
     const token = localStorage.getItem('authToken');
     let id = localStorage.getItem('userId');
+    
     if (!id && token) {
       const decoded = parseJwt(token);
       const resolved = decoded?.userId ?? decoded?.id ?? decoded?.sub ?? null;
@@ -84,45 +152,53 @@ export default function ManagePostsPage() {
         localStorage.setItem('userId', id);
       }
     }
+    
     if (id) {
       setUserId(id);
       if (token) {
         communicationService.setToken(token);
       }
       fetchPosts(id);
-    }
-  }, []);
-
-  const fetchPosts = async (uid: string) => {
-    try {
-      setLoading(true);
-      const data = await communicationService.getUserPosts(uid);
-      setPosts(Array.isArray(data) ? data : []);
-      setError(null);
-    } catch (err) {
-      setPosts([]);
-      setError(err instanceof Error ? err.message : 'Có lỗi xảy ra');
-      console.error('Error fetching posts:', err);
-    } finally {
+    } else {
+      setError('Không tìm thấy thông tin người dùng. Vui lòng đăng nhập lại.');
       setLoading(false);
     }
-  };
+  }, [fetchPosts, parseJwt]);
+
+  // Sync selectedPost khi posts thay đổi
+  useEffect(() => {
+    if (selectedPost && posts.length > 0) {
+      const updatedPost = posts.find(p => p.post_id === selectedPost.post_id);
+      if (updatedPost) {
+        setSelectedPost(updatedPost);
+      }
+    }
+  }, [posts, selectedPost]);
 
   const getStatusColor = (isHidden?: boolean) => {
-    if (isHidden) return 'bg-orange-500/20 text-orange-700 border-orange-500/30';
+    if (isHidden === true) return 'bg-orange-500/20 text-orange-700 border-orange-500/30';
     return 'bg-green-500/20 text-green-700 border-green-500/30';
   };
 
   const getStatusText = (isHidden?: boolean) => {
-    return isHidden ? 'Đã ẩn' : 'Đang hiển thị';
+    return isHidden === true ? 'Đã ẩn' : 'Đang hiển thị';
   };
 
   const formatDate = (dateString?: string) => {
     if (!dateString) return 'Chưa rõ';
-    return new Date(dateString).toLocaleDateString('vi-VN');
+    try {
+      return new Date(dateString).toLocaleDateString('vi-VN', {
+        year: 'numeric',
+        month: '2-digit',
+        day: '2-digit'
+      });
+    } catch {
+      return 'Ngày không hợp lệ';
+    }
   };
 
-  const truncateTitle = (title: string, maxLength: number = 20) => {
+  const truncateTitle = (title: string, maxLength: number = 50) => {
+    if (!title) return 'Untitled';
     if (title.length <= maxLength) return title;
     return title.substring(0, maxLength) + '...';
   };
@@ -132,23 +208,23 @@ export default function ManagePostsPage() {
       if (searchQuery.trim()) {
         const query = searchQuery.toLowerCase();
         const matchesSearch =
-          post.title.toLowerCase().includes(query) ||
-          post.content.toLowerCase().includes(query) ||
-          post.author.fullname.toLowerCase().includes(query);
+          post.title?.toLowerCase().includes(query) ||
+          post.content?.toLowerCase().includes(query) ||
+          post.author?.fullname?.toLowerCase().includes(query);
         if (!matchesSearch) return false;
       }
       if (filterStatus === 'all') return true;
-      if (filterStatus === 'visible') return !post.isHidden;
-      if (filterStatus === 'hidden') return post.isHidden;
+      if (filterStatus === 'visible') return post.isHidden === false;
+      if (filterStatus === 'hidden') return post.isHidden === true;
       return true;
     })
     .sort((a, b) => {
       if (sortBy === 'date') {
         return new Date(b.createdAt || 0).getTime() - new Date(a.createdAt || 0).getTime();
       } else if (sortBy === 'reports') {
-        return b.reportCount - a.reportCount;
+        return (b.reportCount || 0) - (a.reportCount || 0);
       } else if (sortBy === 'likes') {
-        return b.likeCount - a.likeCount;
+        return (b.likeCount || 0) - (a.likeCount || 0);
       }
       return 0;
     });
@@ -162,6 +238,7 @@ export default function ManagePostsPage() {
   };
 
   const handleGoToDetailPage = (postId: string) => {
+    if (!postId) return;
     router.push(`/user/community/detail?id=${postId}`);
   };
 
@@ -179,10 +256,14 @@ export default function ManagePostsPage() {
       setPosts(prev => prev.filter(post => post.post_id !== postToDelete.post_id));
       setDeleteModalOpen(false);
       setPostToDelete(null);
+      if (showDetailModal) {
+        setShowDetailModal(false);
+        setSelectedPost(null);
+      }
       alert('Xóa bài viết thành công!');
     } catch (error: any) {
       console.error('Delete post error:', error);
-      alert('Có lỗi xảy ra khi xóa bài viết: ' + error.message);
+      alert('Có lỗi xảy ra khi xóa bài viết: ' + (error?.message || 'Unknown error'));
     } finally {
       setIsDeleting(false);
     }
@@ -193,20 +274,9 @@ export default function ManagePostsPage() {
     setPostToDelete(null);
   };
 
-  const handleToggleVisibility = async (post: Post) => {
-    try {
-      const endpoint = post.isHidden ? 'unhidePost' : 'hidePost';
-      await communicationService[endpoint](post.post_id);
-      if (userId) fetchPosts(userId);
-    } catch (error: any) {
-      console.error('Toggle visibility error:', error);
-      alert('Có lỗi xảy ra: ' + error.message);
-    }
-  };
-
   if (loading) {
     return (
-      <div className="flex items-center justify-center p-10">
+      <div className="flex items-center justify-center p-10 min-h-screen">
         <div className="text-center">
           <div className="w-16 h-16 border-4 border-teal-600 border-t-transparent rounded-full animate-spin mx-auto mb-4"></div>
           <p className="text-gray-600">Đang tải danh sách bài viết...</p>
@@ -217,7 +287,7 @@ export default function ManagePostsPage() {
 
   if (error) {
     return (
-      <div className="flex items-center justify-center p-8">
+      <div className="flex items-center justify-center p-8 min-h-screen">
         <div className="bg-red-50 border border-red-200 rounded-xl p-8 max-w-md text-center">
           <svg className="w-12 h-12 text-red-500 mx-auto mb-3" fill="none" stroke="currentColor" viewBox="0 0 24 24">
             <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 8v4m0 4h.01M21 12a9 9 0 11-18 0 9 9 0 0118 0z" />
@@ -261,15 +331,15 @@ export default function ManagePostsPage() {
             </div>
             <div className="bg-gradient-to-br from-teal-600 to-cyan-600 rounded-xl shadow-lg p-3 text-white">
               <div className="text-green-100 text-sm font-medium mb-1">Đang hiển thị</div>
-              <div className="text-3xl font-bold">{posts.filter(p => !p.isHidden).length}</div>
+              <div className="text-3xl font-bold">{posts.filter(p => p.isHidden === false).length}</div>
             </div>
             <div className="bg-gradient-to-br from-teal-600 to-cyan-600 rounded-xl shadow-lg p-3 text-white">
               <div className="text-orange-100 text-sm font-medium mb-1">Đã ẩn</div>
-              <div className="text-3xl font-bold">{posts.filter(p => p.isHidden).length}</div>
+              <div className="text-3xl font-bold">{posts.filter(p => p.isHidden === true).length}</div>
             </div>
             <div className="bg-gradient-to-br from-teal-600 to-cyan-600 rounded-xl shadow-lg p-3 text-white">
               <div className="text-red-100 text-sm font-medium mb-1">Có báo cáo</div>
-              <div className="text-3xl font-bold">{posts.filter(p => p.reportCount > 0).length}</div>
+              <div className="text-3xl font-bold">{posts.filter(p => (p.reportCount || 0) > 0).length}</div>
             </div>
           </div>
 
@@ -305,7 +375,7 @@ export default function ManagePostsPage() {
                 className={`px-4 py-2 rounded-lg font-medium transition-all ${
                   filterStatus === 'all'
                     ? 'bg-teal-600 text-white shadow-md'
-                    : 'bg-white text-gray-600 hover:bg-teal-50'
+                    : 'bg-white text-gray-600 hover:bg-teal-50 border border-gray-200'
                 }`}
               >
                 Tất cả
@@ -315,7 +385,7 @@ export default function ManagePostsPage() {
                 className={`px-4 py-2 rounded-lg font-medium transition-all ${
                   filterStatus === 'visible'
                     ? 'bg-teal-600 text-white shadow-md'
-                    : 'bg-white text-gray-600 hover:bg-teal-50'
+                    : 'bg-white text-gray-600 hover:bg-teal-50 border border-gray-200'
                 }`}
               >
                 Đang hiển thị
@@ -325,7 +395,7 @@ export default function ManagePostsPage() {
                 className={`px-4 py-2 rounded-lg font-medium transition-all ${
                   filterStatus === 'hidden'
                     ? 'bg-teal-600 text-white shadow-md'
-                    : 'bg-white text-gray-600 hover:bg-teal-50'
+                    : 'bg-white text-gray-600 hover:bg-teal-50 border border-gray-200'
                 }`}
               >
                 Đã ẩn
@@ -350,7 +420,7 @@ export default function ManagePostsPage() {
           <div className="divide-y divide-gray-100">
             {filteredPosts.length === 0 ? (
               <div className="p-12 text-center text-gray-500">
-                Không có bài viết nào
+                {searchQuery ? 'Không tìm thấy bài viết nào phù hợp' : 'Không có bài viết nào'}
               </div>
             ) : (
               filteredPosts.map((post) => (
@@ -359,11 +429,12 @@ export default function ManagePostsPage() {
                   className="hover:bg-gray-50 transition-colors duration-150"
                 >
                   <div className="flex items-center gap-6 px-4 py-3">
-                    {/* Tiêu đề - Click để xem trang chi tiết */}
+                    {/* Tiêu đề */}
                     <div className="w-64">
                       <button
                         onClick={() => handleGoToDetailPage(post.post_id)}
                         className="text-left font-semibold text-gray-900 hover:text-teal-600 transition-colors truncate w-full"
+                        title={post.title}
                       >
                         {truncateTitle(post.title)}
                       </button>
@@ -394,24 +465,6 @@ export default function ManagePostsPage() {
                         </svg>
                       </button>
                       <button
-                        onClick={() => handleToggleVisibility(post)}
-                        className={`p-2 rounded-lg transition-colors ${
-                          post.isHidden ? 'text-green-600 hover:bg-green-50' : 'text-orange-600 hover:bg-orange-50'
-                        }`}
-                        title={post.isHidden ? 'Hiện bài viết' : 'Ẩn bài viết'}
-                      >
-                        {post.isHidden ? (
-                          <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                            <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M15 12a3 3 0 11-6 0 3 3 0 016 0z" />
-                            <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M2.458 12C3.732 7.943 7.523 5 12 5c4.478 0 8.268 2.943 9.542 7-1.274 4.057-5.064 7-9.542 7-4.477 0-8.268-2.943-9.542-7z" />
-                          </svg>
-                        ) : (
-                          <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                            <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M13.875 18.825A10.05 10.05 0 0112 19c-4.478 0-8.268-2.943-9.543-7a9.97 9.97 0 011.563-3.029m5.858.908a3 3 0 114.243 4.243M9.878 9.878l4.242 4.242M9.88 9.88l-3.29-3.29m7.532 7.532l3.29 3.29M3 3l3.59 3.59m0 0A9.953 9.953 0 0112 5c4.478 0 8.268 2.943 9.543 7a10.025 10.025 0 01-4.132 5.411m0 0L21 21" />
-                          </svg>
-                        )}
-                      </button>
-                      <button
                         onClick={(e) => handleDeleteClick(post, e)}
                         className="p-2 text-red-600 hover:bg-red-50 rounded-lg transition-colors"
                         title="Xóa"
@@ -431,20 +484,26 @@ export default function ManagePostsPage() {
 
       {/* Detail Modal */}
       {showDetailModal && selectedPost && (
-        <div className="fixed inset-0 bg-black/30 flex items-center justify-center z-50 p-4">
-          <div className="bg-white rounded-2xl max-w-3xl w-full max-h-[90vh] overflow-y-auto shadow-2xl">
+        <div 
+          className="fixed inset-0 bg-black/30 flex items-center justify-center z-50 p-4"
+          onClick={() => setShowDetailModal(false)}
+        >
+          <div 
+            className="bg-white rounded-2xl max-w-3xl w-full max-h-[90vh] overflow-y-auto shadow-2xl"
+            onClick={(e) => e.stopPropagation()}
+          >
             <div className="p-6">
               <div className="flex items-start justify-between mb-6">
                 <div className="flex-1 pr-4">
                   <h2 className="text-2xl font-bold text-gray-900 mb-2">{selectedPost.title}</h2>
                   <div className="flex items-center gap-3">
                     <img
-                      src={selectedPost.author.avatar || `https://api.dicebear.com/7.x/avataaars/svg?seed=${selectedPost.author.user_id}`}
-                      alt={selectedPost.author.fullname}
+                      src={selectedPost.author?.avatar || `https://api.dicebear.com/7.x/avataaars/svg?seed=${selectedPost.author?.user_id || 'default'}`}
+                      alt={selectedPost.author?.fullname || 'User'}
                       className="w-10 h-10 rounded-full border-2 border-teal-100"
                     />
                     <div>
-                      <div className="font-semibold text-gray-900">{selectedPost.author.fullname}</div>
+                      <div className="font-semibold text-gray-900">{selectedPost.author?.fullname || 'Unknown'}</div>
                       <div className="text-sm text-gray-500">{formatDate(selectedPost.createdAt)}</div>
                     </div>
                   </div>
@@ -465,8 +524,12 @@ export default function ManagePostsPage() {
                   <div className="text-xs text-gray-500">Views</div>
                 </div>
                 <div>
-                  <div className={`text-lg font-bold ${selectedPost.reportCount > 0 ? 'text-red-600' : 'text-gray-900'}`}>
-                    {selectedPost.reportCount}
+                  <div className="text-lg font-bold text-gray-900">{selectedPost.likeCount || 0}</div>
+                  <div className="text-xs text-gray-500">Likes</div>
+                </div>
+                <div>
+                  <div className={`text-lg font-bold ${(selectedPost.reportCount || 0) > 0 ? 'text-red-600' : 'text-gray-900'}`}>
+                    {selectedPost.reportCount || 0}
                   </div>
                   <div className="text-xs text-gray-500">Reports</div>
                 </div>
@@ -499,14 +562,16 @@ export default function ManagePostsPage() {
                 <div className="mb-6">
                   <h3 className="font-semibold text-gray-900 mb-3 text-lg">Tags</h3>
                   <div className="flex flex-wrap gap-2">
-                    {selectedPost.tags.map((tag, idx) => (
-                      <span
-                        key={idx}
-                        className="px-3 py-1 bg-teal-100 text-teal-700 rounded-full text-sm font-medium"
-                      >
-                        {tag}
-                      </span>
-                    ))}
+                    {selectedPost.tags
+                      .filter(t => t && typeof t === 'string')
+                      .map((tag, idx) => (
+                        <span
+                          key={idx}
+                          className="px-3 py-1 bg-teal-100 text-teal-700 rounded-full text-sm font-medium"
+                        >
+                          {tag}
+                        </span>
+                      ))}
                   </div>
                 </div>
               )}
@@ -534,27 +599,6 @@ export default function ManagePostsPage() {
                 >
                   Xem trang chi tiết
                 </button>
-                {!selectedPost.isHidden ? (
-                  <button
-                    onClick={() => {
-                      handleToggleVisibility(selectedPost);
-                      setShowDetailModal(false);
-                    }}
-                    className="flex-1 px-4 py-3 bg-gradient-to-r from-orange-500 to-orange-600 text-white rounded-lg hover:from-orange-600 hover:to-orange-700 font-semibold shadow-md transition-all"
-                  >
-                    Ẩn bài viết
-                  </button>
-                ) : (
-                  <button
-                    onClick={() => {
-                      handleToggleVisibility(selectedPost);
-                      setShowDetailModal(false);
-                    }}
-                    className="flex-1 px-4 py-3 bg-gradient-to-r from-green-500 to-green-600 text-white rounded-lg hover:from-green-600 hover:to-green-700 font-semibold shadow-md transition-all"
-                  >
-                    Hiện bài viết
-                  </button>
-                )}
                 <button
                   onClick={() => {
                     setShowDetailModal(false);
@@ -580,34 +624,34 @@ export default function ManagePostsPage() {
             className="bg-white rounded-2xl shadow-2xl max-w-2xl w-full overflow-hidden animate-scaleIn"
             onClick={(e) => e.stopPropagation()}
           >
-            <div className="bg-gradient-to-r from-teal-500 to-green-600 p-6 text-white">
+            <div className="bg-gradient-to-r from-red-500 to-rose-600 p-6 text-white">
               <div className="flex items-center gap-3">
                 <div className="w-12 h-12 bg-white/20 rounded-full flex items-center justify-center flex-shrink-0">
                   <svg className="w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                    <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 9v2m0 4h.01m-6.938 4h13.856c1.54 0 2.502-1.667 1.732-3L13.732 4c-.77-1.333-2.694-1.333-3.464 0L3.34 16c-.77 1.333.192 3 1.732 3zM11 13a1 1 0 11-2 0 1 1 0 012 0zm-1-8a1 1 0 00-1 1v3a1 1 0 002 0V6a1 1 0 00-1-1z" clipRule="evenodd" />
+                    <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 9v2m0 4h.01m-6.938 4h13.856c1.54 0 2.502-1.667 1.732-3L13.732 4c-.77-1.333-2.694-1.333-3.464 0L3.34 16c-.77 1.333.192 3 1.732 3z" />
                   </svg>
                 </div>
                 <div>
                   <h3 className="text-xl font-bold">Xác nhận xóa bài viết</h3>
-                  <p className="text-green-100 text-sm mt-1">Hành động này không thể hoàn tác</p>
+                  <p className="text-red-100 text-sm mt-1">Hành động này không thể hoàn tác</p>
                 </div>
               </div>
             </div>
             <div className="p-6 space-y-4">
               <div className="bg-gray-50 p-4 rounded-lg">
                 <h4 className="font-bold text-lg text-gray-900 mb-2">{postToDelete.title}</h4>
-                <p className="text-gray-600 text-sm">{postToDelete.content.substring(0, 150)}...</p>
+                <p className="text-gray-600 text-sm line-clamp-3">{postToDelete.content}</p>
               </div>
-              <div className="bg-green-50 border-l-4 border-green-500 p-4 rounded-r-lg">
+              <div className="bg-red-50 border-l-4 border-red-500 p-4 rounded-r-lg">
                 <div className="flex gap-3">
-                  <svg className="w-5 h-5 text-green-500 flex-shrink-0 mt-0.5" fill="currentColor" viewBox="0 0 20 20">
+                  <svg className="w-5 h-5 text-red-500 flex-shrink-0 mt-0.5" fill="currentColor" viewBox="0 0 20 20">
                     <path fillRule="evenodd" d="M8.257 3.099c.765-1.36 2.722-1.36 3.486 0l5.58 9.92c.75 1.334-.213 2.98-1.742 2.98H4.42c-1.53 0-2.493-1.646-1.743-2.98l5.58-9.92zM11 13a1 1 0 11-2 0 1 1 0 012 0zm-1-8a1 1 0 00-1 1v3a1 1 0 002 0V6a1 1 0 00-1-1z" clipRule="evenodd" />
                   </svg>
                   <div className="flex-1">
-                    <p className="text-sm font-medium text-green-800">
+                    <p className="text-sm font-medium text-red-800">
                       Bạn có chắc chắn muốn xóa bài viết này?
                     </p>
-                    <p className="text-xs text-green-700 mt-1">
+                    <p className="text-xs text-red-700 mt-1">
                       Tất cả dữ liệu bao gồm bình luận, lượt thích sẽ bị xóa vĩnh viễn.
                     </p>
                   </div>
@@ -658,6 +702,12 @@ export default function ManagePostsPage() {
         }
         .animate-scaleIn {
           animation: scaleIn 0.3s ease-out;
+        }
+        .line-clamp-3 {
+          display: -webkit-box;
+          -webkit-line-clamp: 3;
+          -webkit-box-orient: vertical;
+          overflow: hidden;
         }
       `}</style>
     </>
