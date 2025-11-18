@@ -13,6 +13,7 @@ import { usePathname } from 'next/navigation';
 import { parseJwt, isTokenExpired } from '@/utils/jwt';
 import { useRouter } from 'next/navigation';
 import { logoutUser } from '@/services/auth/authService';
+import RoleSwitcher from '@/components/RoleSwitcher'; // Import component
 
 interface UserData {
   userId: string;
@@ -42,6 +43,7 @@ export default function Sidebar({
 }: ClinicNavbarProps) {
   const pathname = usePathname();
   const [isDropdownOpen, setIsDropdownOpen] = useState(false);
+  const [isRoleSwitcherOpen, setIsRoleSwitcherOpen] = useState(false); // State cho role switcher
   const [userData, setUserData] = useState<UserData | null>(null);
   const [userRoles, setUserRoles] = useState<string[]>([]);
   const [isLoading, setIsLoading] = useState(true);
@@ -94,7 +96,7 @@ export default function Sidebar({
       )
       .join('');
 
-  // 🧭 Menu theo role
+  // Menu theo role
   const roleMenus: Record<
     string,
     { label: string; href: string; icon: React.ReactNode }[]
@@ -102,7 +104,6 @@ export default function Sidebar({
     Admin: [
       { label: 'Dashboard', href: '/admin/dashboard', icon: <HomeIcon className="w-4 h-4" /> },
       { label: 'Manage Users', href: '/admin/manager-user', icon: <UsersIcon className="w-4 h-4" /> },
-      { label: 'System Logs', href: '#', icon: <ClipboardDocumentListIcon className="w-4 h-4" /> },
     ],
     Staff: [
       { label: 'Trang chủ', href: '/staff/dashboard', icon: <HomeIcon className="w-4 h-4" /> },
@@ -110,7 +111,7 @@ export default function Sidebar({
       { label: 'Xét duyệt Phòng khám', href: '/staff/request-clinic-list', icon: <ClipboardDocumentListIcon className="w-4 h-4" /> },
       { label: 'Xét duyệt Bác Sĩ', href: '/staff/request-vet-list', icon: <ClipboardDocumentListIcon className="w-4 h-4" /> },
       { label: 'Quản lí bài viết', href: '/staff/post-report', icon: <ClipboardDocumentListIcon className="w-4 h-4" /> },
-      { label: 'Cộng đồng', href: '#', icon: <ClipboardDocumentListIcon className="w-4 h-4" /> }
+      { label: 'Cộng Đồng', href: '#', icon: <ClipboardDocumentListIcon className="w-4 h-4" /> }
     ],
     Clinic: [
       { label: 'Trang tổng quan', href: '/clinic/dashboard', icon: <HomeIcon className="w-4 h-4" /> },
@@ -129,16 +130,7 @@ export default function Sidebar({
     ],
   };
 
-  // 🧭 Role Dashboard links (cho dropdown)
-  const roleLinks: Record<string, string> = {
-    Admin: '/admin/dashboard',
-    Staff: '/staff/dashboard',
-    Clinic: '/clinic/dashboard',
-    Vet: '/vet/dashboard',
-    User: '/user/dashboard',
-  };
-
-  // 🧩 Xác định role hiện tại theo pathname
+  // Xác định role hiện tại theo pathname
   const detectedRole =
     pathname.includes('/admin/')
       ? 'Admin'
@@ -154,7 +146,7 @@ export default function Sidebar({
 
   const navItems = roleMenus[detectedRole] || [];
 
-  // 🏷️ Tiêu đề theo role
+  // Tiêu đề theo role
   const roleTitleMap: Record<string, string> = {
     Admin: 'Admin Dashboard',
     Staff: 'Staff Panel',
@@ -167,11 +159,8 @@ export default function Sidebar({
 
   const handleLogoutClick = () => {
     logoutUser();
-    // Redirect về trang login sau 500ms để đảm bảo logout xong
-    // Redirect dùng window.location.href để full page reload (tránh cache)
     setTimeout(() => {
       window.location.href = '/auth/login';
-      // Ngăn chặn quay lại bằng cách push state mới
       if (window.history && window.history.length > 1) {
         window.history.forward();
       }
@@ -210,7 +199,7 @@ export default function Sidebar({
             ) : (
               <>
                 <div className="w-8 h-8 bg-gradient-to-br from-teal-500 to-cyan-600 rounded-full flex items-center justify-center text-xs font-bold text-white shadow-sm">
-                  {userData ? getInitials(userData.fullname) : '🐾'}
+                  {userData ? getInitials(userData.fullname) : '👤'}
                 </div>
                 <div className="flex-1 text-left min-w-0">
                   <div className="text-sm font-semibold text-gray-900 truncate">
@@ -280,32 +269,20 @@ export default function Sidebar({
                 <span className="text-sm font-medium text-gray-900">Hồ sơ</span>
               </button>
 
-              {/* ✅ Chuyển dashboard theo role */}
-              {userRoles.length > 0 && (
+              {/* ✅ Nút Chuyển Role */}
+              {userRoles.length > 1 && (
                 <>
                   <div className="border-t border-gray-100 my-1"></div>
-                  {userRoles.map((role) => (
-                    <a
-                      key={role}
-                      href={roleLinks[role] || '#'}
-                      className="w-full flex items-center gap-3 px-4 py-3 hover:bg-teal-50 transition-colors text-left"
-                    >
-                      <ArrowPathIcon
-                        className="w-5 h-5 text-teal-600"
-                        fill="none"
-                        stroke="currentColor"
-                        viewBox="0 0 24 24"
-                      >
-                        <path
-                          strokeLinecap="round"
-                          strokeLinejoin="round"
-                          strokeWidth={2}
-                          d="M5 13l4 4L19 7"
-                        />
-                      </ArrowPathIcon>
-                      <span className="text-sm font-medium text-gray-900">Switch to {role}</span>
-                    </a>
-                  ))}
+                  <button
+                    onClick={() => {
+                      setIsDropdownOpen(false);
+                      setIsRoleSwitcherOpen(true);
+                    }}
+                    className="w-full flex items-center gap-3 px-4 py-3 hover:bg-blue-50 transition-colors text-left"
+                  >
+                    <ArrowPathIcon className="w-5 h-5 text-blue-600" />
+                    <span className="text-sm font-medium text-gray-900">Chuyển Role</span>
+                  </button>
                 </>
               )}
 
@@ -358,6 +335,14 @@ export default function Sidebar({
           onClick={() => setIsDropdownOpen(false)}
         />
       )}
+
+      {/* Role Switcher Modal */}
+      <RoleSwitcher
+        isOpen={isRoleSwitcherOpen}
+        onClose={() => setIsRoleSwitcherOpen(false)}
+        userRoles={userRoles}
+        currentRole={detectedRole}
+      />
     </>
   );
 }
