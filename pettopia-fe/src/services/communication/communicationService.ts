@@ -209,7 +209,7 @@ class CommunicationService {
    * Endpoint: DELETE /api/v1/communication/:id
    */
   async deletePost(postId: string): Promise<void> {
-    const response = await fetch(`${this.baseUrl}/communication/posts/${postId}`, {
+    const response = await fetch(`${this.baseUrl}/${postId}`, {
       method: 'DELETE',
       headers: this.getHeaders(),
     });
@@ -228,20 +228,12 @@ class CommunicationService {
     return this.handleResponse<Post>(response);
   }
 
-  async hidePost(postId: string): Promise<void> {
-    const response = await fetch(`${this.baseUrl}/communication/posts/${postId}/hide`, {
-      method: 'PATCH',
-      headers: this.getHeaders(),
-    });
-    if (!response.ok) throw new Error('Failed to hide post');
+  async hidePost(postId: string): Promise<Post> {
+    return this.toggleHidePost(postId, true);
   }
 
-  async unhidePost(postId: string): Promise<void> {
-    const response = await fetch(`${this.baseUrl}/communication/posts/${postId}/unhide`, {
-      method: 'PATCH',
-      headers: this.getHeaders(),
-    });
-    if (!response.ok) throw new Error('Failed to unhide post');
+  async unhidePost(postId: string): Promise<Post> {
+    return this.toggleHidePost(postId, false);
   }
 
   /**
@@ -477,6 +469,23 @@ class CommunicationService {
       headers: this.getHeaders(),
     });
     return this.handleResponse<Post>(response);
+  }
+
+  private parsePost(data: any): Post {
+    return {
+      ...data,
+      tags: data.tags?.map((tag: string) => {
+        // Nếu tag là JSON string, parse nó
+        if (typeof tag === 'string' && tag.startsWith('[')) {
+          try {
+            return JSON.parse(tag);
+          } catch {
+            return tag;
+          }
+        }
+        return tag;
+      }).flat() || [],
+    };
   }
 }
 
