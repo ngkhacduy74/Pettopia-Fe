@@ -16,6 +16,16 @@ interface Category {
   color: string;
 }
 
+const normalizeHiddenFlag = (value: unknown): boolean => {
+  if (typeof value === 'boolean') return value;
+  if (typeof value === 'number') return value === 1;
+  if (typeof value === 'string') {
+    const normalized = value.trim().toLowerCase();
+    return normalized === 'true' || normalized === '1';
+  }
+  return false;
+};
+
 export default function CommunityPage() {
   const router = useRouter();
   
@@ -82,9 +92,13 @@ export default function CommunityPage() {
       setLoading(true);
       setError('');
       const data = await communicationService.getAllPosts();
-      const normalized = (data || [])
-        .filter(p => !p.isHidden)
-        .map(p => ({ ...p, tags: communicationService.parseTags(p.tags) }));
+      const normalized = (Array.isArray(data) ? data : [])
+        .map(post => ({
+          ...post,
+          isHidden: normalizeHiddenFlag((post as any)?.isHidden),
+          tags: communicationService.parseTags(post.tags),
+        }))
+        .filter(post => !post.isHidden);
       setAllPosts(normalized);
       setPosts(normalized);
     } catch (err) {
@@ -101,7 +115,12 @@ export default function CommunityPage() {
     try {
       const response = await communicationService.getTrendingPosts(5);
       const postsArray = (Array.isArray(response) ? response : [])
-        .map(p => ({ ...p, tags: communicationService.parseTags(p.tags) }));
+        .map(post => ({
+          ...post,
+          isHidden: normalizeHiddenFlag((post as any)?.isHidden),
+          tags: communicationService.parseTags(post.tags),
+        }))
+        .filter(post => !post.isHidden);
       setTrendingPosts(postsArray);
     } catch (err) {
       console.error('Error loading trending posts:', err);
