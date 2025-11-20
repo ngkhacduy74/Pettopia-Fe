@@ -166,9 +166,9 @@ const AppointmentTimeline = memo(function AppointmentTimeline() {
                   <div
                     className={`
                       min-w-[120px] p-5 rounded-xl border-2 cursor-pointer
-                      transition-all duration-300 hover:scale-101 hover:shadow-xl
+                      transition-all duration-300 hover:scale-100 hover:shadow-xl
                       ${getStatusColor(apt.status)}
-                      ${today ? 'ring-2 ring-orange-400 ring-offset-2' : ''}
+                     
                     `}
                   >
                     {/* Date display */}

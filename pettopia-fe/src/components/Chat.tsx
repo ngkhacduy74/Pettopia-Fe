@@ -131,7 +131,10 @@ const Chat = memo(function Chat({
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({
           userId,
-          messages: allMessages.map(m => ({ role: m.role, content: m.content }))
+          // Chỉ gửi các message có role === 'user'
+          messages: allMessages
+            .filter(m => m.role === 'user')
+            .map(m => ({ role: 'user', content: m.content }))
         })
       });
 
@@ -195,7 +198,7 @@ const Chat = memo(function Chat({
               key={i}
               className={`flex items-start gap-3 animate-fadeIn ${m.role === 'user' ? 'justify-end' : ''}`}
             >
-              {m.role === 'assistant' ? (
+              {m.role === 'user' ? (
                 <>
                   <CatAvatar />
                   <div className="bg-white rounded-2xl rounded-tl-sm p-4 max-w-[85%] shadow-sm border border-teal-100">
