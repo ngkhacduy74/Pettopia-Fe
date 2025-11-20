@@ -1,6 +1,7 @@
 // app/clinic/dashboard/page.tsx
 'use client'
 import React, { useState, useEffect } from 'react';
+import Link from 'next/link';
 import Dashboard from '@/components/Dashboard';
 import {
   CurrencyDollarIcon,
@@ -101,23 +102,31 @@ export default function ClinicDashboardPage() {
       description: 'Xem và quản lý bác sĩ',
       icon: <UserGroupIcon className="h-6 w-6 text-white" />,
       color: 'from-teal-600 to-cyan-600',
-      link: '/clinic/doctors',
+      link: '/clinic/vet-list',
     },
     {
       id: 2,
-      title: 'Tiêm phòng',
-      description: 'Lịch tiêm và vaccine',
+      title: 'Dịch vụ',
+      description: 'Danh sách dịch vụ phòng khám',
       icon: <BeakerIcon className="h-6 w-6 text-white" />,
       color: 'from-cyan-600 to-blue-600',
-      link: '/clinic/vaccination',
+      link: '/clinic/service',
     },
     {
       id: 3,
-      title: 'Ký gửi',
-      description: 'Quản lý chăm sóc Pet',
+      title: 'Quản lý ca làm',
+      description: 'Quản lý ca làm của nhân viên',
       icon: <HomeIcon className="h-6 w-6 text-white" />,
       color: 'from-blue-600 to-teal-600',
-      link: '/clinic/boarding',
+      link: '/clinic/shift',
+    },
+    {
+      id: 4,
+      title: 'Quản lý lịch hẹn',
+      description: 'Quản lý lịch hẹn của khách hàng',
+      icon: <CalendarIcon className="h-6 w-6 text-white" />,
+      color: 'from-teal-600 to-blue-600',
+      link: '/clinic/appointment',
     },
   ];
 
@@ -138,10 +147,9 @@ export default function ClinicDashboardPage() {
     },
   ];
 
-  // NÚT MỜI THÀNH VIÊN + MODAL TRONG PAGE
-  const InviteSection = (
+  // Nút Mời thành viên + Modal
+  const InviteButton = (
     <>
-      {/* Nút */}
       <button
         onClick={() => setShowInviteForm(true)}
         className="px-4 py-2 bg-gradient-to-r from-teal-600 to-cyan-600 text-white rounded-lg hover:shadow-lg transition-all text-sm font-medium flex items-center gap-2"
@@ -152,19 +160,19 @@ export default function ClinicDashboardPage() {
         Mời thành viên
       </button>
 
-      {/* Modal */}
+      {/* Modal Invite Form */}
       {showInviteForm && (
         <div className="fixed inset-0 bg-black/40 backdrop-blur-sm flex items-center justify-center z-50 p-4">
           <div className="bg-white rounded-2xl shadow-2xl max-w-lg w-full p-6 relative">
             <button
               onClick={() => setShowInviteForm(false)}
-              className="absolute top-4 right-4 text-gray-400 hover:text-gray-600"
+              className="absolute top-4 right-4 text-gray-400 hover:text-gray-600 transition-colors"
             >
               <XMarkIcon className="w-5 h-5" />
             </button>
 
             <div className="flex items-center gap-3 mb-5">
-              <div className="w-10 h-10 bg-gradient-to-br from-teal-600 to-cyan-600 rounded-lg flex items-center justify-center">
+              <div className="w-10 h-10 bg-gradient-to-br from-teal-600 to-cyan-600 rounded-lg flex items-center justify-center flex-shrink-0">
                 <EnvelopeIcon className="w-5 h-5 text-white" />
               </div>
               <div>
@@ -209,7 +217,7 @@ export default function ClinicDashboardPage() {
                 </button>
                 <button
                   onClick={() => setShowInviteForm(false)}
-                  className="px-5 py-2.5 border border-gray-300 text-gray-700 rounded-lg font-semibold hover:bg-gray-50 text-sm"
+                  className="px-5 py-2.5 border border-gray-300 text-gray-700 rounded-lg font-semibold hover:bg-gray-50 transition-colors text-sm"
                 >
                   Hủy
                 </button>
@@ -222,19 +230,17 @@ export default function ClinicDashboardPage() {
   );
 
   return (
-    <>
-      <Dashboard
-        title="Dashboard Phòng khám"
-        subtitle="Tổng quan hoạt động phòng khám thú y"
-        statsCards={statsCards}
-        revenueData={revenueData}
-        serviceData={serviceData}
-        quickActions={quickActions}
-        recentActivities={recentActivities}
-       
-        selectedPeriod={selectedPeriod}
-        onPeriodChange={setSelectedPeriod}
-      />
-    </>
+    <Dashboard
+      title="Dashboard Phòng khám"
+      subtitle="Tổng quan hoạt động phòng khám thú y"
+      statsCards={statsCards}
+      revenueData={revenueData}
+      serviceData={serviceData}
+      quickActions={quickActions}
+      recentActivities={recentActivities}
+      selectedPeriod={selectedPeriod}
+      onPeriodChange={setSelectedPeriod}
+      inviteButton={InviteButton}
+    />
   );
 }
