@@ -1,6 +1,6 @@
 'use client';
 import React, { useState, useEffect, useRef, useCallback, memo } from 'react';
-import { getServiceDetail, ServiceDetail } from '../services/petcare/petService';
+import { getServiceDetail, ServiceDetail, callAIChat } from '../services/petcare/petService';
 
 interface Message {
   role: 'user' | 'assistant';
@@ -121,42 +121,27 @@ const Chat = memo(function Chat({
 
     const svcMatch = content.match(/^(?:\/service\s+|service:\s*)([^\s]+)/i);
     if (svcMatch) {
-      await fetchAndShowService(svcMatch[1]);
-      return;
+        await fetchAndShowService(svcMatch[1]);
+        return;
     }
 
     try {
-      const res = await fetch('http://localhost:3000/api/v1/ai/gemini/chat', {
-        method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({
-          userId,
-          // Chỉ gửi các message có role === 'user'
-          messages: allMessages
-            .filter(m => m.role === 'user')
-            .map(m => ({ role: 'user', content: m.content }))
-        })
-      });
+        // Chỉ gửi các message có role là 'user'
+        const userMessages = allMessages.filter(m => m.role === 'user') as { role: 'user'; content: string }[]; // Ép kiểu
+        const aiResponse = await callAIChat(userId, userMessages); // Gọi hàm AI API
 
-      const data = await (res.headers.get('content-type')?.includes('application/json') ? res.json() : res.text());
-      let aiText = '';
+        // Lưu trữ phản hồi từ AI mà không tạo role 'assistant'
+        const aiText = aiResponse.content || 'Không có phản hồi từ AI';
+        // Hiển thị phản hồi từ AI mà không thêm message mới
+        setMessages(prev => [...prev, { role: 'user', content: aiText }]); // Thêm phản hồi vào danh sách messages
 
-      if (typeof data === 'string') {
-        aiText = data;
-        try {
-          const parsed = JSON.parse(data);
-          aiText = typeof parsed === 'string' ? parsed : (parsed?.content || JSON.stringify(parsed));
-        } catch { }
-      } else if (data && typeof data === 'object') {
-        aiText = data.content || data.reply || data.message || JSON.stringify(data);
-      }
-
-      setMessages(prev => [...prev, { role: 'assistant', content: String(aiText).trim() }]);
     } catch (err) {
-      setMessages(prev => [...prev, { role: 'assistant', content: 'Lỗi: không thể kết nối tới API' }]);
+        // Xử lý lỗi nếu cần
+        console.error('Lỗi khi gọi API AI:', err);
+        // Không thêm message role 'assistant'
     } finally {
-      setIsLoading(false);
-      sendLockRef.current = false;
+        setIsLoading(false);
+        sendLockRef.current = false;
     }
   }, [userId, fetchAndShowService]);
 

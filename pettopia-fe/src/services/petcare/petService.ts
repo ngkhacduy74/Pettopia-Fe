@@ -342,3 +342,31 @@ function logAxiosError(context: string, error: unknown) {
         console.error(`[${context}] Unknown Error:`, error);
     }
 }
+
+// Hàm gọi API AI
+export async function callAIChat(userId: string, messages: { role: 'user'; content: string }[]) {
+    const maxRetries = 3; // Số lần thử lại tối đa
+    let attempt = 0;
+
+    while (attempt < maxRetries) {
+        try {
+            const response = await axios.post('http://localhost:3000/api/v1/ai/gemini/chat', {
+                userId,
+                messages: messages.map(m => ({ role: 'user', content: m.content })) // Chỉ gửi role 'user'
+            });
+            return response.data;
+        } catch (error) {
+            if (isAxiosError(error) && error.response?.status === 429) {
+                attempt++;
+                const retryAfter = error.response.headers['retry-after'] || 1; // Thời gian chờ (giây)
+                console.warn(`Rate limit exceeded. Retrying after ${retryAfter} seconds...`);
+                await new Promise(resolve => setTimeout(resolve, retryAfter * 1000)); // Chờ trước khi thử lại
+            } else {
+                console.error('Error calling AI API:', error);
+                throw error;
+            }
+        }
+    }
+
+    throw new Error('Max retries reached for calling AI API');
+}
