@@ -17,7 +17,10 @@ const AppointmentTimeline = memo(function AppointmentTimeline() {
     const fetchAppointments = async () => {
       try {
         setLoading(true);
-        const token = typeof window !== 'undefined' ? localStorage.getItem('authToken') : null;
+        let token: string | null = null;
+        if (typeof window !== 'undefined') {
+          token = localStorage.getItem('authToken');
+        }
         if (token) axios.defaults.headers.common['Authorization'] = `Bearer ${token}`;
         const response: AppointmentsResponse = await getAppointments({ page: 1, limit: 50 });
 
@@ -515,20 +518,26 @@ export default function PetCareApp() {
       }
     };
 
+    // Only run on client-side
     if (typeof window === 'undefined') return;
-    const token = localStorage.getItem('authToken');
-    let id = localStorage.getItem('userId');
 
-    if (!id && token) {
-      const decoded = parseJwt(token);
-      const resolved = decoded?.userId ?? decoded?.id ?? decoded?.sub ?? null;
-      if (resolved) {
-        id = String(resolved);
-        localStorage.setItem('userId', id);
+    try {
+      const token = localStorage.getItem('authToken');
+      let id = localStorage.getItem('userId');
+
+      if (!id && token) {
+        const decoded = parseJwt(token);
+        const resolved = decoded?.userId ?? decoded?.id ?? decoded?.sub ?? null;
+        if (resolved) {
+          id = String(resolved);
+          localStorage.setItem('userId', id);
+        }
       }
-    }
 
-    if (id) setUserId(id);
+      if (id) setUserId(id);
+    } catch (error) {
+      console.error('Error accessing localStorage:', error);
+    }
   }, []);
 
   // Callback được memo hóa để tránh re-render PetCards

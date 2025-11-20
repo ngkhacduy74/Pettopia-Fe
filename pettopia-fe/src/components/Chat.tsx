@@ -50,32 +50,39 @@ const Chat = memo(function Chat({
   setShowChat,
   chatSuggestions
 }: ChatProps) {
-  const [messages, setMessages] = useState<Message[]>(() => {
-    const savedMessages = localStorage.getItem('chatMessages');
-    return savedMessages ? JSON.parse(savedMessages) : [{ role: 'assistant', content: 'Meo? ngươi cần giúp gì đây?' }];
-  });
+  const [messages, setMessages] = useState<Message[]>([{ role: 'assistant', content: 'Meo? ngươi cần giúp gì đây?' }]);
   const [chatMessage, setChatMessage] = useState('');
   const [isLoading, setIsLoading] = useState(false);
+  const [userId, setUserId] = useState<string>('anonymous');
   const messagesEndRef = useRef<HTMLDivElement>(null);
   const inputRef = useRef<HTMLInputElement>(null);
   const chatMessageRef = useRef('');
   const messagesRef = useRef<Message[]>([]);
   const sendLockRef = useRef(false);
 
-  const [userId] = useState<string>(() => {
+  // Initialize messages and userId from localStorage on mount
+  useEffect(() => {
+    if (typeof window === 'undefined') return;
+    
     try {
-      if (typeof window === 'undefined') return 'anonymous';
+      // Load messages from localStorage
+      const savedMessages = localStorage.getItem('chatMessages');
+      if (savedMessages) {
+        setMessages(JSON.parse(savedMessages));
+      }
+      
+      // Load or create userId
       const key = 'pettopia_chat_userId';
       let id = localStorage.getItem(key);
       if (!id) {
         id = crypto.randomUUID?.() ?? `uid-${Math.random().toString(36).slice(2, 10)}`;
         localStorage.setItem(key, id);
       }
-      return id;
-    } catch {
-      return 'anonymous';
+      setUserId(id);
+    } catch (error) {
+      console.error('Error initializing chat:', error);
     }
-  });
+  }, []);
 
   useEffect(() => {
     messagesRef.current = messages;
@@ -117,7 +124,9 @@ const Chat = memo(function Chat({
     const allMessages = [...messagesRef.current, userMsg];
 
     setMessages(allMessages);
-    localStorage.setItem('chatMessages', JSON.stringify(allMessages));
+    if (typeof window !== 'undefined') {
+      localStorage.setItem('chatMessages', JSON.stringify(allMessages));
+    }
     setIsLoading(true);
     setChatMessage('');
 
@@ -138,14 +147,18 @@ const Chat = memo(function Chat({
         const updatedMessages = [...allMessages, assistantMsg];
         
         setMessages(updatedMessages);
-        localStorage.setItem('chatMessages', JSON.stringify(updatedMessages));
+        if (typeof window !== 'undefined') {
+          localStorage.setItem('chatMessages', JSON.stringify(updatedMessages));
+        }
 
     } catch (err) {
         console.error('Lỗi khi gọi API AI:', err);
         const errorMsg: Message = { role: 'assistant', content: 'Xin lỗi, có lỗi xảy ra. Vui lòng thử lại!' };
         const updatedMessages = [...allMessages, errorMsg];
         setMessages(updatedMessages);
-        localStorage.setItem('chatMessages', JSON.stringify(updatedMessages));
+        if (typeof window !== 'undefined') {
+          localStorage.setItem('chatMessages', JSON.stringify(updatedMessages));
+        }
     } finally {
         setIsLoading(false);
         sendLockRef.current = false;
