@@ -32,30 +32,16 @@ export default function LoginForm() {
 
       if (response.token) {
         localStorage.setItem('authToken', response.token);
-        const isSecure = typeof window !== 'undefined' && window.location.protocol === 'https:';
-        const secureFlag = isSecure ? '; Secure' : '';
-        document.cookie = `authToken=${encodeURIComponent(response.token)}; path=/; max-age=3600; SameSite=Lax${secureFlag}`;
+        document.cookie = `authToken=${response.token}; path=/; max-age=3600; Secure`;
 
         const decoded = parseJwt(response.token);
         let userRole: string[] = [];
 
         if (decoded && decoded.role) {
-          const rawRole: any = decoded.role;
-          if (Array.isArray(rawRole)) {
-            userRole = rawRole.filter((role) => typeof role === 'string' && role);
-          } else if (typeof rawRole === 'string') {
-            try {
-              const parsed = JSON.parse(rawRole);
-              if (Array.isArray(parsed)) {
-                userRole = parsed.filter((r) => typeof r === 'string' && r);
-              } else {
-                userRole = (rawRole as string).split(',').map((r: string) => r.trim()).filter(Boolean);
-              }
-            } catch {
-              userRole = (rawRole as string).split(',').map((r: string) => r.trim()).filter(Boolean);
-            }
-          } else {
-            userRole = [String(rawRole)];
+          if (Array.isArray(decoded.role)) {
+            userRole = decoded.role.filter((role) => typeof role === 'string' && role);
+          } else if (typeof decoded.role === 'string') {
+            userRole = decoded.role.split(',').map((role) => role.trim()).filter((role) => role);
           }
 
           if (!userRole.length) {
@@ -63,9 +49,9 @@ export default function LoginForm() {
             return;
           }
 
-          const primaryRole = userRole[0];
-          document.cookie = `userRole=${encodeURIComponent(primaryRole)}; path=/; max-age=3600; SameSite=Lax${secureFlag}`;
-          localStorage.setItem('userRole', JSON.stringify(userRole));
+          const rolesJson = JSON.stringify(userRole);
+          document.cookie = `userRole=${rolesJson}; path=/; max-age=3600; Secure`;
+          localStorage.setItem('userRole', rolesJson);
 
           setIsSuccess(true);
           setTimeout(() => {
@@ -196,7 +182,7 @@ export default function LoginForm() {
             <div className="relative flex items-center">
               <input
                 id="password"
-                {...register('password', { 
+                {...register('password', {
                   required: 'Mật khẩu là bắt buộc',
                   minLength: { value: 6, message: 'Mật khẩu phải có ít nhất 6 ký tự' }
                 })}
