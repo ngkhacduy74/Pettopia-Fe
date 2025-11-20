@@ -2,6 +2,14 @@ import axios from "axios";
 
 const API_BASE_URL = process.env.NEXT_PUBLIC_PETTOPIA_API_URL; // SỬA: chỉ dùng .env, bỏ fallback sau
 
+type PostsEnvelope = {
+  data?: Post[];
+  posts?: Post[];
+  items?: Post[];
+  content?: Post[];
+  results?: Post[];
+};
+
 export interface Author {
   user_id: string;
   fullname: string;
@@ -387,10 +395,11 @@ class CommunicationService {
       headers: this.getHeaders(),
     });
     
-    const data = await this.handleResponse<Post[]>(response);
+    const data = await this.handleResponse<Post[] | PostsEnvelope>(response);
+    const normalized = this.extractPostsArray(data);
     
     // Additional client-side filtering if needed
-    return data
+    return normalized
         .filter(post => !post.isHidden)
         .filter(post => {
             const postDate = new Date(post.createdAt);
@@ -399,6 +408,24 @@ class CommunicationService {
         .sort((a, b) => b.likeCount - a.likeCount)
         .slice(0, limit);
 }
+
+  private extractPostsArray(response: Post[] | PostsEnvelope): Post[] {
+    if (Array.isArray(response)) {
+      return response;
+    }
+
+    if (response && typeof response === 'object') {
+      const possibleKeys: (keyof PostsEnvelope)[] = ['data', 'posts', 'items', 'content', 'results'];
+      for (const key of possibleKeys) {
+        const value = response[key];
+        if (Array.isArray(value)) {
+          return value;
+        }
+      }
+    }
+
+    return [];
+  }
 
   // ==================== UTILITY METHODS ====================
 

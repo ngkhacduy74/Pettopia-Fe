@@ -50,9 +50,10 @@ const Chat = memo(function Chat({
   setShowChat,
   chatSuggestions
 }: ChatProps) {
-  const [messages, setMessages] = useState<Message[]>([
-    { role: 'assistant', content: 'Meo? ngươi cần giúp gì đây?' }
-  ]);
+  const [messages, setMessages] = useState<Message[]>(() => {
+    const savedMessages = localStorage.getItem('chatMessages');
+    return savedMessages ? JSON.parse(savedMessages) : [{ role: 'assistant', content: 'Meo? ngươi cần giúp gì đây?' }];
+  });
   const [chatMessage, setChatMessage] = useState('');
   const [isLoading, setIsLoading] = useState(false);
   const messagesEndRef = useRef<HTMLDivElement>(null);
@@ -116,6 +117,7 @@ const Chat = memo(function Chat({
     const allMessages = [...messagesRef.current, userMsg];
 
     setMessages(allMessages);
+    localStorage.setItem('chatMessages', JSON.stringify(allMessages));
     setIsLoading(true);
     setChatMessage('');
 
@@ -126,19 +128,24 @@ const Chat = memo(function Chat({
     }
 
     try {
-        // Chỉ gửi các message có role là 'user'
-        const userMessages = allMessages.filter(m => m.role === 'user') as { role: 'user'; content: string }[]; // Ép kiểu
-        const aiResponse = await callAIChat(userId, userMessages); // Gọi hàm AI API
+        // Chỉ gửi các message có role là 'user' cho AI
+        const userMessages = allMessages.filter(m => m.role === 'user') as { role: 'user'; content: string }[];
+        const aiResponse = await callAIChat(userId, userMessages);
 
-        // Lưu trữ phản hồi từ AI mà không tạo role 'assistant'
+        // Lấy phản hồi từ AI và thêm vào messages với role 'assistant'
         const aiText = aiResponse.content || 'Không có phản hồi từ AI';
-        // Hiển thị phản hồi từ AI mà không thêm message mới
-        setMessages(prev => [...prev, { role: 'user', content: aiText }]); // Thêm phản hồi vào danh sách messages
+        const assistantMsg: Message = { role: 'assistant', content: aiText };
+        const updatedMessages = [...allMessages, assistantMsg];
+        
+        setMessages(updatedMessages);
+        localStorage.setItem('chatMessages', JSON.stringify(updatedMessages));
 
     } catch (err) {
-        // Xử lý lỗi nếu cần
         console.error('Lỗi khi gọi API AI:', err);
-        // Không thêm message role 'assistant'
+        const errorMsg: Message = { role: 'assistant', content: 'Xin lỗi, có lỗi xảy ra. Vui lòng thử lại!' };
+        const updatedMessages = [...allMessages, errorMsg];
+        setMessages(updatedMessages);
+        localStorage.setItem('chatMessages', JSON.stringify(updatedMessages));
     } finally {
         setIsLoading(false);
         sendLockRef.current = false;
@@ -183,7 +190,7 @@ const Chat = memo(function Chat({
               key={i}
               className={`flex items-start gap-3 animate-fadeIn ${m.role === 'user' ? 'justify-end' : ''}`}
             >
-              {m.role === 'user' ? (
+              {m.role === 'assistant' ? (
                 <>
                   <CatAvatar />
                   <div className="bg-white rounded-2xl rounded-tl-sm p-4 max-w-[85%] shadow-sm border border-teal-100">
@@ -217,7 +224,7 @@ const Chat = memo(function Chat({
         </div>
       </div>
 
-      {/* Suggestions - đã bỏ hết icon, chỉ còn text + tag */}
+      {/* Suggestions */}
       {messages.length === 1 && !isLoading && chatSuggestions.length > 0 && (
         <div className="px-4 pb-3 space-y-2 border-b border-teal-100 bg-teal-50/30">
           {chatSuggestions.map((s, i) => (
@@ -247,7 +254,7 @@ const Chat = memo(function Chat({
             value={chatMessage}
             onChange={(e) => setChatMessage(e.target.value)}
             onKeyDown={handleKeyDown}
-            className="flex-1 bg-transparent outline-none text-sm text-gray-800 placeholder:text-gray-500 py-2"
+            className="flex-1 bg-transparent outline-none text-sm text-gray-800 placeholder:text-gray-500 px-3 py-2"
             disabled={isLoading}
           />
           <button

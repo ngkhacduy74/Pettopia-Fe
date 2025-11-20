@@ -46,6 +46,16 @@ interface Post {
   updatedAt?: string;
 }
 
+const normalizeHiddenFlag = (value: unknown): boolean => {
+  if (typeof value === 'boolean') return value;
+  if (typeof value === 'number') return value === 1;
+  if (typeof value === 'string') {
+    const normalized = value.trim().toLowerCase();
+    return normalized === 'true' || normalized === '1';
+  }
+  return false;
+};
+
 export default function ManagePostsPage() {
   const router = useRouter();
   const [filterStatus, setFilterStatus] = useState<'all' | 'visible' | 'hidden'>('all');
@@ -114,7 +124,7 @@ export default function ManagePostsPage() {
         author: p?.author || { user_id: uid, fullname: 'Unknown', avatar: null },
         title: p?.title || 'Untitled',
         content: p?.content || '',
-        isHidden: p?.isHidden === true || p?.isHidden === 'true' || p?.isHidden === 1,
+        isHidden: normalizeHiddenFlag(p?.isHidden),
         tags: parseTags(p?.tags),
         images: Array.isArray(p?.images) ? p.images : [],
         comments: Array.isArray(p?.comments) ? p.comments : [],
