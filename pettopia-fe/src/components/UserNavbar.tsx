@@ -115,7 +115,7 @@ export default function UserNavbar({ setShowSearch, showSearch }: UserNavbarProp
     {
       id: 'view-appointments',
       name: 'Xem lịch khám',
-      icon: <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 20 20" fill="currentColor" className="size-5"><path d="M10.5 1.5H5.75A2.75 2.75 0 003 4.25v11A2.75 2.75 0 005.75 18h8.5A2.75 2.75 0 0117 15.25v-11A2.75 2.75 0 0014.25 1.5H10.5z" /><path d="M7 5h6M7 9h6M7 13h3" fill="white" opacity="0.3"/></svg>,
+      icon: <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 20 20" fill="currentColor" className="size-5"><path d="M10.5 1.5H5.75A2.75 2.75 0 003 4.25v11A2.75 2.75 0 005.75 18h8.5A2.75 2.75 0 0117 15.25v-11A2.75 2.75 0 0014.25 1.5H10.5z" /><path d="M7 5h6M7 9h6M7 13h3" fill="white" opacity="0.3" /></svg>,
       path: '/user/appointments/list',
       category: 'Đặt lịch',
       keywords: ['xem', 'lịch khám', 'appointments', 'lịch hẹn', 'quản lý', 'lịch sử']
@@ -490,9 +490,9 @@ export default function UserNavbar({ setShowSearch, showSearch }: UserNavbarProp
                 ) : pets.length > 0 ? (
                   <>
                     {pets.map((pet) => (
-                      <Link key={pet.id} href={`/user/user-pet/${pet.id}`}>
-                        <button className={`w-full flex items-center gap-3 px-3 py-2 rounded-lg text-sm transition-colors
-                          ${pathname === `/user/user-pet/${pet.id}`
+                      <Link key={pet.id} href={`/user/pet/${pet.id}`}>
+                        <button className={`w-full flex items-center gap-3 px-3 py-2 rounded-lg text-sm transition-colors cursor-pointer
+                          ${pathname === `/user/pet/${pet.id}`
                             ? 'bg-gradient-to-r from-teal-400 to-orange-500 text-white shadow-sm'
                             : 'hover:bg-teal-50 text-gray-700'}`}>
                           {pet.image || pet.imageUrl || pet.photo || pet.avatar_url ? (
