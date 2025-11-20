@@ -2,6 +2,7 @@
 
 import { useState, useEffect, useRef, JSX } from 'react';
 import { parseJwt, isTokenExpired } from '@/utils/jwt';
+import { logoutUser } from '@/services/auth/authService';
 import Link from 'next/link';
 import { usePathname, useRouter } from 'next/navigation';
 import { getPetsByOwner, type PetDetailResponse } from '@/services/petcare/petService';
@@ -176,7 +177,8 @@ export default function UserNavbar({ setShowSearch, showSearch }: UserNavbarProp
 
         if (isTokenExpired(token)) {
           console.error('Token expired');
-          localStorage.removeItem("authToken");
+          // Gọi hàm logout tối ưu để xoá tất cả dữ liệu
+          logoutUser();
           router.replace('/auth/login');
           return;
         }
@@ -249,9 +251,13 @@ export default function UserNavbar({ setShowSearch, showSearch }: UserNavbarProp
   };
 
   const handleLogoutClick = () => {
-    setIsDropdownOpen(false);
-    localStorage.removeItem("authToken");
-    router.replace('/auth/login');
+    logoutUser();
+    setTimeout(() => {
+      window.location.href = '/auth/login';
+      if (window.history && window.history.length > 1) {
+        window.history.forward();
+      }
+    }, 500);
   };
 
   const getInitials = (name: string) => {

@@ -1,5 +1,6 @@
 import axios from "axios";
 import { parseJwt } from "@/utils/jwt";
+import { logAllCookies, logAuthStatus } from "@/utils/cookieHelper"; // Import cookie helpers
 
 // Lấy base URL từ .env
 const API_URL = `${process.env.NEXT_PUBLIC_PETTOPIA_API_URL}/auth`;
@@ -99,25 +100,39 @@ export const createUser = async (userData: {
   }
 };
 
-// services/auth/authService.ts (hoặc utils/authService.ts)
-
-interface CookieOptions {
-  path?: string;
-  domain?: string;
-  secure?: boolean;
-}
-
 /**
- * XÓA HOÀN TOÀN MỌI DỮ LIỆU ĐĂNG NHẬP
- * - localStorage: authToken, userRole, userRoles, refreshToken, userId, ...
- * - Cookie: authToken, userRole, userRoles, ... (dù path nào)
- * - Xóa history và clear cache
+ * XÓA HOÀN TOÀN MỌI DỮ LIỆU ĐĂNG NHẬP & SESSION
+ * - localStorage: authToken, userRole, userRoles, refreshToken, userId, chatMessages, v.v...
+ * - sessionStorage: tất cả session data
+ * - Cookie: tất cả cookies (xóa bằng multiple variations)
+ * - Axios headers: xóa Authorization header
+ * - History: ngăn quay lại bằng replaceState + pushState
+ * - IndexedDB: xóa tất cả databases nếu có
  */
 export const logoutUser = (): void => {
-  console.log('Bắt đầu đăng xuất...');
+  console.log('🔄 Bắt đầu quy trình đăng xuất...');
+  
+  // Log trạng thái auth trước logout
+  logAuthStatus();
 
-  // ================== 1. XÓA LOCALSTORAGE ==================
+  // Kiểm tra môi trường client
+  if (typeof window === 'undefined') {
+    console.warn('⚠️  logoutUser chỉ có thể chạy trên client-side');
+    return;
+  }
+
+  // ================== 1. XÓA AXIOS HEADERS ==================
+  try {
+    // Xóa Authorization header từ axios default
+    delete axiosInstance.defaults.headers.common['Authorization'];
+    console.log('✓ Đã xóa Authorization header từ axios');
+  } catch (e) {
+    console.warn('⚠️  Lỗi khi xóa axios header:', e);
+  }
+
+  // ================== 2. XÓA LOCALSTORAGE ==================
   const localStorageKeysToRemove = [
+    // Auth & User info
     'authToken',
     'userRole',
     'userRoles',
@@ -125,56 +140,98 @@ export const logoutUser = (): void => {
     'userId',
     'clinicId',
     'vetId',
-    // Thêm key nếu cần
+    'userEmail',
+    // Chat & Messages
+    'chatMessages',
+    'pettopia_chat_userId',
+    // Other potential keys
+    'pettopia_user_preferences',
+    'pettopia_last_route',
   ];
 
-  localStorageKeysToRemove.forEach(key => {
-    if (localStorage.getItem(key) !== null) {
-      localStorage.removeItem(key);
-      console.log(`✓ Đã xóa localStorage: ${key}`);
-    }
-  });
+  try {
+    localStorageKeysToRemove.forEach(key => {
+      if (localStorage.getItem(key) !== null) {
+        localStorage.removeItem(key);
+        console.log(`✓ Xóa localStorage: ${key}`);
+      }
+    });
+  } catch (e) {
+    console.warn('⚠️  Lỗi khi xóa localStorage:', e);
+  }
 
-  // ================== 2. XÓA COOKIES ==================
+  // ================== 3. XÓA SESSION STORAGE ==================
+  try {
+    sessionStorage.clear();
+    console.log('✓ Đã xóa tất cả sessionStorage');
+  } catch (e) {
+    console.warn('⚠️  Lỗi khi xóa sessionStorage:', e);
+  }
+
+  // ================== 4. XÓA COOKIES (MULTIPLE METHODS) ==================
+  const deleteCookie = (name: string) => {
+    const expires = new Date(0).toUTCString();
+    const currentDomain = window.location.hostname;
+    
+    // Debug: log cookie hiện tại trước khi xoá
+    const beforeDelete = document.cookie;
+    console.log(`📋 Cookie trước khi xoá ${name}:`, beforeDelete);
+    
+    // Các variation để đảm bảo xóa được cookie dù lưu như thế nào
+    const cookieVariations = [
+      // Basic: set value thành empty string
+      `${name}=`,
+      `${name}=; path=/`,
+      // Với expires = past date
+      `${name}=; path=/; expires=${expires}`,
+      `${name}=; path=/; expires=${expires}; SameSite=Strict`,
+      `${name}=; path=/; expires=${expires}; SameSite=Lax`,
+      // Với Secure flag
+      `${name}=; path=/; expires=${expires}; Secure`,
+      `${name}=; path=/; expires=${expires}; Secure; SameSite=Lax`,
+      // Max-age=0 (modern way)
+      `${name}=; path=/; max-age=0`,
+      `${name}=; max-age=0`,
+      // Thử với domain (nếu có)
+      `${name}=; path=/; expires=${expires}; domain=${currentDomain}`,
+      `${name}=; path=/; expires=${expires}; domain=.${currentDomain}`,
+      // Không có path
+      `${name}=; expires=${expires}`,
+    ];
+
+    // Thực hiện xoá với tất cả variations
+    let deletedCount = 0;
+    cookieVariations.forEach(cookieString => {
+      try {
+        document.cookie = cookieString;
+        deletedCount++;
+      } catch (e) {
+        // Silently fail - some variations might not be valid
+      }
+    });
+    
+    // Debug: log cookie sau khi xoá
+    const afterDelete = document.cookie;
+    console.log(`✓ Đã cố xoá cookie "${name}" bằng ${deletedCount} variations. Cookie sau xoá:`, afterDelete);
+  };
+
   const cookieNamesToRemove = [
     'authToken',
     'userRole',
     'userRoles',
+    'refreshToken',
+    'userId',
+    'clinicId',
+    'vetId',
   ];
-
-  const deleteCookie = (name: string) => {
-    // Tạo chuỗi expires trong quá khứ
-    const expires = new Date(0).toUTCString();
-    
-    // Xóa cookie với các tùy chọn khác nhau
-    const cookieVariations = [
-      // Variation 1: path=/ + SameSite=Lax
-      `${name}=; path=/; expires=${expires}; SameSite=Lax`,
-      // Variation 2: path=/ + Secure + SameSite=Lax
-      `${name}=; path=/; expires=${expires}; Secure; SameSite=Lax`,
-      // Variation 3: không path
-      `${name}=; expires=${expires}`,
-      // Variation 4: current pathname
-      `${name}=; path=${window.location.pathname}; expires=${expires}`,
-    ];
-
-    cookieVariations.forEach(cookieString => {
-      try {
-        document.cookie = cookieString;
-      } catch (e) {
-        console.warn(`Không thể xóa cookie variant: ${name}`, e);
-      }
-    });
-  };
 
   // Xóa từng cookie được biết
   cookieNamesToRemove.forEach(cookieName => {
     deleteCookie(cookieName);
-    console.log(`✓ Đã cố gắng xóa cookie: ${cookieName}`);
   });
 
-  // ================== 3. FALLBACK: XÓA TẤT CẢ COOKIES ==================
-  // (Phòng trường hợp có cookie lạ không trong danh sách)
+  // ================== 5. FALLBACK: XÓA TẤT CẢ COOKIES ==================
+  // Xóa mọi cookie không rõ tên bằng cách parse document.cookie
   try {
     const allCookies = document.cookie.split(';');
     const expires = new Date(0).toUTCString();
@@ -182,34 +239,70 @@ export const logoutUser = (): void => {
     allCookies.forEach(cookie => {
       const name = cookie.split('=')[0].trim();
       if (name && name.length > 0) {
-        // Xóa mà không cần biết path/domain, browser sẽ xóa từ current scope
+        // Xóa cookie với multiple variations
         document.cookie = `${name}=; path=/; expires=${expires}`;
         document.cookie = `${name}=; expires=${expires}`;
-        console.log(`✓ Đã xóa cookie: ${name}`);
+        document.cookie = `${name}=; max-age=0`;
       }
     });
+    console.log('✓ Đã xóa tất cả cookies via fallback');
   } catch (err) {
-    console.warn('Lỗi khi xóa cookie fallback:', err);
+    console.warn('⚠️  Lỗi khi xóa cookie fallback:', err);
   }
 
-  // ================== 4. NGĂN CHẶN QUAY LẠI (BACK BUTTON) ==================
-  // Xóa history khỏi browser history stack
-  if (typeof window !== 'undefined') {
-    // Cách 1: Thay thế history state để không thể quay lại
+  // ================== 6. XÓA INDEXEDDB (NẾU CÓ) ==================
+  // Xóa tất cả IndexedDB databases
+  if (typeof indexedDB !== 'undefined') {
+    try {
+      // Lấy danh sách databases và xóa từng cái
+      // Note: Không có cách lấy danh sách trực tiếp, nhưng có thể xóa những cái biết
+      const dbNames = [
+        'pettopia-db',
+        'pettopia_cache',
+        'chat_db',
+        'messages_db',
+      ];
+      
+      dbNames.forEach(dbName => {
+        try {
+          const request = indexedDB.deleteDatabase(dbName);
+          request.onsuccess = () => console.log(`✓ Đã xóa IndexedDB: ${dbName}`);
+          request.onerror = () => console.warn(`⚠️  Không thể xóa IndexedDB: ${dbName}`);
+        } catch (e) {
+          // Silently fail
+        }
+      });
+    } catch (e) {
+      console.warn('⚠️  Lỗi khi xóa IndexedDB:', e);
+    }
+  }
+
+  // ================== 7. NGĂN CHẶN QUAY LẠI (BACK BUTTON) ==================
+  try {
+    // Xóa history khỏi browser history stack
     window.history.replaceState(null, '', '/auth/login');
-    
-    // Cách 2: Push state mới để đẩy logout page vào history stack
-    // Điều này ngăn browser quay lại trang trước
     window.history.pushState(null, '', '/auth/login');
-    
-    console.log('✓ Đã xóa history khỏi browser stack');
+    console.log('✓ Đã xóa history - ngăn chặn quay lại');
+  } catch (err) {
+    console.warn('⚠️  Lỗi khi xóa history:', err);
   }
 
-  // ================== 5. CLEAR CACHE & SESSION STORAGE ==================
-  if (typeof sessionStorage !== 'undefined') {
-    sessionStorage.clear();
-    console.log('✓ Đã xóa sessionStorage');
+  // ================== 8. CLEAR BROWSER CACHE (VIA SERVICE WORKER - OPTIONAL) ==================
+  // Nếu có service worker, có thể gửi message để xóa cache
+  if ('serviceWorker' in navigator && navigator.serviceWorker.controller) {
+    try {
+      navigator.serviceWorker.controller.postMessage({
+        type: 'CLEAR_CACHE',
+      });
+      console.log('✓ Đã gửi signal xóa service worker cache');
+    } catch (e) {
+      console.warn('⚠️  Lỗi khi gửi message đến service worker:', e);
+    }
   }
 
-  console.log('✅ Đăng xuất thành công! Đã xóa hết localStorage, cookie, history & cache.');
+  console.log('✅ Đăng xuất thành công! Đã xóa hết localStorage, cookie, history, sessionStorage & cache.');
+  
+  // Log trạng thái auth sau logout
+  console.log('📊 === VERIFY LOGOUT ===');
+  logAuthStatus();
 };
