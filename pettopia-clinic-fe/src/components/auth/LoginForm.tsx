@@ -84,35 +84,27 @@ export default function LoginForm() {
   if (isSuccess) {
     return (
       <div className="flex flex-col items-center justify-center min-h-screen bg-gradient-to-br from-teal-50 to-white">
-        <div className="bg-white rounded-3xl shadow-2xl p-8 text-center max-w-md border border-teal-100">
-          <div className="mb-6 relative">
-            <div className="w-20 h-20 mx-auto bg-gradient-to-br from-teal-400 to-cyan-500 rounded-full flex items-center justify-center shadow-lg">
-              <svg className="w-12 h-12 text-white" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M9 12l2 2 4-4m6 2a9 9 0 11-18 0 9 9 0 0118 0z" />
-              </svg>
-            </div>
-            <div className="absolute inset-0 bg-gradient-to-br from-teal-400 to-cyan-500 rounded-full blur-2xl opacity-20 -z-10"></div>
+        <div className="bg-white rounded-2xl shadow-xl p-8 text-center max-w-md">
+          <div className="mb-4">
+            <svg className="w-20 h-20 mx-auto text-teal-500" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+              <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M9 12l2 2 4-4m6 2a9 9 0 11-18 0 9 9 0 0118 0z" />
+            </svg>
           </div>
-
           <h2 className="text-3xl font-bold text-gray-900 mb-2">Đăng nhập thành công!</h2>
           <p className="text-gray-500 text-sm mb-6">Chào mừng bạn trở lại</p>
-
           <div
             style={{
               width: "180px",
               height: "90px",
-              margin: "0 auto 20px",
+              margin: "16px auto",
               backgroundImage: "url(./sampleimg/cat.gif)",
               backgroundSize: "cover",
-              borderRadius: "16px",
-              border: "2px solid #ccfbf1"
+              borderRadius: "12px",
             }}
-            className="shadow-md"
           ></div>
-
-          <p className="text-gray-600 text-sm flex items-center justify-center gap-2">
+          <p className="text-gray-500 text-sm flex items-center justify-center gap-2">
             <span className="inline-block w-4 h-4 border-2 border-teal-500 border-t-transparent rounded-full animate-spin"></span>
-            <span>Đang chuyển hướng...</span>
+            Đang chuyển hướng...
           </p>
         </div>
       </div>
@@ -124,14 +116,14 @@ export default function LoginForm() {
       <div className="bg-white rounded-3xl shadow-2xl p-8 border border-gray-100">
         {/* Header */}
         <div className="text-center mb-8">
-          <div className="inline-block p-4 bg-gradient-to-br from-teal-50 to-cyan-50 rounded-2xl mb-5 border border-teal-100">
+          <div className="">
             <Image
-              alt="Logo"
-              src="/sampleimg/logo.png"
-              width={56}
-              height={56}
-              className="w-14 h-14 drop-shadow-sm"
-            />
+          alt="Your Company"
+          src="/sampleimg/logo.png"
+          width={60}
+          height={60}
+          className="mx-auto h-25 w-auto"
+        />
           </div>
           <h1 className="text-3xl font-bold text-gray-900 mb-2">Đăng nhập</h1>
           <p className="text-gray-500 text-sm">Quản lý các dịch vụ thú y của bạn</p>
