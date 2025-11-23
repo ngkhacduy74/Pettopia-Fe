@@ -236,19 +236,11 @@ export default function LoginForm() {
         <p className="text-center text-sm text-gray-600">
           Chưa có tài khoản?{' '}
           <a
-            href="http://localhost:4001/auth/register"
+            href="https://pettopia-user.onrender.com/auth/register"
             className="font-semibold text-teal-600 hover:text-teal-700 transition-colors"
           >
             Đăng ký ngay
           </a>
-        </p>
-      </div>
-
-      {/* Footer info - Mobile only */}
-      <div className="mt-8 lg:hidden text-center">
-        <h3 className="text-lg font-bold text-gray-900 mb-2">Chăm sóc thú cưng</h3>
-        <p className="text-sm text-gray-500 max-w-sm mx-auto">
-          Quản lý hiệu quả các dịch vụ thú y của bạn với nền tảng đáng tin cậy
         </p>
       </div>
     </div>
