@@ -3,7 +3,7 @@ import React, { useEffect, useMemo, useState } from 'react';
 import { Sun, Sunset, Moon, Clock, Edit, Trash2, Loader2 } from 'lucide-react';
 
 // API Configuration
-const API_BASE_URL = 'http://localhost:3000/api/v1/partner/clinic/shift';
+const API_BASE_URL = `${process.env.NEXT_PUBLIC_PETTOPIA_API_URL}/partner/clinic/shift`;
 const getToken = () => localStorage.getItem('authToken') || '';
 
 // API Services
