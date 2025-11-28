@@ -1,6 +1,8 @@
 import React, { useState, useEffect } from 'react';
-import { UserGroupIcon, EnvelopeIcon, CheckCircleIcon, ClockIcon, XMarkIcon } from '@heroicons/react/24/outline';
+import { UserGroupIcon, CheckCircleIcon, ClockIcon } from '@heroicons/react/24/outline';
 import { LineChart, Line, XAxis, YAxis, CartesianGrid, Tooltip, ResponsiveContainer, PieChart, Pie, Cell } from 'recharts';
+import InviteMemberModal from '@/components/InviteMemberModal';
+import InviteMemberButton from '@/components/InviteMemberButton';
 import {
     CurrencyDollarIcon,
     CalendarIcon,
@@ -14,8 +16,6 @@ export default function Dashboard() {
     const [selectedPeriod, setSelectedPeriod] = useState('month');
     const [clinicId, setClinicId] = useState<string | null>(null);
     const [showInviteForm, setShowInviteForm] = useState(false);
-    const [inviteEmails, setInviteEmails] = useState('');
-    const [inviteMessage, setInviteMessage] = useState('');
 
     useEffect(() => {
         if (typeof window === 'undefined') return;
@@ -204,17 +204,14 @@ export default function Dashboard() {
         },
     ];
 
-    const handleInvite = () => {
+    const handleInvite = async (email: string, role: string) => {
         // Logic gửi lời mời
-        console.log('Sending invites to:', inviteEmails);
-        console.log('Message:', inviteMessage);
-        setShowInviteForm(false);
-        setInviteEmails('');
-        setInviteMessage('');
+        console.log('Sending invite to:', email, 'with role:', role);
+        // Có thể gửi API ở đây
     };
 
     type StatusType = 'accepted' | 'pending';
-    
+
     const getStatusBadge = (status: StatusType) => {
         if (status === 'accepted') {
             return (
@@ -233,29 +230,23 @@ export default function Dashboard() {
     };
 
     return (
-        <section className="max-w-7xl mx-auto p-12">
+        <section className="max-w-7xl mx-auto ">
             {/* Header */}
             <div className="flex items-center justify-between mb-8">
                 <div>
                     <div className="flex items-center gap-3 mb-2">
                         <UserGroupIcon className="w-8 h-8 text-teal-600" />
-                        <h2 className="text-4xl font-bold text-gray-900">Quản lý Bác sĩ</h2>
+                        <h1 className="text-3xl font-bold text-gray-900 mb-1">Quản lý Bác sĩ AAA</h1>
                     </div>
-                    <p className="text-gray-500 text-lg">Mời và quản lý đội ngũ bác sĩ thú y của phòng khám</p>
+                    <p className="text-gray-500 text-sm">Mời và quản lý đội ngũ bác sĩ thú y của phòng khám</p>
                 </div>
-                <button
-                    onClick={() => setShowInviteForm(true)}
-                    className="px-6 py-3 bg-gradient-to-r from-teal-600 to-cyan-600 text-white rounded-xl font-semibold hover:shadow-lg transition-all duration-300 flex items-center gap-2 hover:scale-105"
-                >
-                    <EnvelopeIcon className="w-5 h-5" />
-                    Mời Bác sĩ
-                </button>
+                <InviteMemberButton onClick={() => setShowInviteForm(true)} />
             </div>
 
             {/* Stats Overview */}
-            <div className="grid grid-cols-3 gap-6 mb-8">
-                <div className="bg-white rounded-2xl p-6 shadow-lg border border-teal-100">
-                    <div className="flex items-center gap-4">
+            <div className="grid grid-cols-3 gap-4 mb-5">
+                <div className="bg-white rounded-2xl p-3 shadow-lg border border-teal-100">
+                    <div className="flex items-center gap-2">
                         <div className="w-14 h-14 bg-gradient-to-br from-teal-600 to-cyan-600 rounded-xl flex items-center justify-center">
                             <UserGroupIcon className="w-7 h-7 text-white" />
                         </div>
@@ -265,8 +256,8 @@ export default function Dashboard() {
                         </div>
                     </div>
                 </div>
-                <div className="bg-white rounded-2xl p-6 shadow-lg border border-teal-100">
-                    <div className="flex items-center gap-4">
+                <div className="bg-white rounded-2xl p-3 shadow-lg border border-teal-100">
+                    <div className="flex items-center gap-2">
                         <div className="w-14 h-14 bg-gradient-to-br from-green-600 to-emerald-600 rounded-xl flex items-center justify-center">
                             <CheckCircleIcon className="w-7 h-7 text-white" />
                         </div>
@@ -278,8 +269,8 @@ export default function Dashboard() {
                         </div>
                     </div>
                 </div>
-                <div className="bg-white rounded-2xl p-6 shadow-lg border border-teal-100">
-                    <div className="flex items-center gap-4">
+                <div className="bg-white rounded-2xl p-3 shadow-lg border border-teal-100">
+                    <div className="flex items-center gap-2">
                         <div className="w-14 h-14 bg-gradient-to-br from-yellow-600 to-amber-600 rounded-xl flex items-center justify-center">
                             <ClockIcon className="w-7 h-7 text-white" />
                         </div>
@@ -294,71 +285,11 @@ export default function Dashboard() {
             </div>
 
             {/* Invite Form Modal */}
-            {showInviteForm && (
-                <div className="fixed inset-0 bg-black/40 backdrop-blur-sm flex items-center justify-center z-50 p-4">
-                    <div className="bg-white/90 backdrop-blur-md rounded-2xl shadow-2xl max-w-2xl w-full p-8 relative">
-                        <button
-                            onClick={() => setShowInviteForm(false)}
-                            className="absolute top-6 right-6 text-gray-400 hover:text-gray-600"
-                        >
-                            <XMarkIcon className="w-6 h-6" />
-                        </button>
-                        
-                        <div className="flex items-center gap-3 mb-6">
-                            <div className="w-12 h-12 bg-gradient-to-br from-teal-600 to-cyan-600 rounded-xl flex items-center justify-center">
-                                <EnvelopeIcon className="w-6 h-6 text-white" />
-                            </div>
-                            <div>
-                                <h3 className="text-2xl font-bold text-gray-900">Mời Bác sĩ Thú y</h3>
-                                <p className="text-sm text-gray-500">Gửi lời mời tham gia đội ngũ phòng khám</p>
-                            </div>
-                        </div>
-
-                        <div className="space-y-6">
-                            <div>
-                                <label className="block text-sm font-semibold text-gray-700 mb-2">
-                                    Email (có thể nhập nhiều email, cách nhau bởi dấu phẩy)
-                                </label>
-                                <input
-                                    type="text"
-                                    value={inviteEmails}
-                                    onChange={(e) => setInviteEmails(e.target.value)}
-                                    placeholder="bsvet1@email.com, bsvet2@email.com"
-                                    className="w-full px-4 py-3 border border-gray-300 rounded-xl focus:outline-none focus:ring-2 focus:ring-teal-500 focus:border-transparent"
-                                />
-                            </div>
-
-                            <div>
-                                <label className="block text-sm font-semibold text-gray-700 mb-2">
-                                    Lời nhắn (tùy chọn)
-                                </label>
-                                <textarea
-                                    value={inviteMessage}
-                                    onChange={(e) => setInviteMessage(e.target.value)}
-                                    placeholder="Chào mừng bạn tham gia đội ngũ phòng khám của chúng tôi..."
-                                    rows={4}
-                                    className="w-full px-4 py-3 border border-gray-300 rounded-xl focus:outline-none focus:ring-2 focus:ring-teal-500 focus:border-transparent resize-none"
-                                />
-                            </div>
-
-                            <div className="flex gap-3 pt-4">
-                                <button
-                                    onClick={handleInvite}
-                                    className="flex-1 px-6 py-3 bg-gradient-to-r from-teal-600 to-cyan-600 text-white rounded-xl font-semibold hover:shadow-lg transition-all duration-300"
-                                >
-                                    Gửi lời mời
-                                </button>
-                                <button
-                                    onClick={() => setShowInviteForm(false)}
-                                    className="px-6 py-3 border border-gray-300 text-gray-700 rounded-xl font-semibold hover:bg-gray-50 transition-colors"
-                                >
-                                    Hủy
-                                </button>
-                            </div>
-                        </div>
-                    </div>
-                </div>
-            )}
+            <InviteMemberModal
+                isOpen={showInviteForm}
+                onClose={() => setShowInviteForm(false)}
+                onSubmit={handleInvite}
+            />
 
             {/* Vet List */}
             <div className="bg-white rounded-2xl shadow-lg border border-teal-100 overflow-hidden">

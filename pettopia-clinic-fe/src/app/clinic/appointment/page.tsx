@@ -62,13 +62,15 @@ export default function AppointmentsPage() {
                         if (customerId) {
                             try {
                                 const customerData = await getCustomerById(customerId);
-                                if (customerData?.data?.fullname) {
-                                    enriched.customer_name = customerData.data.fullname;
+                                // API response structure: { success: true, data: { fullname: "..." } } hoặc { data: { fullname: "..." } }
+                                const fullname = customerData?.data?.fullname || customerData?.fullname;
+                                if (fullname) {
+                                    enriched.customer_name = fullname;
                                 } else {
                                     enriched.customer_name = `Khách hàng ${customerId.substring(0, 8)}`;
                                 }
                             } catch (err) {
-                                // Nếu không lấy được, dùng ID
+                                console.warn(`Không thể lấy thông tin khách hàng ${customerId}:`, err);
                                 enriched.customer_name = `Khách hàng ${customerId.substring(0, 8)}`;
                             }
                         } else {
