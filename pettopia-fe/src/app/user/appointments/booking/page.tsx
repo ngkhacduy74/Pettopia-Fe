@@ -178,6 +178,29 @@ export default function AppointmentBooking() {
 
   const getMinDate = () => new Date().toISOString().split('T')[0];
 
+  // --- NEW: check if a shift (by its end_time) is already in the past for a given date ---
+  const isShiftPast = (shift?: Shift | null, dateStr?: string) => {
+    if (!shift || !dateStr) return false;
+    // shift.end_time expected format "HH:mm"
+    const [year, month, day] = dateStr.split('-').map(n => parseInt(n, 10));
+    if (Number.isNaN(year) || Number.isNaN(month) || Number.isNaN(day)) return false;
+    const [hStr = '0', mStr = '0'] = (shift.end_time || '00:00').split(':');
+    const hours = parseInt(hStr, 10);
+    const minutes = parseInt(mStr, 10);
+    const shiftEnd = new Date(year, month - 1, day, hours, minutes, 0);
+    return shiftEnd.getTime() <= Date.now();
+  };
+  // -------------------------------------------------------------------------------
+
+  // if selectedDate or shifts change and the selectedShift becomes past, clear it
+  useEffect(() => {
+    if (!selectedShift || !selectedDate) return;
+    const chosen = shifts.find(s => s.id === selectedShift);
+    if (isShiftPast(chosen, selectedDate)) {
+      setSelectedShift('');
+    }
+  }, [selectedDate, shifts, selectedShift]);
+
   const toggleService = (serviceId: string) => {
     setSelectedServices(prev => {
       if (prev.includes(serviceId)) {
@@ -210,7 +233,11 @@ export default function AppointmentBooking() {
   const canProceed = () => {
     switch (currentStep) {
       case 1: return selectedClinic !== '';
-      case 2: return selectedDate !== '' && selectedShift !== '';
+      case 2: {
+        if (!selectedDate || !selectedShift) return false;
+        const chosen = shifts.find(s => s.id === selectedShift);
+        return !isShiftPast(chosen, selectedDate);
+      }
       case 3: return selectedServices.length > 0;
       case 4: return Object.keys(petServiceMap).length > 0;
       default: return true;
@@ -370,16 +397,24 @@ export default function AppointmentBooking() {
                   <p className="text-center py-8 text-orange-600">Phòng khám chưa có ca làm việc - Tính năng hỗ trợ ca đang phát triển liên hệ sau</p>
                 ) : (
                   <div className="grid md:grid-cols-3 gap-4">
-                    {shifts.map(shift => (
-                      <div
-                        key={shift.id}
-                        onClick={() => setSelectedShift(shift.id)}
-                        className={`p-5 rounded-xl border-2 text-center cursor-pointer transition-all ${selectedShift === shift.id ? 'border-teal-600 bg-teal-50 shadow-md' : 'border-gray-300 hover:border-gray-400'}`}
-                      >
-                        <h4 className="text-lg font-bold text-gray-700">{formatShiftName(shift.shift)}</h4>
-                        <p className="text-xl font-bold mt-2">{shift.start_time} - {shift.end_time}</p>
-                      </div>
-                    ))}
+                    {shifts.map(shift => {
+                      const disabled = isShiftPast(shift, selectedDate);
+                      return (
+                        <div
+                          key={shift.id}
+                          onClick={() => {
+                            if (disabled) return;
+                            setSelectedShift(shift.id);
+                          }}
+                          aria-disabled={disabled}
+                          className={`p-5 rounded-xl border-2 text-center transition-all ${disabled ? 'border-gray-200 bg-gray-50 text-gray-400 cursor-not-allowed' : selectedShift === shift.id ? 'border-teal-600 bg-teal-50 shadow-md' : 'border-gray-300 hover:border-gray-400 cursor-pointer'}`}
+                        >
+                          <h4 className="text-lg font-bold text-gray-700">{formatShiftName(shift.shift)}</h4>
+                          <p className={`text-xl font-bold mt-2 ${disabled ? 'opacity-60' : ''}`}>{shift.start_time} - {shift.end_time}</p>
+                          {disabled && <p className="text-xs text-red-500 mt-2">Ca đã kết thúc</p>}
+                        </div>
+                      );
+                    })}
                   </div>
                 )}
               </div>
@@ -417,6 +452,17 @@ export default function AppointmentBooking() {
                       </div>
                     </div>
                   ))}
+
+                  {/* DEBUG: Hiển thị dịch vụ đã chọn */}
+                  {/* <div className="col-span-2">
+                    <h4 className="text-lg font-bold text-gray-800 mb-4">Dịch vụ đã chọn (debug)</h4>
+                    <ul className="list-disc list-inside space-y-1">
+                      {selectedServices.map(sId => {
+                        const svc = services.find(s => s.id === sId);
+                        return svc ? <li key={sId} className="text-gray-700">{svc.name}</li> : null;
+                      })}
+                    </ul>
+                  </div> */}
                 </div>
               )}
             </div>
@@ -543,11 +589,7 @@ export default function AppointmentBooking() {
           <button
             onClick={() => setCurrentStep(s => Math.max(1, s - 1))}
             disabled={currentStep === 1 || isSubmitting} // ✅ DISABLE KHI ĐANG LOADING
-            className={`px-8 py-4 rounded-xl font-medium transition ${
-              currentStep === 1 || isSubmitting
-                ? 'bg-gray-200 text-gray-400 cursor-not-allowed'
-                : 'bg-gray-100 hover:bg-gray-200 text-gray-700'
-            }`}
+            className={`px-8 py-4 rounded-xl font-medium transition ${currentStep === 1 || isSubmitting ? 'bg-gray-200 text-gray-400 cursor-not-allowed' : 'bg-gray-100 hover:bg-gray-200 text-gray-700'}`}
           >
             Quay lại
           </button>
@@ -556,11 +598,7 @@ export default function AppointmentBooking() {
             <button
               onClick={() => setCurrentStep(s => s + 1)}
               disabled={!canProceed() || isSubmitting} // ✅ DISABLE KHI ĐANG LOADING
-              className={`px-8 py-4 rounded-xl font-medium transition ${
-                canProceed() && !isSubmitting
-                  ? 'bg-teal-600 text-white hover:bg-teal-700 shadow-lg'
-                  : 'bg-gray-200 text-gray-400 cursor-not-allowed'
-              }`}
+              className={`px-8 py-4 rounded-xl font-medium transition ${canProceed() && !isSubmitting ? 'bg-teal-600 text-white hover:bg-teal-700 shadow-lg' : 'bg-gray-200 text-gray-400 cursor-not-allowed'}`}
             >
               Tiếp theo
             </button>
@@ -568,11 +606,7 @@ export default function AppointmentBooking() {
             <button
               onClick={handleSubmit}
               disabled={isSubmitting} // ✅ DISABLE KHI ĐANG LOADING
-              className={`px-12 py-5 rounded-xl font-bold text-xl transition shadow-xl transform ${
-                isSubmitting
-                  ? 'bg-gray-400 text-gray-600 cursor-not-allowed'
-                  : 'bg-teal-600 text-white hover:bg-teal-700 hover:scale-105'
-              }`}
+              className={`px-12 py-5 rounded-xl font-bold text-xl transition shadow-xl transform ${isSubmitting ? 'bg-gray-400 text-gray-600 cursor-not-allowed' : 'bg-teal-600 text-white hover:bg-teal-700 hover:scale-105'}`}
             >
               {isSubmitting ? (
                 <div className="flex items-center justify-center gap-3">

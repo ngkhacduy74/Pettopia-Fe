@@ -266,7 +266,7 @@ export const updateAppointmentStatus = async (
     const body: any = { status };
     if (cancel_reason) body.cancel_reason = cancel_reason;
 
-    const response = await axios.post(
+    const response = await axios.patch(
       `${HEALTHCARE_API_URL}/appointments/${appointmentId}/status`,
       body,
       { headers: { 'token': token } }
