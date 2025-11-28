@@ -1,33 +1,30 @@
 import axios from "axios";
 
-// Lấy base URL từ .env
+// Base URL
 const API_URL = `${process.env.NEXT_PUBLIC_PETTOPIA_API_URL}/customer`;
 
-// Tạo instance Axios với interceptor
-const axiosInstance = axios.create({
-  baseURL: API_URL,
+// Hàm hỗ trợ lấy token (để không lặp code)
+const getAuthToken = () => {
+  if (typeof window === "undefined") return null;
+  const token = localStorage.getItem("authToken");
+  if (!token) throw new Error("No authentication token found");
+  return token;
+};
+
+// Hàm tạo headers có token (dùng chung)
+const getAuthHeaders = () => ({
   headers: {
     "Content-Type": "application/json",
+    token: getAuthToken(), // giống hệt Service 2
   },
 });
 
-// Interceptor thêm token vào header
-axiosInstance.interceptors.request.use(
-  (config) => {
-    if (typeof window !== "undefined") {
-      const token = localStorage.getItem("authToken");
-      if (token) {
-        config.headers.Authorization = `Bearer ${token}`;
-      }
-    }
-    return config;
-  },
-  (error) => Promise.reject(error)
-);
-
 export async function getCustomerData(page: number, limit: number) {
   try {
-    const response = await axiosInstance.get(`/?page=${page}&limit=${limit}`);
+    const response = await axios.get(
+      `${API_URL}/?page=${page}&limit=${limit}`,
+      getAuthHeaders()
+    );
     return response.data;
   } catch (error: any) {
     console.error("Lỗi khi lấy danh sách khách hàng:", error.response?.data || error.message);
@@ -37,7 +34,7 @@ export async function getCustomerData(page: number, limit: number) {
 
 export async function getCustomerById(id: string | number) {
   try {
-    const response = await axiosInstance.get(`/${id}`);
+    const response = await axios.get(`${API_URL}/${id}`, getAuthHeaders());
     return response.data;
   } catch (error: any) {
     const errorMsg = error.response?.data?.message || error.response?.data || error.message || 'Unknown error';
@@ -52,7 +49,7 @@ export async function getCustomerById(id: string | number) {
 
 export async function getCustomerTotalDetail() {
   try {
-    const response = await axiosInstance.get(`/total/detail`);
+    const response = await axios.get(`${API_URL}/total/detail`, getAuthHeaders());
     return response.data;
   } catch (error: any) {
     console.error("Lỗi khi lấy tổng chi tiết khách hàng:", error.response?.data || error.message);
