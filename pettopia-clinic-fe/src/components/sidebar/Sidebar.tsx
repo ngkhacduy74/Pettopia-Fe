@@ -107,6 +107,8 @@ export default function Sidebar({
     Admin: [
       { label: 'Dashboard', href: '/admin/dashboard', icon: <HomeIcon className="w-5 h-5" /> },
       { label: 'Manage Users', href: '/admin/manager-user', icon: <UsersIcon className="w-5 h-5" /> },
+      { label: 'Manage Clinic', href: '/admin/manager-clinic', icon: <UsersIcon className="w-5 h-5" /> },
+      { label: 'Community', href: '/admin/community', icon: <UsersIcon className="w-5 h-5" /> }
     ],
     Staff: [
       { label: 'Trang chủ', href: '/staff/dashboard', icon: <HomeIcon className="w-5 h-5" /> },

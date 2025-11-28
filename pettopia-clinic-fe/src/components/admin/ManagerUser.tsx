@@ -143,7 +143,9 @@ export default function RequestTable({ title }: RequestTableProps) {
                 </div>
                 <input
                   type="text"
-                  className="block w-full pl-10 pr-3 py-2.5 border border-gray-300 rounded-lg focus:ring-2 focus:ring-teal-500 focus:border-transparent transition"
+                    className="w-full px-4 py-2.5 border border-gray-300 rounded-lg 
+           focus:outline-none focus:border-transparent pl-10
+           focus:ring-2 focus:ring-teal-500"
                   placeholder="Tìm kiếm theo tên, username, email, số điện thoại..."
                   value={searchTerm}
                   onChange={(e) => setSearchTerm(e.target.value)}
@@ -269,7 +271,7 @@ export default function RequestTable({ title }: RequestTableProps) {
                     Liên hệ
                   </th>
                   <th scope="col" className="px-6 py-4 text-left text-xs font-semibold text-gray-600 uppercase tracking-wider">
-                    Điểm uy tín
+                    Uy tín
                   </th>
                   <th scope="col" className="px-6 py-4 text-left text-xs font-semibold text-gray-600 uppercase tracking-wider">
                     Trạng thái
@@ -323,7 +325,7 @@ export default function RequestTable({ title }: RequestTableProps) {
                           : 'bg-red-100 text-red-800'
                           }`}
                       >
-                        {form.is_active ? 'Đã kích hoạt' : 'Đã bị đình chỉ'}
+                        {form.is_active ? 'Acitve' : 'Deactive'}
                       </span>
                     </td>
                     <td className="px-6 py-4">
