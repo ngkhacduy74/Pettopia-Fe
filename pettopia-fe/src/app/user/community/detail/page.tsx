@@ -1,7 +1,7 @@
 "use client";
 
 import React, { useEffect, useMemo, useState } from "react";
-import { useSearchParams } from "next/navigation";
+import { useRouter, useSearchParams } from "next/navigation";
 import { communicationService, Post, Comment } from "@/services/communication/communicationService";
 import { parseJwt } from "@/utils/jwt";
 
@@ -12,6 +12,7 @@ interface LightboxState {
 
 export default function PostDetailPage() {
   const searchParams = useSearchParams();
+  const router = useRouter();
   const postId = searchParams.get("id");
 
   const [post, setPost] = useState<Post | null>(null);
@@ -131,8 +132,8 @@ export default function PostDetailPage() {
     if (!postId) return;
     const content = commentInput.trim();
     if (!content) return;
-    if (content.length > 450) {
-      alert("Bình luận không được vượt quá 450 ký tự.");
+    if (content.length > 200) {
+      alert("Bình luận không được vượt quá số ký tự.");
       return;
     }
     if (!currentUserId) {
@@ -286,9 +287,15 @@ export default function PostDetailPage() {
                   <div className="flex justify-between items-start mb-3">
                     {/* Date */}
                     <span className="text-sm text-teal-600 font-medium">{formatDate(post.createdAt)}</span>
-
-                    {/* Share icon */}
                     <div className="flex items-center gap-3">
+                      {currentUserId === post.author.user_id && (
+                        <button
+                          onClick={() => router.push(`/user/community/edit/${post.post_id}`)}
+                          className="px-3 py-1.5 rounded-lg bg-blue-100 text-blue-700 text-sm font-semibold hover:bg-blue-200 transition-colors"
+                        >
+                          Chỉnh sửa
+                        </button>
+                      )}
                       <button
                         onClick={() => {
                           if (navigator.share) {
@@ -393,12 +400,12 @@ export default function PostDetailPage() {
                   onChange={(e) => setCommentInput(e.target.value)}
                   placeholder="Viết bình luận của bạn..."
                   rows={3}
-                  maxLength={450}
+                  maxLength={200}
                   className="w-full px-4 py-3 border border-teal-200 rounded-lg focus:outline-none focus:ring-2 focus:ring-teal-500 focus:border-transparent resize-none bg-teal-50/30"
                 />
                 <div className="flex justify-between items-center mt-2">
                   <span className={`text-sm ${commentInput.length > 400 ? 'text-orange-600 font-semibold' : 'text-gray-500'}`}>
-                    {commentInput.length}/450 ký tự
+                    {commentInput.length}/200 ký tự
                   </span>
                   <button
                     onClick={handleSubmitComment}

@@ -350,7 +350,7 @@ export default function Home() {
         <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
           <div className="text-center mb-16">
             <h2 className="text-4xl font-bold text-gray-900 mb-4">
-              Phụ Huynh Thú Cưng Nói Gì
+              Những người sở hữu thú cưng nói gì
             </h2>
             <p className="text-xl text-gray-600">
               Đừng chỉ tin lời chúng tôi. Đây là những gì khách hàng nói về trải nghiệm tại Pettopia.
@@ -425,13 +425,13 @@ export default function Home() {
       </section>
 
       {/* Sample Image Section */}
-      <section>
+      {/* <section>
         <img
           src="./sampleimg/samplebg.jpg"
           alt="Hình ảnh mẫu"
           className="mx-auto rounded-xl shadow-lg"
         />
-      </section>
+      </section> */}
 
       {/* CTA Section */}
       <section className="bg-gradient-to-r from-teal-600 to-cyan-600 py-16">

@@ -3,7 +3,7 @@ import React, { useState, useEffect, useCallback } from 'react';
 import { useRouter } from 'next/navigation';
 import { communicationService } from '@/services/communication/communicationService';
 
-const API_BASE_URL = process.env.NEXT_PUBLIC_API_URL || 'http://localhost:3000/api/v1';
+const API_BASE_URL = process.env.NEXT_PUBLIC_API_URL;
 
 interface Author {
   user_id: string;
@@ -284,6 +284,12 @@ export default function ManagePostsPage() {
     setPostToDelete(null);
   };
 
+  const handleNavigateEdit = (postId: string, e?: React.MouseEvent) => {
+    e?.stopPropagation();
+    if (!postId) return;
+    router.push(`/user/community/edit/${postId}`);
+  };
+
   if (loading) {
     return (
       <div className="flex items-center justify-center p-10 min-h-screen">
@@ -326,7 +332,7 @@ export default function ManagePostsPage() {
               <p className="text-gray-600">Quản lý và theo dõi tất cả bài viết của bạn ({posts.length} bài viết)</p>
             </div>
             <button
-              onClick={() => router.push('/user/create-post')}
+              onClick={() => router.push('/user/community/create')}
               className="bg-gradient-to-r from-teal-600 to-cyan-600 text-white px-6 py-3 rounded-xl font-semibold hover:shadow-lg transition-all duration-300 hover:scale-105"
             >
               Tạo bài viết mới
@@ -475,6 +481,15 @@ export default function ManagePostsPage() {
                         </svg>
                       </button>
                       <button
+                        onClick={(e) => handleNavigateEdit(post.post_id, e)}
+                        className="p-2 text-blue-600 hover:bg-blue-50 rounded-lg transition-colors"
+                        title="Chỉnh sửa"
+                      >
+                        <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                          <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M11 5h2m-1-1v2m-6 6v6m0 0h6m-6 0l9-9a2.121 2.121 0 013 3l-9 9" />
+                        </svg>
+                      </button>
+                      <button
                         onClick={(e) => handleDeleteClick(post, e)}
                         className="p-2 text-red-600 hover:bg-red-50 rounded-lg transition-colors"
                         title="Xóa"
@@ -610,9 +625,17 @@ export default function ManagePostsPage() {
                   Xem trang chi tiết
                 </button>
                 <button
-                  onClick={() => {
+                  onClick={(e) => {
+                    handleNavigateEdit(selectedPost.post_id, e);
+                  }}
+                  className="flex-1 px-4 py-3 bg-gradient-to-r from-blue-500 to-blue-600 text-white rounded-lg hover:from-blue-600 hover:to-blue-700 font-semibold shadow-md transition-all"
+                >
+                  Chỉnh sửa
+                </button>
+                <button
+                  onClick={(e) => {
                     setShowDetailModal(false);
-                    handleDeleteClick(selectedPost, new MouseEvent('click') as any);
+                    handleDeleteClick(selectedPost, e);
                   }}
                   className="flex-1 px-4 py-3 bg-gradient-to-r from-red-500 to-red-600 text-white rounded-lg hover:from-red-600 hover:to-red-700 font-semibold shadow-md transition-all"
                 >
@@ -638,7 +661,7 @@ export default function ManagePostsPage() {
               <div className="flex items-center gap-3">
                 <div className="w-12 h-12 bg-white/20 rounded-full flex items-center justify-center flex-shrink-0">
                   <svg className="w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                    <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 9v2m0 4h.01m-6.938 4h13.856c1.54 0 2.502-1.667 1.732-3L13.732 4c-.77-1.333-2.694-1.333-3.464 0L3.34 16c-.77 1.333.192 3 1.732 3z" />
+                    <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 9v2m0 4h.01m-6.938 4h13.856c1.54 0 2.502-1.667 1.732-3L13.732 4c-.77-1.333-2.694-1.333-3.464 0L3.34 16c-.77 1.333.192 3 1.732 3zM11 13a1 1 0 11-2 0 1 1 0 012 0zm-1-8a1 1 0 00-1 1v3a1 1 0 002 0V6a1 1 0 00-1-1z" clipRule="evenodd" />
                   </svg>
                 </div>
                 <div>

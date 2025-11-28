@@ -3,7 +3,7 @@
 import { useState, useRef, useEffect } from 'react';
 import { motion, useInView } from 'framer-motion';
 import { useParams, useRouter } from 'next/navigation';
-import UpcomingMeetings from '@/components/UpcomingMeetings';
+
 import { getPetById, getAppointments } from '@/services/petcare/petService';
 
 interface Owner {
@@ -210,24 +210,24 @@ export default function UserPetPage() {
                                                     <div className="w-24 h-24 bg-white rounded-xl flex items-center justify-center flex-shrink-0 border-2 border-gray-400 overflow-hidden">
                                                         <img src={petData.avatar_url || '/sampleimg/default-pet.jpg'} alt={petData.name} className="w-full h-full object-cover" />
                                                     </div>
-                                                    <div className="flex-1">
-                                                        <h4 className="text-3xl font-bold mb-4 text-gray-900">{petData.name}</h4>
+                                                    <div className="flex-1 min-w-0">
+                                                        <h4 className="text-3xl font-bold mb-4 text-gray-900 truncate">{petData.name}</h4>
                                                         <div className="grid grid-cols-2 gap-3 text-sm">
                                                             <div>
                                                                 <p className="text-gray-700">Giống:</p>
-                                                                <p className="font-semibold text-gray-900">{petData.breed || 'Chưa rõ'}</p>
+                                                                <p className="font-semibold text-gray-900 truncate">{petData.breed || 'Chưa rõ'}</p>
                                                             </div>
                                                             <div>
                                                                 <p className="text-gray-700">Màu lông:</p>
-                                                                <p className="font-semibold text-gray-900">{petData.color || 'Chưa rõ'}</p>
+                                                                <p className="font-semibold text-gray-900 truncate">{petData.color || 'Chưa rõ'}</p>
                                                             </div>
                                                             <div>
                                                                 <p className="text-gray-700">Giới tính:</p>
-                                                                <p className="font-semibold text-gray-900">{petData.gender || 'Chưa rõ'}</p>
+                                                                <p className="font-semibold text-gray-900 truncate">{petData.gender || 'Chưa rõ'}</p>
                                                             </div>
                                                             <div>
                                                                 <p className="text-gray-700">Ngày sinh:</p>
-                                                                <p className="font-semibold text-gray-900">{formatDate(petData.dateOfBirth)}</p>
+                                                                <p className="font-semibold text-gray-900 truncate">{formatDate(petData.dateOfBirth)}</p>
                                                             </div>
                                                         </div>
                                                     </div>
@@ -259,19 +259,19 @@ export default function UserPetPage() {
                                                     </div>
                                                     <div className="flex justify-between border-b-2 border-gray-400 pb-2">
                                                         <span className="text-gray-700">Chủ sở hữu:</span>
-                                                        <span className="font-semibold text-gray-900">{petData.owner?.fullname || 'Chưa có thông tin'}</span>
+                                                        <span className="font-semibold text-gray-900 truncate ml-2">{petData.owner?.fullname || 'Chưa có thông tin'}</span>
                                                     </div>
                                                     <div className="flex justify-between border-b-2 border-gray-400 pb-2">
                                                         <span className="text-gray-700">Số điện thoại:</span>
-                                                        <span className="font-semibold text-gray-900">{petData.owner?.phone || 'Chưa cập nhật'}</span>
+                                                        <span className="font-semibold text-gray-900 truncate ml-2">{petData.owner?.phone || 'Chưa cập nhật'}</span>
                                                     </div>
                                                     <div className="flex justify-between border-b-2 border-gray-400 pb-2">
                                                         <span className="text-gray-700">Email:</span>
-                                                        <span className="font-semibold text-xs text-gray-900">{petData.owner?.email || 'Chưa cập nhật'}</span>
+                                                        <span className="font-semibold text-xs text-gray-900 truncate ml-2 break-all">{petData.owner?.email || 'Chưa cập nhật'}</span>
                                                     </div>
                                                     <div className="flex justify-between">
                                                         <span className="text-gray-700">Địa chỉ:</span>
-                                                        <span className="font-semibold text-xs text-gray-900">
+                                                        <span className="font-semibold text-xs text-gray-900 truncate ml-2">
                                                             {petData.owner?.address?.ward && petData.owner?.address?.district 
                                                                 ? `${petData.owner.address.ward}, ${petData.owner.address.district}`
                                                                 : 'Chưa cập nhật'}
@@ -335,10 +335,10 @@ export default function UserPetPage() {
                         </div>
                     </section>
 
-                    <section className="mb-20">
+                    {/* <section className="mb-20">
                         <h2 className="text-3xl font-bold text-gray-900 mb-8 text-center">Lịch hẹn sắp tới</h2>
                         <div className="bg-white rounded-2xl p-8 shadow-lg border border-teal-100">
-                            <UpcomingMeetings />
+                        
                             {upcomingAppointments.length > 0 ? (
                                 <div className="space-y-4">
                                     <h3 className="text-xl font-semibold text-gray-900 mb-4">Lịch đã đặt</h3>
@@ -365,24 +365,24 @@ export default function UserPetPage() {
                                 </div>
                             )}
                         </div>
-                    </section>
+                    </section> */}
 
                     <section className="mb-20">
                         <h2 className="text-3xl font-bold text-gray-900 mb-8 text-center">Thông tin chi tiết</h2>
                         <div className="bg-white rounded-2xl p-8 shadow-lg border border-teal-100">
                             <div className="flex items-center justify-between mb-6">
-                                <div className="flex items-center">
-                                    <div className="w-20 h-20 rounded-full flex items-center justify-center mr-4 overflow-hidden">
+                                <div className="flex items-center gap-4 min-w-0 flex-1">
+                                    <div className="w-20 h-20 rounded-full flex items-center justify-center flex-shrink-0 overflow-hidden bg-gray-100">
                                         <img src={petData.avatar_url || '/sampleimg/default-pet.jpg'} alt={petData.name} className="w-full h-full object-cover" />
                                     </div>
-                                    <div>
-                                        <h3 className="text-2xl font-bold text-gray-900">{petData.name}</h3>
-                                        <p className="text-gray-600">
+                                    <div className="min-w-0 flex-1">
+                                        <h3 className="text-2xl font-bold text-gray-900 truncate">{petData.name}</h3>
+                                        <p className="text-gray-600 truncate">
                                             {petData.species || 'Chưa rõ'} • {petData.gender || 'Chưa rõ'} • {petData.age || 'Chưa rõ'} tuổi
                                         </p>
                                     </div>
                                 </div>
-                                <button onClick={() => setShowPetDetails(!showPetDetails)} className="bg-teal-600 text-white px-6 py-3 rounded-lg font-semibold hover:bg-teal-700 transition">
+                                <button onClick={() => setShowPetDetails(!showPetDetails)} className="bg-teal-600 text-white px-6 py-3 rounded-lg font-semibold hover:bg-teal-700 transition flex-shrink-0">
                                     {showPetDetails ? 'Ẩn chi tiết' : 'Hiển thị chi tiết'}
                                 </button>
                             </div>
@@ -423,7 +423,7 @@ export default function UserPetPage() {
                                             <div className="space-y-3">
                                                 <div className="flex justify-between">
                                                     <span className="text-gray-600">Mã hồ sơ:</span>
-                                                    <span className="font-medium">{petData.medical_record?.record_id || 'Chưa có'}</span>
+                                                    <span className="font-medium truncate ml-2">{petData.medical_record?.record_id || 'Chưa có'}</span>
                                                 </div>
                                                 <div className="flex justify-between">
                                                     <span className="text-gray-600">Khám gần nhất:</span>
@@ -431,13 +431,13 @@ export default function UserPetPage() {
                                                 </div>
                                                 <div>
                                                     <span className="text-gray-600 block mb-2">Chẩn đoán:</span>
-                                                    <p className="text-sm bg-gray-50 p-3 rounded-lg">
+                                                    <p className="text-sm bg-gray-50 p-3 rounded-lg break-words line-clamp-3">
                                                         {petData.medical_record?.diagnoses || 'Chưa có thông tin'}
                                                     </p>
                                                 </div>
                                                 <div>
                                                     <span className="text-gray-600 block mb-2">Ghi chú:</span>
-                                                    <p className="text-sm bg-gray-50 p-3 rounded-lg">
+                                                    <p className="text-sm bg-gray-50 p-3 rounded-lg break-words line-clamp-3">
                                                         {petData.medical_record?.notes || 'Chưa có ghi chú'}
                                                     </p>
                                                 </div>
@@ -451,12 +451,12 @@ export default function UserPetPage() {
                                                 {petData.medical_record.treatment.map((med, index) => (
                                                     <div key={index} className="bg-teal-50 rounded-lg p-4">
                                                         <div className="flex justify-between items-start mb-2">
-                                                            <h5 className="font-semibold text-gray-900">{med.medicine || 'Chưa rõ'}</h5>
-                                                            <span className="text-sm text-teal-600 font-medium">{med.duration || 'Chưa rõ'}</span>
+                                                            <h5 className="font-semibold text-gray-900 truncate">{med.medicine || 'Chưa rõ'}</h5>
+                                                            <span className="text-sm text-teal-600 font-medium ml-2 flex-shrink-0">{med.duration || 'Chưa rõ'}</span>
                                                         </div>
                                                         <div className="grid grid-cols-2 gap-2 text-sm text-gray-600">
-                                                            <div><span className="font-medium">Liều lượng:</span> {med.dosage || 'Chưa rõ'}</div>
-                                                            <div><span className="font-medium">Tần suất:</span> {med.frequency || 'Chưa rõ'}</div>
+                                                            <div><span className="font-medium">Liều lượng:</span> <span className="break-words">{med.dosage || 'Chưa rõ'}</span></div>
+                                                            <div><span className="font-medium">Tần suất:</span> <span className="break-words">{med.frequency || 'Chưa rõ'}</span></div>
                                                         </div>
                                                     </div>
                                                 ))}
@@ -470,17 +470,17 @@ export default function UserPetPage() {
                                                 <div className="space-y-3">
                                                     <div className="pr-5">
                                                         <span className="text-gray-600 mr-2">Họ tên:</span>
-                                                        <span className="font-medium">{petData.owner?.fullname || 'Chưa có thông tin'}</span>
+                                                        <span className="font-medium truncate block sm:inline">{petData.owner?.fullname || 'Chưa có thông tin'}</span>
                                                     </div>
                                                 </div>
                                                 <div className="space-y-3">
                                                     <div className="pr-5">
                                                         <span className="text-gray-600 mr-2">Số điện thoại:</span>
-                                                        <span className="font-medium">{petData.owner?.phone || 'Chưa cập nhật'}</span>
+                                                        <span className="font-medium truncate block sm:inline">{petData.owner?.phone || 'Chưa cập nhật'}</span>
                                                     </div>
                                                     <div className="pr-5">
                                                         <span className="text-gray-600 mr-2">Email:</span>
-                                                        <span className="font-medium">{petData.owner?.email || 'Chưa cập nhật'}</span>
+                                                        <span className="font-medium truncate block sm:inline break-all text-xs">{petData.owner?.email || 'Chưa cập nhật'}</span>
                                                     </div>
                                                 </div>
                                             </div>
@@ -492,14 +492,14 @@ export default function UserPetPage() {
                                                 >
                                                     {showCustomerId ? (
                                                         <>
-                                                            <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                                                                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M13.875 18.825A10.05 10.05 0 0112 19c-4.478 0-8.268-2.943-9.543-7a9.97 9.97 0 011.563-3.029m5.858.908a3 3 0 114.243 4.243M9.878 9.878l4.242 4.242M9.88 9.88l-3.29-3.29m7.532 7.532l3.29 3.29M3 3l3.59 3.59m0 0A9.953 9.953 0 0112 5c4.478 0 8.268 2.943 9.543 7a10.025 10.025 0 01-4.132 5.411m0 0L21 21" />
+                                                            <svg className="w-4 h-4 flex-shrink-0" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                                                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M13.875 18.825A10.05 10.05 0 0112 19c-4.478 0-8.268-2.943-9.543-7a9.97 9.97 0 011.563-3.029m5.858.908a3 3 0 114.243 4.243M9.878 9.878l4.242 4.242M9.88 9.88l-3.29-3.29m7.532 7.532l3.29 3.29M3 3l3.59 3.59m0 0A9.953 9.953 0 0112 5c4.478 0 8.268 2.943 9.542 7-1.274 4.057-5.064 7-9.542 7-4.477 0-8.268-2.943-9.542-7z" />
                                                             </svg>
                                                             Ẩn mã khách hàng
                                                         </>
                                                     ) : (
                                                         <>
-                                                            <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                                            <svg className="w-4 h-4 flex-shrink-0" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                                                                 <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M15 12a3 3 0 11-6 0 3 3 0 016 0z" />
                                                                 <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M2.458 12C3.732 7.943 7.523 5 12 5c4.478 0 8.268 2.943 9.542 7-1.274 4.057-5.064 7-9.542 7-4.477 0-8.268-2.943-9.542-7z" />
                                                             </svg>
@@ -510,8 +510,10 @@ export default function UserPetPage() {
 
                                                 {showCustomerId && (
                                                     <div className="pr-5 mt-2">
-                                                        <span className="text-gray-600 mr-2">Mã khách hàng:</span>
-                                                        <span className="font-medium font-mono">{petData.owner?.user_id || 'Chưa có'}</span>
+                                                        <span className="mr-2">Mã khách hàng:</span> 
+                                                        <span className="font-medium font-mono break-all">{petData.owner?.user_id || 'Chưa có'}</span>
+                                                        <br/>
+                                                        <span className='text-gray-600 text-sm italic'> Mã khách hàng sử dụng trong các tình huống hỗ trợ cần sự giúp đỡ của nhân viên</span>
                                                     </div>
                                                 )}
                                             </div>

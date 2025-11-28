@@ -83,7 +83,7 @@ export default function PetCards({ userId, onPetsLoaded }: PetCardsProps) {
     };
 
     const handlePetClick = (petId: string | number) => {
-        router.push(`/user/user-pet/${petId}`);
+        router.push(`/user/pet/${petId}`);
     };
 
     if (loading) {

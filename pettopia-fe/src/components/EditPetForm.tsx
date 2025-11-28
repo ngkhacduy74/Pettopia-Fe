@@ -93,7 +93,7 @@ export default function EditPetForm() {
 
       const res = await updatePet(petId, payload);
       alert(res?.message || 'Cập nhật thú cưng thành công');
-      router.push('/user/pet-list');
+      router.push('/user/pet/list');
     } catch (err: any) {
       console.error(err);
       setServerError(err?.response?.data?.message || 'Có lỗi xảy ra khi cập nhật thú cưng');

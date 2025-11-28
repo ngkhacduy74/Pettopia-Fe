@@ -62,7 +62,7 @@ export interface UpdatePostData {
   title?: string;
   content?: string;
   tags?: string[];
-  images?: string[];
+  images?: Array<string | File>;
 }
 
 export interface CommentData {
@@ -204,10 +204,31 @@ class CommunicationService {
    * Endpoint: PATCH /api/v1/communication/:id
    */
   async updatePost(postId: string, data: UpdatePostData): Promise<Post> {
+    const formData = new FormData();
+    
+    if (data.title) formData.append('title', data.title);
+    if (data.content) formData.append('content', data.content);
+    if (data.tags) formData.append('tags', JSON.stringify(data.tags));
+    
+    if (data.images && data.images.length > 0) {
+      // Nếu là File objects
+      for (const image of data.images) {
+        if (image instanceof File) {
+          formData.append('images', image);
+        } else if (typeof image === 'string') {
+          // Nếu là URL string, append trực tiếp
+          formData.append('images', image);
+        }
+      }
+    }
+
     const response = await fetch(`${this.baseUrl}/${postId}`, {
       method: 'PATCH',
-      headers: this.getHeaders(),
-      body: JSON.stringify(data),
+      headers: {
+        ...(this.token && { 'Authorization': `Bearer ${this.token}` }),
+        // Do NOT set Content-Type; browser will set multipart boundary
+      },
+      body: formData,
     });
     return this.handleResponse<Post>(response);
   }

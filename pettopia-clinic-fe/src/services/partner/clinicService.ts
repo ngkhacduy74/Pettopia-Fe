@@ -277,3 +277,20 @@ export const updateAppointmentStatus = async (
     throw error;
   }
 };
+
+export const sendInvitation = async (email: string, role: string) => {
+  const token = localStorage.getItem('authToken');
+  if (!token) throw new Error('No authentication token found');
+
+  try {
+    const response = await axios.post(
+      `${PARTNER_API_URL}/clinic/invitations`,
+      { email, role },
+      { headers: { 'token': token } }
+    );
+    return response.data;
+  } catch (error: any) {
+    console.error("Lỗi khi gửi lời mời:", error.response?.data || error.message);
+    throw error;
+  }
+};

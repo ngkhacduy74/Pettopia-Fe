@@ -129,9 +129,9 @@ export default function LoginForm() {
               />
             </div>
             <h2 className="text-2xl font-bold text-gray-800">
-              Chào mừng trở lại
+              Đăng nhập
             </h2>
-            <p className="text-gray-500 text-sm mt-2">Đăng nhập để tiếp tục</p>
+            <p className="text-gray-500 text-sm mt-2">Đăng nhập với tư cách người dùng</p>
           </div>
 
           {/* Form */}

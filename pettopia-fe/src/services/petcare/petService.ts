@@ -348,19 +348,22 @@ export async function callAIChat(userId: string, messages: { role: 'user'; conte
     const maxRetries = 3; // Số lần thử lại tối đa
     let attempt = 0;
 
+    
+    const AI_API_BASE = process.env.NEXT_PUBLIC_AI_API_URL || process.env.NEXT_PUBLIC_PETTOPIA_API_URL;
+
     while (attempt < maxRetries) {
         try {
-            const response = await axios.post('http://localhost:3000/api/v1/ai/gemini/chat', {
+            const response = await axios.post(`${AI_API_BASE?.replace(/\/$/, '')}/ai/gemini/chat`, {
                 userId,
-                messages: messages.map(m => ({ role: 'user', content: m.content })) // Chỉ gửi role 'user'
+                messages: messages.map(m => ({ role: 'user', content: m.content })) 
             });
             return response.data;
         } catch (error) {
             if (isAxiosError(error) && error.response?.status === 429) {
                 attempt++;
-                const retryAfter = error.response.headers['retry-after'] || 1; // Thời gian chờ (giây)
+                const retryAfter = error.response.headers['retry-after'] || 1; 
                 console.warn(`Rate limit exceeded. Retrying after ${retryAfter} seconds...`);
-                await new Promise(resolve => setTimeout(resolve, retryAfter * 1000)); // Chờ trước khi thử lại
+                await new Promise(resolve => setTimeout(resolve, retryAfter * 1000)); 
             } else {
                 console.error('Error calling AI API:', error);
                 throw error;

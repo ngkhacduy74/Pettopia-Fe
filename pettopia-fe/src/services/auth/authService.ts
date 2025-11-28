@@ -61,7 +61,7 @@ export const loginUser = async (loginData: {
         }
         
         document.cookie = cookieAttributes.join('; ');
-        console.log("Đã lưu userRole vào localStorage và cookie:", decoded.role);
+        // console.log("Đã lưu userRole vào localStorage và cookie:", decoded.role);
       } else {
         console.warn("Không tìm thấy role trong token đã giải mã");
       }

@@ -84,7 +84,7 @@ export default function LoginForm() {
   if (isSuccess) {
     return (
       <div className="flex flex-col items-center justify-center min-h-screen bg-gradient-to-br from-teal-50 to-white">
-        <div className="bg-white rounded-2xl shadow-xl p-8 text-center max-w-md">
+        <div className="bg-white rounded-2xl shadow-xl p-5 text-center max-w-md">
           <div className="mb-4">
             <svg className="w-20 h-20 mx-auto text-teal-500" fill="none" stroke="currentColor" viewBox="0 0 24 24">
               <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M9 12l2 2 4-4m6 2a9 9 0 11-18 0 9 9 0 0118 0z" />
@@ -122,11 +122,11 @@ export default function LoginForm() {
           src="/sampleimg/logo.png"
           width={60}
           height={60}
-          className="mx-auto h-25 w-auto"
+          className="mx-auto w-auto"
         />
           </div>
-          <h1 className="text-3xl font-bold text-gray-900 mb-2">Đăng nhập</h1>
-          <p className="text-gray-500 text-sm">Quản lý các dịch vụ thú y của bạn</p>
+          <h1 className="text-2xl font-bold text-gray-900 mb-2">Đăng nhập</h1>
+          <p className="text-gray-500 text-sm">Đăng nhập với tư cách là bác sĩ</p>
         </div>
 
         {/* Form */}
