@@ -2,7 +2,7 @@
 
 import React, { useState, useEffect } from 'react';
 import type { Appointment, AppointmentsResponse } from '@/services/petcare/petService';
-import { getAppointments } from '@/services/petcare/petService';
+import { getAppointments, updateAppointmentStatus } from '@/services/petcare/petService';
 import Link from 'next/link';
 import axios from 'axios';
 
@@ -44,6 +44,12 @@ const ViewAppointmentsPage = () => {
   const [statusFilter, setStatusFilter] = useState<string>('all');
   const [shiftFilter, setShiftFilter] = useState<string>('all');
   const [viewMode, setViewMode] = useState<'upcoming' | 'all' | 'past'>('upcoming');
+  
+  // Cancel modal states
+  const [showCancelModal, setShowCancelModal] = useState(false);
+  const [selectedAppointmentId, setSelectedAppointmentId] = useState<string | null>(null);
+  const [cancelReason, setCancelReason] = useState('');
+  const [isCancelling, setIsCancelling] = useState(false);
 
   const daysOfWeek = ['T2', 'T3', 'T4', 'T5', 'T6', 'T7', 'CN'];
 
@@ -178,6 +184,39 @@ const ViewAppointmentsPage = () => {
   };
 
   const changeMonth = (dir: number) => setCurrentDate(new Date(currentDate.getFullYear(), currentDate.getMonth() + dir, 1));
+  
+  // Cancel handler
+  const handleCancelClick = (appointmentId: string) => {
+    setSelectedAppointmentId(appointmentId);
+    setShowCancelModal(true);
+    setCancelReason('');
+  };
+
+  const handleConfirmCancel = async () => {
+    if (!selectedAppointmentId) return;
+    if (!cancelReason.trim()) {
+      alert('Vui lòng nhập lý do hủy.');
+      return;
+    }
+
+    try {
+      setIsCancelling(true);
+      await updateAppointmentStatus(selectedAppointmentId, 'Cancelled', cancelReason.trim());
+      // Refresh appointments list
+      const response: AppointmentsResponse = await getAppointments({ page: 1, limit: 200 });
+      setAppointments(response.data);
+      setShowCancelModal(false);
+      setSelectedAppointmentId(null);
+      setCancelReason('');
+      alert('Hủy lịch hẹn thành công!');
+    } catch (err: any) {
+      console.error('Error cancelling appointment:', err);
+      const errorMessage = err?.response?.data?.message || err?.message || 'Hủy lịch thất bại. Vui lòng thử lại.';
+      alert(errorMessage);
+    } finally {
+      setIsCancelling(false);
+    }
+  };
   
   const isToday = (day: number) => {
     const t = new Date();
@@ -343,7 +382,10 @@ const ViewAppointmentsPage = () => {
                           Xem chi tiết
                         </Link>
                         {apt.status === 'Pending_Confirmation' && (
-                          <button className="px-5 py-2.5 bg-red-100 hover:bg-red-200 text-red-700 font-medium rounded-lg transition">
+                          <button 
+                            onClick={() => handleCancelClick(apt.id)}
+                            className="px-5 py-2.5 bg-red-100 hover:bg-red-200 text-red-700 font-medium rounded-lg transition"
+                          >
                             Hủy lịch
                           </button>
                         )}
@@ -356,6 +398,40 @@ const ViewAppointmentsPage = () => {
           </div>
         </div>
       </div>
+
+      {/* Cancel Modal */}
+      {showCancelModal && (
+        <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/50 p-4">
+          <div className="bg-white rounded-2xl max-w-lg w-full p-6 shadow-lg">
+            <h3 className="text-lg font-bold mb-2">Xác nhận hủy lịch</h3>
+            <p className="text-sm text-gray-600 mb-4">
+              Vui lòng nhập lý do hủy để chúng tôi lưu lại và thông báo cho phòng khám.
+            </p>
+            <textarea
+              value={cancelReason}
+              onChange={(e) => setCancelReason(e.target.value)}
+              placeholder="Lý do hủy (bắt buộc)"
+              className="w-full min-h-[120px] p-3 border rounded-md mb-4 resize-y"
+            />
+            <div className="flex justify-end gap-3">
+              <button
+                onClick={() => { setShowCancelModal(false); setCancelReason(''); setSelectedAppointmentId(null); }}
+                disabled={isCancelling}
+                className="px-4 py-2 rounded-md bg-gray-100 hover:bg-gray-200"
+              >
+                Hủy
+              </button>
+              <button
+                onClick={handleConfirmCancel}
+                disabled={isCancelling || !cancelReason.trim()}
+                className={`px-4 py-2 rounded-md text-white ${isCancelling || !cancelReason.trim() ? 'bg-gray-400 cursor-not-allowed' : 'bg-red-600 hover:bg-red-700'}`}
+              >
+                {isCancelling ? 'Đang hủy...' : 'Xác nhận hủy'}
+              </button>
+            </div>
+          </div>
+        </div>
+      )}
     </div>
   );
 };

@@ -1,18 +1,38 @@
 'use client';
 
-import { useState, useEffect } from 'react';
+import React, { useState, useEffect } from 'react';
 import { useParams, useRouter } from 'next/navigation';
-import { getAppointmentDetail, type AppointmentDetailResponse } from '../../../../services/petcare/petService';
 import Link from 'next/link';
+import {
+  getAppointmentDetail,
+  updateAppointmentStatus,
+  type AppointmentDetail,
+} from '../../../../services/petcare/petService';
+
+// Predefined cancel reasons
+const CANCEL_REASONS = [
+  'Không có thời gian điều trị',
+  'Vị trí phòng khám xa quá',
+  'Tình hình sức khỏe thú cưng đã cải thiện',
+  'Sai thông tin thú cưng cần điều trị',
+  'Thay đổi ý định',
+  'Lý do khác',
+];
 
 export default function AppointmentDetailPage() {
   const params = useParams();
   const router = useRouter();
   const appointmentId = params?.id as string;
-  
-  const [appointment, setAppointment] = useState<AppointmentDetailResponse['data'] | null>(null);
+
+  const [appointment, setAppointment] = useState<AppointmentDetail | null>(null);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
+
+  // New states for cancel modal
+  const [showCancelModal, setShowCancelModal] = useState(false);
+  const [selectedReason, setSelectedReason] = useState('');
+  const [cancelReason, setCancelReason] = useState('');
+  const [isCancelling, setIsCancelling] = useState(false);
 
   useEffect(() => {
     if (!appointmentId) return;
@@ -20,7 +40,8 @@ export default function AppointmentDetailPage() {
     const fetchAppointment = async () => {
       try {
         setLoading(true);
-        const data = await getAppointmentDetail(appointmentId);
+        setError(null);
+        const data = await getAppointmentDetail(appointmentId); // returns data object (AppointmentDetail)
         setAppointment(data);
       } catch (err: any) {
         setError(err?.response?.data?.message || 'Không thể tải thông tin lịch hẹn');
@@ -33,43 +54,99 @@ export default function AppointmentDetailPage() {
     fetchAppointment();
   }, [appointmentId]);
 
-  const formatDate = (dateString: string) => {
-    const date = new Date(dateString);
-    return date.toLocaleDateString('vi-VN', {
-      weekday: 'long',
-      year: 'numeric',
-      month: 'long',
-      day: 'numeric',
-    });
+  // When predefined reason changes, update the textarea
+  const handleReasonSelect = (reason: string) => {
+    setSelectedReason(reason);
+    if (reason !== 'Lý do khác') {
+      setCancelReason(reason);
+    } else {
+      setCancelReason('');
+    }
   };
 
-  const formatShift = (shift: string) => {
+  // Confirm cancel handler (reason required)
+  const handleConfirmCancel = async () => {
+    if (!appointmentId) return;
+    
+    const finalReason = cancelReason.trim() || selectedReason;
+    if (!finalReason) {
+      alert('Vui lòng chọn hoặc nhập lý do hủy.');
+      return;
+    }
+
+    try {
+      setIsCancelling(true);
+      await updateAppointmentStatus(appointmentId, 'Cancelled', finalReason.trim());
+      // Refresh appointment data from server to get updated status
+      const updatedData = await getAppointmentDetail(appointmentId);
+      setAppointment(updatedData);
+      setShowCancelModal(false);
+      setCancelReason('');
+      setSelectedReason('');
+      alert('Hủy lịch hẹn thành công!');
+    } catch (err: any) {
+      console.error('Error cancelling appointment:', err);
+      const errorMessage = err?.response?.data?.message || err?.message || 'Hủy lịch thất bại. Vui lòng thử lại.';
+      alert(errorMessage);
+    } finally {
+      setIsCancelling(false);
+    }
+  };
+
+  const formatDate = (dateString?: string) => {
+    if (!dateString) return 'Chưa rõ';
+    try {
+      const date = new Date(dateString);
+      return date.toLocaleDateString('vi-VN', {
+        weekday: 'long',
+        year: 'numeric',
+        month: 'long',
+        day: 'numeric',
+      });
+    } catch {
+      return dateString;
+    }
+  };
+
+  const formatShift = (shift?: string) => {
+    if (!shift) return 'Chưa rõ';
     const shiftMap: Record<string, string> = {
-      'Morning': 'Sáng',
-      'Afternoon': 'Chiều',
-      'Evening': 'Tối',
+      Morning: 'Sáng',
+      Afternoon: 'Chiều',
+      Evening: 'Tối',
+      Night: 'Đêm',
+      morning: 'Sáng',
+      afternoon: 'Chiều',
+      evening: 'Tối',
+      night: 'Đêm',
     };
     return shiftMap[shift] || shift;
   };
 
-  const formatStatus = (status: string) => {
+  const formatStatus = (status?: string) => {
+    if (!status) return 'Chưa rõ';
     const statusMap: Record<string, string> = {
-      'Pending_Confirmation': 'Chờ xác nhận',
-      'Confirmed': 'Đã xác nhận',
-      'Cancelled': 'Đã hủy',
-      'Completed': 'Hoàn thành',
+      Pending_Confirmation: 'Chờ xác nhận',
+      Confirmed: 'Đã xác nhận',
+      Cancelled: 'Đã hủy',
+      Completed: 'Hoàn thành',
     };
     return statusMap[status] || status;
   };
 
-  const getStatusColor = (status: string) => {
+  const getStatusColor = (status?: string) => {
     const colorMap: Record<string, string> = {
-      'Pending_Confirmation': 'bg-yellow-500',
-      'Confirmed': 'bg-emerald-500',
-      'Cancelled': 'bg-red-500',
-      'Completed': 'bg-blue-500',
+      Pending_Confirmation: 'bg-yellow-500',
+      Confirmed: 'bg-emerald-500',
+      Cancelled: 'bg-red-500',
+      Completed: 'bg-blue-500',
     };
-    return colorMap[status] || 'bg-gray-500';
+    return colorMap[status || ''] || 'bg-gray-500';
+  };
+
+  const formatCurrency = (n?: number) => {
+    if (typeof n !== 'number') return '-';
+    return new Intl.NumberFormat('vi-VN', { style: 'currency', currency: 'VND' }).format(n);
   };
 
   if (loading) {
@@ -104,10 +181,16 @@ export default function AppointmentDetailPage() {
     );
   }
 
+  // helper to build clinic address
+  const clinicAddress = () => {
+    const addr = appointment.clinic_info?.address;
+    if (!addr) return 'Chưa cập nhật';
+    return [addr.detail, addr.ward, addr.district, addr.city].filter(Boolean).join(', ');
+  };
+
   return (
     <div className="min-h-screen bg-gradient-to-br from-teal-50 via-white to-blue-50 p-6">
       <div className="max-w-4xl mx-auto">
-        {/* Header */}
         <div className="mb-6">
           <Link
             href="/user/appointments/list"
@@ -121,85 +204,79 @@ export default function AppointmentDetailPage() {
           <h1 className="text-3xl font-bold text-gray-900">Chi tiết lịch hẹn</h1>
         </div>
 
-        {/* Appointment Card */}
         <div className="bg-white rounded-2xl shadow-lg p-8 space-y-6">
-          {/* Status Badge */}
           <div className="flex items-center justify-between">
             <div>
-              <h2 className="text-2xl font-bold text-gray-900">Thông tin lịch hẹn</h2>
-              <p className="text-gray-600 mt-1">ID: {appointment.id}</p>
+              <h2 className="text-2xl font-bold text-gray-900">Lịch hẹn của bạn</h2>
+              <p className="text-gray-600 mt-1">Ngày: {formatDate(appointment.date)}</p>
+              <p className="text-gray-600 mt-1">Giờ: {formatShift(appointment.shift)}</p>
             </div>
+
             <span className={`${getStatusColor(appointment.status)} text-white px-4 py-2 rounded-full text-sm font-bold`}>
               {formatStatus(appointment.status)}
             </span>
           </div>
 
-          {/* Date & Shift */}
-          <div className="grid md:grid-cols-2 gap-4">
-            <div className="bg-gray-50 rounded-xl p-4">
-              <div className="flex items-center gap-3 mb-2">
-                <svg className="w-6 h-6 text-teal-600" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                  <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M8 7V3m8 4V3m-9 8h10M5 21h14a2 2 0 002-2V7a2 2 0 00-2-2H5a2 2 0 00-2 2v12a2 2 0 002 2z" />
-                </svg>
-                <h3 className="font-bold text-gray-900">Ngày hẹn</h3>
-              </div>
-              <p className="text-gray-700 text-lg">{formatDate(appointment.date)}</p>
-            </div>
-
-            <div className="bg-gray-50 rounded-xl p-4">
-              <div className="flex items-center gap-3 mb-2">
-                <svg className="w-6 h-6 text-teal-600" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                  <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 8v4l3 3m6-3a9 9 0 11-18 0 9 9 0 0118 0z" />
-                </svg>
-                <h3 className="font-bold text-gray-900">Ca khám</h3>
-              </div>
-              <p className="text-gray-700 text-lg">Ca {formatShift(appointment.shift)}</p>
-            </div>
+          {/* Clinic */}
+          <div className="bg-gray-50 rounded-xl p-4">
+            <h3 className="font-bold text-gray-900 mb-2">Phòng khám</h3>
+            <p className="text-gray-800">{appointment.clinic_info?.clinic_name || 'Chưa có tên phòng khám'}</p>
+            <p className="text-gray-600 text-sm mt-1">Địa chỉ: {clinicAddress()}</p>
+            {appointment.clinic_info?.phone?.phone_number && (
+              <p className="text-gray-600 text-sm mt-1">Điện thoại: {appointment.clinic_info.phone.phone_number}</p>
+            )}
+            {appointment.clinic_info?.email?.email_address && (
+              <p className="text-gray-600 text-sm mt-1">Email: {appointment.clinic_info.email.email_address}</p>
+            )}
           </div>
 
-          {/* Pet IDs */}
+          {/* Customer / Contact */}
           <div className="bg-gray-50 rounded-xl p-4">
-            <h3 className="font-bold text-gray-900 mb-3">Thú cưng ({appointment.pet_ids.length})</h3>
-            <div className="space-y-2">
-              {appointment.pet_ids.map((petId, index) => (
-                <div key={petId} className="flex items-center gap-2 text-gray-700">
-                  <span className="w-6 h-6 bg-teal-100 text-teal-700 rounded-full flex items-center justify-center text-sm font-bold">
-                    {index + 1}
-                  </span>
-                  <span>{petId}</span>
+            <h3 className="font-bold text-gray-900 mb-2">Thông tin liên hệ</h3>
+            <p className="text-gray-800">{appointment.user_info?.fullname || 'Khách hàng'}</p>
+            {appointment.user_info?.phone_number && <p className="text-gray-600 text-sm mt-1">SĐT: {appointment.user_info.phone_number}</p>}
+          </div>
+
+          {/* Pets */}
+          <div className="bg-gray-50 rounded-xl p-4">
+            <h3 className="font-bold text-gray-900 mb-3">Thú cưng ({(appointment.pet_infos || []).length})</h3>
+            <div className="space-y-3">
+              {(appointment.pet_infos || []).map((pet) => (
+                <div key={pet.id} className="flex items-center gap-4">
+                  <div className="w-14 h-14 rounded-full overflow-hidden bg-gray-100 flex-shrink-0">
+                    <img src={pet.avatar_url || '/sampleimg/default-pet.jpg'} alt={pet.name} className="w-full h-full object-cover" />
+                  </div>
+                  <div>
+                    <div className="font-semibold text-gray-900">{pet.name || 'Không tên'}</div>
+                    <div className="text-sm text-gray-600">{[pet.species, pet.breed].filter(Boolean).join(' • ')}</div>
+                  </div>
                 </div>
               ))}
+              {(appointment.pet_infos || []).length === 0 && <p className="text-gray-600">Không có thú cưng trong lịch hẹn này</p>}
             </div>
           </div>
 
-          {/* Service IDs */}
+          {/* Services */}
           <div className="bg-gray-50 rounded-xl p-4">
-            <h3 className="font-bold text-gray-900 mb-3">Dịch vụ ({appointment.service_ids.length})</h3>
-            <div className="space-y-2">
-              {appointment.service_ids.map((serviceId, index) => (
-                <div key={serviceId} className="flex items-center gap-2 text-gray-700">
-                  <span className="w-6 h-6 bg-blue-100 text-blue-700 rounded-full flex items-center justify-center text-sm font-bold">
-                    {index + 1}
-                  </span>
-                  <span>{serviceId}</span>
+            <h3 className="font-bold text-gray-900 mb-3">Dịch vụ ({(appointment.service_infos || []).length})</h3>
+            <div className="space-y-3">
+              {(appointment.service_infos || []).map((s) => (
+                <div key={s.id || s._id} className="flex justify-between items-center">
+                  <div>
+                    <div className="font-medium text-gray-900">{s.name || s.title || 'Dịch vụ'}</div>
+                    {s.description && <div className="text-sm text-gray-600">{s.description}</div>}
+                  </div>
+                  <div className="text-right text-sm text-gray-700">
+                    <div>{formatCurrency(s.price)}</div>
+                    {s.duration && <div className="text-xs text-gray-500">{s.duration} phút</div>}
+                  </div>
                 </div>
               ))}
+              {(appointment.service_infos || []).length === 0 && <p className="text-gray-600">Không có dịch vụ</p>}
             </div>
           </div>
 
-          {/* Clinic & Other Info */}
-          <div className="bg-gray-50 rounded-xl p-4">
-            <h3 className="font-bold text-gray-900 mb-3">Thông tin khác</h3>
-            <div className="space-y-2 text-gray-700">
-              <p><span className="font-semibold">Phòng khám ID:</span> {appointment.clinic_id}</p>
-              <p><span className="font-semibold">Khách hàng:</span> {appointment.customer}</p>
-              <p><span className="font-semibold">Tạo bởi:</span> {appointment.created_by}</p>
-              <p><span className="font-semibold">Ngày tạo:</span> {new Date(appointment.createdAt).toLocaleString('vi-VN')}</p>
-              <p><span className="font-semibold">Cập nhật lần cuối:</span> {new Date(appointment.updatedAt).toLocaleString('vi-VN')}</p>
-            </div>
-          </div>
-
-          {/* Actions */}
+          {/* Footer / actions */}
           <div className="flex gap-4 pt-4 border-t">
             <Link
               href="/user/appointments/list"
@@ -207,14 +284,101 @@ export default function AppointmentDetailPage() {
             >
               Quay lại
             </Link>
-            {appointment.status === 'Pending_Confirmation' && (
-              <button className="px-6 py-3 bg-red-500 text-white rounded-lg hover:bg-red-600 transition font-medium">
+
+            {/* action: show cancel modal when appointment not yet cancelled/completed */}
+            {appointment && appointment.status !== 'Cancelled' && appointment.status !== 'Completed' && (
+              <button
+                onClick={() => setShowCancelModal(true)}
+                className="px-6 py-3 bg-red-500 text-white rounded-lg hover:bg-red-600 transition font-medium"
+              >
                 Hủy lịch hẹn
               </button>
             )}
           </div>
         </div>
       </div>
+
+      {/* Cancel Modal */}
+      {showCancelModal && (
+        <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/50 p-4">
+          <div className="bg-white rounded-2xl max-w-lg w-full p-6 shadow-lg max-h-[90vh] overflow-y-auto">
+            <h3 className="text-lg font-bold mb-2">Xác nhận hủy lịch</h3>
+            <p className="text-sm text-gray-600 mb-4">
+              Vui lòng chọn hoặc nhập lý do hủy để chúng tôi lưu lại và thông báo cho phòng khám. Các lý do này giúp chúng tôi và phòng khám cải thiện dịch vụ trong tương lai.
+            </p>
+
+            {/* Predefined reasons */}
+            <div className="mb-4">
+              <label className="text-sm font-medium text-gray-700 mb-2 block">Chọn lý do hủy:</label>
+              <div className="space-y-2">
+                {CANCEL_REASONS.map((reason) => (
+                  <button
+                    key={reason}
+                    onClick={() => handleReasonSelect(reason)}
+                    className={`w-full text-left px-4 py-3 rounded-lg border-2 transition ${
+                      selectedReason === reason
+                        ? 'border-teal-600 bg-teal-50 text-teal-900'
+                        : 'border-gray-200 bg-white hover:border-gray-300'
+                    }`}
+                  >
+                    <div className="flex items-center gap-3">
+                      <div className={`w-5 h-5 rounded border-2 flex items-center justify-center ${
+                        selectedReason === reason ? 'border-teal-600 bg-teal-600' : 'border-gray-300'
+                      }`}>
+                        {selectedReason === reason && (
+                          <svg className="w-3 h-3 text-white" fill="currentColor" viewBox="0 0 20 20">
+                            <path fillRule="evenodd" d="M16.707 5.293a1 1 0 010 1.414l-8 8a1 1 0 01-1.414 0l-4-4a1 1 0 011.414-1.414L8 12.586l7.293-7.293a1 1 0 011.414 0z" clipRule="evenodd" />
+                          </svg>
+                        )}
+                      </div>
+                      <span>{reason}</span>
+                    </div>
+                  </button>
+                ))}
+              </div>
+            </div>
+
+            {/* Custom reason textarea (show when "Lý do khác" selected) */}
+            {selectedReason === 'Lý do khác' && (
+              <div className="mb-4">
+                <label className="text-sm font-medium text-gray-700 mb-2 block">Nhập lý do khác:</label>
+                <textarea
+                  value={cancelReason}
+                  onChange={(e) => setCancelReason(e.target.value)}
+                  placeholder="Vui lòng mô tả lý do hủy của bạn..."
+                  className="w-full min-h-[100px] p-3 border border-gray-200 rounded-lg focus:outline-none focus:ring-2 focus:ring-teal-500 resize-y"
+                />
+              </div>
+            )}
+
+            {/* Action buttons */}
+            <div className="flex justify-end gap-3 pt-4 border-t">
+              <button
+                onClick={() => {
+                  setShowCancelModal(false);
+                  setCancelReason('');
+                  setSelectedReason('');
+                }}
+                disabled={isCancelling}
+                className="px-4 py-2 rounded-lg bg-gray-100 hover:bg-gray-200 disabled:opacity-50 disabled:cursor-not-allowed transition"
+              >
+                Đóng
+              </button>
+              <button
+                onClick={handleConfirmCancel}
+                disabled={isCancelling || !selectedReason || (selectedReason === 'Lý do khác' && !cancelReason.trim())}
+                className={`px-4 py-2 rounded-lg text-white font-medium transition ${
+                  isCancelling || !selectedReason || (selectedReason === 'Lý do khác' && !cancelReason.trim())
+                    ? 'bg-gray-400 cursor-not-allowed'
+                    : 'bg-red-600 hover:bg-red-700'
+                }`}
+              >
+                {isCancelling ? 'Đang hủy...' : 'Xác nhận hủy'}
+              </button>
+            </div>
+          </div>
+        </div>
+      )}
     </div>
   );
 }

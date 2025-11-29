@@ -130,34 +130,94 @@ export async function getAppointments(params?: GetAppointmentsParams): Promise<A
     return response.data;
 }
 
-export interface AppointmentDetailResponse {
-    status: string;
-    message: string;
-    data: {
-        _id: string;
-        user_id: string;
-        customer: string;
-        pet_ids: string[];
-        clinic_id: string;
-        service_ids: string[];
-        date: string;
-        shift: 'Morning' | 'Afternoon' | 'Evening';
-        status: 'Pending_Confirmation' | 'Confirmed' | 'Cancelled' | 'Completed';
-        created_by: string;
-        id: string;
-        createdAt: string;
-        updatedAt: string;
-    };
+// -- Replace old AppointmentDetailResponse & getAppointmentDetail with these updated types / fn --
+
+export interface AppointmentClinicInfo {
+  _id?: string;
+  id?: string;
+  clinic_name?: string;
+  email?: { email_address?: string; verified?: boolean } | any;
+  phone?: { phone_number?: string; verified?: boolean } | any;
+  license_number?: string;
+  address?: {
+    city?: string;
+    district?: string;
+    ward?: string;
+    detail?: string;
+  };
+  representative?: any;
+  is_active?: boolean;
+  member_ids?: string[];
+  createdAt?: string;
+  updatedAt?: string;
+  user_account_id?: string;
+  [key: string]: any;
 }
 
-export async function getAppointmentDetail(appointmentId: string): Promise<AppointmentDetailResponse['data']> {
+export interface AppointmentServiceInfo {
+  _id?: string;
+  clinic_id?: string;
+  name?: string;
+  description?: string;
+  price?: number;
+  duration?: number;
+  is_active?: boolean;
+  id?: string;
+  createdAt?: string;
+  updatedAt?: string;
+  [key: string]: any;
+}
+
+export interface AppointmentPetInfo {
+  id?: string;
+  name?: string;
+  species?: string;
+  gender?: string;
+  breed?: string;
+  color?: string;
+  weight?: number;
+  dateOfBirth?: string;
+  avatar_url?: string;
+  owner?: any;
+  [key: string]: any;
+}
+
+export interface AppointmentUserInfo {
+  fullname?: string;
+  phone_number?: string;
+  email?: string;
+  [key: string]: any;
+}
+
+export interface AppointmentDetail {
+  id: string;
+  date?: string;
+  shift?: string;
+  status?: 'Pending_Confirmation' | 'Confirmed' | 'Cancelled' | 'Completed' | string;
+  user_info?: AppointmentUserInfo;
+  clinic_info?: AppointmentClinicInfo;
+  service_infos?: AppointmentServiceInfo[];
+  pet_infos?: AppointmentPetInfo[];
+  createdAt?: string;
+  updatedAt?: string;
+  [key: string]: any;
+}
+
+export interface AppointmentDetailResponse {
+  status: string;
+  message?: string;
+  data: AppointmentDetail;
+}
+
+export async function getAppointmentDetail(appointmentId: string): Promise<AppointmentDetail> {
     const token = getAuthToken();
-    const url = `${process.env.NEXT_PUBLIC_PETTOPIA_API_URL}/healthcare/appointments/${encodeURIComponent(appointmentId)}`; // ĐÃ SỬA
+    const url = `${process.env.NEXT_PUBLIC_PETTOPIA_API_URL}/healthcare/appointments/${encodeURIComponent(appointmentId)}`;
     const response = await axios.get(url, {
         headers: {
             ...(token && { 'token': token }),
         },
     });
+    // API trả về { status, message, data: { ... } } theo ví dụ, nên trả về phần data
     return response.data?.data || response.data;
 }
 
@@ -318,6 +378,43 @@ export async function bookAppointment(payload: BookingPayload) {
     return response.data;
   } catch (error) {
     logAxiosError('bookAppointment', error);
+    throw error;
+  }
+}
+
+/* ================ NEW: update appointment status (cancel / confirm) ================
+   Endpoint (example): PATCH /healthcare/appointments/{id}/status
+   Body: { status: "Cancelled" | "Confirmed", cancel_reason?: "..." }
+   Returns API response.data
+*/
+export async function updateAppointmentStatus(
+  appointmentId: string,
+  status: string,
+  cancel_reason?: string
+) {
+  const token = getAuthToken();
+  if (!token) throw new Error('No authentication token found');
+
+  try {
+    const url = `${process.env.NEXT_PUBLIC_PETTOPIA_API_URL}/healthcare/appointments/${appointmentId}/status`;
+    const payload: Record<string, any> = { status };
+    if (cancel_reason) payload.cancel_reason = cancel_reason;
+    
+    console.log('Updating appointment status:', { url, method: 'PATCH', body: payload });
+
+    const response = await axios.patch(url, payload, { headers: { 'token': token } });
+    return response.data;
+  } catch (error: any) {
+    console.error("Lỗi khi cập nhật trạng thái lịch hẹn:", error);
+    console.error("Error details:", {
+      message: error?.message,
+      status: error?.response?.status,
+      statusText: error?.response?.statusText,
+      url: error?.config?.url,
+      method: error?.config?.method,
+      data: error?.response?.data
+    });
+    logAxiosError('updateAppointmentStatus', error);
     throw error;
   }
 }
