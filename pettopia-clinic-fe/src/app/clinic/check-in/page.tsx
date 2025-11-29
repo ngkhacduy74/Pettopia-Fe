@@ -7,7 +7,9 @@ const CheckIn = dynamic(() => import('@/components/clinic/Clinic-CheckIn'));
 export default function ClinicHomePage() {
 
   return (
-    <div className="flex-1 overflow-y-auto bg-gradient-to-b from-teal-50 to-white">
+    <div >
+       <h1 className="text-3xl font-bold text-gray-900 mb-1">Check-In Khách hàng</h1>
+          <p className="text-gray-500 text-sm">Check In khi khách hàng đã có mặt và làm thủ tục khác</p>
       <CheckIn />
     </div>
   );

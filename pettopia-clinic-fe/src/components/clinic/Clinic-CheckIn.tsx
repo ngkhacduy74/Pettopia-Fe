@@ -79,7 +79,7 @@ export default function CheckInPage() {
                                 const customerData = await getCustomerById(customerId);
                                 const fullname = customerData?.data?.fullname || customerData?.fullname;
                                 const phone = customerData?.data?.phone_number || customerData?.phone_number;
-                                
+
                                 if (fullname) {
                                     enriched.customer_name = fullname;
                                 }
@@ -137,10 +137,10 @@ export default function CheckInPage() {
                 const customerName = (apt.customer_name || '').toLowerCase();
                 const phone = (apt.phone || '').toLowerCase();
                 const id = (apt.id || apt._id || '').toLowerCase();
-                
-                return customerName.includes(query) || 
-                       phone.includes(query) || 
-                       id === query;
+
+                return customerName.includes(query) ||
+                    phone.includes(query) ||
+                    id === query;
             });
         }
 
@@ -217,7 +217,7 @@ export default function CheckInPage() {
     // Check-in khách hàng
     const handleCheckIn = async (appointmentId: string) => {
         if (!confirm('Xác nhận khách hàng đã đến và check-in?')) return;
-        
+
         setCheckingIn(true);
         setError(null);
         try {
@@ -238,24 +238,20 @@ export default function CheckInPage() {
     };
 
     return (
-        <div className="min-h-screen bg-gray-50 p-4 md:p-6">
+        <div className="min-h-screen p-4 md:p-6">
             <div className="max-w-7xl mx-auto">
                 {/* Header */}
-                <div className="bg-white rounded-xl shadow-sm border border-gray-200 p-6 mb-6">
+                <div className="mb-6">
                     <div className="flex items-center justify-between mb-4">
                         <div>
-                            <h1 className="text-3xl font-bold text-gray-900 flex items-center gap-3">
-                                <CheckCircle className="text-teal-600" size={32} />
-                                Check-in Khách Hàng
-                            </h1>
-                            <p className="text-gray-600 mt-2">
-                                {new Date().toLocaleDateString('vi-VN', { 
-                                    weekday: 'long', 
-                                    day: 'numeric', 
-                                    month: 'long', 
-                                    year: 'numeric' 
+                            <h1 className="text-gray-600 mt-2">
+                                {new Date().toLocaleDateString('vi-VN', {
+                                    weekday: 'long',
+                                    day: 'numeric',
+                                    month: 'long',
+                                    year: 'numeric'
                                 })}
-                            </p>
+                            </h1>
                         </div>
                         <button
                             onClick={loadTodayAppointments}
@@ -313,7 +309,7 @@ export default function CheckInPage() {
                 </div>
 
                 {/* Search & Filters */}
-                <div className="bg-white rounded-xl shadow-sm border border-gray-200 p-6 mb-6">
+                <div className="p-3 mb-3">
                     <div className="flex flex-col md:flex-row gap-4">
                         {/* Search */}
                         <div className="flex-1">
@@ -324,7 +320,7 @@ export default function CheckInPage() {
                                     placeholder="Tìm theo tên, số điện thoại hoặc mã lịch hẹn..."
                                     value={searchQuery}
                                     onChange={(e) => setSearchQuery(e.target.value)}
-                                    className="w-full pl-10 pr-4 py-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-teal-500 focus:border-transparent"
+                                    className="w-full pl-10 pr-4 py-3 border border-gray-300 rounded-lg focus:outline-none"
                                 />
                             </div>
                         </div>
@@ -332,11 +328,10 @@ export default function CheckInPage() {
                         {/* Filter Button */}
                         <button
                             onClick={() => setShowFilters(!showFilters)}
-                            className={`px-4 py-3 rounded-lg border transition flex items-center gap-2 ${
-                                showFilters 
-                                    ? 'bg-teal-600 text-white border-teal-600' 
-                                    : 'bg-white text-gray-700 border-gray-300 hover:bg-gray-50'
-                            }`}
+                            className={`px-4 py-3 rounded-lg border transition flex items-center gap-2 ${showFilters
+                                    ? 'bg-teal-600 text-white border-teal-600'
+                                    : ' text-gray-700 border-gray-300 hover:bg-gray-50'
+                                }`}
                         >
                             <Filter size={20} />
                             Lọc ca
@@ -356,11 +351,10 @@ export default function CheckInPage() {
                                     <button
                                         key={option.value}
                                         onClick={() => setFilterShift(option.value as any)}
-                                        className={`px-4 py-2 rounded-lg border transition ${
-                                            filterShift === option.value
+                                        className={`px-4 py-2 rounded-lg border transition ${filterShift === option.value
                                                 ? 'bg-teal-600 text-white border-teal-600'
                                                 : 'bg-white text-gray-700 border-gray-300 hover:bg-gray-50'
-                                        }`}
+                                            }`}
                                     >
                                         {option.label}
                                     </button>
@@ -406,8 +400,8 @@ export default function CheckInPage() {
                         <div className="text-center py-12">
                             <Clock className="mx-auto h-12 w-12 text-gray-400 mb-4" />
                             <p className="text-gray-600">
-                                {appointments.length === 0 
-                                    ? 'Không có lịch hẹn nào hôm nay' 
+                                {appointments.length === 0
+                                    ? 'Không có lịch hẹn nào hôm nay'
                                     : 'Không tìm thấy lịch hẹn phù hợp'}
                             </p>
                         </div>
@@ -543,8 +537,8 @@ export default function CheckInPage() {
                                                     <div key={pet.id} className="bg-white rounded-lg p-4 border border-gray-200">
                                                         <div className="flex gap-4">
                                                             {pet.avatar_url && (
-                                                                <img 
-                                                                    src={pet.avatar_url} 
+                                                                <img
+                                                                    src={pet.avatar_url}
                                                                     alt={pet.name}
                                                                     className="w-16 h-16 rounded-lg object-cover"
                                                                 />
