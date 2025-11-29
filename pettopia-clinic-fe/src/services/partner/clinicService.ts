@@ -266,14 +266,25 @@ export const updateAppointmentStatus = async (
     const body: any = { status };
     if (cancel_reason) body.cancel_reason = cancel_reason;
 
+    const url = `${HEALTHCARE_API_URL}/appointments/${appointmentId}/status`;
+    console.log('Updating appointment status:', { url, method: 'PATCH', body });
+
     const response = await axios.patch(
-      `${HEALTHCARE_API_URL}/appointments/${appointmentId}/status`,
+      url,
       body,
       { headers: { 'token': token } }
     );
     return response.data;
-  } catch (error) {
+  } catch (error: any) {
     console.error("Lỗi khi cập nhật trạng thái lịch hẹn:", error);
+    console.error("Error details:", {
+      message: error?.message,
+      status: error?.response?.status,
+      statusText: error?.response?.statusText,
+      url: error?.config?.url,
+      method: error?.config?.method,
+      data: error?.response?.data
+    });
     throw error;
   }
 };

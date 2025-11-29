@@ -2,6 +2,7 @@
 
 import { useState } from 'react';
 import Sidebar from '@/components/sidebar/Sidebar';
+import { ToastProvider } from '@/contexts/ToastContext';
 
 export default function Layout({
   children,
@@ -13,8 +14,9 @@ export default function Layout({
   const [isSettingsModalOpen, setIsSettingsModalOpen] = useState(false); // ✅ Thêm state modal
 
   return (
-    <section>
-      <div className="flex h-screen bg-gradient-to-b from-teal-50 to-white text-gray-900 relative">
+    <ToastProvider>
+      <section>
+        <div className="flex h-screen bg-gradient-to-b from-teal-50 to-white text-gray-900 relative">
 
         {/* Sidebar */}
         <Sidebar
@@ -140,5 +142,6 @@ export default function Layout({
         )}
       </div>
     </section>
+    </ToastProvider>
   );
 }

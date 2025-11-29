@@ -37,12 +37,25 @@ export async function getCustomerById(id: string | number) {
     const response = await axios.get(`${API_URL}/${id}`, getAuthHeaders());
     return response.data;
   } catch (error: any) {
-    const errorMsg = error.response?.data?.message || error.response?.data || error.message || 'Unknown error';
-    if (error.response?.status === 404) {
-      console.error("Khách hàng không tìm thấy:", errorMsg);
-    } else {
-      console.error("Lỗi khi lấy chi tiết khách hàng:", errorMsg);
+    const status = error.response?.status;
+    const respData = error.response?.data;
+    const errorMsg = respData?.message || respData || error.message || 'Unknown error';
+
+    // Log detailed info for debugging
+    console.error(`getCustomerById failed (id=${id}) status=${status}`, respData || error.message);
+
+    // If the customer is not found or caller is unauthorized, return null so callers can continue
+    if (status === 404) {
+      console.warn("Khách hàng không tìm thấy:", errorMsg);
+      return null;
     }
+
+    if (status === 401 || status === 403) {
+      console.warn("Không có quyền truy cập chi tiết khách hàng:", errorMsg);
+      return null;
+    }
+
+    // For other errors, rethrow so upstream can handle/retry
     throw new Error(errorMsg);
   }
 }

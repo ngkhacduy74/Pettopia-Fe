@@ -209,14 +209,6 @@ const AppointmentTimeline = memo(function AppointmentTimeline() {
                       </div>
                     </div>
 
-                    {/* Today badge */}
-                    {today && (
-                      <div className="mt-3 pt-3 border-t border-gray-300">
-                        <span className="inline-block px-3 py-1 bg-orange-500 text-white text-xs font-bold rounded-full">
-                          HÔM NAY
-                        </span>
-                      </div>
-                    )}
                   </div>
                 </Link>
               );

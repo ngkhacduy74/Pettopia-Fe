@@ -1,8 +1,11 @@
 'use client';
 
 import { useState, useEffect, useMemo } from 'react';
-import { Calendar, Filter, ChevronLeft, ChevronRight, X, CheckCircle, XCircle, Clock, Loader2, Sun, Sunset, Moon } from 'lucide-react';
-import { getAppointments, updateAppointmentStatus, type AppointmentData } from '@/services/partner/clinicService';
+import { useSearchParams, useRouter } from 'next/navigation';
+import { Calendar, Filter, ChevronLeft, ChevronRight, X, CheckCircle, XCircle, Clock, Loader2, Sun, Sunset, Moon, RefreshCw } from 'lucide-react';
+import NotificationBell from '@/components/NotificationBell';
+import { useToast } from '@/contexts/ToastContext';
+import { getAppointments, updateAppointmentStatus, getAppointmentDetail, type AppointmentData } from '@/services/partner/clinicService';
 import { getCustomerById } from '@/services/customer/customerService';
 
 // Helper: chuẩn hóa ngày về YYYY-MM-DD (dùng local time để tránh lệch múi giờ)
@@ -22,7 +25,62 @@ interface ExtendedAppointment extends AppointmentData {
     time?: string;
 }
 
+// Interface cho Appointment Detail từ API
+interface AppointmentDetail {
+    id: string;
+    date: string;
+    shift: string;
+    status: string;
+    user_info: {
+        fullname: string;
+        phone_number: string;
+    };
+    clinic_info: {
+        clinic_name: string;
+        email: {
+            email_address: string;
+        };
+        phone: {
+            phone_number: string;
+        };
+        address: {
+            city: string;
+            district: string;
+            ward: string;
+            detail: string;
+        };
+        representative: {
+            name: string;
+        };
+    };
+    service_infos: Array<{
+        name: string;
+        description: string;
+        price: number;
+        duration: number;
+    }>;
+    pet_infos: Array<{
+        id: string;
+        name: string;
+        species: string;
+        gender: string;
+        breed: string;
+        color: string;
+        weight: number;
+        dateOfBirth: string;
+        owner: {
+            fullname: string;
+            phone: string;
+            email: string;
+        };
+        avatar_url?: string;
+    }>;
+}
+
 export default function AppointmentsPage() {
+    const router = useRouter();
+    const searchParams = useSearchParams();
+    const { showSuccess, showError } = useToast();
     const [appointments, setAppointments] = useState<ExtendedAppointment[]>([]);
     const [loading, setLoading] = useState(false);
     const [error, setError] = useState<string | null>(null);
@@ -33,6 +91,34 @@ export default function AppointmentsPage() {
     const [viewMode, setViewMode] = useState<'month' | 'week' | 'day' | 'table'>('month');
     const [currentDate, setCurrentDate] = useState(new Date());
     const [selectedCustomer, setSelectedCustomer] = useState<string | null>(null);
+    const [selectedAppointmentId, setSelectedAppointmentId] = useState<string | null>(null);
+    const [appointmentDetail, setAppointmentDetail] = useState<AppointmentDetail | null>(null);
+    const [loadingDetail, setLoadingDetail] = useState(false);
+    const [dayViewDetails, setDayViewDetails] = useState<Map<string, AppointmentDetail>>(new Map());
+    const [loadingDayDetails, setLoadingDayDetails] = useState(false);
+    const [showCancelModal, setShowCancelModal] = useState(false);
+    const [cancelReason, setCancelReason] = useState('');
+    const [updatingStatus, setUpdatingStatus] = useState(false);
+    const [cancellingAppointmentId, setCancellingAppointmentId] = useState<string | null>(null);
+
+    // Kiểm tra query param appointmentId từ notification
+    useEffect(() => {
+        const appointmentId = searchParams.get('appointmentId');
+        if (appointmentId && appointments.length > 0) {
+            // Tìm appointment để lấy ngày
+            const apt = appointments.find(a => (a.id || a._id) === appointmentId);
+            if (apt) {
+                const aptDate = new Date(apt.date);
+                setCurrentDate(aptDate);
+                setViewMode('day');
+                setSelectedAppointmentId(appointmentId);
+                loadAppointmentDetail(appointmentId);
+                // Xóa query param sau khi đã xử lý
+                router.replace('/clinic/appointment');
+            }
+        }
+        // eslint-disable-next-line react-hooks/exhaustive-deps
+    }, [searchParams, appointments]);
 
     // Filters
     const [filters, setFilters] = useState({
@@ -41,6 +127,7 @@ export default function AppointmentsPage() {
         dateTo: '',
         createdBy: 'all' as 'all' | 'customer' | 'partner'
     });
+    const [searchQuery, setSearchQuery] = useState('');
 
     // Load appointments từ API
     const loadAppointments = async () => {
@@ -166,8 +253,29 @@ export default function AppointmentsPage() {
                 return createdBy === filters.createdBy;
             });
         }
+        
+        // Search filter: tìm theo ID (chính xác) hoặc tên khách hàng (partial match)
+        if (searchQuery.trim()) {
+            const query = searchQuery.trim().toLowerCase();
+            filtered = filtered.filter(a => {
+                const appointmentId = (a.id || a._id || '').toLowerCase();
+                const customerName = (a.customer_name || '').toLowerCase();
+                const customerId = (a.customer || a.user_id || '').toLowerCase();
+                
+                // Tìm chính xác theo ID
+                if (appointmentId === query || customerId === query) {
+                    return true;
+                }
+                // Tìm theo tên khách hàng (partial match)
+                if (customerName.includes(query)) {
+                    return true;
+                }
+                return false;
+            });
+        }
+        
         return filtered;
-    }, [appointments, filters]);
+    }, [appointments, filters, searchQuery]);
 
     // Helper functions
     const getStatusColor = (status: string) => {
@@ -195,6 +303,26 @@ export default function AppointmentsPage() {
             case 'evening': return 'Tối';
             default: return shift || 'N/A';
         }
+    };
+
+    // Tạo map customer với số thứ tự (Đơn 1, Đơn 2, ...)
+    const getCustomerOrderMap = () => {
+        const customerMap = new Map<string, number>();
+        let order = 1;
+        appointments.forEach(apt => {
+            const customerKey = apt.customer || apt.user_id || apt.customer_name || 'unknown';
+            if (!customerMap.has(customerKey)) {
+                customerMap.set(customerKey, order++);
+            }
+        });
+        return customerMap;
+    };
+
+    // Lấy số thứ tự của customer
+    const getCustomerOrder = (customerId: string | undefined, customerName: string | undefined) => {
+        const customerMap = getCustomerOrderMap();
+        const customerKey = customerId || customerName || 'unknown';
+        return customerMap.get(customerKey) || 0;
     };
 
     // Tạo màu dựa trên customer ID để mỗi khách hàng có màu riêng
@@ -249,23 +377,143 @@ export default function AppointmentsPage() {
 
     const resetFilters = () => {
         setFilters({ status: 'all', dateFrom: '', dateTo: '', createdBy: 'all' });
+        setSearchQuery('');
     };
 
     // Cập nhật trạng thái appointment
     const handleUpdateStatus = async (appointmentId: string, newStatus: string, cancelReason?: string) => {
-        setLoading(true);
+        setUpdatingStatus(true);
         setError(null);
         try {
             await updateAppointmentStatus(appointmentId, newStatus, cancelReason);
+            // Reload appointments và detail nếu đang xem detail
             await loadAppointments();
+            if (appointmentDetail && (appointmentDetail.id === appointmentId || selectedAppointmentId === appointmentId)) {
+                await loadAppointmentDetail(appointmentId);
+            }
+            // Trigger refresh notifications
+            if (typeof window !== 'undefined') {
+                // Dispatch custom event để NotificationBell có thể listen
+                window.dispatchEvent(new CustomEvent('appointmentUpdated'));
+                // Hoặc dùng localStorage event (hoạt động cross-tab)
+                localStorage.setItem('appointment_updated', Date.now().toString());
+            }
+            // Hiển thị toast thành công và reload lại sau khi toast hiển thị
+            const statusText = newStatus === 'Confirmed' ? 'xác nhận' : newStatus === 'Cancelled' ? 'hủy' : 'cập nhật';
+            showSuccess(`Đã ${statusText} lịch hẹn thành công!`, undefined, () => {
+                // Callback được gọi khi toast hiển thị - reload lại danh sách
+                loadAppointments();
+            });
         } catch (err: any) {
-            setError(err?.message || 'Không thể cập nhật trạng thái lịch hẹn');
+            const errorMessage = err?.message || 'Không thể cập nhật trạng thái lịch hẹn';
+            setError(errorMessage);
+            showError(errorMessage);
         } finally {
-            setLoading(false);
+            setUpdatingStatus(false);
         }
     };
 
+    // Xử lý hủy appointment với modal (có thể từ detail view hoặc table view)
+    const handleCancelClick = (appointmentId?: string) => {
+        // Nếu có appointmentId từ parameter (table view), dùng nó
+        // Nếu không, dùng appointmentDetail.id (detail view)
+        const idToCancel = appointmentId || appointmentDetail?.id;
+        if (!idToCancel) return;
+        setCancellingAppointmentId(idToCancel);
+        setShowCancelModal(true);
+        setCancelReason('');
+    };
+
+    // Xác nhận hủy appointment
+    const handleConfirmCancel = async () => {
+        if (!cancellingAppointmentId) return;
+        if (!cancelReason.trim()) {
+            setError('Vui lòng nhập lý do hủy');
+            return;
+        }
+        // Lưu lại ID và lý do trước khi reset state
+        const appointmentIdToCancel = cancellingAppointmentId;
+        const reasonToCancel = cancelReason.trim();
+        
+        // Đóng modal và reset state ngay để UX tốt hơn
+        setShowCancelModal(false);
+        setCancelReason('');
+        setCancellingAppointmentId(null);
+        
+        // Gọi handleUpdateStatus (đã có loadAppointments bên trong để reload danh sách)
+        await handleUpdateStatus(appointmentIdToCancel, 'Cancelled', reasonToCancel);
+    };
+
     const goToToday = () => setCurrentDate(new Date());
+
+    // Load appointment detail
+    const loadAppointmentDetail = async (appointmentId: string) => {
+        setLoadingDetail(true);
+        setError(null);
+        try {
+            const response = await getAppointmentDetail(appointmentId);
+            if (response.status === 'success' && response.data) {
+                const detail = response.data as any;
+                // Đảm bảo luôn có id (nếu API trả về _id thì chuyển thành id)
+                if (detail._id && !detail.id) {
+                    detail.id = detail._id;
+                }
+                setAppointmentDetail(detail);
+            }
+        } catch (err: any) {
+            setError(err?.message || 'Không thể tải chi tiết lịch hẹn');
+            setAppointmentDetail(null);
+        } finally {
+            setLoadingDetail(false);
+        }
+    };
+
+    // Load tất cả chi tiết appointments trong ngày
+    const loadDayViewDetails = async (appointments: ExtendedAppointment[]) => {
+        setLoadingDayDetails(true);
+        setError(null);
+        try {
+            const detailsMap = new Map<string, AppointmentDetail>();
+            await Promise.all(
+                appointments.map(async (apt) => {
+                    const id = apt.id || apt._id;
+                    try {
+                        const response = await getAppointmentDetail(id);
+                        if (response.status === 'success' && response.data) {
+                            detailsMap.set(id, response.data as any);
+                        }
+                    } catch (err) {
+                        console.warn(`Không thể tải chi tiết appointment ${id}:`, err);
+                    }
+                })
+            );
+            setDayViewDetails(detailsMap);
+        } catch (err: any) {
+            setError(err?.message || 'Không thể tải chi tiết lịch hẹn');
+        } finally {
+            setLoadingDayDetails(false);
+        }
+    };
+
+    // Handle row click in table view - chuyển sang day view và hiển thị chi tiết
+    const handleRowClick = async (appointmentId: string, appointmentDate: string) => {
+        // Tìm appointment để lấy ngày
+        const apt = appointments.find(a => (a.id || a._id) === appointmentId);
+        if (apt) {
+            // Chuyển sang day view và set ngày
+            const aptDate = new Date(apt.date);
+            setCurrentDate(aptDate);
+            setViewMode('day');
+            setSelectedAppointmentId(appointmentId);
+            await loadAppointmentDetail(appointmentId);
+        }
+    };
+
+    // Close detail view
+    const closeDetailView = () => {
+        setSelectedAppointmentId(null);
+        setAppointmentDetail(null);
+    };
 
     const navigateDate = (dir: 'prev' | 'next') => {
         const newDate = new Date(currentDate);
@@ -381,16 +629,25 @@ export default function AppointmentsPage() {
                                     {day.date.getDate()}
                                 </div>
                                 <div className="space-y-1 text-xs">
-                                    {displayed.map(apt => (
-                                        <div
-                                            key={apt._id || apt.id}
-                                            onClick={() => setDateFilterAndSwitchToTable(day.date)}
-                                            className={`${getCustomerColor(apt.customer || apt.user_id, apt.customer_name)} text-white px-2 py-1 rounded-lg cursor-pointer truncate transition-colors flex items-center gap-1.5`}
-                                        >
-                                            <span className="flex-shrink-0">{getShiftIcon(apt.shift)}</span>
-                                            <span className="truncate">{apt.customer_name || 'Khách hàng'}</span>
-                                        </div>
-                                    ))}
+                                    {displayed.map(apt => {
+                                        const order = getCustomerOrder(apt.customer || apt.user_id, apt.customer_name);
+                                        return (
+                                            <div
+                                                key={apt.id || apt._id}
+                                                onClick={() => setDateFilterAndSwitchToTable(day.date)}
+                                                className={`${getCustomerColor(apt.customer || apt.user_id, apt.customer_name)} text-white px-2 py-1 rounded-lg cursor-pointer truncate transition-colors flex items-center gap-1.5 group relative`}
+                                                title={apt.customer_name || 'Khách hàng'}
+                                            >
+                                                <span className="flex-shrink-0">{getShiftIcon(apt.shift)}</span>
+                                                <span className="truncate">Đơn {order}</span>
+                                                {/* Tooltip */}
+                                                <div className="absolute bottom-full left-1/2 transform -translate-x-1/2 mb-2 px-2 py-1 bg-gray-900 text-white text-xs rounded opacity-0 group-hover:opacity-100 pointer-events-none transition-opacity whitespace-nowrap z-50 shadow-lg">
+                                                    {apt.customer_name || 'Khách hàng'}
+                                                    <div className="absolute top-full left-1/2 transform -translate-x-1/2 border-4 border-transparent border-t-gray-900"></div>
+                                                </div>
+                                            </div>
+                                        );
+                                    })}
                                     {more > 0 && (
                                         <button
                                             onClick={() => setDateFilterAndSwitchToTable(day.date)}
@@ -440,16 +697,25 @@ export default function AppointmentsPage() {
                                 </div>
 
                                 <div className="p-3 space-y-2 min-h-96">
-                                    {displayed.map(apt => (
-                                        <div
-                                            key={apt._id || apt.id}
-                                            onClick={() => setDateFilterAndSwitchToTable(date)}
-                                            className={`${getCustomerColor(apt.customer || apt.user_id, apt.customer_name)} text-white p-2 rounded-lg text-xs cursor-pointer transition-colors flex items-center gap-2 hover:opacity-90`}
-                                        >
-                                            <span className="flex-shrink-0">{getShiftIcon(apt.shift)}</span>
-                                            <div className="font-medium truncate">{apt.customer_name || 'Khách hàng'}</div>
-                                        </div>
-                                    ))}
+                                    {displayed.map(apt => {
+                                        const order = getCustomerOrder(apt.customer || apt.user_id, apt.customer_name);
+                                        return (
+                                            <div
+                                                key={apt.id || apt._id}
+                                                onClick={() => setDateFilterAndSwitchToTable(date)}
+                                                className={`${getCustomerColor(apt.customer || apt.user_id, apt.customer_name)} text-white p-2 rounded-lg text-xs cursor-pointer transition-colors flex items-center gap-2 hover:opacity-90 group relative`}
+                                                title={apt.customer_name || 'Khách hàng'}
+                                            >
+                                                <span className="flex-shrink-0">{getShiftIcon(apt.shift)}</span>
+                                                <div className="font-medium truncate">Đơn {order}</div>
+                                                {/* Tooltip */}
+                                                <div className="absolute bottom-full left-1/2 transform -translate-x-1/2 mb-2 px-2 py-1 bg-gray-900 text-white text-xs rounded opacity-0 group-hover:opacity-100 pointer-events-none transition-opacity whitespace-nowrap z-50 shadow-lg">
+                                                    {apt.customer_name || 'Khách hàng'}
+                                                    <div className="absolute top-full left-1/2 transform -translate-x-1/2 border-4 border-transparent border-t-gray-900"></div>
+                                                </div>
+                                            </div>
+                                        );
+                                    })}
                                     {more > 0 && (
                                         <button
                                             onClick={() => setDateFilterAndSwitchToTable(date)}
@@ -470,15 +736,477 @@ export default function AppointmentsPage() {
     // Day View
     const DayView = () => {
         const appts = getAppointmentsForDate(currentDate);
+        // Group theo customer key (ID hoặc name) để đảm bảo cùng customer có cùng số thứ tự
         const grouped = appts.reduce((acc, apt) => {
-            const customerName = apt.customer_name || 'Khách hàng';
-            acc[customerName] = acc[customerName] || [];
-            acc[customerName].push(apt);
+            const customerKey = apt.customer || apt.user_id || apt.customer_name || 'unknown';
+            if (!acc[customerKey]) {
+                acc[customerKey] = {
+                    apts: [],
+                    customerName: apt.customer_name || 'Khách hàng',
+                    order: getCustomerOrder(apt.customer || apt.user_id, apt.customer_name)
+                };
+            }
+            acc[customerKey].apts.push(apt);
             return acc;
-        }, {} as Record<string, typeof appts>);
+        }, {} as Record<string, { apts: typeof appts; customerName: string; order: number }>);
 
-        const customers = Object.keys(grouped);
+        const customerKeys = Object.keys(grouped);
 
+        // Handle click vào appointment để xem chi tiết
+        const handleAppointmentClick = async (appointmentId: string) => {
+            setSelectedAppointmentId(appointmentId);
+            await loadAppointmentDetail(appointmentId);
+        };
+
+        // Nếu có selectedAppointmentId từ table view, hiển thị chi tiết một appointment
+        if (selectedAppointmentId && appointmentDetail) {
+            return (
+                <div className="space-y-6">
+                    <div className="bg-white rounded-xl shadow-sm border border-gray-200 w-full">
+                        <div className="bg-gray-50 p-6 border-b border-gray-200">
+                            <button
+                                onClick={closeDetailView}
+                                className="mb-4 text-teal-600 hover:text-teal-800 flex items-center gap-2 font-medium"
+                            >
+                                <ChevronLeft size={18} /> Quay lại
+                            </button>
+                            <h2 className="text-2xl font-bold text-gray-900">
+                                Chi tiết lịch hẹn - {currentDate.toLocaleDateString('vi-VN', { weekday: 'long', day: 'numeric', month: 'long', year: 'numeric' })}
+                            </h2>
+                        </div>
+
+                        <div className="p-6">
+                            {loadingDetail ? (
+                                <div className="flex items-center justify-center py-12">
+                                    <Loader2 className="animate-spin h-8 w-8 text-teal-600 mr-2" />
+                                    <span className="text-gray-600">Đang tải chi tiết...</span>
+                                </div>
+                            ) : (
+                                <div className="space-y-6">
+                                    {/* Thông tin cơ bản */}
+                                    <div className="bg-gray-50 rounded-lg p-4">
+                                        <h3 className="text-lg font-semibold text-gray-900 mb-4">Thông tin cơ bản</h3>
+                                        <div className="grid grid-cols-2 gap-4">
+                                            <div>
+                                                <p className="text-sm text-gray-600">Ngày</p>
+                                                <p className="font-medium text-gray-900">{formatDate(appointmentDetail.date)}</p>
+                                            </div>
+                                            <div>
+                                                <p className="text-sm text-gray-600">Ca</p>
+                                                <p className="font-medium text-gray-900">{getShiftLabel(appointmentDetail.shift)}</p>
+                                            </div>
+                                            <div>
+                                                <p className="text-sm text-gray-600">Trạng thái</p>
+                                                <span className={`inline-block px-3 py-1 rounded-full text-xs border font-medium ${getStatusColor(appointmentDetail.status)}`}>
+                                                    {getStatusLabel(appointmentDetail.status)}
+                                                </span>
+                                            </div>
+                                        </div>
+                                    </div>
+
+                                    {/* Thông tin khách hàng */}
+                                    {appointmentDetail.user_info && (
+                                        <div className="bg-gray-50 rounded-lg p-4">
+                                            <h3 className="text-lg font-semibold text-gray-900 mb-4">Thông tin khách hàng</h3>
+                                            <div className="grid grid-cols-2 gap-4">
+                                                <div>
+                                                    <p className="text-sm text-gray-600">Họ tên</p>
+                                                    <p className="font-medium text-gray-900">{appointmentDetail.user_info.fullname}</p>
+                                                </div>
+                                                <div>
+                                                    <p className="text-sm text-gray-600">Số điện thoại</p>
+                                                    <p className="font-medium text-gray-900">{appointmentDetail.user_info.phone_number}</p>
+                                                </div>
+                                            </div>
+                                        </div>
+                                    )}
+
+                                    {/* Thông tin phòng khám */}
+                                    {/* {appointmentDetail.clinic_info && (
+                                        <div className="bg-gray-50 rounded-lg p-4">
+                                            <h3 className="text-lg font-semibold text-gray-900 mb-4">Thông tin phòng khám</h3>
+                                            <div className="space-y-3">
+                                                <div>
+                                                    <p className="text-sm text-gray-600">Tên phòng khám</p>
+                                                    <p className="font-medium text-gray-900">{appointmentDetail.clinic_info.clinic_name}</p>
+                                                </div>
+                                                <div className="grid grid-cols-2 gap-4">
+                                                    <div>
+                                                        <p className="text-sm text-gray-600">Email</p>
+                                                        <p className="font-medium text-gray-900">{appointmentDetail.clinic_info.email.email_address}</p>
+                                                    </div>
+                                                    <div>
+                                                        <p className="text-sm text-gray-600">Số điện thoại</p>
+                                                        <p className="font-medium text-gray-900">{appointmentDetail.clinic_info.phone.phone_number}</p>
+                                                    </div>
+                                                </div>
+                                                <div>
+                                                    <p className="text-sm text-gray-600">Địa chỉ</p>
+                                                    <p className="font-medium text-gray-900">
+                                                        {appointmentDetail.clinic_info.address.detail}, {appointmentDetail.clinic_info.address.ward}, {appointmentDetail.clinic_info.address.district}, {appointmentDetail.clinic_info.address.city}
+                                                    </p>
+                                                </div>
+                                                {appointmentDetail.clinic_info.representative && (
+                                                    <div>
+                                                        <p className="text-sm text-gray-600">Người đại diện</p>
+                                                        <p className="font-medium text-gray-900">{appointmentDetail.clinic_info.representative.name}</p>
+                                                    </div>
+                                                )}
+                                            </div>
+                                        </div>
+                                    )} */}
+
+                                    {/* Danh sách dịch vụ */}
+                                    {appointmentDetail.service_infos && appointmentDetail.service_infos.length > 0 && (
+                                        <div className="bg-gray-50 rounded-lg p-4">
+                                            <h3 className="text-lg font-semibold text-gray-900 mb-4">Dịch vụ</h3>
+                                            <div className="space-y-3">
+                                                {appointmentDetail.service_infos.map((service, index) => (
+                                                    <div key={index} className="bg-white rounded-lg p-3 border border-gray-200">
+                                                        <div className="flex justify-between items-start">
+                                                            <div className="flex-1">
+                                                                <p className="font-medium text-gray-900">{service.name}</p>
+                                                                {service.description && (
+                                                                    <p className="text-sm text-gray-600 mt-1">{service.description}</p>
+                                                                )}
+                                                                <div className="flex gap-4 mt-2 text-sm text-gray-600">
+                                                                    <span>Thời gian: {service.duration} phút</span>
+                                                                </div>
+                                                            </div>
+                                                            <div className="text-right">
+                                                                <p className="font-semibold text-teal-600">{service.price.toLocaleString('vi-VN')} đ</p>
+                                                            </div>
+                                                        </div>
+                                                    </div>
+                                                ))}
+                                            </div>
+                                        </div>
+                                    )}
+
+                                    {/* Danh sách thú cưng */}
+                                    {appointmentDetail.pet_infos && appointmentDetail.pet_infos.length > 0 && (
+                                        <div className="bg-gray-50 rounded-lg p-4">
+                                            <h3 className="text-lg font-semibold text-gray-900 mb-4">Thú cưng</h3>
+                                            <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                                                {appointmentDetail.pet_infos.map((pet) => (
+                                                    <div key={pet.id} className="bg-white rounded-lg p-4 border border-gray-200">
+                                                        <div className="flex gap-4">
+                                                            {pet.avatar_url && (
+                                                                <img 
+                                                                    src={pet.avatar_url} 
+                                                                    alt={pet.name}
+                                                                    className="w-20 h-20 rounded-lg object-cover"
+                                                                />
+                                                            )}
+                                                            <div className="flex-1">
+                                                                <p className="font-medium text-gray-900">{pet.name}</p>
+                                                                <div className="mt-2 space-y-1 text-sm text-gray-600">
+                                                                    <p>Loài: {pet.species}</p>
+                                                                    <p>Giống: {pet.breed}</p>
+                                                                    <p>Giới tính: {pet.gender === 'Male' ? 'Đực' : 'Cái'}</p>
+                                                                    <p>Màu sắc: {pet.color}</p>
+                                                                    <p>Cân nặng: {pet.weight} kg</p>
+                                                                    <p>Ngày sinh: {formatDate(pet.dateOfBirth)}</p>
+                                                                </div>
+                                                            </div>
+                                                        </div>
+                                                    </div>
+                                                ))}
+                                            </div>
+                                        </div>
+                                    )}
+
+                                    {/* Nút thao tác */}
+                                    {appointmentDetail.status === 'Pending_Confirmation' && (
+                                        <div className="bg-gray-50 rounded-lg p-4 border-t-2 border-teal-500">
+                                            <h3 className="text-lg font-semibold text-gray-900 mb-4">Thao tác</h3>
+                                            <div className="flex gap-3">
+                                                <button
+                                                    onClick={() => appointmentDetail.id && handleUpdateStatus(appointmentDetail.id, 'Confirmed')}
+                                                    disabled={updatingStatus}
+                                                    className="flex-1 px-4 py-2.5 bg-green-600 text-white rounded-lg hover:bg-green-700 disabled:opacity-50 disabled:cursor-not-allowed transition-colors font-medium flex items-center justify-center gap-2"
+                                                >
+                                                    {updatingStatus ? (
+                                                        <>
+                                                            <Loader2 className="animate-spin h-5 w-5" />
+                                                            <span>Đang xử lý...</span>
+                                                        </>
+                                                    ) : (
+                                                        <>
+                                                            <CheckCircle className="h-5 w-5" />
+                                                            <span>Xác nhận lịch hẹn</span>
+                                                        </>
+                                                    )}
+                                                </button>
+                                                <button
+                                                    onClick={() => handleCancelClick()}
+                                                    disabled={updatingStatus}
+                                                    className="flex-1 px-4 py-2.5 bg-red-600 text-white rounded-lg hover:bg-red-700 disabled:opacity-50 disabled:cursor-not-allowed transition-colors font-medium flex items-center justify-center gap-2"
+                                                >
+                                                    <XCircle className="h-5 w-5" />
+                                                    <span>Hủy lịch hẹn</span>
+                                                </button>
+                                            </div>
+                                        </div>
+                                    )}
+
+                                    {appointmentDetail.status === 'Confirmed' && (
+                                        <div className="bg-gray-50 rounded-lg p-4 border-t-2 border-green-500">
+                                            <h3 className="text-lg font-semibold text-gray-900 mb-4">Thao tác</h3>
+                                            <div className="flex gap-3">
+                                                <button
+                                                    onClick={() => handleCancelClick()}
+                                                    disabled={updatingStatus}
+                                                    className="flex-1 px-4 py-2.5 bg-red-600 text-white rounded-lg hover:bg-red-700 disabled:opacity-50 disabled:cursor-not-allowed transition-colors font-medium flex items-center justify-center gap-2"
+                                                >
+                                                    {updatingStatus ? (
+                                                        <>
+                                                            <Loader2 className="animate-spin h-5 w-5" />
+                                                            <span>Đang xử lý...</span>
+                                                        </>
+                                                    ) : (
+                                                        <>
+                                                            <XCircle className="h-5 w-5" />
+                                                            <span>Hủy lịch hẹn</span>
+                                                        </>
+                                                    )}
+                                                </button>
+                                            </div>
+                                        </div>
+                                    )}
+                                </div>
+                            )}
+                        </div>
+                    </div>
+                </div>
+            );
+        }
+
+        // Nếu có selectedAppointmentId, hiển thị chi tiết một appointment
+        if (selectedAppointmentId && appointmentDetail) {
+            return (
+                <div className="space-y-6">
+                    <div className="bg-white rounded-xl shadow-sm border border-gray-200 w-full">
+                        <div className="bg-gray-50 p-6 border-b border-gray-200">
+                            <button
+                                onClick={closeDetailView}
+                                className="mb-4 text-teal-600 hover:text-teal-800 flex items-center gap-2 font-medium"
+                            >
+                                <ChevronLeft size={18} /> Quay lại
+                            </button>
+                            <h2 className="text-2xl font-bold text-gray-900">
+                                Chi tiết lịch hẹn - {currentDate.toLocaleDateString('vi-VN', { weekday: 'long', day: 'numeric', month: 'long', year: 'numeric' })}
+                            </h2>
+                        </div>
+
+                        <div className="p-6">
+                            {loadingDetail ? (
+                                <div className="flex items-center justify-center py-12">
+                                    <Loader2 className="animate-spin h-8 w-8 text-teal-600 mr-2" />
+                                    <span className="text-gray-600">Đang tải chi tiết...</span>
+                                </div>
+                            ) : (
+                                <div className="space-y-6">
+                                    {/* Thông tin cơ bản */}
+                                    <div className="bg-gray-50 rounded-lg p-4">
+                                        <h3 className="text-lg font-semibold text-gray-900 mb-4">Thông tin cơ bản</h3>
+                                        <div className="grid grid-cols-2 gap-4">
+                                            <div>
+                                                <p className="text-sm text-gray-600">Ngày</p>
+                                                <p className="font-medium text-gray-900">{formatDate(appointmentDetail.date)}</p>
+                                            </div>
+                                            <div>
+                                                <p className="text-sm text-gray-600">Ca</p>
+                                                <p className="font-medium text-gray-900">{getShiftLabel(appointmentDetail.shift)}</p>
+                                            </div>
+                                            <div>
+                                                <p className="text-sm text-gray-600">Trạng thái</p>
+                                                <span className={`inline-block px-3 py-1 rounded-full text-xs border font-medium ${getStatusColor(appointmentDetail.status)}`}>
+                                                    {getStatusLabel(appointmentDetail.status)}
+                                                </span>
+                                            </div>
+                                        </div>
+                                    </div>
+
+                                    {/* Thông tin khách hàng */}
+                                    {appointmentDetail.user_info && (
+                                        <div className="bg-gray-50 rounded-lg p-4">
+                                            <h3 className="text-lg font-semibold text-gray-900 mb-4">Thông tin khách hàng</h3>
+                                            <div className="grid grid-cols-2 gap-4">
+                                                <div>
+                                                    <p className="text-sm text-gray-600">Họ tên</p>
+                                                    <p className="font-medium text-gray-900">{appointmentDetail.user_info.fullname}</p>
+                                                </div>
+                                                <div>
+                                                    <p className="text-sm text-gray-600">Số điện thoại</p>
+                                                    <p className="font-medium text-gray-900">{appointmentDetail.user_info.phone_number}</p>
+                                                </div>
+                                            </div>
+                                        </div>
+                                    )}
+
+                                    {/* Thông tin phòng khám */}
+                                    {appointmentDetail.clinic_info && (
+                                        <div className="bg-gray-50 rounded-lg p-4">
+                                            <h3 className="text-lg font-semibold text-gray-900 mb-4">Thông tin phòng khám</h3>
+                                            <div className="space-y-3">
+                                                <div>
+                                                    <p className="text-sm text-gray-600">Tên phòng khám</p>
+                                                    <p className="font-medium text-gray-900">{appointmentDetail.clinic_info.clinic_name}</p>
+                                                </div>
+                                                <div className="grid grid-cols-2 gap-4">
+                                                    <div>
+                                                        <p className="text-sm text-gray-600">Email</p>
+                                                        <p className="font-medium text-gray-900">{appointmentDetail.clinic_info.email.email_address}</p>
+                                                    </div>
+                                                    <div>
+                                                        <p className="text-sm text-gray-600">Số điện thoại</p>
+                                                        <p className="font-medium text-gray-900">{appointmentDetail.clinic_info.phone.phone_number}</p>
+                                                    </div>
+                                                </div>
+                                                <div>
+                                                    <p className="text-sm text-gray-600">Địa chỉ</p>
+                                                    <p className="font-medium text-gray-900">
+                                                        {appointmentDetail.clinic_info.address.detail}, {appointmentDetail.clinic_info.address.ward}, {appointmentDetail.clinic_info.address.district}, {appointmentDetail.clinic_info.address.city}
+                                                    </p>
+                                                </div>
+                                                {appointmentDetail.clinic_info.representative && (
+                                                    <div>
+                                                        <p className="text-sm text-gray-600">Người đại diện</p>
+                                                        <p className="font-medium text-gray-900">{appointmentDetail.clinic_info.representative.name}</p>
+                                                    </div>
+                                                )}
+                                            </div>
+                                        </div>
+                                    )}
+
+                                    {/* Danh sách dịch vụ */}
+                                    {appointmentDetail.service_infos && appointmentDetail.service_infos.length > 0 && (
+                                        <div className="bg-gray-50 rounded-lg p-4">
+                                            <h3 className="text-lg font-semibold text-gray-900 mb-4">Dịch vụ</h3>
+                                            <div className="space-y-3">
+                                                {appointmentDetail.service_infos.map((service, index) => (
+                                                    <div key={index} className="bg-white rounded-lg p-3 border border-gray-200">
+                                                        <div className="flex justify-between items-start">
+                                                            <div className="flex-1">
+                                                                <p className="font-medium text-gray-900">{service.name}</p>
+                                                                {service.description && (
+                                                                    <p className="text-sm text-gray-600 mt-1">{service.description}</p>
+                                                                )}
+                                                                <div className="flex gap-4 mt-2 text-sm text-gray-600">
+                                                                    <span>Thời gian: {service.duration} phút</span>
+                                                                </div>
+                                                            </div>
+                                                            <div className="text-right">
+                                                                <p className="font-semibold text-teal-600">{service.price.toLocaleString('vi-VN')} đ</p>
+                                                            </div>
+                                                        </div>
+                                                    </div>
+                                                ))}
+                                            </div>
+                                        </div>
+                                    )}
+
+                                    {/* Danh sách thú cưng */}
+                                    {appointmentDetail.pet_infos && appointmentDetail.pet_infos.length > 0 && (
+                                        <div className="bg-gray-50 rounded-lg p-4">
+                                            <h3 className="text-lg font-semibold text-gray-900 mb-4">Thú cưng</h3>
+                                            <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                                                {appointmentDetail.pet_infos.map((pet) => (
+                                                    <div key={pet.id} className="bg-white rounded-lg p-4 border border-gray-200">
+                                                        <div className="flex gap-4">
+                                                            {pet.avatar_url && (
+                                                                <img 
+                                                                    src={pet.avatar_url} 
+                                                                    alt={pet.name}
+                                                                    className="w-20 h-20 rounded-lg object-cover"
+                                                                />
+                                                            )}
+                                                            <div className="flex-1">
+                                                                <p className="font-medium text-gray-900">{pet.name}</p>
+                                                                <div className="mt-2 space-y-1 text-sm text-gray-600">
+                                                                    <p>Loài: {pet.species}</p>
+                                                                    <p>Giống: {pet.breed}</p>
+                                                                    <p>Giới tính: {pet.gender === 'Male' ? 'Đực' : 'Cái'}</p>
+                                                                    <p>Màu sắc: {pet.color}</p>
+                                                                    <p>Cân nặng: {pet.weight} kg</p>
+                                                                    <p>Ngày sinh: {formatDate(pet.dateOfBirth)}</p>
+                                                                </div>
+                                                            </div>
+                                                        </div>
+                                                    </div>
+                                                ))}
+                                            </div>
+                                        </div>
+                                    )}
+
+                                    {/* Nút thao tác */}
+                                    {appointmentDetail.status === 'Pending_Confirmation' && (
+                                        <div className="bg-gray-50 rounded-lg p-4 border-t-2 border-teal-500">
+                                            <h3 className="text-lg font-semibold text-gray-900 mb-4">Thao tác</h3>
+                                            <div className="flex gap-3">
+                                                <button
+                                                    onClick={() => appointmentDetail.id && handleUpdateStatus(appointmentDetail.id, 'Confirmed')}
+                                                    disabled={updatingStatus}
+                                                    className="flex-1 px-4 py-2.5 bg-green-600 text-white rounded-lg hover:bg-green-700 disabled:opacity-50 disabled:cursor-not-allowed transition-colors font-medium flex items-center justify-center gap-2"
+                                                >
+                                                    {updatingStatus ? (
+                                                        <>
+                                                            <Loader2 className="animate-spin h-5 w-5" />
+                                                            <span>Đang xử lý...</span>
+                                                        </>
+                                                    ) : (
+                                                        <>
+                                                            <CheckCircle className="h-5 w-5" />
+                                                            <span>Xác nhận lịch hẹn</span>
+                                                        </>
+                                                    )}
+                                                </button>
+                                                <button
+                                                    onClick={() => handleCancelClick()}
+                                                    disabled={updatingStatus}
+                                                    className="flex-1 px-4 py-2.5 bg-red-600 text-white rounded-lg hover:bg-red-700 disabled:opacity-50 disabled:cursor-not-allowed transition-colors font-medium flex items-center justify-center gap-2"
+                                                >
+                                                    <XCircle className="h-5 w-5" />
+                                                    <span>Hủy lịch hẹn</span>
+                                                </button>
+                                            </div>
+                                        </div>
+                                    )}
+
+                                    {appointmentDetail.status === 'Confirmed' && (
+                                        <div className="bg-gray-50 rounded-lg p-4 border-t-2 border-green-500">
+                                            <h3 className="text-lg font-semibold text-gray-900 mb-4">Thao tác</h3>
+                                            <div className="flex gap-3">
+                                                <button
+                                                    onClick={() => handleCancelClick()}
+                                                    disabled={updatingStatus}
+                                                    className="flex-1 px-4 py-2.5 bg-red-600 text-white rounded-lg hover:bg-red-700 disabled:opacity-50 disabled:cursor-not-allowed transition-colors font-medium flex items-center justify-center gap-2"
+                                                >
+                                                    {updatingStatus ? (
+                                                        <>
+                                                            <Loader2 className="animate-spin h-5 w-5" />
+                                                            <span>Đang xử lý...</span>
+                                                        </>
+                                                    ) : (
+                                                        <>
+                                                            <XCircle className="h-5 w-5" />
+                                                            <span>Hủy lịch hẹn</span>
+                                                        </>
+                                                    )}
+                                                </button>
+                                            </div>
+                                        </div>
+                                    )}
+                                </div>
+                            )}
+                        </div>
+                    </div>
+                </div>
+            );
+        }
+
+        // Hiển thị danh sách appointments trong ngày
         return (
             <div className="bg-white rounded-xl shadow-sm border border-gray-200 w-full">
                 <div className="bg-gray-50 p-6 text-center border-b border-gray-200">
@@ -487,62 +1215,44 @@ export default function AppointmentsPage() {
                     </h2>
                 </div>
 
-                {selectedCustomer ? (
-                    <div className="p-6">
-                        <button
-                            onClick={() => setSelectedCustomer(null)}
-                            className="mb-4 text-teal-600 hover:text-teal-800 flex items-center gap-2 font-medium"
-                        >
-                            <ChevronLeft size={18} /> Quay lại
-                        </button>
-                        <h3 className="text-xl font-bold mb-4 text-gray-900">{selectedCustomer}</h3>
-                        <div className="space-y-4">
-                            {grouped[selectedCustomer].map(apt => (
-                                <div key={apt._id || apt.id} className="bg-gradient-to-r from-teal-500 to-teal-600 text-white p-5 rounded-xl shadow-md">
-                                    <div className="flex justify-between items-start">
+                <div className="p-6 space-y-4">
+                    {customerKeys.length === 0 ? (
+                        <p className="text-center text-gray-500 py-12">Không có lịch hẹn nào trong ngày</p>
+                    ) : (
+                        customerKeys.map(customerKey => {
+                            const customerData = grouped[customerKey];
+                            const custAppts = customerData.apts;
+                            const totalPets = custAppts.reduce((s, a) => s + (a.pet_ids?.length || 0), 0);
+                            // Lấy appointment đầu tiên để click vào xem chi tiết
+                            const firstApt = custAppts[0];
+                            const firstAptId = firstApt?.id || firstApt?._id;
+                            
+                            return (
+                                <div
+                                    key={customerKey}
+                                    onClick={() => firstAptId && handleAppointmentClick(firstAptId)}
+                                    className="border-2 border-gray-200 rounded-xl p-5 hover:border-teal-500 hover:shadow-md cursor-pointer transition-all group relative"
+                                    title={customerData.customerName}
+                                >
+                                    <div className="flex justify-between items-center">
                                         <div>
-                                            <div className="text-2xl font-bold">{apt.time || 'N/A'}</div>
-                                            <div className="mt-1 opacity-90">
-                                                Ca {getShiftLabel(apt.shift)} • {apt.pet_ids?.length || 0} thú cưng
-                                            </div>
+                                            <h4 className="font-semibold text-lg text-gray-900">Đơn {customerData.order}</h4>
+                                            <p className="text-gray-600">
+                                                {custAppts.length} lịch hẹn • {totalPets} thú cưng
+                                            </p>
                                         </div>
-                                        <span className={`px-3 py-1 rounded-full text-xs border ${getStatusColor(apt.status)}`}>
-                                            {getStatusLabel(apt.status)}
-                                        </span>
+                                        <ChevronRight className="text-gray-400" />
+                                    </div>
+                                    {/* Tooltip */}
+                                    <div className="absolute bottom-full left-0 mb-2 px-2 py-1 bg-gray-900 text-white text-xs rounded opacity-0 group-hover:opacity-100 pointer-events-none transition-opacity whitespace-nowrap z-50 shadow-lg">
+                                        {customerData.customerName}
+                                        <div className="absolute top-full left-4 border-4 border-transparent border-t-gray-900"></div>
                                     </div>
                                 </div>
-                            ))}
-                        </div>
-                    </div>
-                ) : (
-                    <div className="p-6 space-y-4">
-                        {customers.length === 0 ? (
-                            <p className="text-center text-gray-500 py-12">Không có lịch hẹn nào trong ngày</p>
-                        ) : (
-                            customers.map(customer => {
-                                const custAppts = grouped[customer];
-                                const totalPets = custAppts.reduce((s, a) => s + (a.pet_ids?.length || 0), 0);
-                                return (
-                                    <div
-                                        key={customer}
-                                        onClick={() => setSelectedCustomer(customer)}
-                                        className="border-2 border-gray-200 rounded-xl p-5 hover:border-teal-500 hover:shadow-md cursor-pointer transition-all"
-                                    >
-                                        <div className="flex justify-between items-center">
-                                            <div>
-                                                <h4 className="font-semibold text-lg text-gray-900">{customer}</h4>
-                                                <p className="text-gray-600">
-                                                    {custAppts.length} lịch hẹn • {totalPets} thú cưng
-                                                </p>
-                                            </div>
-                                            <ChevronRight className="text-gray-400" />
-                                        </div>
-                                    </div>
-                                );
-                            })
-                        )}
-                    </div>
-                )}
+                            );
+                        })
+                    )}
+                </div>
             </div>
         );
     };
@@ -592,10 +1302,15 @@ export default function AppointmentsPage() {
                                 </tr>
                             ) : (
                                 filteredAppointments.map((apt) => {
-                                    const id = apt._id || apt.id;
+                                    // Ưu tiên dùng id, nếu không có thì dùng _id
+                                    const id = apt.id || apt._id;
 
                                     return (
-                                        <tr key={id} className="hover:bg-gray-50 transition">
+                                        <tr 
+                                            key={id} 
+                                            className="hover:bg-gray-50 transition cursor-pointer"
+                                            onClick={() => handleRowClick(id, apt.date)}
+                                        >
                                             <td className="px-6 py-4 text-sm text-gray-900">
                                                 {formatDate(apt.date)}
                                             </td>
@@ -622,7 +1337,7 @@ export default function AppointmentsPage() {
                                                 </span>
                                             </td>
                                             <td className="px-6 py-4">
-                                                <div className="flex items-center justify-center gap-3">
+                                                <div className="flex items-center justify-center gap-3" onClick={(e) => e.stopPropagation()}>
                                                     {apt.status === "Pending_Confirmation" && (
                                                         <>
                                                             {/* Nút Xác nhận */}
@@ -646,42 +1361,30 @@ export default function AppointmentsPage() {
 
                                                             {/* Nút Hủy */}
                                                             <button
-                                                                onClick={() => {
-                                                                    setUpdatingId(id);
-                                                                    handleUpdateStatus(id, "Cancelled").finally(() =>
-                                                                        setUpdatingId(null)
-                                                                    );
+                                                                onClick={(e) => {
+                                                                    e.stopPropagation();
+                                                                    handleCancelClick(id);
                                                                 }}
                                                                 disabled={updatingId === id || loading}
                                                                 className="group relative"
                                                                 title="Hủy lịch hẹn"
                                                             >
-                                                                {updatingId === id ? (
-                                                                    <Loader2 className="h-5 w-5 text-gray-400 animate-spin" />
-                                                                ) : (
-                                                                    <XCircle className="h-5 w-5 text-red-600 hover:text-red-700 transition" />
-                                                                )}
+                                                                <XCircle className="h-5 w-5 text-red-600 hover:text-red-700 transition" />
                                                             </button>
                                                         </>
                                                     )}
 
                                                     {apt.status === "Confirmed" && (
                                                         <button
-                                                            onClick={() => {
-                                                                setUpdatingId(id);
-                                                                handleUpdateStatus(id, "Cancelled").finally(() =>
-                                                                    setUpdatingId(null)
-                                                                );
+                                                            onClick={(e) => {
+                                                                e.stopPropagation();
+                                                                handleCancelClick(id);
                                                             }}
                                                             disabled={updatingId === id || loading}
                                                             className="group relative"
                                                             title="Hủy lịch hẹn"
                                                         >
-                                                            {updatingId === id ? (
-                                                                <Loader2 className="h-5 w-5 text-gray-400 animate-spin" />
-                                                            ) : (
-                                                                <XCircle className="h-5 w-5 text-red-600 hover:text-red-700 transition" />
-                                                            )}
+                                                            <XCircle className="h-5 w-5 text-red-600 hover:text-red-700 transition" />
                                                         </button>
                                                     )}
 
@@ -751,9 +1454,12 @@ export default function AppointmentsPage() {
             <div className="w-full">
                 {/* Header */}
                 <div className="mb-6">
-                    <div className="mb-4">
-                        <h1 className="text-2xl md:text-3xl font-bold text-gray-900">Danh sách lịch hẹn</h1>
-                        <p className="mt-1 text-sm md:text-base text-gray-600">{getCurrentDateDisplay()}</p>
+                    <div className="mb-4 flex items-center justify-between">
+                        <div>
+                            <h1 className="text-2xl md:text-3xl font-bold text-gray-900">Danh sách lịch hẹn</h1>
+                            <p className="mt-1 text-sm md:text-base text-gray-600">{getCurrentDateDisplay()}</p>
+                        </div>
+                        <NotificationBell notificationCount={1} />
                     </div>
                     <div className="flex flex-col gap-4 md:flex-row md:items-center md:justify-between">
                         <div className="flex items-center gap-3">
@@ -776,6 +1482,14 @@ export default function AppointmentsPage() {
                                 className="px-4 py-2 border border-gray-300 rounded-lg hover:bg-gray-50 transition font-medium"
                             >
                                 Hôm nay
+                            </button>
+                            <button
+                                onClick={() => loadAppointments()}
+                                disabled={loading}
+                                className="p-2 border border-gray-300 rounded-lg hover:bg-gray-50 transition disabled:opacity-50 disabled:cursor-not-allowed"
+                                title="Làm mới danh sách"
+                            >
+                                <RefreshCw size={20} className={loading ? 'animate-spin' : ''} />
                             </button>
                             <div className="min-w-0">
                                 <p className="text-sm md:text-base text-gray-700 font-medium">{getViewTitle()}</p>
@@ -844,6 +1558,25 @@ export default function AppointmentsPage() {
                         </button>
                     </div>
 
+                    {/* Search Bar */}
+                    <div className="mb-4">
+                        <label className="block text-sm font-medium mb-2 text-gray-700">Tìm kiếm</label>
+                        <div className="relative">
+                            <div className="absolute inset-y-0 left-0 pl-3 flex items-center pointer-events-none">
+                                <svg className="h-5 w-5 text-gray-400" xmlns="http://www.w3.org/2000/svg" viewBox="0 0 20 20" fill="currentColor">
+                                    <path fillRule="evenodd" d="M8 4a4 4 0 100 8 4 4 0 000-8zM2 8a6 6 0 1110.89 3.476l4.817 4.817a1 1 0 01-1.414 1.414l-4.816-4.816A6 6 0 012 8z" clipRule="evenodd" />
+                                </svg>
+                            </div>
+                            <input
+                                type="text"
+                                className="pl-10 pr-4 py-2.5 border border-gray-300 rounded-lg w-full focus:ring-2 focus:ring-teal-500 focus:border-transparent transition"
+                                placeholder="Tìm kiếm theo ID (chính xác) hoặc tên khách hàng..."
+                                value={searchQuery}
+                                onChange={(e) => setSearchQuery(e.target.value)}
+                            />
+                        </div>
+                    </div>
+
                     <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4">
                         <div>
                             <label className="block text-sm font-medium mb-2 text-gray-700">Trạng thái</label>
@@ -891,7 +1624,7 @@ export default function AppointmentsPage() {
                     </div>
 
                     {/* Hiển thị các bộ lọc đang áp dụng */}
-                    {(filters.status !== 'all' || filters.dateFrom || filters.dateTo || filters.createdBy !== 'all') && (
+                    {(filters.status !== 'all' || filters.dateFrom || filters.dateTo || filters.createdBy !== 'all' || searchQuery.trim()) && (
                         <div className="mt-4 p-3 bg-teal-50 border border-teal-200 rounded-lg">
                             <div className="flex items-start gap-2 mb-2">
                                 <Filter className="w-4 h-4 text-teal-600 mt-0.5" />
@@ -942,6 +1675,17 @@ export default function AppointmentsPage() {
                                         </button>
                                     </span>
                                 )}
+                                {searchQuery.trim() && (
+                                    <span className="inline-flex items-center gap-1 px-2.5 py-1 bg-teal-100 text-teal-800 rounded-full text-xs font-medium">
+                                        Tìm kiếm: {searchQuery}
+                                        <button
+                                            onClick={() => setSearchQuery('')}
+                                            className="hover:text-teal-900"
+                                        >
+                                            <X size={12} />
+                                        </button>
+                                    </span>
+                                )}
                             </div>
                         </div>
                     )}
@@ -986,6 +1730,50 @@ export default function AppointmentsPage() {
                 {viewMode === 'day' && <DayView />}
                 {viewMode === 'table' && <TableView />}
             </div>
+
+            {/* Modal nhập lý do hủy */}
+            {showCancelModal && (
+                <div className="fixed inset-0 bg-black/60 backdrop-blur-sm flex items-center justify-center z-50 p-4">
+                    <div className="bg-white rounded-xl shadow-xl max-w-md w-full mx-4">
+                        <div className="p-6">
+                            <h3 className="text-xl font-bold text-gray-900 mb-4">Hủy lịch hẹn</h3>
+                            <p className="text-sm text-gray-600 mb-4">
+                                Vui lòng nhập lý do hủy lịch hẹn này:
+                            </p>
+                            <textarea
+                                value={cancelReason}
+                                onChange={(e) => setCancelReason(e.target.value)}
+                                placeholder="Nhập lý do hủy..."
+                                className="w-full px-3 py-2 border border-gray-300 rounded-lg"
+                                rows={4}
+                            />
+                            {error && (
+                                <p className="text-sm text-red-600 mt-2">{error}</p>
+                            )}
+                            <div className="flex gap-3 mt-6">
+                                <button
+                                    onClick={() => {
+                                        setShowCancelModal(false);
+                                        setCancelReason('');
+                                        setCancellingAppointmentId(null);
+                                        setError(null);
+                                    }}
+                                    className="flex-1 px-4 py-2 border border-gray-300 rounded-lg hover:bg-gray-50 transition-colors font-medium"
+                                >
+                                    Hủy
+                                </button>
+                                <button
+                                    onClick={handleConfirmCancel}
+                                    disabled={updatingStatus || !cancelReason.trim()}
+                                    className="flex-1 px-4 py-2 bg-red-600 text-white rounded-lg hover:bg-red-700 disabled:opacity-50 disabled:cursor-not-allowed transition-colors font-medium"
+                                >
+                                    {updatingStatus ? 'Đang xử lý...' : 'Xác nhận hủy'}
+                                </button>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            )}
         </div>
     );
 }
