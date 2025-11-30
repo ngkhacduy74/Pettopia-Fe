@@ -105,10 +105,10 @@ export default function Sidebar({
     { label: string; href: string; icon: React.ReactNode }[]
   > = {
     Admin: [
-      { label: 'Dashboard', href: '/admin/dashboard', icon: <HomeIcon className="w-5 h-5" /> },
-      { label: 'Manage Users', href: '/admin/manager-user', icon: <UsersIcon className="w-5 h-5" /> },
-      { label: 'Manage Clinic', href: '/admin/manager-clinic', icon: <UsersIcon className="w-5 h-5" /> },
-      { label: 'Community', href: '/admin/community', icon: <UsersIcon className="w-5 h-5" /> }
+      { label: 'Tổng quan', href: '/admin/dashboard', icon: <HomeIcon className="w-5 h-5" /> },
+      { label: 'Quản lí người dùng', href: '/admin/manager-user', icon: <UsersIcon className="w-5 h-5" /> },
+      { label: 'Quản lí bệnh viện', href: '/admin/manager-clinic', icon: <UsersIcon className="w-5 h-5" /> },
+      { label: 'Kênh giao tiếp', href: '/admin/community', icon: <UsersIcon className="w-5 h-5" /> }
     ],
     Staff: [
       { label: 'Trang chủ', href: '/staff/dashboard', icon: <HomeIcon className="w-5 h-5" /> },
@@ -119,7 +119,7 @@ export default function Sidebar({
       { label: 'Cộng đồng', href: '#', icon: <UsersIcon className="w-5 h-5" /> }
     ],
     Clinic: [
-      { label: 'Trang tổng quan', href: '/clinic/dashboard', icon: <HomeIcon className="w-5 h-5" /> },
+      { label: 'Tổng quan', href: '/clinic/dashboard', icon: <HomeIcon className="w-5 h-5" /> },
       { label: 'Quản lý bác sĩ', href: '/clinic/vet-list', icon: <UserGroupIcon className="w-5 h-5" /> },
       { label: 'Ca làm', href: '/clinic/shift', icon: <ClipboardDocumentListIcon className="w-5 h-5" /> },
       { label: 'Dịch vụ', href: '/clinic/service', icon: <ClipboardDocumentListIcon className="w-5 h-5" /> },

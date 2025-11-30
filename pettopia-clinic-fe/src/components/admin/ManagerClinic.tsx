@@ -1,28 +1,24 @@
 'use client';
 
 import React, { useEffect, useState } from 'react';
+import { useRouter } from 'next/navigation';
 import {
   BuildingOfficeIcon,
   MagnifyingGlassIcon,
-  PlusIcon,
-  PencilIcon,
-  TrashIcon,
   MapPinIcon,
   PhoneIcon,
   ClockIcon,
   XMarkIcon,
+  CheckCircleIcon,
 } from '@heroicons/react/24/outline';
 
 import {
   findAllClinics,
-  getClinicDetail,
   activateClinic,
   deactivateClinic,
-  registerClinic,
-  updateClinic,
-  removeClinic,
   type ClinicItem,
 } from '@/services/partner/clinicService';
+import ToastItem, { type Toast as ToastModel } from '@/components/Toast';
 
 interface ClinicView {
   id: string;
@@ -30,33 +26,21 @@ interface ClinicView {
   address: string;
   phone: string;
   email?: string;
-  openTime?: string;
-  closeTime?: string;
-  services: string[];
   status: 'active' | 'inactive';
 }
 
 export default function ManagerClinic() {
+  const router = useRouter();
   const [clinics, setClinics] = useState<ClinicView[]>([]);
   const [searchTerm, setSearchTerm] = useState('');
-  const [isModalOpen, setIsModalOpen] = useState(false);
-  const [modalMode, setModalMode] = useState<'add' | 'edit'>('add');
-  const [currentClinic, setCurrentClinic] = useState<ClinicView | null>(null);
   const [currentPage, setCurrentPage] = useState(1);
   const [totalPages, setTotalPages] = useState(1);
-  const itemsPerPage = 6;
+  const itemsPerPage = 10;
 
-  // Form state
-  const [formData, setFormData] = useState({
-    name: '',
-    address: '',
-    phone: '',
-    email: '',
-    openTime: '',
-    closeTime: '',
-    services: '',
-    status: 'active' as 'active' | 'inactive',
-  });
+  // Modal state
+  const [showConfirmModal, setShowConfirmModal] = useState(false);
+  const [selectedClinic, setSelectedClinic] = useState<ClinicView | null>(null);
+  const [actionType, setActionType] = useState<'activate' | 'deactivate'>('activate');
 
   const loadClinics = async (page = 1) => {
     try {
@@ -68,9 +52,6 @@ export default function ManagerClinic() {
         address: `${it.address.detail || ''}${it.address.ward ? ', ' + it.address.ward : ''}${it.address.district ? ', ' + it.address.district : ''}${it.address.city ? ', ' + it.address.city : ''}`,
         phone: it.phone?.phone_number || '',
         email: it.email?.email_address || '',
-        openTime: undefined,
-        closeTime: undefined,
-        services: [],
         status: it.is_active ? 'active' : 'inactive',
       }));
 
@@ -79,129 +60,52 @@ export default function ManagerClinic() {
     } catch (err) {
       console.error('Load clinics error', err);
       setClinics([]);
+      pushToast('Không thể tải danh sách phòng khám', 'error');
     }
   };
+
+  // Toasts
+  const [toasts, setToasts] = useState<ToastModel[]>([]);
+  const pushToast = (message: string, type: ToastModel['type'] = 'info', duration = 3000) => {
+    const id = Date.now().toString() + Math.random().toString(36).slice(2, 7);
+    setToasts((t) => [...t, { id, message, type, duration }]);
+  };
+  const removeToast = (id: string) => setToasts((t) => t.filter(x => x.id !== id));
 
   useEffect(() => {
     loadClinics(currentPage);
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [currentPage]);
 
-  const openModal = async (mode: 'add' | 'edit', clinicId?: string) => {
-    setModalMode(mode);
-    if (mode === 'edit' && clinicId) {
-      try {
-        const res = await getClinicDetail(clinicId);
-        const it = res.data;
-        setCurrentClinic({
-          id: it.id,
-          name: it.clinic_name,
-          address: `${it.address.detail || ''}${it.address.ward ? ', ' + it.address.ward : ''}${it.address.district ? ', ' + it.address.district : ''}${it.address.city ? ', ' + it.address.city : ''}`,
-          phone: it.phone?.phone_number || '',
-          email: it.email?.email_address || '',
-          openTime: undefined,
-          closeTime: undefined,
-          services: it.representative?.responsible_licenses || [],
-          status: it.is_active ? 'active' : 'inactive',
-        });
-
-        setFormData({
-          name: it.clinic_name || '',
-          address: it.address?.detail || '',
-          phone: it.phone?.phone_number || '',
-          email: it.email?.email_address || '',
-          openTime: '',
-          closeTime: '',
-          services: (it.representative?.responsible_licenses || []).join(', '),
-          status: it.is_active ? 'active' : 'inactive',
-        });
-      } catch (err) {
-        alert('Không thể tải chi tiết phòng khám');
-        return;
-      }
-    } else {
-      setCurrentClinic(null);
-      setFormData({
-        name: '',
-        address: '',
-        phone: '',
-        email: '',
-        openTime: '',
-        closeTime: '',
-        services: '',
-        status: 'active',
-      });
-    }
-
-    setIsModalOpen(true);
+  const handleStatusChange = (clinic: ClinicView) => {
+    setSelectedClinic(clinic);
+    setActionType(clinic.status === 'active' ? 'deactivate' : 'activate');
+    setShowConfirmModal(true);
   };
 
-  const closeModal = () => {
-    setIsModalOpen(false);
-    setCurrentClinic(null);
-  };
-
-  const handleSubmit = async () => {
-    if (!formData.name || !formData.address || !formData.phone || !formData.email) {
-      alert('Vui lòng điền đầy đủ thông tin!');
-      return;
-    }
-
-    const payload: any = {
-      clinic_name: formData.name,
-      address: {
-        detail: formData.address,
-        city: '',
-        district: '',
-        ward: '',
-      },
-      phone: { phone_number: formData.phone },
-      email: { email_address: formData.email },
-      representative: {
-        responsible_licenses: formData.services.split(',').map(s => s.trim()).filter(Boolean),
-      },
-      is_active: formData.status === 'active',
-    };
+  const confirmStatusChange = async () => {
+    if (!selectedClinic) return;
 
     try {
-      if (modalMode === 'add') {
-        await registerClinic(payload as any);
-        alert('Thêm phòng khám thành công');
-      } else if (modalMode === 'edit' && currentClinic) {
-        await updateClinic(currentClinic.id, payload);
-        alert('Cập nhật phòng khám thành công');
-      }
-      closeModal();
-      loadClinics(currentPage);
-    } catch (err: any) {
-      console.error(err);
-      alert(err?.message || 'Có lỗi khi lưu phòng khám');
-    }
-  };
-
-  const handleDelete = async (clinicId: string) => {
-    if (!confirm('Bạn có chắc chắn muốn xóa phòng khám này?')) return;
-    try {
-      await removeClinic(clinicId);
-      alert('Xóa thành công');
-      loadClinics(currentPage);
-    } catch (err: any) {
-      console.error(err);
-      alert('Không thể xóa phòng khám');
-    }
-  };
-
-  const toggleActive = async (clinicId: string, currentlyActive: boolean) => {
-    try {
-      if (currentlyActive) {
-        await deactivateClinic(clinicId);
+      if (actionType === 'activate') {
+        await activateClinic(selectedClinic.id);
+        pushToast('Đã kích hoạt phòng khám thành công', 'success');
       } else {
-        await activateClinic(clinicId);
+        await deactivateClinic(selectedClinic.id);
+        pushToast('Đã ngừng hoạt động phòng khám', 'success');
       }
+      setShowConfirmModal(false);
+      setSelectedClinic(null);
       loadClinics(currentPage);
     } catch (err) {
-      alert('Không thể thay đổi trạng thái');
+      console.error(err);
+      pushToast('Không thể thay đổi trạng thái', 'error');
     }
+  };
+
+  const cancelStatusChange = () => {
+    setShowConfirmModal(false);
+    setSelectedClinic(null);
   };
 
   // Filter + pagination client-side for search
@@ -218,149 +122,139 @@ export default function ManagerClinic() {
     <div className="max-w-7xl mx-auto p-6">
       {/* Header */}
       <div className="mb-8">
-        <div className="flex items-center justify-between mb-2">
-          <div className="flex items-center gap-3">
-            <div>
-            </div>
+        <div className="flex items-center justify-between">
+          <div className="relative">
+            <MagnifyingGlassIcon className="w-5 h-5 text-gray-400 absolute left-3 top-1/2 transform -translate-y-1/2" />
+            <input
+              type="text"
+              placeholder="Tìm kiếm..."
+              value={searchTerm}
+              onChange={(e) => setSearchTerm(e.target.value)}
+              className="pl-11 pr-4 py-2.5 w-64 border border-gray-300 rounded-xl focus:ring-2 focus:ring-teal-500 focus:border-transparent outline-none transition-all"
+            />
           </div>
-          <button
-            onClick={() => openModal('add')}
-            className="flex items-center gap-2 px-5 py-2.5 bg-gradient-to-r from-teal-500 to-cyan-600 text-white rounded-xl hover:shadow-lg transition-all duration-300 font-medium"
-          >
-            <PlusIcon className="w-5 h-5" />
-            Thêm phòng khám
-          </button>
+
+          <div className="flex items-center gap-3">
+            <button
+              type="button"
+              className="px-4 py-2 bg-gradient-to-r from-teal-500 to-cyan-600 text-white rounded-xl hover:shadow-lg transition-all duration-200 font-medium"
+              onClick={() => { /* reserved for later */ }}
+            >
+              Duyệt phòng khám
+            </button>
+          </div>
         </div>
       </div>
 
       {/* Stats */}
-      <div className="grid grid-cols-1 md:grid-cols-3 gap-4 mb-6">
-        <div className="bg-white rounded-xl p-5 shadow-md border border-gray-100">
+      <div className="grid grid-cols-1 md:grid-cols-3 gap-5 mb-4">
+        <div className="bg-white rounded-xl p-3 shadow-md border border-gray-100">
           <div className="flex items-center justify-between">
             <div>
               <p className="text-sm text-gray-500 mb-1">Tổng số phòng khám</p>
               <p className="text-3xl font-bold text-gray-900">{clinics.length}</p>
             </div>
-            <div className="w-14 h-14 bg-blue-100 rounded-xl flex items-center justify-center">
-              <BuildingOfficeIcon className="w-7 h-7 text-blue-600" />
-            </div>
           </div>
         </div>
-        <div className="bg-white rounded-xl p-5 shadow-md border border-gray-100">
+        <div className="bg-white rounded-xl p-3 shadow-md border border-gray-100">
           <div className="flex items-center justify-between">
             <div>
               <p className="text-sm text-gray-500 mb-1">Đang hoạt động</p>
               <p className="text-3xl font-bold text-green-600">{clinics.filter(c => c.status === 'active').length}</p>
-            </div>
-            <div className="w-14 h-14 bg-green-100 rounded-xl flex items-center justify-center">
-              <ClockIcon className="w-7 h-7 text-green-600" />
-            </div>
+            </div>     
           </div>
         </div>
-        <div className="bg-white rounded-xl p-5 shadow-md border border-gray-100">
+        <div className="bg-white rounded-xl p-3 shadow-md border border-gray-100">
           <div className="flex items-center justify-between">
             <div>
               <p className="text-sm text-gray-500 mb-1">Ngừng hoạt động</p>
               <p className="text-3xl font-bold text-red-600">{clinics.filter(c => c.status === 'inactive').length}</p>
             </div>
-            <div className="w-14 h-14 bg-red-100 rounded-xl flex items-center justify-center">
-              <XMarkIcon className="w-7 h-7 text-red-600" />
-            </div>
           </div>
         </div>
       </div>
 
-      {/* Search */}
-      <div className="bg-white rounded-xl p-4 shadow-md border border-gray-100 mb-6">
-        <div className="relative">
-          <MagnifyingGlassIcon className="w-5 h-5 text-gray-400 absolute left-3 top-1/2 transform -translate-y-1/2" />
-          <input
-            type="text"
-            placeholder="Tìm kiếm theo tên, địa chỉ hoặc số điện thoại..."
-            value={searchTerm}
-            onChange={(e) => setSearchTerm(e.target.value)}
-            className="w-full pl-11 pr-4 py-3 border border-gray-200 rounded-lg focus:ring-2 focus:ring-teal-500 focus:border-transparent outline-none transition-all"
-          />
+      {/* Clinics Table */}
+      <div className="bg-white rounded-xl shadow-md border border-gray-100 overflow-hidden mb-6">
+        <div className="overflow-x-auto">
+          <table className="w-full">
+            <thead className="bg-gray-50 border-b border-gray-200">
+              <tr>
+                <th className="px-6 py-4 text-xs font-semibold text-gray-600 uppercase tracking-wider">
+                  Phòng khám
+                </th>
+                <th className="px-6 py-4 text-xs font-semibold text-gray-600 uppercase tracking-wider">
+                  Liên hệ
+                </th>
+                <th className="px-6 py-4 text-xs font-semibold text-gray-600 uppercase tracking-wider">
+                  Địa chỉ
+                </th>
+                <th className="px-6 py-4 text-center text-xs font-semibold text-gray-600 uppercase tracking-wider">
+                  Trạng thái
+                </th>
+              </tr>
+            </thead>
+            <tbody className="divide-y divide-gray-200">
+              {paginatedClinics.length === 0 ? (
+                <tr>
+                  <td colSpan={5} className="px-6 py-12 text-center text-gray-500">
+                    Không tìm thấy phòng khám nào
+                  </td>
+                </tr>
+              ) : (
+                paginatedClinics.map((clinic) => (
+                  <tr key={clinic.id} className="hover:bg-gray-50 transition-colors cursor-pointer" onClick={() => router.push(`/admin/clinic/${clinic.id}`)}>
+                    <td className="px-6 py-4">
+                      <div className="flex items-center gap-3">
+
+                        <div>
+                          <p className="font-semibold text-gray-900">{clinic.name}</p>
+                          <p className="text-sm text-gray-500">{clinic.email}</p>
+                        </div>
+                      </div>
+                    </td>
+                    <td className="px-6 py-4">
+                      <div className="flex items-center gap-2 text-sm text-gray-600">
+                        
+                        {clinic.phone}
+                      </div>
+                    </td>
+                    <td className="px-6 py-4">
+                      <div className="flex items-start gap-2 text-sm text-gray-600 max-w-md">
+                        
+                        <span className="line-clamp-2">{clinic.address}</span>
+                      </div>
+                    </td>
+                    <td className="px-6 py-4 text-center">
+                      <div className="flex items-center justify-center gap-3">
+                        <span className={`inline-flex px-3 py-1 rounded-full text-xs font-semibold ${clinic.status === 'active'
+                          ? 'bg-green-100 text-green-700'
+                          : 'bg-red-100 text-red-700'
+                          }`}>
+                          {clinic.status === 'active' ? 'Active' : 'Inactive'}
+                        </span>
+
+                        <label className="inline-flex items-center cursor-pointer" onClick={(e) => e.stopPropagation()}>
+                          <input
+                            type="checkbox"
+                            className="sr-only peer"
+                            checked={clinic.status === 'active'}
+                            onChange={() => handleStatusChange(clinic)}
+                          />
+                          <div className={`w-10 h-5 rounded-full transition-colors peer-focus:ring-2 peer-focus:ring-teal-300 ${clinic.status === 'active' ? 'bg-teal-500' : 'bg-gray-200'
+                            }`}>
+                            <span className={`block w-5 h-5 bg-white rounded-full shadow transform transition-transform ${clinic.status === 'active' ? 'translate-x-5' : 'translate-x-0'
+                              }`} />
+                          </div>
+                        </label>
+                      </div>
+                    </td>
+                  </tr>
+                ))
+              )}
+            </tbody>
+          </table>
         </div>
-      </div>
-
-      {/* Clinics Grid */}
-      <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6 mb-6">
-        {paginatedClinics.map((clinic) => (
-          <div
-            key={clinic.id}
-            className="bg-white rounded-xl shadow-md border border-gray-100 overflow-hidden hover:shadow-xl transition-all duration-300"
-          >
-            <div className="h-40 bg-gradient-to-br from-teal-400 to-cyan-500 relative">
-              <div className="absolute top-4 right-4">
-                <span className={`px-3 py-1 rounded-full text-xs font-semibold ${
-                  clinic.status === 'active' 
-                    ? 'bg-green-100 text-green-700' 
-                    : 'bg-red-100 text-red-700'
-                }`}>
-                  {clinic.status === 'active' ? 'Hoạt động' : 'Ngừng'}
-                </span>
-              </div>
-              <div className="absolute bottom-4 left-4">
-                <div className="w-16 h-16 bg-white rounded-xl flex items-center justify-center shadow-lg">
-                  <BuildingOfficeIcon className="w-8 h-8 text-teal-600" />
-                </div>
-              </div>
-            </div>
-
-            <div className="p-5">
-              <h3 className="text-lg font-bold text-gray-900 mb-3">{clinic.name}</h3>
-              
-              <div className="space-y-2 mb-4">
-                <div className="flex items-start gap-2">
-                  <MapPinIcon className="w-4 h-4 text-gray-400 mt-0.5 flex-shrink-0" />
-                  <p className="text-sm text-gray-600">{clinic.address}</p>
-                </div>
-                <div className="flex items-center gap-2">
-                  <PhoneIcon className="w-4 h-4 text-gray-400 flex-shrink-0" />
-                  <p className="text-sm text-gray-600">{clinic.phone}</p>
-                </div>
-                <div className="flex items-center gap-2">
-                  <ClockIcon className="w-4 h-4 text-gray-400 flex-shrink-0" />
-                  <p className="text-sm text-gray-600">{clinic.openTime || '-'} - {clinic.closeTime || '-'}</p>
-                </div>
-              </div>
-
-              <div className="mb-4">
-                <p className="text-xs text-gray-500 mb-2">Dịch vụ:</p>
-                <div className="flex flex-wrap gap-1.5">
-                  {clinic.services.map((service, idx) => (
-                    <span key={idx} className="px-2 py-1 bg-teal-50 text-teal-700 rounded text-xs">
-                      {service}
-                    </span>
-                  ))}
-                </div>
-              </div>
-
-              <div className="flex gap-2 pt-4 border-t border-gray-100">
-                <button
-                  onClick={() => openModal('edit', clinic.id)}
-                  className="flex-1 flex items-center justify-center gap-2 px-4 py-2 bg-blue-50 text-blue-600 rounded-lg hover:bg-blue-100 transition-colors font-medium"
-                >
-                  <PencilIcon className="w-4 h-4" />
-                  Sửa
-                </button>
-                <button
-                  onClick={() => handleDelete(clinic.id)}
-                  className="flex-1 flex items-center justify-center gap-2 px-4 py-2 bg-red-50 text-red-600 rounded-lg hover:bg-red-100 transition-colors font-medium"
-                >
-                  <TrashIcon className="w-4 h-4" />
-                  Xóa
-                </button>
-                <button
-                  onClick={() => toggleActive(clinic.id, clinic.status === 'active')}
-                  className={`px-4 py-2 rounded-lg text-sm font-medium ${clinic.status === 'active' ? 'bg-red-50 text-red-600' : 'bg-green-50 text-green-600'}`}>
-                  {clinic.status === 'active' ? 'Ngừng' : 'Kích hoạt'}
-                </button>
-              </div>
-            </div>
-          </div>
-        ))}
       </div>
 
       {/* Pagination */}
@@ -377,11 +271,10 @@ export default function ManagerClinic() {
             <button
               key={page}
               onClick={() => setCurrentPage(page)}
-              className={`px-4 py-2 rounded-lg transition-colors ${
-                currentPage === page
-                  ? 'bg-teal-500 text-white'
-                  : 'border border-gray-200 text-gray-600 hover:bg-gray-50'
-              }`}
+              className={`px-4 py-2 rounded-lg transition-colors ${currentPage === page
+                ? 'bg-teal-500 text-white'
+                : 'border border-gray-200 text-gray-600 hover:bg-gray-50'
+                }`}
             >
               {page}
             </button>
@@ -396,148 +289,56 @@ export default function ManagerClinic() {
         </div>
       )}
 
-      {/* Modal */}
-      {isModalOpen && (
-        <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center p-4 z-50">
-          <div className="bg-white rounded-2xl max-w-2xl w-full max-h-[90vh] overflow-y-auto">
-            <div className="sticky top-0 bg-white border-b border-gray-200 px-6 py-4 flex items-center justify-between">
-              <h2 className="text-2xl font-bold text-gray-900">
-                {modalMode === 'add' ? 'Thêm phòng khám mới' : 'Chỉnh sửa phòng khám'}
-              </h2>
-              <button
-                onClick={closeModal}
-                className="p-2 hover:bg-gray-100 rounded-lg transition-colors"
-              >
-                <XMarkIcon className="w-6 h-6 text-gray-500" />
-              </button>
+      {/* Confirm Modal */}
+      {showConfirmModal && selectedClinic && (
+        <div className="fixed inset-0 bg-black/60 backdrop-blur-sm flex items-center justify-center z-50 p-4">
+          <div className="bg-white rounded-2xl max-w-md w-full p-6">
+            <div className="flex items-center justify-center mb-4">
+              <div className={`w-16 h-16 rounded-full flex items-center justify-center ${actionType === 'activate' ? 'bg-green-100' : 'bg-red-100'
+                }`}>
+                {actionType === 'activate' ? (
+                  <CheckCircleIcon className="w-8 h-8 text-green-600" />
+                ) : (
+                  <XMarkIcon className="w-8 h-8 text-red-600" />
+                )}
+              </div>
             </div>
 
-            <div className="p-6 space-y-4">
-              <div>
-                <label className="block text-sm font-medium text-gray-700 mb-2">
-                  Tên phòng khám *
-                </label>
-                <input
-                  type="text"
-                  value={formData.name}
-                  onChange={(e) => setFormData({ ...formData, name: e.target.value })}
-                  className="w-full px-4 py-2.5 border border-gray-300 rounded-lg focus:ring-2 focus:ring-teal-500 focus:border-transparent outline-none transition-all"
-                  placeholder="Nhập tên phòng khám"
-                />
-              </div>
+            <h3 className="text-xl font-bold text-gray-900 text-center mb-2">
+              {actionType === 'activate' ? 'Kích hoạt phòng khám?' : 'Ngừng hoạt động phòng khám?'}
+            </h3>
 
-              <div>
-                <label className="block text-sm font-medium text-gray-700 mb-2">
-                  Địa chỉ *
-                </label>
-                <input
-                  type="text"
-                  value={formData.address}
-                  onChange={(e) => setFormData({ ...formData, address: e.target.value })}
-                  className="w-full px-4 py-2.5 border border-gray-300 rounded-lg focus:ring-2 focus:ring-teal-500 focus:border-transparent outline-none transition-all"
-                  placeholder="Nhập địa chỉ"
-                />
-              </div>
+            <p className="text-gray-600 text-center mb-6">
+              Bạn có chắc chắn muốn {actionType === 'activate' ? 'kích hoạt' : 'ngừng hoạt động'} phòng khám{' '}
+              <span className="font-semibold">{selectedClinic.name}</span>?
+            </p>
 
-              <div className="grid grid-cols-2 gap-4">
-                <div>
-                  <label className="block text-sm font-medium text-gray-700 mb-2">
-                    Số điện thoại *
-                  </label>
-                  <input
-                    type="tel"
-                    value={formData.phone}
-                    onChange={(e) => setFormData({ ...formData, phone: e.target.value })}
-                    className="w-full px-4 py-2.5 border border-gray-300 rounded-lg focus:ring-2 focus:ring-teal-500 focus:border-transparent outline-none transition-all"
-                    placeholder="0xx xxx xxxx"
-                  />
-                </div>
-                <div>
-                  <label className="block text-sm font-medium text-gray-700 mb-2">
-                    Email *
-                  </label>
-                  <input
-                    type="email"
-                    value={formData.email}
-                    onChange={(e) => setFormData({ ...formData, email: e.target.value })}
-                    className="w-full px-4 py-2.5 border border-gray-300 rounded-lg focus:ring-2 focus:ring-teal-500 focus:border-transparent outline-none transition-all"
-                    placeholder="email@example.com"
-                  />
-                </div>
-              </div>
-
-              <div className="grid grid-cols-2 gap-4">
-                <div>
-                  <label className="block text-sm font-medium text-gray-700 mb-2">
-                    Giờ mở cửa (không bắt buộc)
-                  </label>
-                  <input
-                    type="time"
-                    value={formData.openTime}
-                    onChange={(e) => setFormData({ ...formData, openTime: e.target.value })}
-                    className="w-full px-4 py-2.5 border border-gray-300 rounded-lg focus:ring-2 focus:ring-teal-500 focus:border-transparent outline-none transition-all"
-                  />
-                </div>
-                <div>
-                  <label className="block text-sm font-medium text-gray-700 mb-2">
-                    Giờ đóng cửa (không bắt buộc)
-                  </label>
-                  <input
-                    type="time"
-                    value={formData.closeTime}
-                    onChange={(e) => setFormData({ ...formData, closeTime: e.target.value })}
-                    className="w-full px-4 py-2.5 border border-gray-300 rounded-lg focus:ring-2 focus:ring-teal-500 focus:border-transparent outline-none transition-all"
-                  />
-                </div>
-              </div>
-
-              <div>
-                <label className="block text-sm font-medium text-gray-700 mb-2">
-                  Dịch vụ (phân cách bằng dấu phẩy)
-                </label>
-                <input
-                  type="text"
-                  value={formData.services}
-                  onChange={(e) => setFormData({ ...formData, services: e.target.value })}
-                  className="w-full px-4 py-2.5 border border-gray-300 rounded-lg focus:ring-2 focus:ring-teal-500 focus:border-transparent outline-none transition-all"
-                  placeholder="Khám tổng quát, Nha khoa, Da liễu"
-                />
-              </div>
-
-              <div>
-                <label className="block text-sm font-medium text-gray-700 mb-2">
-                  Trạng thái *
-                </label>
-                <select
-                  value={formData.status}
-                  onChange={(e) => setFormData({ ...formData, status: e.target.value as 'active' | 'inactive' })}
-                  className="w-full px-4 py-2.5 border border-gray-300 rounded-lg focus:ring-2 focus:ring-teal-500 focus:border-transparent outline-none transition-all"
-                >
-                  <option value="active">Hoạt động</option>
-                  <option value="inactive">Ngừng hoạt động</option>
-                </select>
-              </div>
-
-              <div className="flex gap-3 pt-4">
-                <button
-                  type="button"
-                  onClick={closeModal}
-                  className="flex-1 px-6 py-3 border border-gray-300 text-gray-700 rounded-lg hover:bg-gray-50 transition-colors font-medium"
-                >
-                  Hủy
-                </button>
-                <button
-                  type="button"
-                  onClick={handleSubmit}
-                  className="flex-1 px-6 py-3 bg-gradient-to-r from-teal-500 to-cyan-600 text-white rounded-lg hover:shadow-lg transition-all font-medium"
-                >
-                  {modalMode === 'add' ? 'Thêm phòng khám' : 'Cập nhật'}
-                </button>
-              </div>
+            <div className="flex gap-3">
+              <button
+                onClick={cancelStatusChange}
+                className="flex-1 px-6 py-3 border border-gray-300 text-gray-700 rounded-lg hover:bg-gray-50 transition-colors font-medium"
+              >
+                Hủy
+              </button>
+              <button
+                onClick={confirmStatusChange}
+                className={`flex-1 px-6 py-3 text-white rounded-lg transition-all font-medium ${actionType === 'activate'
+                  ? 'bg-green-600 hover:bg-green-700'
+                  : 'bg-red-600 hover:bg-red-700'
+                  }`}
+              >
+                Xác nhận
+              </button>
             </div>
           </div>
         </div>
       )}
+      {/* Toast container */}
+      <div className="fixed top-4 right-4 z-50 flex flex-col gap-3">
+        {toasts.map(t => (
+          <ToastItem key={t.id} toast={t} onClose={() => removeToast(t.id)} />
+        ))}
+      </div>
     </div>
   );
 }
