@@ -128,11 +128,12 @@ export default function Sidebar({
       { label: 'Duyệt gì đó', href: '/clinic/#', icon: <QuestionMarkCircleIcon className="w-5 h-5" /> },
     ],
     Vet: [
-      { label: 'Dashboard', href: '/vet/dashboard', icon: <HomeIcon className="w-5 h-5" /> },
-      { label: 'Patient Records', href: '/vet/patients', icon: <ClipboardDocumentListIcon className="w-5 h-5" /> },
+      { label: 'Trang chính', href: '/vet/main', icon: <HomeIcon className="w-5 h-5" /> },
+      { label: 'Hồ sơ bệnh án', href: '/vet/patients', icon: <ClipboardDocumentListIcon className="w-5 h-5" /> },
+
     ],
     User: [
-      { label: 'My Dashboard', href: '/user/dashboard', icon: <HomeIcon className="w-5 h-5" /> },
+      { label: 'My Guide', href: '/user/dashboard', icon: <HomeIcon className="w-5 h-5" /> },
       { label: 'Submit veterinarian form', href: '/user/submit-vet-certificate', icon: <DocumentTextIcon className="w-5 h-5" /> },
       { label: 'Submit clinic form', href: '/user/submit-clinic-certificate', icon: <DocumentTextIcon className="w-5 h-5" /> },
     ],

@@ -59,6 +59,47 @@ export interface ClinicFormsResponse {
   data: ClinicFormData[];
 }
 
+export interface ClinicItem {
+  _id: string;
+  id: string;
+  clinic_name: string;
+  email: { email_address: string; verified?: boolean };
+  phone: { phone_number: string; verified?: boolean };
+  license_number?: string;
+  address: {
+    city: string;
+    district: string;
+    ward: string;
+    detail: string;
+  };
+  representative?: {
+    name?: string;
+    email?: { email_address?: string };
+    phone?: { phone_number?: string };
+    identify_number?: string;
+    responsible_licenses?: string[];
+    license_issued_date?: string;
+  };
+  is_active?: boolean;
+  member_ids?: string[];
+  createdAt?: string;
+  updatedAt?: string;
+  user_account_id?: string;
+}
+
+export interface ClinicsResponse {
+  status: string;
+  message: string;
+  data: ClinicItem[];
+  pagination?: PaginationResponse;
+}
+
+export interface ClinicDetailResponse {
+  status: string;
+  message: string;
+  data: ClinicItem;
+}
+
 interface ClinicData {
   user_id: string;
   clinic_name: string;
@@ -305,3 +346,110 @@ export const sendInvitation = async (email: string, role: string) => {
     throw error;
   }
 };
+
+/**
+ * Cập nhật thông tin phòng khám
+ * PUT `${API_URL}/${clinicId}`
+ */
+export const updateClinic = async (clinicId: string, clinicData: Partial<ClinicItem>) => {
+  const token = localStorage.getItem('authToken');
+  if (!token) throw new Error('No authentication token found');
+
+  try {
+    const response = await axiosInstance.put(`/${clinicId}`, clinicData, {
+      headers: { 'token': token },
+    });
+    return response.data;
+  } catch (error: any) {
+    console.error(`Lỗi khi cập nhật phòng khám (${clinicId}):`, error?.response?.data || error?.message || error);
+    throw error;
+  }
+};
+
+/**
+ * Xóa phòng khám
+ * DELETE `${API_URL}/${clinicId}`
+ */
+export const removeClinic = async (clinicId: string) => {
+  const token = localStorage.getItem('authToken');
+  if (!token) throw new Error('No authentication token found');
+
+  try {
+    const response = await axiosInstance.delete(`/${clinicId}`, {
+      headers: { 'token': token },
+    });
+    return response.data;
+  } catch (error: any) {
+    console.error(`Lỗi khi xóa phòng khám (${clinicId}):`, error?.response?.data || error?.message || error);
+    throw error;
+  }
+};
+
+/**
+ * Lấy danh sách tất cả phòng khám (có phân trang)
+ * GET `${API_URL}?page=1&limit=5`
+ */
+export const findAllClinics = async (page: number = 1, limit: number = 10, search?: string) => {
+  const token = localStorage.getItem('authToken');
+  if (!token) throw new Error('No authentication token found');
+
+  try {
+    const params: Record<string, any> = { page, limit };
+    if (search?.trim()) params.search = search.trim();
+
+    const response = await axiosInstance.get('/', {
+      params,
+      headers: { 'token': token },
+    });
+
+    return response.data as ClinicsResponse;
+  } catch (error) {
+    console.error('Lỗi khi lấy danh sách phòng khám:', error);
+    throw error;
+  }
+};
+
+/**
+ * Lấy chi tiết phòng khám theo `id` (uuid)
+ * GET `${API_URL}/${clinicId}`
+ */
+export const getClinicDetail = async (clinicId: string) => {
+  const token = localStorage.getItem('authToken');
+  if (!token) throw new Error('No authentication token found');
+
+  try {
+    const response = await axiosInstance.get(`/${clinicId}`, {
+      headers: { 'token': token },
+    });
+
+    return response.data as ClinicDetailResponse;
+  } catch (error) {
+    console.error(`Lỗi khi lấy chi tiết phòng khám (${clinicId}):`, error);
+    throw error;
+  }
+};
+
+/**
+ * Bật / tắt trạng thái active của phòng khám
+ * PATCH `${API_URL}/active/${clinicId}`
+ * body: { is_active: boolean }
+ */
+export const setClinicActive = async (clinicId: string, isActive: boolean) => {
+  const token = localStorage.getItem('authToken');
+  if (!token) throw new Error('No authentication token found');
+
+  try {
+    const response = await axiosInstance.patch(
+      `/active/${clinicId}`,
+      { is_active: isActive },
+      { headers: { 'token': token } }
+    );
+    return response.data;
+  } catch (error: any) {
+    console.error(`Lỗi khi cập nhật trạng thái active phòng khám (${clinicId}):`, error?.response?.data || error?.message || error);
+    throw error;
+  }
+};
+
+export const activateClinic = async (clinicId: string) => setClinicActive(clinicId, true);
+export const deactivateClinic = async (clinicId: string) => setClinicActive(clinicId, false);

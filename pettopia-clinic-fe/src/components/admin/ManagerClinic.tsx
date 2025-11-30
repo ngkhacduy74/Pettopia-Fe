@@ -1,6 +1,6 @@
 'use client';
 
-import React, { useState } from 'react';
+import React, { useEffect, useState } from 'react';
 import {
   BuildingOfficeIcon,
   MagnifyingGlassIcon,
@@ -13,61 +13,37 @@ import {
   XMarkIcon,
 } from '@heroicons/react/24/outline';
 
-interface Clinic {
-  id: number;
+import {
+  findAllClinics,
+  getClinicDetail,
+  activateClinic,
+  deactivateClinic,
+  registerClinic,
+  updateClinic,
+  removeClinic,
+  type ClinicItem,
+} from '@/services/partner/clinicService';
+
+interface ClinicView {
+  id: string;
   name: string;
   address: string;
   phone: string;
-  email: string;
-  openTime: string;
-  closeTime: string;
+  email?: string;
+  openTime?: string;
+  closeTime?: string;
   services: string[];
   status: 'active' | 'inactive';
-  image?: string;
 }
 
 export default function ManagerClinic() {
-  const [clinics, setClinics] = useState<Clinic[]>([
-    {
-      id: 1,
-      name: 'Phòng Khám Đa Khoa Tâm Đức',
-      address: '123 Nguyễn Huệ, Quận 1, TP.HCM',
-      phone: '028 3822 4567',
-      email: 'tamduc@clinic.vn',
-      openTime: '07:00',
-      closeTime: '20:00',
-      services: ['Khám tổng quát', 'Nha khoa', 'Da liễu'],
-      status: 'active',
-    },
-    {
-      id: 2,
-      name: 'Phòng Khám Đa Khoa Hoàn Mỹ',
-      address: '456 Lê Lợi, Quận 3, TP.HCM',
-      phone: '028 3933 5678',
-      email: 'hoanmy@clinic.vn',
-      openTime: '08:00',
-      closeTime: '21:00',
-      services: ['Khám tổng quát', 'Tai mũi họng', 'Nội khoa'],
-      status: 'active',
-    },
-    {
-      id: 3,
-      name: 'Phòng Khám An Khang',
-      address: '789 Trần Hưng Đạo, Quận 5, TP.HCM',
-      phone: '028 3855 9012',
-      email: 'ankhang@clinic.vn',
-      openTime: '06:30',
-      closeTime: '19:00',
-      services: ['Khám tổng quát', 'Tim mạch', 'Xét nghiệm'],
-      status: 'inactive',
-    },
-  ]);
-
+  const [clinics, setClinics] = useState<ClinicView[]>([]);
   const [searchTerm, setSearchTerm] = useState('');
   const [isModalOpen, setIsModalOpen] = useState(false);
   const [modalMode, setModalMode] = useState<'add' | 'edit'>('add');
-  const [currentClinic, setCurrentClinic] = useState<Clinic | null>(null);
+  const [currentClinic, setCurrentClinic] = useState<ClinicView | null>(null);
   const [currentPage, setCurrentPage] = useState(1);
+  const [totalPages, setTotalPages] = useState(1);
   const itemsPerPage = 6;
 
   // Form state
@@ -82,32 +58,67 @@ export default function ManagerClinic() {
     status: 'active' as 'active' | 'inactive',
   });
 
-  // Filter clinics
-  const filteredClinics = clinics.filter(clinic =>
-    clinic.name.toLowerCase().includes(searchTerm.toLowerCase()) ||
-    clinic.address.toLowerCase().includes(searchTerm.toLowerCase()) ||
-    clinic.phone.includes(searchTerm)
-  );
+  const loadClinics = async (page = 1) => {
+    try {
+      const res = await findAllClinics(page, itemsPerPage, searchTerm || undefined);
+      const items = res.data || [];
+      const mapped: ClinicView[] = items.map((it: ClinicItem) => ({
+        id: it.id,
+        name: it.clinic_name,
+        address: `${it.address.detail || ''}${it.address.ward ? ', ' + it.address.ward : ''}${it.address.district ? ', ' + it.address.district : ''}${it.address.city ? ', ' + it.address.city : ''}`,
+        phone: it.phone?.phone_number || '',
+        email: it.email?.email_address || '',
+        openTime: undefined,
+        closeTime: undefined,
+        services: [],
+        status: it.is_active ? 'active' : 'inactive',
+      }));
 
-  // Pagination
-  const totalPages = Math.ceil(filteredClinics.length / itemsPerPage);
-  const startIndex = (currentPage - 1) * itemsPerPage;
-  const paginatedClinics = filteredClinics.slice(startIndex, startIndex + itemsPerPage);
+      setClinics(mapped);
+      setTotalPages(res.pagination?.totalPages || 1);
+    } catch (err) {
+      console.error('Load clinics error', err);
+      setClinics([]);
+    }
+  };
 
-  const openModal = (mode: 'add' | 'edit', clinic?: Clinic) => {
+  useEffect(() => {
+    loadClinics(currentPage);
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [currentPage]);
+
+  const openModal = async (mode: 'add' | 'edit', clinicId?: string) => {
     setModalMode(mode);
-    if (mode === 'edit' && clinic) {
-      setCurrentClinic(clinic);
-      setFormData({
-        name: clinic.name,
-        address: clinic.address,
-        phone: clinic.phone,
-        email: clinic.email,
-        openTime: clinic.openTime,
-        closeTime: clinic.closeTime,
-        services: clinic.services.join(', '),
-        status: clinic.status,
-      });
+    if (mode === 'edit' && clinicId) {
+      try {
+        const res = await getClinicDetail(clinicId);
+        const it = res.data;
+        setCurrentClinic({
+          id: it.id,
+          name: it.clinic_name,
+          address: `${it.address.detail || ''}${it.address.ward ? ', ' + it.address.ward : ''}${it.address.district ? ', ' + it.address.district : ''}${it.address.city ? ', ' + it.address.city : ''}`,
+          phone: it.phone?.phone_number || '',
+          email: it.email?.email_address || '',
+          openTime: undefined,
+          closeTime: undefined,
+          services: it.representative?.responsible_licenses || [],
+          status: it.is_active ? 'active' : 'inactive',
+        });
+
+        setFormData({
+          name: it.clinic_name || '',
+          address: it.address?.detail || '',
+          phone: it.phone?.phone_number || '',
+          email: it.email?.email_address || '',
+          openTime: '',
+          closeTime: '',
+          services: (it.representative?.responsible_licenses || []).join(', '),
+          status: it.is_active ? 'active' : 'inactive',
+        });
+      } catch (err) {
+        alert('Không thể tải chi tiết phòng khám');
+        return;
+      }
     } else {
       setCurrentClinic(null);
       setFormData({
@@ -121,6 +132,7 @@ export default function ManagerClinic() {
         status: 'active',
       });
     }
+
     setIsModalOpen(true);
   };
 
@@ -129,38 +141,78 @@ export default function ManagerClinic() {
     setCurrentClinic(null);
   };
 
-  const handleSubmit = () => {
-    if (!formData.name || !formData.address || !formData.phone || !formData.email || !formData.openTime || !formData.closeTime || !formData.services) {
+  const handleSubmit = async () => {
+    if (!formData.name || !formData.address || !formData.phone || !formData.email) {
       alert('Vui lòng điền đầy đủ thông tin!');
       return;
     }
-    
-    const newClinic: Clinic = {
-      id: modalMode === 'edit' && currentClinic ? currentClinic.id : Date.now(),
-      name: formData.name,
-      address: formData.address,
-      phone: formData.phone,
-      email: formData.email,
-      openTime: formData.openTime,
-      closeTime: formData.closeTime,
-      services: formData.services.split(',').map(s => s.trim()),
-      status: formData.status,
+
+    const payload: any = {
+      clinic_name: formData.name,
+      address: {
+        detail: formData.address,
+        city: '',
+        district: '',
+        ward: '',
+      },
+      phone: { phone_number: formData.phone },
+      email: { email_address: formData.email },
+      representative: {
+        responsible_licenses: formData.services.split(',').map(s => s.trim()).filter(Boolean),
+      },
+      is_active: formData.status === 'active',
     };
 
-    if (modalMode === 'edit') {
-      setClinics(clinics.map(c => c.id === currentClinic?.id ? newClinic : c));
-    } else {
-      setClinics([...clinics, newClinic]);
+    try {
+      if (modalMode === 'add') {
+        await registerClinic(payload as any);
+        alert('Thêm phòng khám thành công');
+      } else if (modalMode === 'edit' && currentClinic) {
+        await updateClinic(currentClinic.id, payload);
+        alert('Cập nhật phòng khám thành công');
+      }
+      closeModal();
+      loadClinics(currentPage);
+    } catch (err: any) {
+      console.error(err);
+      alert(err?.message || 'Có lỗi khi lưu phòng khám');
     }
-    
-    closeModal();
   };
 
-  const handleDelete = (id: number) => {
-    if (window.confirm('Bạn có chắc chắn muốn xóa phòng khám này?')) {
-      setClinics(clinics.filter(c => c.id !== id));
+  const handleDelete = async (clinicId: string) => {
+    if (!confirm('Bạn có chắc chắn muốn xóa phòng khám này?')) return;
+    try {
+      await removeClinic(clinicId);
+      alert('Xóa thành công');
+      loadClinics(currentPage);
+    } catch (err: any) {
+      console.error(err);
+      alert('Không thể xóa phòng khám');
     }
   };
+
+  const toggleActive = async (clinicId: string, currentlyActive: boolean) => {
+    try {
+      if (currentlyActive) {
+        await deactivateClinic(clinicId);
+      } else {
+        await activateClinic(clinicId);
+      }
+      loadClinics(currentPage);
+    } catch (err) {
+      alert('Không thể thay đổi trạng thái');
+    }
+  };
+
+  // Filter + pagination client-side for search
+  const filtered = clinics.filter(c =>
+    c.name.toLowerCase().includes(searchTerm.toLowerCase()) ||
+    c.address.toLowerCase().includes(searchTerm.toLowerCase()) ||
+    c.phone.includes(searchTerm)
+  );
+
+  const startIndex = (currentPage - 1) * itemsPerPage;
+  const paginatedClinics = filtered.slice(startIndex, startIndex + itemsPerPage);
 
   return (
     <div className="max-w-7xl mx-auto p-6">
@@ -270,7 +322,7 @@ export default function ManagerClinic() {
                 </div>
                 <div className="flex items-center gap-2">
                   <ClockIcon className="w-4 h-4 text-gray-400 flex-shrink-0" />
-                  <p className="text-sm text-gray-600">{clinic.openTime} - {clinic.closeTime}</p>
+                  <p className="text-sm text-gray-600">{clinic.openTime || '-'} - {clinic.closeTime || '-'}</p>
                 </div>
               </div>
 
@@ -287,7 +339,7 @@ export default function ManagerClinic() {
 
               <div className="flex gap-2 pt-4 border-t border-gray-100">
                 <button
-                  onClick={() => openModal('edit', clinic)}
+                  onClick={() => openModal('edit', clinic.id)}
                   className="flex-1 flex items-center justify-center gap-2 px-4 py-2 bg-blue-50 text-blue-600 rounded-lg hover:bg-blue-100 transition-colors font-medium"
                 >
                   <PencilIcon className="w-4 h-4" />
@@ -299,6 +351,11 @@ export default function ManagerClinic() {
                 >
                   <TrashIcon className="w-4 h-4" />
                   Xóa
+                </button>
+                <button
+                  onClick={() => toggleActive(clinic.id, clinic.status === 'active')}
+                  className={`px-4 py-2 rounded-lg text-sm font-medium ${clinic.status === 'active' ? 'bg-red-50 text-red-600' : 'bg-green-50 text-green-600'}`}>
+                  {clinic.status === 'active' ? 'Ngừng' : 'Kích hoạt'}
                 </button>
               </div>
             </div>
@@ -412,7 +469,7 @@ export default function ManagerClinic() {
               <div className="grid grid-cols-2 gap-4">
                 <div>
                   <label className="block text-sm font-medium text-gray-700 mb-2">
-                    Giờ mở cửa *
+                    Giờ mở cửa (không bắt buộc)
                   </label>
                   <input
                     type="time"
@@ -423,7 +480,7 @@ export default function ManagerClinic() {
                 </div>
                 <div>
                   <label className="block text-sm font-medium text-gray-700 mb-2">
-                    Giờ đóng cửa *
+                    Giờ đóng cửa (không bắt buộc)
                   </label>
                   <input
                     type="time"
@@ -436,7 +493,7 @@ export default function ManagerClinic() {
 
               <div>
                 <label className="block text-sm font-medium text-gray-700 mb-2">
-                  Dịch vụ (phân cách bằng dấu phẩy) *
+                  Dịch vụ (phân cách bằng dấu phẩy)
                 </label>
                 <input
                   type="text"
