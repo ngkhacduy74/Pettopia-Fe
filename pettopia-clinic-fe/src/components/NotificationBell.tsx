@@ -4,6 +4,7 @@ import React, { useState, useRef, useEffect } from 'react';
 import { useRouter } from 'next/navigation';
 import { getAppointments, type AppointmentData } from '@/services/partner/clinicService';
 import { getCustomerById } from '@/services/customer/customerService';
+import { parseJwt } from '@/utils/jwt';
 
 interface NotificationBellProps {
     notificationCount?: number;
