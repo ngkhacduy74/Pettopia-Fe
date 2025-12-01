@@ -347,6 +347,40 @@ export const sendInvitation = async (email: string, role: string) => {
   }
 };
 
+export const acceptInvitation = async (inviteId: string) => {
+  const token = localStorage.getItem('authToken');
+  if (!token) throw new Error('No authentication token found');
+
+  try {
+    const response = await axios.post(
+      `${PARTNER_API_URL}/clinic/invitations/${inviteId}/accept`,
+      {},
+      { headers: { 'token': token } }
+    );
+    return response.data;
+  } catch (error: any) {
+    console.error("Lỗi khi chấp nhận lời mời:", error.response?.data || error.message);
+    throw error;
+  }
+};
+
+export const declineInvitation = async (inviteId: string) => {
+  const token = localStorage.getItem('authToken');
+  if (!token) throw new Error('No authentication token found');
+
+  try {
+    const response = await axios.post(
+      `${PARTNER_API_URL}/clinic/invitations/${inviteId}/decline`,
+      {},
+      { headers: { 'token': token } }
+    );
+    return response.data;
+  } catch (error: any) {
+    console.error("Lỗi khi từ chối lời mời:", error.response?.data || error.message);
+    throw error;
+  }
+};
+
 /**
  * Cập nhật thông tin phòng khám
  * PUT `${API_URL}/${clinicId}`

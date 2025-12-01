@@ -5,6 +5,7 @@ import { useRouter } from 'next/navigation';
 import Link from 'next/link';
 import { motion } from 'framer-motion';
 import { createPet } from '@/services/petcare/petService';
+import { getCustomerById } from '@/services/user/userService';
 
 export default function RegisterPetPage() {
     const router = useRouter();
@@ -137,8 +138,8 @@ export default function RegisterPetPage() {
             newErrors.name = 'Vui lòng nhập tên thú cưng';
         } else if (petForm.name.trim().length < 2) {
             newErrors.name = 'Tên thú cưng phải có ít nhất 2 ký tự';
-        } else if (petForm.name.trim().length > 50) {
-            newErrors.name = 'Tên thú cưng không được quá 50 ký tự';
+        } else if (petForm.name.trim().length > 15) {
+            newErrors.name = 'Tên thú cưng không được quá 15 ký tự';
         }
 
         if (!petForm.species) {
@@ -334,36 +335,31 @@ export default function RegisterPetPage() {
                     return;
                 }
 
-                const response = await fetch(`http://localhost:3000/api/v1/customer/${userId}`, {
-                    headers: {
-                        'Authorization': `Bearer ${token}`,
-                        'Content-Type': 'application/json'
-                    }
-                });
+                const data = await getCustomerById(userId);
 
-                if (response.ok) {
-                    const data = await response.json();
-                    setUserData({
-                        user_id: userId,
-                        fullname: data.fullname || '',
-                        phone: data.phone || '',
-                        email: data.email || '',
-                        address: {
-                            city: data.address?.city || '',
-                            district: data.address?.district || '',
-                            ward: data.address?.ward || ''
-                        }
-                    });
+                if (!data) {
+                    console.warn('Không thể tải thông tin khách hàng');
+                    return;
+                }
 
-                    setPetForm(prev => ({
-                        ...prev,
+                setUserData({
+                    user_id: userId,
+                    fullname: data.fullname || '',
+                    phone: data.phone || '',
+                    email: data.email || '',
+                    address: {
                         city: data.address?.city || '',
                         district: data.address?.district || '',
                         ward: data.address?.ward || ''
-                    }));
-                } else {
-                    console.error('Fetch user data failed', response.status);
-                }
+                    }
+                });
+
+                setPetForm(prev => ({
+                    ...prev,
+                    city: data.address?.city || '',
+                    district: data.address?.district || '',
+                    ward: data.address?.ward || ''
+                }));
             } catch (error) {
                 console.error('Error fetching user data:', error);
             }
@@ -398,17 +394,23 @@ export default function RegisterPetPage() {
                                         <label htmlFor="pet-name" className="block text-sm font-medium text-gray-700 mb-1">
                                             Tên thú cưng <span className="text-red-500">*</span>
                                         </label>
-                                        <input
-                                            id="pet-name"
-                                            type="text"
-                                            placeholder="VD: Milu, Cún..."
-                                            className={`w-full px-3 py-2 border rounded-lg focus:ring-2 focus:ring-teal-500 focus:border-transparent outline-none ${
-                                                errors.name ? 'border-red-500' : 'border-gray-300'
-                                            }`}
-                                            value={petForm.name}
-                                            onChange={(e) => handleInputChange('name', e.target.value)}
-                                            required
-                                        />
+                                        <div className="relative">
+                                            <input
+                                                id="pet-name"
+                                                type="text"
+                                                placeholder="VD: Milu, Cún..."
+                                                maxLength={15}
+                                                className={`w-full px-3 py-2 border rounded-lg focus:ring-2 focus:ring-teal-500 focus:border-transparent outline-none ${
+                                                    errors.name ? 'border-red-500' : 'border-gray-300'
+                                                }`}
+                                                value={petForm.name}
+                                                onChange={(e) => handleInputChange('name', e.target.value)}
+                                                required
+                                            />
+                                            <span className="absolute right-3 top-2.5 text-xs text-gray-500">
+                                                {petForm.name.length}/15
+                                            </span>
+                                        </div>
                                         {errors.name && (
                                             <p className="mt-1 text-sm text-red-600">{errors.name}</p>
                                         )}

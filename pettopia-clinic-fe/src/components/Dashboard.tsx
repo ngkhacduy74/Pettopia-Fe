@@ -2,7 +2,7 @@
 'use client'
 import React, { useState } from 'react';
 import Link from 'next/link';
-import NotificationBell from './NotificationBell';
+
 import { LineChart, Line, XAxis, YAxis, CartesianGrid, Tooltip, ResponsiveContainer, PieChart, Pie, Cell } from 'recharts';
 import {
   CurrencyDollarIcon,
@@ -97,7 +97,7 @@ export default function Dashboard({
         <div className="flex items-center gap-3">
           {inviteButton}
 
-          <NotificationBell notificationCount={1} />
+         
         </div>
       </div>
 

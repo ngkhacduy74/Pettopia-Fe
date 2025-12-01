@@ -7,7 +7,7 @@ import {
   getAppointmentDetail,
   updateAppointmentStatus,
   type AppointmentDetail,
-} from '../../../../services/petcare/petService';
+} from '@/services/petcare/petService';
 
 // Predefined cancel reasons
 const CANCEL_REASONS = [
