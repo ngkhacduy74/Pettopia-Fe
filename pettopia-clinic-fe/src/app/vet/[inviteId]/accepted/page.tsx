@@ -1,27 +1,24 @@
 'use client';
 
-import React, { useState, use } from 'react';
+import React, { useState } from 'react';
 import { useRouter } from 'next/navigation';
-import { Mail, X, Eye, EyeOff } from 'lucide-react';
+import { Mail, Eye, EyeOff } from 'lucide-react';
 import { acceptInvitation, declineInvitation } from '@/services/partner/clinicService';
 import { useToast } from '@/contexts/ToastContext';
 
-interface InviteAcceptedPageProps {
-  params: Promise<{
-    inviteId: string;
-  }>;
+interface Props {
+  inviteId: string;
 }
 
-export default function InviteAcceptedPage({ params }: InviteAcceptedPageProps) {
-  const { inviteId } = use(params);
+export default function InviteAcceptedClient({ inviteId }: Props) {
   const router = useRouter();
   const { showSuccess, showError } = useToast();
 
   const [isProcessing, setIsProcessing] = useState(false);
   const [showInviteCode, setShowInviteCode] = useState(false);
 
-  // Hàm che mã lời mời
   const maskInviteCode = (code: string) => {
+    if (!code) return '••••••••';
     if (code.length <= 8) return '••••••••';
     return code.substring(0, 4) + '••••••••' + code.substring(code.length - 4);
   };
@@ -77,7 +74,6 @@ export default function InviteAcceptedPage({ params }: InviteAcceptedPageProps) 
           Bạn được mời tham gia một nhóm mới trong hệ thống Pettopia.
         </p>
 
-        {/* Invite Info với mã ẩn */}
         <div className="mb-8">
           <p className="text-sm text-gray-500 mb-2">Mã lời mời</p>
           <div className="flex items-center justify-between bg-gray-50 p-3 rounded-lg">
@@ -101,7 +97,6 @@ export default function InviteAcceptedPage({ params }: InviteAcceptedPageProps) 
           </div>
         </div>
 
-        {/* Action Buttons */}
         <div className="flex gap-3 mb-6">
           <button
             onClick={handleDecline}
