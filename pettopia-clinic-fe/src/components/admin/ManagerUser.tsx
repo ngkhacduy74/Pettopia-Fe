@@ -1,7 +1,7 @@
 'use client'
 import React, { useState, useEffect, useRef } from 'react'
+import { useRouter } from 'next/navigation';
 import { getCustomerData } from '@/services/customer/customerService';
-import Location from '@/utils/location';
 import Register from '@/components/auth/RegisterForm';
 
 interface RequestTableProps {
@@ -9,16 +9,13 @@ interface RequestTableProps {
 }
 
 export default function RequestTable({ title }: RequestTableProps) {
-  const [selectedForm, setSelectedForm] = useState<any | null>(null);
-  const [dropdownRow, setDropdownRow] = useState<number | null>(null);
+  const router = useRouter();
   const [forms, setForms] = useState<any[]>([]);
   const [currentPage, setCurrentPage] = useState(1);
   const [totalPages, setTotalPages] = useState(1);
   const [isLoading, setIsLoading] = useState(true);
   const [limit] = useState(10);
   
-  const [isEditing, setIsEditing] = useState(false);
-  const [editableData, setEditableData] = useState<any | null>(null);
   const [showRegisterModal, setShowRegisterModal] = useState(false);
 
   // Filter states
@@ -94,51 +91,11 @@ export default function RequestTable({ title }: RequestTableProps) {
   };
 
   const openDetailPage = (form: any) => {
-    setSelectedForm(form);
-    setEditableData(JSON.parse(JSON.stringify(form)));
-    setIsEditing(false);
-  };
-
-  const closeDetailPage = () => {
-    setSelectedForm(null);
-    setIsEditing(false);
-    setEditableData(null);
-  };
-
-  const toggleDropdown = (index: number) => {
-    setDropdownRow(dropdownRow === index ? null : index);
+    router.push(`/admin/user/${form.id}`);
   };
 
   const handlePageChange = (newPage: number) => {
     setCurrentPage(newPage);
-  };
-
-  const handleInputChange = (field: string, value: any, nestedField?: string) => {
-    if (!editableData) return;
-    if (nestedField) {
-      setEditableData({
-        ...editableData,
-        [field]: { ...editableData[field], [nestedField]: value },
-      });
-    } else {
-      setEditableData({
-        ...editableData,
-        [field]: value,
-      });
-    }
-  };
-
-  const handleSaveEdit = () => {
-    if (!editableData) return;
-    setForms(prev => prev.map(f => (f.id === editableData.id ? editableData : f)));
-    setSelectedForm(editableData);
-    setIsEditing(false);
-    console.log('Saved (local):', editableData);
-  };
-
-  const handleCancelEdit = () => {
-    setIsEditing(false);
-    setEditableData(selectedForm ? JSON.parse(JSON.stringify(selectedForm)) : null);
   };
 
   return (
@@ -187,7 +144,7 @@ export default function RequestTable({ title }: RequestTableProps) {
                     <th scope="col" className="px-6 py-4 text-left text-xs font-semibold text-gray-600 uppercase tracking-wider">
                       Liên hệ
                     </th>
-                    <th scope="col" className="px-6 py-4 text-left text-xs font-semibold text-gray-600 uppercase tracking-wider">
+                    <th scope="col" className="px-3 py-4 text-center text-xs font-semibold text-gray-600 uppercase tracking-wider w-20">
                       Điểm uy tín
                     </th>
                     <th scope="col" className="px-6 py-4 text-left text-xs font-semibold text-gray-600 uppercase tracking-wider">
@@ -216,7 +173,7 @@ export default function RequestTable({ title }: RequestTableProps) {
                         className="w-full px-3 py-1.5 border border-gray-300 rounded text-sm focus:outline-none focus:ring-1 focus:ring-indigo-500"
                       />
                     </td>
-                    <td className="px-6 py-3">
+                    <td className="px-3 py-3">
                       <input
                         type="text"
                         placeholder="Tìm kiếm..."
@@ -299,7 +256,7 @@ export default function RequestTable({ title }: RequestTableProps) {
                           {form.phone.phone_number}
                         </div>
                       </td>
-                      <td className="px-6 py-4 text-sm font-medium text-gray-900">
+                      <td className="px-3 py-4 text-sm font-medium text-gray-900 text-center">
                         {form.reward_point}
                       </td>
                       <td className="px-6 py-4">
@@ -311,22 +268,6 @@ export default function RequestTable({ title }: RequestTableProps) {
                         >
                           {form.is_active ? 'Đã kích hoạt' : 'Đã bị đình chỉ'}
                         </span>
-                      </td>
-                      <td className="px-6 py-4">
-                        <div className="flex flex-wrap gap-2">
-                          {Array.isArray(form.role) && form.role.length > 0 ? (
-                            form.role.map((r: string, idx: number) => (
-                              <span
-                                key={idx}
-                                className="px-3 py-1 inline-flex text-xs leading-5 font-semibold rounded-full bg-blue-100 text-blue-800"
-                              >
-                                {r}
-                              </span>
-                            ))
-                          ) : (
-                            <span className="text-gray-500 text-sm italic">Không có quyền</span>
-                          )}
-                        </div>
                       </td>
                     </tr>
                     ))
@@ -402,196 +343,6 @@ export default function RequestTable({ title }: RequestTableProps) {
           )}
         </div>
       </div>
-
-      {/* Detail Modal */}
-      {selectedForm && (
-        <div
-          className="fixed inset-0 bg-black/30 backdrop-blur-sm flex items-center justify-center z-50 animate-fadeIn"
-          onClick={(e) => {
-            if (e.target === e.currentTarget) closeDetailPage();
-          }}
-        >
-          <div className="bg-white rounded-xl shadow-2xl w-full max-w-4xl max-h-[90vh] overflow-y-auto relative">
-            <button
-              onClick={closeDetailPage}
-              className="absolute top-4 right-4 text-gray-500 hover:text-gray-800 transition"
-            >
-              <svg className="w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M6 18L18 6M6 6l12 12" />
-              </svg>
-            </button>
-
-            <div className="p-8 space-y-6">
-              <div className="flex items-start justify-between">
-                <div>
-                  <p className="text-sm text-gray-600 uppercase tracking-wider font-medium">Chi tiết</p>
-                  {!isEditing ? (
-                    <h2 className="text-2xl font-bold text-gray-900">{selectedForm.fullname}</h2>
-                  ) : (
-                    <input
-                      className="border rounded px-3 py-2 text-xl font-semibold w-full"
-                      value={editableData.fullname ?? ''}
-                      onChange={(e) => handleInputChange('fullname', e.target.value)}
-                    />
-                  )}
-                </div>
-                <div className="text-right">
-                  {!isEditing ? (
-                    <span
-                      className={`px-4 py-2 rounded-lg text-sm font-bold inline-block ${selectedForm.is_active
-                        ? 'bg-green-100 text-green-800'
-                        : 'bg-red-100 text-red-800'
-                      }`}
-                    >
-                      {selectedForm.is_active ? 'Đã kích hoạt' : 'Đã bị đình chỉ'}
-                    </span>
-                  ) : (
-                    <select
-                      className="border rounded px-3 py-2 text-sm"
-                      value={editableData.is_active ? 'true' : 'false'}
-                      onChange={(e) =>
-                        handleInputChange('is_active', e.target.value === 'true')
-                      }
-                    >
-                      <option value="true">Đã kích hoạt</option>
-                      <option value="false">Dừng hoạt động</option>
-                    </select>
-                  )}
-                  <p className="text-xs text-gray-500 mt-2">ID: {selectedForm.id}</p>
-                  <p className="text-xs text-gray-500">Ngày tạo: {new Date(selectedForm.createdAt).toLocaleDateString('vi-VN')}</p>
-                </div>
-              </div>
-
-              <div className="grid grid-cols-2 gap-6">
-                <div>
-                  <label className="block text-sm font-semibold text-gray-700 mb-1">Tên đăng nhập</label>
-                  {!isEditing ? (
-                    <p className="text-gray-900">{selectedForm.username}</p>
-                  ) : (
-                    <input
-                      className="w-full border rounded px-3 py-2"
-                      value={editableData.username ?? ''}
-                      onChange={(e) => handleInputChange('username', e.target.value)}
-                    />
-                  )}
-                </div>
-
-                <div>
-                  <label className="block text-sm font-semibold text-gray-700 mb-1">Email</label>
-                  {!isEditing ? (
-                    <p className="text-gray-900">{selectedForm.email?.email_address}</p>
-                  ) : (
-                    <input
-                      className="w-full border rounded px-3 py-2"
-                      value={editableData.email?.email_address ?? ''}
-                      onChange={(e) =>
-                        handleInputChange('email', e.target.value, 'email_address')
-                      }
-                    />
-                  )}
-                </div>
-
-                <div>
-                  <label className="block text-sm font-semibold text-gray-700 mb-1">Số điện thoại</label>
-                  {!isEditing ? (
-                    <p className="text-gray-900">{selectedForm.phone?.phone_number}</p>
-                  ) : (
-                    <input
-                      className="w-full border rounded px-3 py-2"
-                      value={editableData.phone?.phone_number ?? ''}
-                      onChange={(e) =>
-                        handleInputChange('phone', e.target.value, 'phone_number')
-                      }
-                    />
-                  )}
-                </div>
-
-                <div>
-                  <label className="block text-sm font-semibold text-gray-700 mb-1">Điểm uy tín</label>
-                  {!isEditing ? (
-                    <p className="text-gray-900">{selectedForm.reward_point}</p>
-                  ) : (
-                    <input
-                      type="number"
-                      className="w-full border rounded px-3 py-2"
-                      value={editableData.reward_point ?? 0}
-                      onChange={(e) =>
-                        handleInputChange('reward_point', Number(e.target.value))
-                      }
-                    />
-                  )}
-                </div>
-
-                <div>
-                  <label className="block text-sm font-semibold text-gray-700 mb-1">Ngày sinh</label>
-                  {!isEditing ? (
-                    <p className="text-gray-900">
-                      {selectedForm.dob
-                        ? new Date(selectedForm.dob).toLocaleDateString('vi-VN')
-                        : 'Chưa có'}
-                    </p>
-                  ) : (
-                    <input
-                      type="date"
-                      className="w-full border rounded px-3 py-2"
-                      value={
-                        editableData.dob
-                          ? new Date(editableData.dob).toISOString().split('T')[0]
-                          : ''
-                      }
-                      onChange={(e) =>
-                        handleInputChange('dob', new Date(e.target.value))
-                      }
-                    />
-                  )}
-                </div>
-
-                <div>
-                  <label className="block text-sm font-semibold text-gray-700 mb-1">Địa chỉ</label>
-                  {!isEditing ? (
-                    <p className="text-gray-900">
-                      {selectedForm.address
-                        ? `${selectedForm.address.description || ''}, ${selectedForm.address.ward || ''}, ${selectedForm.address.district || ''}, ${selectedForm.address.city || ''}`
-                        : 'Chưa có thông tin địa chỉ'}
-                    </p>
-                  ) : (
-                    <Location
-                      value={editableData.address}
-                      onChange={(newAddress) => handleInputChange('address', newAddress)}
-                    />
-                  )}
-                </div>
-              </div>
-
-              <div className="flex justify-end space-x-3 px-6 py-4 border-t border-gray-200 bg-gray-50 sticky bottom-0">
-                {!isEditing ? (
-                  <button
-                    onClick={() => setIsEditing(true)}
-                    className="bg-teal-600 hover:bg-teal-700 text-white px-5 py-2.5 rounded-lg shadow"
-                  >
-                    Chỉnh sửa thông tin
-                  </button>
-                ) : (
-                  <>
-                    <button
-                      onClick={handleSaveEdit}
-                      className="bg-teal-600 hover:bg-teal-700 text-white px-5 py-2.5 rounded-lg shadow"
-                    >
-                      Lưu
-                    </button>
-                    <button
-                      onClick={handleCancelEdit}
-                      className="bg-gray-400 hover:bg-gray-500 text-white px-5 py-2.5 rounded-lg shadow"
-                    >
-                      Huỷ
-                    </button>
-                  </>
-                )}
-              </div>
-            </div>
-          </div>
-        </div>
-      )}
 
       {/* Register Modal */}
       {showRegisterModal && (

@@ -105,3 +105,17 @@ export async function getCustomerTotalDetail() {
     throw error;
   }
 }
+
+export async function updateCustomerStatus(id: string | number, status: 'active' | 'deactive') {
+  try {
+    const response = await axios.patch(
+      `${API_URL}/${id}/status`,
+      { status },
+      getAuthHeaders()
+    );
+    return response.data;
+  } catch (error: any) {
+    console.error("Lỗi khi cập nhật trạng thái khách hàng:", error.response?.data || error.message);
+    throw error;
+  }
+}
