@@ -2,15 +2,15 @@
 
 import React from 'react';
 import { useParams } from 'next/navigation';
-import ClinicDetail from '@/components/admin/ClinicDetail';
+import UserDetail from '@/components/admin/UserDetail';
 
-export default function ClinicDetailPage() {
+export default function UserDetailPage() {
   const params = useParams();
   const id = params?.id as string | undefined;
 
   if (!id) {
     return (
-      <div className="max-w-5xl mx-auto p-6">
+      <div className="max-w-5xl mx-auto">
         <div className="text-center">
           <p className="text-red-700 font-medium">ID không hợp lệ</p>
         </div>
@@ -18,5 +18,5 @@ export default function ClinicDetailPage() {
     );
   }
 
-  return <ClinicDetail id={id} />;
+  return <UserDetail id={id} />;
 }
