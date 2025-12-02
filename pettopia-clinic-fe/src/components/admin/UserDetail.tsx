@@ -13,7 +13,7 @@ import {
   IdentificationIcon,
 } from '@heroicons/react/24/outline';
 
-import { getCustomerById, updateCustomerStatus } from '@/services/customer/customerService';
+import { getCustomerById, updateCustomerStatus, addCustomerRole } from '@/services/customer/customerService';
 import ToastItem, { type Toast as ToastModel } from '@/components/Toast';
 
 interface UserDetailProps {
@@ -28,6 +28,7 @@ export default function UserDetail({ id }: UserDetailProps) {
   const [isEditing, setIsEditing] = useState(false);
   const [editableData, setEditableData] = useState<any | null>(null);
   const [isUpdatingStatus, setIsUpdatingStatus] = useState(false);
+  const [addingRole, setAddingRole] = useState<string | null>(null);
 
   const [toasts, setToasts] = useState<ToastModel[]>([]);
   const pushToast = (message: string, type: ToastModel['type'] = 'info', duration = 3000) => {
@@ -117,6 +118,38 @@ export default function UserDetail({ id }: UserDetailProps) {
     }
   };
 
+  const handleAddRole = async (role: string) => {
+    if (!customer) return;
+    
+    // Kiểm tra nếu role đã tồn tại
+    if (Array.isArray(customer.role) && customer.role.includes(role)) {
+      pushToast(`User đã có role ${role}`, 'info');
+      return;
+    }
+
+    try {
+      setAddingRole(role);
+      await addCustomerRole(customer.id, role);
+      
+      // Update local state
+      const updatedRoles = Array.isArray(customer.role) ? [...customer.role, role] : [role];
+      const updatedCustomer = {
+        ...customer,
+        role: updatedRoles
+      };
+      setCustomer(updatedCustomer);
+      setEditableData(updatedCustomer);
+      
+      pushToast(`Thêm role ${role} thành công`, 'success');
+      console.log('Role đã thêm:', role);
+    } catch (error) {
+      console.error('Lỗi khi thêm role:', error);
+      pushToast('Thêm role thất bại', 'error');
+    } finally {
+      setAddingRole(null);
+    }
+  };
+
   if (loading) {
     return (
       <div className="max-w-5xl mx-auto p-6">
@@ -135,7 +168,7 @@ export default function UserDetail({ id }: UserDetailProps) {
       <div className="max-w-5xl mx-auto p-6">
         <button
           onClick={() => router.back()}
-          className="flex items-center gap-2 px-4 py-2 text-gray-600 hover:text-gray-900 transition-colors mb-6"
+          className="flex items-center gap-2 px-4 py-2 text-gray-600 hover:text-gray-900 transition-colors "
         >
           <ArrowLeftIcon className="w-5 h-5" />
           Quay lại
@@ -151,18 +184,19 @@ export default function UserDetail({ id }: UserDetailProps) {
   return (
     <div className="max-w-5xl mx-auto">
       {/* Header */}
-      <div className="mb-8">
+      <div className="mb-4">
         <button
           onClick={() => router.back()}
-          className="flex items-center gap-2 px-4 py-2 text-gray-600 hover:text-gray-900 transition-colors mb-4"
+          className="flex items-center gap-2 px-4 py-2 text-gray-600 hover:text-gray-900 transition-colors mb-2"
         >
           <ArrowLeftIcon className="w-5 h-5" />
           Quay lại
         </button>
         <div className="flex items-start justify-between">
-          <div>
-            <h1 className="text-3xl font-bold text-gray-900 mb-1">{customer.fullname}</h1>
-            <div className="flex items-center gap-2">
+          <div className="flex-1">
+            <h1 className="text-3xl font-bold text-gray-900">{customer.fullname}</h1>
+            <p className="text-xs text-gray-500 mt-1">ID: {customer.id}</p>
+            <div className="flex items-center gap-2 mt-2">
               <span className={`inline-flex items-center gap-1.5 px-3 py-1 rounded-full text-sm font-semibold ${
                 customer.is_active
                   ? 'bg-green-100 text-green-700'
@@ -183,13 +217,13 @@ export default function UserDetail({ id }: UserDetailProps) {
             </div>
           </div>
 
-          <div className="flex items-center gap-3">
+          <div className="flex items-center gap-3 ml-4">
             {!isEditing ? (
               <>
                 <button
                   onClick={handleToggleStatus}
                   disabled={isUpdatingStatus}
-                  className={`px-4 py-2 rounded-xl text-white transition-all duration-200 font-medium ${
+                  className={`px-4 py-2 rounded-xl text-white transition-all duration-200 font-medium whitespace-nowrap ${
                     customer.is_active
                       ? 'bg-red-600 hover:bg-red-700 disabled:bg-gray-400'
                       : 'bg-green-600 hover:bg-green-700 disabled:bg-gray-400'
@@ -198,11 +232,11 @@ export default function UserDetail({ id }: UserDetailProps) {
                   {isUpdatingStatus 
                     ? 'Đang cập nhật...' 
                     : customer.is_active 
-                      ? 'Đình chỉ tài khoản' 
-                      : 'Kích hoạt tài khoản'}
+                      ? 'Đình chỉ' 
+                      : 'Kích hoạt'}
                 </button>
                 <button
-                  className="px-4 py-2 bg-gradient-to-r from-teal-500 to-cyan-600 text-white rounded-xl hover:shadow-lg transition-all duration-200 font-medium"
+                  className="px-4 py-2 bg-gradient-to-r from-teal-500 to-cyan-600 text-white rounded-xl hover:shadow-lg transition-all duration-200 font-medium whitespace-nowrap"
                   onClick={() => setIsEditing(true)}
                 >
                   Chỉnh sửa
@@ -212,13 +246,13 @@ export default function UserDetail({ id }: UserDetailProps) {
               <>
                 <button
                   onClick={handleSaveEdit}
-                  className="px-4 py-2 bg-teal-600 hover:bg-teal-700 text-white rounded-xl shadow transition-all duration-200 font-medium"
+                  className="px-4 py-2 bg-teal-600 hover:bg-teal-700 text-white rounded-xl shadow transition-all duration-200 font-medium whitespace-nowrap"
                 >
                   Lưu
                 </button>
                 <button
                   onClick={handleCancelEdit}
-                  className="px-4 py-2 bg-gray-400 hover:bg-gray-500 text-white rounded-xl shadow transition-all duration-200 font-medium"
+                  className="px-4 py-2 bg-gray-400 hover:bg-gray-500 text-white rounded-xl shadow transition-all duration-200 font-medium whitespace-nowrap"
                 >
                   Huỷ
                 </button>
@@ -231,12 +265,6 @@ export default function UserDetail({ id }: UserDetailProps) {
       <div className="grid grid-cols-1 lg:grid-cols-3 gap-6">
         {/* Main Information */}
         <div className="lg:col-span-2 space-y-6">
-          {/* ID Card */}
-          <div className="bg-gradient-to-br from-teal-500 to-cyan-600 rounded-xl shadow-md p-6 text-white">
-            <p className="text-teal-100 text-sm mb-2">ID Khách hàng</p>
-            <p className="text-lg font-bold font-mono break-all leading-relaxed">{customer.id}</p>
-          </div>
-
           {/* Contact Information */}
           <div className="bg-white rounded-xl shadow-md border border-gray-100 p-6">
             <h2 className="text-lg font-semibold text-gray-900 mb-4 flex items-center gap-2">
@@ -395,21 +423,15 @@ export default function UserDetail({ id }: UserDetailProps) {
                   {['Admin', 'Staff', 'Clinic', 'Vet', 'User'].map(role => (
                     <button
                       key={role}
-                      onClick={() => {
-                        const roles = editableData.role || [];
-                        if (roles.includes(role)) {
-                          setEditableData({ ...editableData, role: roles.filter((r: string) => r !== role) });
-                        } else {
-                          setEditableData({ ...editableData, role: [...roles, role] });
-                        }
-                      }}
+                      onClick={() => handleAddRole(role)}
+                      disabled={addingRole === role}
                       className={`px-3 py-1 text-xs font-semibold rounded-full transition ${
-                        (editableData.role || []).includes(role)
-                          ? 'bg-blue-600 text-white'
-                          : 'bg-gray-200 text-gray-700 hover:bg-gray-300'
+                        (customer.role || []).includes(role)
+                          ? 'bg-blue-600 text-white hover:bg-blue-700 disabled:opacity-50'
+                          : 'bg-gray-200 text-gray-700 hover:bg-gray-300 disabled:opacity-50'
                       }`}
                     >
-                      {role}
+                      {addingRole === role ? '...' : role}
                     </button>
                   ))}
                 </div>

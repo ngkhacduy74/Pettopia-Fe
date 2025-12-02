@@ -269,6 +269,19 @@ export default function RequestTable({ title }: RequestTableProps) {
                           {form.is_active ? 'Đã kích hoạt' : 'Đã bị đình chỉ'}
                         </span>
                       </td>
+                      <td className="px-6 py-4">
+                        <div className="flex flex-wrap gap-1">
+                          {Array.isArray(form.role) && form.role.length > 0 ? (
+                            form.role.map((r: string, idx: number) => (
+                              <span key={idx} className="px-2 py-0.5 inline-flex text-xs font-semibold rounded bg-blue-100 text-blue-800">
+                                {r}
+                              </span>
+                            ))
+                          ) : (
+                            <span className="text-gray-500 text-xs italic">-</span>
+                          )}
+                        </div>
+                      </td>
                     </tr>
                     ))
                   )}

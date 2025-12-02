@@ -119,3 +119,17 @@ export async function updateCustomerStatus(id: string | number, status: 'active'
     throw error;
   }
 }
+
+export async function addCustomerRole(id: string | number, role: string) {
+  try {
+    const response = await axios.patch(
+      `${API_URL}/${id}/add-role`,
+      { role },
+      getAuthHeaders()
+    );
+    return response.data;
+  } catch (error: any) {
+    console.error("Lỗi khi thêm role cho khách hàng:", error.response?.data || error.message);
+    throw error;
+  }
+}

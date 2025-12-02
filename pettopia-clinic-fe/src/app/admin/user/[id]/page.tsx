@@ -10,7 +10,7 @@ export default function UserDetailPage() {
 
   if (!id) {
     return (
-      <div className="max-w-5xl mx-auto p-6">
+      <div className="max-w-5xl mx-auto">
         <div className="text-center">
           <p className="text-red-700 font-medium">ID không hợp lệ</p>
         </div>
