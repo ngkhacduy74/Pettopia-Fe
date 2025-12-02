@@ -1,8 +1,9 @@
 import axios from "axios";
 
-const API_URL = "http://localhost:3000/api/v1/partner/clinic";
-const PARTNER_API_URL = "http://localhost:3000/api/v1/partner";
-
+// Lấy base URL từ .env
+const API_URL = `${process.env.NEXT_PUBLIC_PETTOPIA_API_URL}/partner/clinic`;
+const PARTNER_API_URL = `${process.env.NEXT_PUBLIC_PETTOPIA_API_URL}/partner`;
+const HEALTHCARE_API_URL = `${process.env.NEXT_PUBLIC_PETTOPIA_API_URL}/healthcare`;
 
 // Tạo instance Axios
 const axiosInstance = axios.create({
@@ -58,6 +59,47 @@ export interface ClinicFormsResponse {
   data: ClinicFormData[];
 }
 
+export interface ClinicItem {
+  _id: string;
+  id: string;
+  clinic_name: string;
+  email: { email_address: string; verified?: boolean };
+  phone: { phone_number: string; verified?: boolean };
+  license_number?: string;
+  address: {
+    city: string;
+    district: string;
+    ward: string;
+    detail: string;
+  };
+  representative?: {
+    name?: string;
+    email?: { email_address?: string };
+    phone?: { phone_number?: string };
+    identify_number?: string;
+    responsible_licenses?: string[];
+    license_issued_date?: string;
+  };
+  is_active?: boolean;
+  member_ids?: string[];
+  createdAt?: string;
+  updatedAt?: string;
+  user_account_id?: string;
+}
+
+export interface ClinicsResponse {
+  status: string;
+  message: string;
+  data: ClinicItem[];
+  pagination?: PaginationResponse;
+}
+
+export interface ClinicDetailResponse {
+  status: string;
+  message: string;
+  data: ClinicItem;
+}
+
 interface ClinicData {
   user_id: string;
   clinic_name: string;
@@ -78,19 +120,46 @@ interface ClinicData {
   };
 }
 
+export interface AppointmentData {
+  _id: string;
+  user_id: string;
+  customer?: string;
+  partner?: string;
+  pet_ids: string[];
+  clinic_id: string;
+  service_ids: string[];
+  date: string;
+  shift: string;
+  status: string;
+  created_by?: string;
+  id: string;
+  createdAt: string;
+  updatedAt: string;
+  cancelled_by?: string;
+}
+
+export interface AppointmentsResponse {
+  status: string;
+  message: string;
+  data: AppointmentData[];
+  pagination: PaginationResponse;
+}
+
+export interface AppointmentDetailResponse {
+  status: string;
+  message: string;
+  data: AppointmentData;
+}
+
 export const registerClinic = async (clinicData: ClinicData) => {
   const token = localStorage.getItem('authToken');
-  if (!token) {
-    throw new Error('No authentication token found');
-  }
+  if (!token) throw new Error('No authentication token found');
+
   try {
     const response = await axiosInstance.post("/register", clinicData, {
-      headers: {
-        'Content-Type': 'application/json',
-        'token': token,
-      },
+      headers: { 'token': token },
     });
-    console.log("API response:", response.data); // Debug
+    console.log("API response:", response.data);
     return response.data;
   } catch (error: any) {
     console.error("Lỗi khi đăng ký phòng khám:", error.response?.data || error.message);
@@ -100,15 +169,11 @@ export const registerClinic = async (clinicData: ClinicData) => {
 
 export const getClinicForms = async (page: number = 1, limit: number = 10) => {
   const token = localStorage.getItem('authToken');
-  if (!token) {
-    throw new Error('No authentication token found');
-  }
+  if (!token) throw new Error('No authentication token found');
+
   try {
     const response = await axiosInstance.get(`/form?page=${page}&limit=${limit}`, {
-      headers: {
-        'Content-Type': 'application/json',
-        'token': token,
-      },
+      headers: { 'token': token },
     });
     return response.data as ClinicFormsResponse;
   } catch (error) {
@@ -119,18 +184,14 @@ export const getClinicForms = async (page: number = 1, limit: number = 10) => {
 
 export const updateClinicFormStatus = async (formId: string, status: string, note?: string) => {
   const token = localStorage.getItem('authToken');
-  if (!token) {
-    throw new Error('No authentication token found');
-  }
+  if (!token) throw new Error('No authentication token found');
+
   try {
     const response = await axiosInstance.post(`/status/${formId}`, {
       status,
       note: note || (status === 'approved' ? 'Phòng khám đủ điều kiện hoạt động' : 'Phòng khám không đủ điều kiện hoạt động')
     }, {
-      headers: {
-        'Content-Type': 'application/json',
-        'token': token,
-      },
+      headers: { 'token': token },
     });
     return response.data;
   } catch (error) {
@@ -139,18 +200,14 @@ export const updateClinicFormStatus = async (formId: string, status: string, not
   }
 };
 
-// Lấy danh sách service (GET /service/all)
 export const getClinicServices = async (page: number = 1, limit: number = 10, search?: string) => {
   const token = localStorage.getItem('authToken');
-  if (!token) {
-    throw new Error('No authentication token found');
-  }
+  if (!token) throw new Error('No authentication token found');
+
   try {
     const params: Record<string, any> = { page, limit };
-    if (search && search.trim()) {
-      params.search = search.trim();
-    }
-    
+    if (search?.trim()) params.search = search.trim();
+
     const response = await axios.get(`${PARTNER_API_URL}/service/all`, {
       params,
       headers: { 'token': token }
@@ -162,12 +219,10 @@ export const getClinicServices = async (page: number = 1, limit: number = 10, se
   }
 };
 
-// Tạo mới service (POST /service)
 export const createClinicService = async (serviceData: any) => {
   const token = localStorage.getItem('authToken');
-  if (!token) {
-    throw new Error('No authentication token found');
-  }
+  if (!token) throw new Error('No authentication token found');
+
   try {
     const response = await axios.post(`${PARTNER_API_URL}/service`, serviceData, {
       headers: { 'token': token }
@@ -179,12 +234,10 @@ export const createClinicService = async (serviceData: any) => {
   }
 };
 
-// Cập nhật service (PUT /service/:id)
 export const updateClinicService = async (serviceId: string, serviceData: any) => {
   const token = localStorage.getItem('authToken');
-  if (!token) {
-    throw new Error('No authentication token found');
-  }
+  if (!token) throw new Error('No authentication token found');
+
   try {
     const response = await axios.put(`${PARTNER_API_URL}/service/${serviceId}`, serviceData, {
       headers: { 'token': token }
@@ -196,12 +249,10 @@ export const updateClinicService = async (serviceId: string, serviceData: any) =
   }
 };
 
-// Xóa service (DELETE /service/:id)
 export const deleteClinicService = async (serviceId: string) => {
   const token = localStorage.getItem('authToken');
-  if (!token) {
-    throw new Error('No authentication token found');
-  }
+  if (!token) throw new Error('No authentication token found');
+
   try {
     const response = await axios.delete(`${PARTNER_API_URL}/service/${serviceId}`, {
       headers: { 'token': token }
@@ -209,7 +260,230 @@ export const deleteClinicService = async (serviceId: string) => {
     return response.data;
   } catch (error: any) {
     console.error("Lỗi khi xóa service:", error);
-    // Throw error với message từ API nếu có
     throw new Error(error.response?.data?.message || 'Không thể xóa dịch vụ');
   }
 };
+
+export const getAppointments = async (page: number = 1, limit: number = 10) => {
+  const token = localStorage.getItem('authToken');
+  if (!token) throw new Error('No authentication token found');
+
+  try {
+    const response = await axios.get(`${HEALTHCARE_API_URL}/appointments`, {
+      params: { page, limit },
+      headers: { 'token': token }
+    });
+    return response.data as AppointmentsResponse;
+  } catch (error) {
+    console.error("Lỗi khi lấy danh sách lịch hẹn:", error);
+    throw error;
+  }
+};
+
+export const getAppointmentDetail = async (appointmentId: string) => {
+  const token = localStorage.getItem('authToken');
+  if (!token) throw new Error('No authentication token found');
+
+  try {
+    const response = await axios.get(`${HEALTHCARE_API_URL}/appointments/${appointmentId}`, {
+      headers: { 'token': token }
+    });
+    return response.data as AppointmentDetailResponse;
+  } catch (error) {
+    console.error("Lỗi khi lấy chi tiết lịch hẹn:", error);
+    throw error;
+  }
+};
+
+export const updateAppointmentStatus = async (
+  appointmentId: string,
+  status: string,
+  cancel_reason?: string
+) => {
+  const token = localStorage.getItem('authToken');
+  if (!token) throw new Error('No authentication token found');
+
+  try {
+    const body: any = { status };
+    if (cancel_reason) body.cancel_reason = cancel_reason;
+
+    const url = `${HEALTHCARE_API_URL}/appointments/${appointmentId}/status`;
+    console.log('Updating appointment status:', { url, method: 'PATCH', body });
+
+    const response = await axios.patch(
+      url,
+      body,
+      { headers: { 'token': token } }
+    );
+    return response.data;
+  } catch (error: any) {
+    console.error("Lỗi khi cập nhật trạng thái lịch hẹn:", error);
+    console.error("Error details:", {
+      message: error?.message,
+      status: error?.response?.status,
+      statusText: error?.response?.statusText,
+      url: error?.config?.url,
+      method: error?.config?.method,
+      data: error?.response?.data
+    });
+    throw error;
+  }
+};
+
+export const sendInvitation = async (email: string, role: string) => {
+  const token = localStorage.getItem('authToken');
+  if (!token) throw new Error('No authentication token found');
+
+  try {
+    const response = await axios.post(
+      `${PARTNER_API_URL}/clinic/invitations`,
+      { email, role },
+      { headers: { 'token': token } }
+    );
+    return response.data;
+  } catch (error: any) {
+    console.error("Lỗi khi gửi lời mời:", error.response?.data || error.message);
+    throw error;
+  }
+};
+
+export const acceptInvitation = async (inviteId: string) => {
+  const token = localStorage.getItem('authToken');
+  if (!token) throw new Error('No authentication token found');
+
+  try {
+    const response = await axios.post(
+      `${PARTNER_API_URL}/clinic/invitations/${inviteId}/accept`,
+      {},
+      { headers: { 'token': token } }
+    );
+    return response.data;
+  } catch (error: any) {
+    console.error("Lỗi khi chấp nhận lời mời:", error.response?.data || error.message);
+    throw error;
+  }
+};
+
+export const declineInvitation = async (inviteId: string) => {
+  const token = localStorage.getItem('authToken');
+  if (!token) throw new Error('No authentication token found');
+
+  try {
+    const response = await axios.post(
+      `${PARTNER_API_URL}/clinic/invitations/${inviteId}/decline`,
+      {},
+      { headers: { 'token': token } }
+    );
+    return response.data;
+  } catch (error: any) {
+    console.error("Lỗi khi từ chối lời mời:", error.response?.data || error.message);
+    throw error;
+  }
+};
+
+/**
+ * Cập nhật thông tin phòng khám
+ * PUT `${API_URL}/${clinicId}`
+ */
+export const updateClinic = async (clinicId: string, clinicData: Partial<ClinicItem>) => {
+  const token = localStorage.getItem('authToken');
+  if (!token) throw new Error('No authentication token found');
+
+  try {
+    const response = await axiosInstance.put(`/${clinicId}`, clinicData, {
+      headers: { 'token': token },
+    });
+    return response.data;
+  } catch (error: any) {
+    console.error(`Lỗi khi cập nhật phòng khám (${clinicId}):`, error?.response?.data || error?.message || error);
+    throw error;
+  }
+};
+
+/**
+ * Xóa phòng khám
+ * DELETE `${API_URL}/${clinicId}`
+ */
+export const removeClinic = async (clinicId: string) => {
+  const token = localStorage.getItem('authToken');
+  if (!token) throw new Error('No authentication token found');
+
+  try {
+    const response = await axiosInstance.delete(`/${clinicId}`, {
+      headers: { 'token': token },
+    });
+    return response.data;
+  } catch (error: any) {
+    console.error(`Lỗi khi xóa phòng khám (${clinicId}):`, error?.response?.data || error?.message || error);
+    throw error;
+  }
+};
+
+/**
+ * Lấy danh sách tất cả phòng khám (có phân trang)
+ * GET `${API_URL}?page=1&limit=5`
+ */
+export const findAllClinics = async (page: number = 1, limit: number = 10, search?: string) => {
+  const token = localStorage.getItem('authToken');
+  if (!token) throw new Error('No authentication token found');
+
+  try {
+    const params: Record<string, any> = { page, limit };
+    if (search?.trim()) params.search = search.trim();
+
+    const response = await axiosInstance.get('/', {
+      params,
+      headers: { 'token': token },
+    });
+
+    return response.data as ClinicsResponse;
+  } catch (error) {
+    console.error('Lỗi khi lấy danh sách phòng khám:', error);
+    throw error;
+  }
+};
+
+/**
+ * Lấy chi tiết phòng khám theo `id` (uuid)
+ * GET `${API_URL}/${clinicId}`
+ */
+export const getClinicDetail = async (clinicId: string) => {
+  const token = localStorage.getItem('authToken');
+  if (!token) throw new Error('No authentication token found');
+
+  try {
+    const response = await axiosInstance.get(`/${clinicId}`, {
+      headers: { 'token': token },
+    });
+
+    return response.data as ClinicDetailResponse;
+  } catch (error) {
+    console.error(`Lỗi khi lấy chi tiết phòng khám (${clinicId}):`, error);
+    throw error;
+  }
+};
+
+/**
+ * Bật / tắt trạng thái active của phòng khám
+ * PATCH `${API_URL}/active/${clinicId}`
+ * body: { is_active: boolean }
+ */
+export const setClinicActive = async (clinicId: string, isActive: boolean) => {
+  const token = localStorage.getItem('authToken');
+  if (!token) throw new Error('No authentication token found');
+
+  try {
+    const response = await axiosInstance.patch(
+      `/active/${clinicId}`,
+      { is_active: isActive },
+      { headers: { 'token': token } }
+    );
+    return response.data;
+  } catch (error: any) {
+    console.error(`Lỗi khi cập nhật trạng thái active phòng khám (${clinicId}):`, error?.response?.data || error?.message || error);
+    throw error;
+  }
+};
+
+export const activateClinic = async (clinicId: string) => setClinicActive(clinicId, true);
+export const deactivateClinic = async (clinicId: string) => setClinicActive(clinicId, false);

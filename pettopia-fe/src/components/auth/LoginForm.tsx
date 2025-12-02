@@ -86,120 +86,153 @@ export default function LoginForm() {
   // Animation thành công
   if (isSuccess) {
     return (
-      <div className="flex flex-col items-center justify-center min-h-screen bg-white text-center">
-        <h2 className="text-2xl font-semibold text-teal-600 mb-4">Đăng nhập thành công!</h2>
-        <div
-          style={{
-            width: "200px",
-            height: "100px",
-            margin: "20px auto",
-            backgroundImage: "url(./sampleimg/cat.gif)",
-            backgroundSize: "cover",
-            borderRadius: "12px",
-          }}
-        ></div>
-        <p className="text-gray-500 text-sm mt-3">Đang chuyển hướng...</p>
+      <div className="flex flex-col items-center justify-center min-h-screen bg-gradient-to-br from-teal-50 to-white">
+        <div className="bg-white rounded-2xl shadow-xl p-8 text-center max-w-md">
+          <div className="mb-4">
+            <svg className="w-20 h-20 mx-auto text-teal-500" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+              <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M9 12l2 2 4-4m6 2a9 9 0 11-18 0 9 9 0 0118 0z" />
+            </svg>
+          </div>
+          <h2 className="text-2xl font-bold text-gray-800 mb-2">Đăng nhập thành công!</h2>
+          <div
+            style={{
+              width: "180px",
+              height: "90px",
+              margin: "16px auto",
+              backgroundImage: "url(./sampleimg/cat.gif)",
+              backgroundSize: "cover",
+              borderRadius: "12px",
+            }}
+          ></div>
+          <p className="text-gray-500 text-sm flex items-center justify-center gap-2">
+            <span className="inline-block w-4 h-4 border-2 border-teal-500 border-t-transparent rounded-full animate-spin"></span>
+            Đang chuyển hướng...
+          </p>
+        </div>
       </div>
     );
   }
 
   return (
-    <div className="flex min-h-full flex-col justify-center px-6 py-12 lg:px-8">
-      <div className="sm:mx-auto sm:w-full sm:max-w-sm">
-        <Image
-          alt="Your Company"
-          src="/sampleimg/logo.png"
-          width={60}
-          height={60}
-          className="mx-auto h-25 w-auto"
-        />
-        <h2 className="mt-10 text-center text-2xl font-bold tracking-tight text-gray-900">
-          Đăng nhập
-        </h2>
-      </div>
+    <div className="flex min-h-screen bg-gradient-to-br from-teal-50 via-white to-cyan-50">
+      <div className="w-full max-w-md m-auto">
+        <div className="bg-white rounded-2xl shadow-xl p-8 mx-4">
+          {/* Logo và tiêu đề */}
+          <div className="text-center mb-8">
+            <div className="inline-block p-3 bg-teal-50 rounded-full mb-4">
+              <Image
+                alt="Logo"
+                src="/sampleimg/logo.png"
+                width={48}
+                height={48}
+                className="w-12 h-12"
+              />
+            </div>
+            <h2 className="text-2xl font-bold text-gray-800">
+              Đăng nhập
+            </h2>
+            <p className="text-gray-500 text-sm mt-2">Đăng nhập với tư cách người dùng</p>
+          </div>
 
-      <div className="mt-10 sm:mx-auto sm:w-full sm:max-w-sm">
-        <form onSubmit={handleSubmit(onSubmit)} className="space-y-6">
-          {serverError && (
-            <p className="text-center text-sm text-red-500">{serverError}</p>
-          )}
+          {/* Form */}
+          <div className="space-y-5">
+            {serverError && (
+              <div className="bg-red-50 border border-red-200 text-red-600 px-4 py-3 rounded-lg text-sm flex items-start gap-2">
+                <svg className="w-5 h-5 flex-shrink-0 mt-0.5" fill="currentColor" viewBox="0 0 20 20">
+                  <path fillRule="evenodd" d="M10 18a8 8 0 100-16 8 8 0 000 16zM8.707 7.293a1 1 0 00-1.414 1.414L8.586 10l-1.293 1.293a1 1 0 101.414 1.414L10 11.414l1.293 1.293a1 1 0 001.414-1.414L11.414 10l1.293-1.293a1 1 0 00-1.414-1.414L10 8.586 8.707 7.293z" clipRule="evenodd" />
+                </svg>
+                <span>{serverError}</span>
+              </div>
+            )}
 
-          <div>
-            <label htmlFor="username" className="block text-sm font-medium text-gray-900">
-              Tên đăng nhập
-            </label>
-            <div className="mt-2">
+            {/* Tên đăng nhập */}
+            <div>
+              <label htmlFor="username" className="block text-sm font-medium text-gray-700 mb-2">
+                Tên đăng nhập
+              </label>
               <input
                 id="username"
                 {...register('username', { required: true })}
                 type="text"
-                placeholder="Tên đăng nhập"
-                className="block w-full bg-white px-3 py-1.5 border-b border-gray-300 text-gray-900 placeholder:text-gray-500 focus:border-teal-600 focus:outline-none sm:text-sm"
+                placeholder="Nhập tên đăng nhập"
+                className="block w-full px-4 py-2.5 bg-gray-50 border border-gray-200 rounded-lg text-gray-900 placeholder:text-gray-400 focus:bg-white focus:border-teal-500 focus:ring-2 focus:ring-teal-100 focus:outline-none transition-all text-sm"
               />
               {errors.username && (
-                <p className="text-sm text-red-400 mt-1">Tên đăng nhập là bắt buộc</p>
-              )}
-            </div>
-          </div>
-
-          <div>
-            <div className="flex items-center justify-between">
-              <label htmlFor="password" className="block text-sm font-medium text-gray-900">
-                Mật khẩu
-              </label>
-              <div className="text-sm">
-                <a href="#" className="font-semibold text-teal-500 hover:text-teal-300">
-                  Quên mật khẩu?
-                </a>
-              </div>
-            </div>
-            <div className="mt-2 relative">
-              <input
-                id="password"
-                {...register('password', { required: true, minLength: 6 })}
-                type={showPassword ? 'text' : 'password'}
-                placeholder="*******"
-                className="block w-full bg-white px-3 py-1.5 pr-10 border-b border-gray-300 text-gray-900 placeholder:text-gray-500 focus:border-teal-600 focus:outline-none sm:text-sm"
-              />
-              <button
-                type="button"
-                onClick={() => setShowPassword(!showPassword)}
-                className="absolute right-2 top-1/2 -translate-y-1/2 text-gray-500 hover:text-teal-500"
-                tabIndex={-1}
-              >
-                {showPassword ? (
-                  <EyeSlashIcon className="h-5 w-5" />
-                ) : (
-                  <EyeIcon className="h-5 w-5" />
-                )}
-              </button>
-              {errors.password && (
-                <p className="text-sm text-red-400 mt-1">
-                  Mật khẩu là bắt buộc (tối thiểu 6 ký tự)
+                <p className="text-xs text-red-500 mt-1.5 flex items-center gap-1">
+                  <span>●</span> Vui lòng nhập tên đăng nhập
                 </p>
               )}
             </div>
-          </div>
 
-          <div>
+            {/* Mật khẩu */}
+            <div>
+              <label htmlFor="password" className="block text-sm font-medium text-gray-700 mb-2">
+                Mật khẩu
+              </label>
+              <div className="relative">
+                <input
+                  id="password"
+                  {...register('password', { required: true, minLength: 6 })}
+                  type={showPassword ? 'text' : 'password'}
+                  placeholder="Nhập mật khẩu"
+                  className="block w-full px-4 py-2.5 pr-11 bg-gray-50 border border-gray-200 rounded-lg text-gray-900 placeholder:text-gray-400 focus:bg-white focus:border-teal-500 focus:ring-2 focus:ring-teal-100 focus:outline-none transition-all text-sm"
+                />
+                <button
+                  type="button"
+                  onClick={() => setShowPassword(!showPassword)}
+                  className="absolute right-3 top-1/2 -translate-y-1/2 text-gray-400 hover:text-teal-500 transition-colors"
+                  tabIndex={-1}
+                >
+                  {showPassword ? (
+                    <EyeSlashIcon className="h-5 w-5" />
+                  ) : (
+                    <EyeIcon className="h-5 w-5" />
+                  )}
+                </button>
+              </div>
+              {errors.password && (
+                <p className="text-xs text-red-500 mt-1.5 flex items-center gap-1">
+                  <span>●</span> Mật khẩu phải có ít nhất 6 ký tự
+                </p>
+              )}
+            </div>
+
+            {/* Nút đăng nhập */}
             <button
-              type="submit"
-              className="flex w-full justify-center rounded-md bg-teal-500 px-3 py-1.5 text-sm font-semibold text-white hover:bg-teal-600 focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-teal-700"
+              type="button"
+              onClick={handleSubmit(onSubmit)}
+              className="w-full bg-teal-500 hover:bg-teal-600 text-white font-semibold py-2.5 rounded-lg transition-all duration-200 shadow-md hover:shadow-lg transform hover:-translate-y-0.5 text-sm"
             >
               Đăng nhập
             </button>
           </div>
-        </form>
 
-        <p className="mt-10 text-center text-sm text-gray-400">
-          Chưa có tài khoản?{' '}
-          <a
-            href="http://localhost:4001/auth/register"
-            className="font-semibold text-teal-500 hover:text-teal-300"
-          >
-            Đăng ký ngay
-          </a>
-        </p>
+          {/* Đăng ký */}
+          <div className="mt-6 pt-6 border-t border-gray-100">
+            <p className="text-center text-sm text-gray-600">
+              Chưa có tài khoản?{' '}
+              <a
+                href="/auth/register"
+                className="font-semibold text-teal-500 hover:text-teal-600 transition-colors"
+              >
+                Đăng ký ngay
+              </a>
+            </p>
+          </div>
+
+          {/* Quên mật khẩu */}
+          <div className="mt-4 text-center">
+            <a
+               href="/auth/forgot"
+              className="text-sm text-gray-500 hover:text-teal-500 transition-colors inline-flex items-center gap-1"
+            >
+              <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M8.228 9c.549-1.165 2.03-2 3.772-2 2.21 0 4 1.343 4 3 0 1.4-1.278 2.575-3.006 2.907-.542.104-.994.54-.994 1.093m0 3h.01M21 12a9 9 0 11-18 0 9 9 0 0118 0z" />
+              </svg>
+              Quên mật khẩu?
+            </a>
+          </div>
+        </div>
       </div>
     </div>
   );

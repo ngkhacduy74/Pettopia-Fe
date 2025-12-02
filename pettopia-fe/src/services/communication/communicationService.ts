@@ -1,13 +1,20 @@
 import axios from "axios";
 
-const API_BASE_URL = process.env.NEXT_PUBLIC_API_URL || 'http://localhost:3000/api/v1';
+const API_BASE_URL = process.env.NEXT_PUBLIC_PETTOPIA_API_URL; // SỬA: chỉ dùng .env, bỏ fallback sau
+
+type PostsEnvelope = {
+  data?: Post[];
+  posts?: Post[];
+  items?: Post[];
+  content?: Post[];
+  results?: Post[];
+};
 
 export interface Author {
   user_id: string;
   fullname: string;
   avatar: string | null;
 }
-
 
 export interface Post {
     _id: string;
@@ -55,7 +62,7 @@ export interface UpdatePostData {
   title?: string;
   content?: string;
   tags?: string[];
-  images?: string[];
+  images?: Array<string | File>;
 }
 
 export interface CommentData {
@@ -105,7 +112,6 @@ class CommunicationService {
     return headers;
   }
 
-
   private async handleResponse<T>(response: Response): Promise<T> {
     if (!response.ok) {
       const errorData = await response.json().catch(() => ({}));
@@ -152,6 +158,13 @@ class CommunicationService {
   }
 
   /**
+   * Backwards compatible alias for getPostsByUserId used by legacy screens
+   */
+  async getUserPosts(userId: string): Promise<Post[]> {
+    return this.getPostsByUserId(userId);
+  }
+
+  /**
    * Create a new post
    * Endpoint: POST /api/v1/communication/create
    */
@@ -191,10 +204,31 @@ class CommunicationService {
    * Endpoint: PATCH /api/v1/communication/:id
    */
   async updatePost(postId: string, data: UpdatePostData): Promise<Post> {
+    const formData = new FormData();
+    
+    if (data.title) formData.append('title', data.title);
+    if (data.content) formData.append('content', data.content);
+    if (data.tags) formData.append('tags', JSON.stringify(data.tags));
+    
+    if (data.images && data.images.length > 0) {
+      // Nếu là File objects
+      for (const image of data.images) {
+        if (image instanceof File) {
+          formData.append('images', image);
+        } else if (typeof image === 'string') {
+          // Nếu là URL string, append trực tiếp
+          formData.append('images', image);
+        }
+      }
+    }
+
     const response = await fetch(`${this.baseUrl}/${postId}`, {
       method: 'PATCH',
-      headers: this.getHeaders(),
-      body: JSON.stringify(data),
+      headers: {
+        ...(this.token && { 'Authorization': `Bearer ${this.token}` }),
+        // Do NOT set Content-Type; browser will set multipart boundary
+      },
+      body: formData,
     });
     return this.handleResponse<Post>(response);
   }
@@ -203,30 +237,36 @@ class CommunicationService {
    * Delete a post
    * Endpoint: DELETE /api/v1/communication/:id
    */
-  async deletePost(postId: string): Promise<{ message: string }> {
+  async deletePost(postId: string): Promise<void> {
     const response = await fetch(`${this.baseUrl}/${postId}`, {
       method: 'DELETE',
       headers: this.getHeaders(),
     });
-    return this.handleResponse<{ message: string }>(response);
+    if (!response.ok) throw new Error('Failed to delete post');
   }
 
   /**
    * Hide/Unhide a post (soft delete)
    */
-  async toggleHidePost(postId: string): Promise<Post> {
-    const response = await fetch(`${this.baseUrl}/hide/${postId}`, {
+  async toggleHidePost(postId: string, isHidden: boolean): Promise<Post> {
+    const response = await fetch(`${this.baseUrl}/${postId}/hide`, {
       method: 'PATCH',
       headers: this.getHeaders(),
+      body: JSON.stringify({ isHidden }),
     });
     return this.handleResponse<Post>(response);
   }
 
-  // ==================== LIKE OPERATIONS ====================
+  async hidePost(postId: string): Promise<Post> {
+    return this.toggleHidePost(postId, true);
+  }
+
+  async unhidePost(postId: string): Promise<Post> {
+    return this.toggleHidePost(postId, false);
+  }
 
   /**
    * Like a post
-   * Endpoint: POST /api/v1/communication/:id/like
    */
   async likePost(postId: string): Promise<{ message: string; likeCount: number }> {
     const response = await fetch(`${this.baseUrl}/${postId}/like`, {
@@ -238,7 +278,6 @@ class CommunicationService {
 
   /**
    * Unlike a post
-   * Endpoint: DELETE /api/v1/communication/:id/like
    */
   async unlikePost(postId: string): Promise<{ message: string; likeCount: number }> {
     const response = await fetch(`${this.baseUrl}/${postId}/like`, {
@@ -248,25 +287,13 @@ class CommunicationService {
     return this.handleResponse<{ message: string; likeCount: number }>(response);
   }
 
-  /**
-   * Check if user liked a post
-   */
-  async checkLikeStatus(postId: string): Promise<{ isLiked: boolean }> {
-    const response = await fetch(`${this.baseUrl}/${postId}/like/check`, {
-      method: 'GET',
-      headers: this.getHeaders(),
-    });
-    return this.handleResponse<{ isLiked: boolean }>(response);
-  }
-
   // ==================== COMMENT OPERATIONS ====================
 
   /**
    * Get comments for a post
-   * Endpoint: GET /api/v1/communication/:id/comment
    */
   async getComments(postId: string): Promise<Comment[]> {
-    const response = await fetch(`${this.baseUrl}/${postId}/comment`, {
+    const response = await fetch(`${this.baseUrl}/${postId}/comments`, {
       method: 'GET',
       headers: this.getHeaders(),
     });
@@ -274,24 +301,21 @@ class CommunicationService {
   }
 
   /**
-   * Create a comment
+   * Create a comment or reply
    * Endpoint: POST /api/v1/communication/:id/comment
    */
   async createComment(data: CommentData): Promise<Comment> {
     const response = await fetch(`${this.baseUrl}/${data.post_id}/comment`, {
       method: 'POST',
       headers: this.getHeaders(),
-      body: JSON.stringify({
-        user_id: data.user_id,
-        content: data.content,
-        ...(data.parent_comment_id !== undefined ? { parent_comment_id: data.parent_comment_id } : {}),
-      }),
+      body: JSON.stringify(data),
     });
     return this.handleResponse<Comment>(response);
   }
 
   /**
    * Update a comment
+   * Endpoint: PATCH /api/v1/communication/:id/comment/:comment_id
    */
   async updateComment(postId: string, commentId: string, content: string): Promise<Comment> {
     const response = await fetch(`${this.baseUrl}/${postId}/comment/${commentId}`, {
@@ -392,10 +416,11 @@ class CommunicationService {
       headers: this.getHeaders(),
     });
     
-    const data = await this.handleResponse<Post[]>(response);
+    const data = await this.handleResponse<Post[] | PostsEnvelope>(response);
+    const normalized = this.extractPostsArray(data);
     
     // Additional client-side filtering if needed
-    return data
+    return normalized
         .filter(post => !post.isHidden)
         .filter(post => {
             const postDate = new Date(post.createdAt);
@@ -404,6 +429,24 @@ class CommunicationService {
         .sort((a, b) => b.likeCount - a.likeCount)
         .slice(0, limit);
 }
+
+  private extractPostsArray(response: Post[] | PostsEnvelope): Post[] {
+    if (Array.isArray(response)) {
+      return response;
+    }
+
+    if (response && typeof response === 'object') {
+      const possibleKeys: (keyof PostsEnvelope)[] = ['data', 'posts', 'items', 'content', 'results'];
+      for (const key of possibleKeys) {
+        const value = response[key];
+        if (Array.isArray(value)) {
+          return value;
+        }
+      }
+    }
+
+    return [];
+  }
 
   // ==================== UTILITY METHODS ====================
 
@@ -441,20 +484,28 @@ class CommunicationService {
     }
   }
 
-  /**
-   * Format time ago
-   */
-  formatTimeAgo(dateString: string): string {
-    const date = new Date(dateString);
-    const now = new Date();
-    const diffInSeconds = Math.floor((now.getTime() - date.getTime()) / 1000);
+  formatDate(date: string | Date): string {
+    const d = new Date(date);
+    return d.toLocaleDateString('vi-VN', {
+      year: 'numeric',
+      month: 'long',
+      day: 'numeric'
+    });
+  }
 
-    if (diffInSeconds < 60) return `${diffInSeconds} giây trước`;
-    if (diffInSeconds < 3600) return `${Math.floor(diffInSeconds / 60)} phút trước`;
-    if (diffInSeconds < 86400) return `${Math.floor(diffInSeconds / 3600)} giờ trước`;
-    if (diffInSeconds < 2592000) return `${Math.floor(diffInSeconds / 86400)} ngày trước`;
+  formatTimeAgo(date: string | Date): string {
+    const now = new Date();
+    const d = new Date(date);
+    const seconds = Math.floor((now.getTime() - d.getTime()) / 1000);
     
-    return date.toLocaleDateString('vi-VN');
+    if (seconds < 60) return 'Vừa xong';
+    const minutes = Math.floor(seconds / 60);
+    if (minutes < 60) return `${minutes}m trước`;
+    const hours = Math.floor(minutes / 60);
+    if (hours < 24) return `${hours}h trước`;
+    const days = Math.floor(hours / 24);
+    if (days < 7) return `${days}d trước`;
+    return d.toLocaleDateString('vi-VN');
   }
 
   /**
@@ -466,6 +517,23 @@ class CommunicationService {
       headers: this.getHeaders(),
     });
     return this.handleResponse<Post>(response);
+  }
+
+  private parsePost(data: any): Post {
+    return {
+      ...data,
+      tags: data.tags?.map((tag: string) => {
+        // Nếu tag là JSON string, parse nó
+        if (typeof tag === 'string' && tag.startsWith('[')) {
+          try {
+            return JSON.parse(tag);
+          } catch {
+            return tag;
+          }
+        }
+        return tag;
+      }).flat() || [],
+    };
   }
 }
 

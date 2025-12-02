@@ -48,7 +48,12 @@ export function middleware(request: NextRequest) {
       pathname.startsWith('/vet') ||
       pathname.startsWith('/user')
     ) {
-      return NextResponse.redirect(new URL('/', request.url));
+      const response = NextResponse.redirect(new URL('/auth/login', request.url));
+      // Thêm header để ngăn browser cache trang đó
+      response.headers.set('Cache-Control', 'no-cache, no-store, must-revalidate');
+      response.headers.set('Pragma', 'no-cache');
+      response.headers.set('Expires', '0');
+      return response;
     }
     return NextResponse.next();
   }
@@ -60,10 +65,19 @@ export function middleware(request: NextRequest) {
   });
 
   if (!isAuthorized) {
-    return NextResponse.redirect(new URL('/', request.url));
+    const response = NextResponse.redirect(new URL('/', request.url));
+    response.headers.set('Cache-Control', 'no-cache, no-store, must-revalidate');
+    response.headers.set('Pragma', 'no-cache');
+    response.headers.set('Expires', '0');
+    return response;
   }
 
-  return NextResponse.next();
+  const response = NextResponse.next();
+  // Thêm header ngăn cache cho tất cả protected routes
+  response.headers.set('Cache-Control', 'no-cache, no-store, must-revalidate');
+  response.headers.set('Pragma', 'no-cache');
+  response.headers.set('Expires', '0');
+  return response;
 }
 
 // Configure matcher to apply middleware to specific paths

@@ -1,9 +1,9 @@
 'use client'
 import React, { useEffect, useMemo, useState } from 'react';
-import { Sun, Sunset, Moon, Clock } from 'lucide-react';
+import { Sun, Sunset, Moon, Clock, Edit, Trash2, Loader2 } from 'lucide-react';
 
 // API Configuration
-const API_BASE_URL = 'http://localhost:3000/api/v1/partner/clinic/shift';
+const API_BASE_URL = `${process.env.NEXT_PUBLIC_PETTOPIA_API_URL}/partner/clinic/shift`;
 const getToken = () => localStorage.getItem('authToken') || '';
 
 // API Services
@@ -81,6 +81,8 @@ export default function ClinicShift() {
   const [isModalOpen, setIsModalOpen] = useState(false);
   const [deleteId, setDeleteId] = useState<string | undefined>(undefined);
   const [isDeleteModalOpen, setIsDeleteModalOpen] = useState(false);
+  const [editingIdAction, setEditingIdAction] = useState<string | undefined>(undefined);
+  const [deletingIdAction, setDeletingIdAction] = useState<string | undefined>(undefined);
 
   const [form, setForm] = useState<ClinicShift>({
     shift: 'Morning',
@@ -210,6 +212,7 @@ export default function ClinicShift() {
 
   async function handleDelete() {
     if (!deleteId) return;
+    setDeletingIdAction(deleteId);
     setLoading(true);
     setError(null);
     setSuccessMessage(null);
@@ -224,6 +227,7 @@ export default function ClinicShift() {
       setError(e?.message || 'Không thể xóa ca làm việc');
     } finally {
       setLoading(false);
+      setDeletingIdAction(undefined);
     }
   }
 
@@ -296,7 +300,7 @@ export default function ClinicShift() {
 
   return (
     <div className="min-h-screen ">
-      <div className="max-w-7xl mx-auto p-6">
+      <div className="max-w-7xl mx-auto">
         {/* Header */}
         <div className="mb-8 flex flex-col gap-4 md:flex-row md:items-center md:justify-between">
           <div>
@@ -370,9 +374,37 @@ export default function ClinicShift() {
                           {s.is_active ? 'Hoạt động' : 'Tạm ngưng'}
                         </span>
                       </td>
-                      <td className="px-6 py-5 text-center text-sm">
-                        <button onClick={() => openModal(s)} className="text-teal-600 hover:text-teal-800 font-medium mr-4">Chỉnh sửa</button>
-                        <button onClick={() => openDeleteModal(s.id!)} className="text-red-600 hover:text-red-800 font-medium">Xóa</button>
+                      <td className="px-6 py-5 text-center">
+                        <div className="flex items-center justify-center gap-3">
+                          <button 
+                            onClick={() => {
+                              setEditingIdAction(s.id);
+                              openModal(s);
+                              setTimeout(() => setEditingIdAction(undefined), 100);
+                            }}
+                            disabled={loading}
+                            className="group relative"
+                            title="Chỉnh sửa ca làm việc"
+                          >
+                            {editingIdAction === s.id ? (
+                              <Loader2 className="h-5 w-5 text-gray-400 animate-spin" />
+                            ) : (
+                              <Edit className="h-5 w-5 text-teal-600 hover:text-teal-800 transition" />
+                            )}
+                          </button>
+                          <button 
+                            onClick={() => openDeleteModal(s.id!)} 
+                            disabled={loading}
+                            className="group relative"
+                            title="Xóa ca làm việc"
+                          >
+                            {deletingIdAction === s.id ? (
+                              <Loader2 className="h-5 w-5 text-gray-400 animate-spin" />
+                            ) : (
+                              <Trash2 className="h-5 w-5 text-red-600 hover:text-red-800 transition" />
+                            )}
+                          </button>
+                        </div>
                       </td>
                     </tr>
                   ))

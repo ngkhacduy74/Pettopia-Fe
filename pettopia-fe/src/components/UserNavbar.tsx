@@ -1,7 +1,11 @@
+'use client'
+
 import { useState, useEffect, useRef, JSX } from 'react';
-import { parseJwt, isTokenExpired } from '../utils/jwt';
+import { parseJwt, isTokenExpired } from '@/utils/jwt';
+import { logoutUser } from '@/services/auth/authService';
 import Link from 'next/link';
 import { usePathname, useRouter } from 'next/navigation';
+import { getPetsByOwner, type PetDetailResponse } from '@/services/petcare/petService';
 
 interface UserData {
   userId: string;
@@ -22,17 +26,13 @@ interface UserData {
   };
 }
 
-interface Pet {
-  id: string | number;
-  name: string;
-  species?: string;
-  type?: string;
-  breed?: string;
+type Pet = PetDetailResponse & {
   image?: string;
   imageUrl?: string;
   photo?: string;
-  avatar_url?: string;
-}
+  avatar?: string;
+  type?: string;
+};
 
 interface UserNavbarProps {
   setShowSearch: (v: boolean) => void;
@@ -62,8 +62,6 @@ export default function UserNavbar({ setShowSearch, showSearch }: UserNavbarProp
   const searchInputRef = useRef<HTMLInputElement>(null);
 
   const menuItems: MenuItem[] = [
-
-
     {
       id: 'home',
       name: 'Trang chủ',
@@ -73,10 +71,10 @@ export default function UserNavbar({ setShowSearch, showSearch }: UserNavbarProp
       keywords: ['trang chủ', 'home', 'dashboard', 'tổng quan']
     },
     {
-      id: 'pet-list',
+      id: 'list',
       name: 'Danh sách thú cưng',
       icon: <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 20 20" fill="currentColor" className="size-5"><path d="M10 9a3 3 0 100-6 3 3 0 000 6zM6 8a2 2 0 11-4 0 2 2 0 014 0zM1.49 15.326a.78.78 0 01-.358-.442 3 3 0 014.308-3.516 6.484 6.484 0 00-1.905 3.959c-.023.222-.014.442.025.654a4.97 4.97 0 01-2.07-.655zM16.44 15.98a4.97 4.97 0 002.07-.654.78.78 0 00.357-.442 3 3 0 00-4.308-3.517 6.484 6.484 0 011.907 3.96 2.32 2.32 0 01-.026.654zM18 8a2 2 0 11-4 0 2 2 0 014 0zM5.304 16.19a.844.844 0 01-.277-.71 5 5 0 019.947 0 .843.843 0 01-.277.71A6.975 6.975 0 0110 18a6.974 6.974 0 01-4.696-1.81z" /></svg>,
-      path: '/user/pet-list',
+      path: '/user/pet/list',
       category: 'Thú cưng',
       keywords: ['thú cưng', 'pet', 'danh sách', 'list', 'quản lý pet']
     },
@@ -84,7 +82,7 @@ export default function UserNavbar({ setShowSearch, showSearch }: UserNavbarProp
       id: 'register-pet',
       name: 'Đăng ký thú cưng mới',
       icon: <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 20 20" fill="currentColor" className="size-5"><path d="M10.75 4.75a.75.75 0 00-1.5 0v4.5h-4.5a.75.75 0 000 1.5h4.5v4.5a.75.75 0 001.5 0v-4.5h4.5a.75.75 0 000-1.5h-4.5v-4.5z" /></svg>,
-      path: '/user/register-pet',
+      path: '/user/pet/new',
       category: 'Thú cưng',
       keywords: ['đăng ký', 'thêm', 'register', 'add', 'pet mới', 'thú cưng mới']
     },
@@ -92,19 +90,18 @@ export default function UserNavbar({ setShowSearch, showSearch }: UserNavbarProp
       id: 'community',
       name: 'Cộng đồng Pettopia',
       icon: <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 20 20" fill="currentColor" className="size-5"><path d="M10 9a3 3 0 100-6 3 3 0 000 6zM6 8a2 2 0 11-4 0 2 2 0 014 0zM1.49 15.326a.78.78 0 01-.358-.442 3 3 0 014.308-3.516 6.484 6.484 0 00-1.905 3.959c-.023.222-.014.442.025.654a4.97 4.97 0 01-2.07-.655zM16.44 15.98a4.97 4.97 0 002.07-.654.78.78 0 00.357-.442 3 3 0 00-4.308-3.517 6.484 6.484 0 011.907 3.96 2.32 2.32 0 01-.026.654zM18 8a2 2 0 11-4 0 2 2 0 014 0zM5.304 16.19a.844.844 0 01-.277-.71 5 5 0 019.947 0 .843.843 0 01-.277.71A6.975 6.975 0 0110 18a6.974 6.974 0 01-4.696-1.81z" /></svg>,
-      path: '/user/community/mainPage',
+      path: '/user/community',
       category: 'Cộng đồng',
       keywords: ['cộng đồng', 'community', 'pettopia', 'social', 'bạn bè']
     },
-
-        {
-      id: 'manage-posts',
+    {
+      id: 'manage',
       name: 'Quản lý bài viết',
       icon: <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 20 20" fill="currentColor" className="size-5">
         <path d="M3 4a1 1 0 011-1h12a1 1 0 011 1v2a1 1 0 01-1 1H4a1 1 0 01-1-1V4zM3 8a1 1 0 011-1h12a1 1 0 011 1v8a1 1 0 01-1 1H4a1 1 0 01-1-1V8zM4 9v6h12V9H4z" />
         <path d="M7 11h2v2H7v-2zm4 0h2v2h-2v-2zm4 0h2v2h-2v-2z" />
       </svg>,
-      path: '/user/community/manage-posts',
+      path: '/user/community/manage',
       category: 'Cộng đồng',
       keywords: ['quản lý', 'bài viết', 'post', 'manage', 'nội dung', 'content']
     },
@@ -112,15 +109,15 @@ export default function UserNavbar({ setShowSearch, showSearch }: UserNavbarProp
       id: 'booking',
       name: 'Đặt lịch khám',
       icon: <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 20 20" fill="currentColor" className="size-5"><path fillRule="evenodd" d="M5.75 2a.75.75 0 01.75.75V4h7V2.75a.75.75 0 011.5 0V4h.25A2.75 2.75 0 0118 6.75v8.5A2.75 2.75 0 0115.25 18H4.75A2.75 2.75 0 012 15.25v-8.5A2.75 2.75 0 014.75 4H5V2.75A.75.75 0 015.75 2zm-1 5.5c-.69 0-1.25.56-1.25 1.25v6.5c0 .69.56 1.25 1.25 1.25h10.5c.69 0 1.25-.56 1.25-1.25v-6.5c0-.69-.56-1.25-1.25-1.25H4.75z" clipRule="evenodd" /></svg>,
-      path: '/user/user-booking',
+      path: '/user/appointments/booking',
       category: 'Đặt lịch',
-      keywords: ['lịch khám', 'booking', 'appointment', 'đặt lịch', 'khám bệnh', 'veterinary', 'bác sĩ thú y', 'đặt lịch', 'khám']
+      keywords: ['lịch khám', 'booking', 'appointment', 'đặt lịch', 'khám bệnh', 'veterinary', 'bác sĩ thú y']
     },
     {
       id: 'view-appointments',
       name: 'Xem lịch khám',
-      icon: <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 20 20" fill="currentColor" className="size-5"><path d="M10.5 1.5H5.75A2.75 2.75 0 003 4.25v11A2.75 2.75 0 005.75 18h8.5A2.75 2.75 0 0117 15.25v-11A2.75 2.75 0 0014.25 1.5H10.5z" /><path d="M7 5h6M7 9h6M7 13h3" fill="white" opacity="0.3"/></svg>,
-      path: '/user/view-appointments',
+      icon: <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 20 20" fill="currentColor" className="size-5"><path d="M10.5 1.5H5.75A2.75 2.75 0 003 4.25v11A2.75 2.75 0 005.75 18h8.5A2.75 2.75 0 0117 15.25v-11A2.75 2.75 0 0014.25 1.5H10.5z" /><path d="M7 5h6M7 9h6M7 13h3" fill="white" opacity="0.3" /></svg>,
+      path: '/user/appointments/list',
       category: 'Đặt lịch',
       keywords: ['xem', 'lịch khám', 'appointments', 'lịch hẹn', 'quản lý', 'lịch sử']
     },
@@ -180,7 +177,8 @@ export default function UserNavbar({ setShowSearch, showSearch }: UserNavbarProp
 
         if (isTokenExpired(token)) {
           console.error('Token expired');
-          localStorage.removeItem("authToken");
+          // Gọi hàm logout tối ưu để xoá tất cả dữ liệu
+          logoutUser();
           router.replace('/auth/login');
           return;
         }
@@ -219,26 +217,16 @@ export default function UserNavbar({ setShowSearch, showSearch }: UserNavbarProp
     loadUserDataFromToken();
   }, []);
 
+  // ✅ Load pets từ service
   useEffect(() => {
     const fetchPets = async () => {
       if (!userData?.userId) return;
 
       try {
         setLoadingPets(true);
-        const apiUrl = `http://localhost:3000/api/v1/pet/owner/${userData.userId}`;
-        const response = await fetch(apiUrl, {
-          headers: {
-            'Accept': 'application/json',
-          },
-        });
-
-        if (!response.ok) {
-          throw new Error(`Không thể tải danh sách thú cưng`);
-        }
-
-        const data = await response.json();
-        const petsData = Array.isArray(data.data) ? data.data : Array.isArray(data) ? data : [];
-        setPets(petsData.slice(0, 5));
+        // ✅ Sử dụng service thay vì fetch trực tiếp
+        const data = await getPetsByOwner(userData.userId);
+        setPets(data.slice(0, 5));
       } catch (error) {
         console.error('Error fetching pets:', error);
         setPets([]);
@@ -263,9 +251,13 @@ export default function UserNavbar({ setShowSearch, showSearch }: UserNavbarProp
   };
 
   const handleLogoutClick = () => {
-    setIsDropdownOpen(false);
-    localStorage.removeItem("authToken");
-    router.replace('/auth/login');
+    logoutUser();
+    setTimeout(() => {
+      window.location.href = '/auth/login';
+      if (window.history && window.history.length > 1) {
+        window.history.forward();
+      }
+    }, 500);
   };
 
   const getInitials = (name: string) => {
@@ -396,9 +388,9 @@ export default function UserNavbar({ setShowSearch, showSearch }: UserNavbarProp
             <div>
               <div className="text-xs text-teal-600 font-semibold px-3 mb-2 uppercase tracking-wide">Thú cưng của tôi</div>
               <div className="space-y-1">
-                <Link href="/user/pet-list">
+                <Link href="/user/pet/list">
                   <button className={`w-full flex items-center gap-3 px-3 py-2 rounded-lg text-sm transition-colors cursor-pointer
-                    ${pathname === '/user/pet-list'
+                    ${pathname === '/user/pet/list'
                       ? 'bg-gradient-to-r from-teal-500 to-cyan-600 text-white shadow-sm'
                       : 'hover:bg-teal-50 text-gray-700'}`}>
                     <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 20 20" fill="currentColor" className="size-5">
@@ -408,9 +400,9 @@ export default function UserNavbar({ setShowSearch, showSearch }: UserNavbarProp
                   </button>
                 </Link>
 
-                <Link href="/user/register-pet">
+                <Link href="/user/pet/new">
                   <button className={`w-full flex items-center gap-3 px-3 py-2 rounded-lg text-sm transition-colors cursor-pointer
-                    ${pathname === '/user/register-pet'
+                    ${pathname === '/user/pet/new'
                       ? 'bg-gradient-to-r from-teal-500 to-cyan-600 text-white shadow-sm'
                       : 'hover:bg-teal-50 text-gray-700'}`}>
                     <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 20 20" fill="currentColor" className="size-5">
@@ -426,9 +418,9 @@ export default function UserNavbar({ setShowSearch, showSearch }: UserNavbarProp
               <div className="text-xs text-teal-600 font-semibold px-3 mb-2 uppercase tracking-wide">Cộng đồng</div>
               <div className="space-y-1">
                 {/* Trang chủ cộng đồng */}
-                <Link href="/user/community/mainPage">
+                <Link href="/user/community">
                   <button className={`w-full flex items-center gap-3 px-3 py-2 rounded-lg text-sm transition-colors cursor-pointer
-        ${pathname === '/user/community/mainPage'
+        ${pathname === '/user/community'
                       ? 'bg-gradient-to-r from-teal-500 to-teal-700 text-white shadow-sm'
                       : 'hover:bg-teal-50 text-gray-700'}`}>
                     <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 20 20" fill="currentColor" className="size-5">
@@ -439,9 +431,9 @@ export default function UserNavbar({ setShowSearch, showSearch }: UserNavbarProp
                 </Link>
 
                 {/* Quản lý bài viết - MỚI */}
-                <Link href="/user/community/manage-posts">
+                <Link href="/user/community/manage">
                   <button className={`w-full flex items-center gap-3 px-3 py-2 rounded-lg text-sm transition-colors cursor-pointer
-        ${pathname === '/user/community/manage-posts'
+        ${pathname === '/user/community/manage'
                       ? 'bg-gradient-to-r from-teal-500 to-teal-700 text-white shadow-sm'
                       : 'hover:bg-teal-50 text-gray-700'}`}>
                     <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 20 20" fill="currentColor" className="size-5">
@@ -449,7 +441,6 @@ export default function UserNavbar({ setShowSearch, showSearch }: UserNavbarProp
                       <path d="M7 11h2v2H7v-2zm4 0h2v2h-2v-2zm4 0h2v2h-2v-2z" />
                     </svg>
                     <span>Quản lý post</span>
-                    <span className="ml-auto text-xs bg-gray-100 text-gray-500 px-2 py-0.5 rounded">Sắp có</span>
                   </button>
                 </Link>
               </div>
@@ -459,7 +450,7 @@ export default function UserNavbar({ setShowSearch, showSearch }: UserNavbarProp
             <div>
               <div className="text-xs text-teal-600 font-semibold px-3 mb-2 uppercase tracking-wide">Đặt lịch & Y tế</div>
               <div className="space-y-1">
-                <Link href="/user/user-booking">
+                <Link href="/user/appointments/booking">
                   <button className={`w-full flex items-center gap-3 px-3 py-2 rounded-lg text-sm transition-colors cursor-pointer
                     ${pathname === '/user/user-booking'
                       ? 'bg-gradient-to-r from-teal-500 to-indigo-600 text-white shadow-sm'
@@ -471,7 +462,7 @@ export default function UserNavbar({ setShowSearch, showSearch }: UserNavbarProp
                   </button>
                 </Link>
 
-                <Link href="/user/view-appointments">
+                <Link href="/user/appointments/list">
                   <button className={`w-full flex items-center gap-3 px-3 py-2 rounded-lg text-sm transition-colors cursor-pointer
                     ${pathname === '/user/view-appointments'
                       ? 'bg-gradient-to-r from-teal-500 to-indigo-600 text-white shadow-sm'
@@ -505,9 +496,9 @@ export default function UserNavbar({ setShowSearch, showSearch }: UserNavbarProp
                 ) : pets.length > 0 ? (
                   <>
                     {pets.map((pet) => (
-                      <Link key={pet.id} href={`/user/user-pet/${pet.id}`}>
-                        <button className={`w-full flex items-center gap-3 px-3 py-2 rounded-lg text-sm transition-colors
-                          ${pathname === `/user/user-pet/${pet.id}`
+                      <Link key={pet.id} href={`/user/pet/${pet.id}`}>
+                        <button className={`w-full flex items-center gap-3 px-3 py-2 rounded-lg text-sm transition-colors cursor-pointer
+                          ${pathname === `/user/pet/${pet.id}`
                             ? 'bg-gradient-to-r from-teal-400 to-orange-500 text-white shadow-sm'
                             : 'hover:bg-teal-50 text-gray-700'}`}>
                           {pet.image || pet.imageUrl || pet.photo || pet.avatar_url ? (
@@ -522,7 +513,7 @@ export default function UserNavbar({ setShowSearch, showSearch }: UserNavbarProp
                       </Link>
                     ))}
                     {pets.length >= 5 && (
-                      <Link href="/user/pet-list">
+                      <Link href="/user/pet/list">
                         <button className="w-full flex items-center gap-3 px-3 py-2 rounded-lg hover:bg-teal-50 text-teal-600 text-sm transition-colors font-medium">
                           <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 20 20" fill="currentColor" className="size-5">
                             <path d="M10.75 4.75a.75.75 0 00-1.5 0v4.5h-4.5a.75.75 0 000 1.5h4.5v4.5a.75.75 0 001.5 0v-4.5h4.5a.75.75 0 000-1.5h-4.5v-4.5z" />
@@ -536,7 +527,7 @@ export default function UserNavbar({ setShowSearch, showSearch }: UserNavbarProp
                   <div className="px-3 py-4 text-center">
                     <div className="text-2xl mb-2">🐾</div>
                     <p className="text-xs text-gray-500 mb-2">Chưa có thú cưng</p>
-                    <Link href="/user/register-pet">
+                    <Link href="/user/pet/new">
                       <button className="text-xs text-teal-600 hover:text-teal-700 font-medium">+ Thêm thú cưng</button>
                     </Link>
                   </div>

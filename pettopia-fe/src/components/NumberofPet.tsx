@@ -1,5 +1,6 @@
 import React, { useEffect, useState, useCallback } from 'react';
 import { useRouter } from 'next/navigation';
+import { getPetsByOwner } from '@/services/petcare/petService';
 
 interface Pet {
     id: string | number;
@@ -35,31 +36,7 @@ export default function PetCards({ userId, onPetsLoaded }: PetCardsProps) {
         try {
             setLoading(true);
             setError(null);
-            const apiUrl = `http://localhost:3000/api/v1/pet/owner/${userId}`;
-            const response = await fetch(apiUrl, {
-                headers: { Accept: 'application/json' },
-                signal,
-            });
-
-            if (!response.ok) {
-                const contentType = response.headers.get('content-type') || '';
-                let errorDetail = '';
-                try {
-                    errorDetail = contentType.includes('application/json')
-                        ? JSON.stringify(await response.json())
-                        : await response.text();
-                } catch { /* ignore */ }
-                console.error('Failed to fetch pets', {
-                    status: response.status,
-                    statusText: response.statusText,
-                    url: apiUrl,
-                    body: errorDetail,
-                });
-                throw new Error(`Không thể tải danh sách thú cưng (HTTP ${response.status})`);
-            }
-
-            const data = await response.json();
-            const petsData = Array.isArray(data.data) ? data.data : Array.isArray(data) ? data : [];
+            const petsData = await getPetsByOwner(userId);
             setPets(petsData);
             onPetsLoaded?.(petsData.length);
         } catch (err: any) {
@@ -106,7 +83,7 @@ export default function PetCards({ userId, onPetsLoaded }: PetCardsProps) {
     };
 
     const handlePetClick = (petId: string | number) => {
-        router.push(`/user/user-pet/${petId}`);
+        router.push(`/user/pet/${petId}`);
     };
 
     if (loading) {
@@ -146,14 +123,7 @@ export default function PetCards({ userId, onPetsLoaded }: PetCardsProps) {
     if (pets.length === 0) {
         return (
             <div className="w-full">
-                <div className="text-center py-20">
-                    <div className="text-6xl mb-4">🐾</div>
-                    <h3 className="text-2xl font-bold text-gray-900 mb-2">Chưa có thú cưng nào</h3>
-                    <p className="text-gray-600 mb-6">Hãy đăng ký thú cưng đầu tiên của bạn!</p>
-                    <button className="bg-gradient-to-r from-teal-600 to-cyan-600 text-white px-8 py-3 rounded-full font-semibold hover:shadow-lg transition-all">
-                        Đăng ký thú cưng
-                    </button>
-                </div>
+
             </div>
         );
     }

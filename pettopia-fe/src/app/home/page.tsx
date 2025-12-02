@@ -34,11 +34,11 @@ export default function Home() {
               Thú cưng của bạn xứng đáng được chăm sóc tốt nhất bởi đội ngũ bác sĩ giàu kinh nghiệm và nhân viên tận tâm.
             </p>
             <div className="flex flex-col sm:flex-row gap-4">
-              <Link href='/user/user-page'>
+              <Link href='/auth/register'>
                 <button className="bg-white text-teal-700 px-8 py-3.5 rounded-full font-medium 
                      hover:bg-teal-700 hover:text-white hover:shadow-lg hover:scale-105 
                      transition-all duration-300 inline-flex items-center cursor-pointer">
-                  Dịch Vụ Của Chúng Tôi
+                  Đăng ký ngay bây giờ
                   <svg
                     className="w-5 h-5 ml-2 transition-transform group-hover:translate-x-1"
                     fill="none"
@@ -54,11 +54,11 @@ export default function Home() {
                   </svg>
                 </button>
               </Link>
-              <Link href='/user-page'>
+              <Link href='/auth/login'>
                 <button className="border-2 border-white text-white px-8 py-3.5 rounded-full font-medium 
                      hover:bg-white hover:text-teal-700 hover:shadow-lg hover:scale-105 
                      transition-all duration-300 inline-flex items-center group cursor-pointer">
-                  Đặt Lịch Khám
+                  Đăng nhập
                   <svg
                     className="w-5 h-5 ml-2 transition-transform group-hover:translate-x-1"
                     fill="none"
@@ -105,8 +105,8 @@ export default function Home() {
                 animate={isInView ? { opacity: 1 } : { opacity: 0 }}
                 transition={{ delay: 0.9 }}
               >
-                <h3 className="text-xl font-semibold mb-3">Khám Sức Khỏe Tổng Quát</h3>
-                <p className="text-gray-600 text-sm mb-4">Kiểm tra định kỳ để đảm bảo thú cưng khỏe mạnh và phát hiện sớm các vấn đề.</p>
+                <h3 className="text-xl font-semibold mb-3">Hỗ trợ đặt lịch khám</h3>
+                <p className="text-gray-600 text-sm mb-4">Hỗ trợ đặt lịch khám giúp kiểm tra định kỳ để đảm bảo thú cưng khỏe mạnh và phát hiện sớm các vấn đề.</p>
                 <a href="#" className="text-teal-600 text-sm font-medium hover:text-teal-700 inline-flex items-center">
                   Tìm hiểu thêm →
                 </a>
@@ -130,8 +130,10 @@ export default function Home() {
                 animate={isInView ? { opacity: 1 } : { opacity: 0 }}
                 transition={{ delay: 1.0 }}
               >
-                <h3 className="text-xl font-semibold mb-3">Tiêm Phòng</h3>
-                <p className="text-gray-600 text-sm mb-4">Bảo vệ thú cưng khỏi các bệnh phổ biến và nguy hiểm với chương trình tiêm chủng đầy đủ.</p>
+                <h3 className="text-xl font-semibold mb-3">Quản lí thú cưng</h3>
+                <p className="text-gray-600 text-sm mb-4">
+                  Hệ thống có các chức năng quản lí nhằm dễ dàng quản lí thú cưng, bao gồm lưu hồ sơ, lịch tiêm chủng, lịch khám, nhắc lịch và ghi chú sức khỏe chi tiết.
+                </p>
                 <a href="#" className="text-teal-600 text-sm font-medium hover:text-teal-700 inline-flex items-center">
                   Tìm hiểu thêm →
                 </a>
@@ -155,8 +157,10 @@ export default function Home() {
                 animate={isInView ? { opacity: 1 } : { opacity: 0 }}
                 transition={{ delay: 1.1 }}
               >
-                <h3 className="text-xl font-semibold mb-3">Phẫu Thuật</h3>
-                <p className="text-gray-600 text-sm mb-4">Từ triệt sản đến phẫu thuật phức tạp, đội ngũ phẫu thuật của chúng tôi luôn đảm bảo an toàn.</p>
+                <h3 className="text-xl font-semibold mb-3">Nhân viên và cộng đồng</h3>
+                <p className="text-gray-600 text-sm mb-4">
+                  Đội ngũ nhân viên và cộng đồng thú cưng luôn nhiệt tình và sẵn sàng hỗ trợ bạn trong mọi vấn đề liên quan đến sức khỏe và chăm sóc thú cưng.
+                </p>
                 <a href="#" className="text-teal-600 text-sm font-medium hover:text-teal-700 inline-flex items-center">
                   Tìm hiểu thêm →
                 </a>
@@ -180,8 +184,8 @@ export default function Home() {
                 animate={isInView ? { opacity: 1 } : { opacity: 0 }}
                 transition={{ delay: 1.2 }}
               >
-                <h3 className="text-xl font-semibold mb-3">Chăm Sóc Răng Miệng</h3>
-                <p className="text-gray-600 text-sm mb-4">Dịch vụ nha khoa toàn diện để duy trì sức khỏe răng miệng và phòng ngừa bệnh tật.</p>
+                <h3 className="text-xl font-semibold mb-3">Tích hợp AI linh miêu</h3>
+                <p className="text-gray-600 text-sm mb-4">Hỗ trợ bạn trong việc đặt lịch và quản lý hồ sơ thú cưng một cách dễ dàng và nhanh chóng.</p>
                 <a href="#" className="text-teal-600 text-sm font-medium hover:text-teal-700 inline-flex items-center">
                   Tìm hiểu thêm →
                 </a>
@@ -346,7 +350,7 @@ export default function Home() {
         <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
           <div className="text-center mb-16">
             <h2 className="text-4xl font-bold text-gray-900 mb-4">
-              Phụ Huynh Thú Cưng Nói Gì
+              Những người sở hữu thú cưng nói gì
             </h2>
             <p className="text-xl text-gray-600">
               Đừng chỉ tin lời chúng tôi. Đây là những gì khách hàng nói về trải nghiệm tại Pettopia.
@@ -367,11 +371,11 @@ export default function Home() {
                 ))}
               </div>
               <p className="text-gray-700 mb-6">
-                "Đội ngũ tại Pettopia thật tuyệt vời! Họ đã chăm sóc chú chó Max của chúng tôi rất chu đáo trong quá trình phẫu thuật. Dịch vụ hậu phẫu cực kỳ tốt, luôn sẵn sàng giải đáp thắc mắc."
+                "Trang web của Pettopia thực sự làm cho việc đặt lịch khám thú cưng trở nên dễ dàng và thuận tiện. Tôi rất ấn tượng với cách họ quản lý hồ sơ thú cưng của tôi và luôn nhắc nhở tôi về các cuộc hẹn sắp tới."
               </p>
               <div>
-                <p className="font-semibold text-gray-900">Sarah Johnson</p>
-                <p className="text-gray-500 text-sm">Chủ chó</p>
+                <p className="font-semibold text-gray-900">Duy Valỏ</p>
+                <p className="text-gray-500 text-sm">Chủ của 2 con chó</p>
               </div>
             </div>
 
@@ -388,11 +392,11 @@ export default function Home() {
                 ))}
               </div>
               <p className="text-gray-700 mb-6">
-                "Tôi đã đưa mấy bé mèo đến Pettopia nhiều năm nay. Bác sĩ Martinez rất nhẹ nhàng, các bé ít căng thẳng hơn hẳn so với các phòng khám khác. Toàn bộ nhân viên đều thực sự yêu động vật."
+                "Đặt lịch khám cho mèo của tôi chưa bao giờ dễ dàng hơn thế. Giao diện người dùng rất thân thiện và tôi yêu cách họ lưu trữ tất cả thông tin sức khỏe của mèo tôi ở một nơi."
               </p>
               <div>
-                <p className="font-semibold text-gray-900">Michael Thompson</p>
-                <p className="text-gray-500 text-sm">Chủ mèo</p>
+                <p className="font-semibold text-gray-900">Duong Nguyen</p>
+                <p className="text-gray-500 text-sm">Chủ của một con mèo đã được khám tại Pettopia</p>
               </div>
             </div>
 
@@ -409,11 +413,11 @@ export default function Home() {
                 ))}
               </div>
               <p className="text-gray-700 mb-6">
-                "Khi chú thỏ của chúng tôi cần cấp cứu vào cuối tuần, Pettopia đã kết nối ngay với phòng khám đối tác và gọi theo dõi vào sáng thứ Hai. Sự phối hợp chăm sóc thật sự ấn tượng!"
+                "Dù là lần đầu tiên tôi sử dụng dịch vụ của Pettopia, tôi đã rất ấn tượng với sự chuyên nghiệp và tận tâm của đội ngũ nhân viên. Họ thực sự quan tâm đến sức khỏe và hạnh phúc của thú cưng."
               </p>
               <div>
-                <p className="font-semibold text-gray-900">Emily Wilson</p>
-                <p className="text-gray-500 text-sm">Chủ thỏ</p>
+                <p className="font-semibold text-gray-900">Ultra404</p>
+                <p className="text-gray-500 text-sm">Chủ của một chú chim bồ câu</p>
               </div>
             </div>
           </div>
@@ -421,26 +425,28 @@ export default function Home() {
       </section>
 
       {/* Sample Image Section */}
-      <section>
+      {/* <section>
         <img
           src="./sampleimg/samplebg.jpg"
           alt="Hình ảnh mẫu"
           className="mx-auto rounded-xl shadow-lg"
         />
-      </section>
+      </section> */}
 
       {/* CTA Section */}
       <section className="bg-gradient-to-r from-teal-600 to-cyan-600 py-16">
         <div className="max-w-4xl mx-auto px-4 sm:px-6 lg:px-8 text-center">
           <h2 className="text-4xl font-bold text-white mb-4">
-            Đặt Lịch Ngay Hôm Nay – Chăm Sóc Toàn Diện Cho Thú Cưng
+           Bạn là bác sĩ và muốn tham gia cùng chúng tôi?
           </h2>
           <p className="text-xl text-cyan-50 mb-8">
-            Dù là khám định kỳ hay cần chăm sóc đặc biệt, đội ngũ của chúng tôi luôn sẵn sàng hỗ trợ.
+            Hãy đăng ký ngay hôm nay để trở thành một phần của đội ngũ chăm sóc thú cưng tận tâm và chuyên nghiệp của chúng tôi.
           </p>
-          <button className="bg-white text-teal-700 px-8 py-4 rounded-full font-semibold text-lg hover:bg-cyan-50 transition shadow-xl">
-            Đặt Lịch Khám Ngay
-          </button>
+          <Link href="/join-us" className="mr-4">
+            <button className="bg-white text-teal-700 px-8 py-4 rounded-full font-semibold text-lg hover:bg-cyan-50 transition shadow-xl">
+              Tham gia ngay?
+            </button>
+          </Link>
         </div>
       </section>
       <Footer />

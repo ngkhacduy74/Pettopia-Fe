@@ -3,7 +3,6 @@ import React, { useState, useEffect } from 'react';
 import { motion } from 'framer-motion';
 import Link from 'next/link';
 import { useRouter, useParams } from 'next/navigation';
-import UserNavbar from '@/components/UserNavbar';
 import { getPetById, updatePet, UpdatePetPayload } from '@/services/petcare/petService';
 
 /**
@@ -94,7 +93,7 @@ export default function EditPetForm() {
 
       const res = await updatePet(petId, payload);
       alert(res?.message || 'Cập nhật thú cưng thành công');
-      router.push('/user/pet-list');
+      router.push('/user/pet/list');
     } catch (err: any) {
       console.error(err);
       setServerError(err?.response?.data?.message || 'Có lỗi xảy ra khi cập nhật thú cưng');
@@ -145,13 +144,13 @@ export default function EditPetForm() {
   // MAIN RENDER
   return (
     <div className="flex h-screen bg-gradient-to-b from-teal-50 to-white text-gray-900">
-      <UserNavbar setShowSearch={setShowSearch} showSearch={showSearch} />
+  
       <div className="flex-1 overflow-y-auto p-8">
         <div className="max-w-5xl mx-auto bg-white shadow-lg border border-gray-100 rounded-xl p-6">
           <h2 className="text-2xl font-bold text-teal-700 mb-6">Chỉnh sửa thông tin thú cưng</h2>
 
           <form onSubmit={handleSubmitPet} className="space-y-6">
-            <div className="grid grid-cols-2 gap-6">
+            <div className="grid grid-cols-2 gap-6 ">
               <div>
                 <label className="block text-sm font-medium mb-1">Tên thú cưng</label>
                 <input

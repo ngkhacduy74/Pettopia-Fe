@@ -76,28 +76,28 @@ export default function ClinicDashboardPage() {
   const quickActions = [
     {
       id: 1,
-      title: 'Quản lý Bác sĩ',
-      description: 'Xem và quản lý bác sĩ',
+      title: 'Quản lý người dùng',
+      description: 'Xem và quản lý người dùng',
       icon: <UserGroupIcon className="h-6 w-6 text-white" />,
       color: 'from-teal-600 to-cyan-600',
-      link: '/clinic/doctors',
+      link: '/admin/manager-user',
     },
-    {
-      id: 2,
-      title: 'Tiêm phòng',
-      description: 'Lịch tiêm và vaccine',
-      icon: <BeakerIcon className="h-6 w-6 text-white" />,
-      color: 'from-cyan-600 to-blue-600',
-      link: '/clinic/vaccination',
-    },
-    {
-      id: 3,
-      title: 'Ký gửi',
-      description: 'Quản lý chăm sóc Pet',
-      icon: <HomeIcon className="h-6 w-6 text-white" />,
-      color: 'from-blue-600 to-teal-600',
-      link: '/clinic/boarding',
-    },
+    // {
+    //   id: 2,
+    //   title: 'Tiêm phòng',
+    //   description: 'Lịch tiêm và vaccine',
+    //   icon: <BeakerIcon className="h-6 w-6 text-white" />,
+    //   color: 'from-cyan-600 to-blue-600',
+    //   link: '/clinic/vaccination',
+    // },
+    // {
+    //   id: 3,
+    //   title: 'Ký gửi',
+    //   description: 'Quản lý chăm sóc Pet',
+    //   icon: <HomeIcon className="h-6 w-6 text-white" />,
+    //   color: 'from-blue-600 to-teal-600',
+    //   link: '/clinic/boarding',
+    // },
   ];
 
   const recentActivities = [
@@ -176,10 +176,9 @@ export default function ClinicDashboardPage() {
       serviceData={serviceData}
       quickActions={quickActions}
       recentActivities={recentActivities}
-      showInviteButton={true}
+
       selectedPeriod={selectedPeriod}
       onPeriodChange={setSelectedPeriod}
-      onInvite={() => console.log('Mời bác sĩ từ page')}
     />
   );
 }

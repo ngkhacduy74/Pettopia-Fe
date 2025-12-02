@@ -1,6 +1,8 @@
 // components/common/Dashboard.tsx
 'use client'
 import React, { useState } from 'react';
+import Link from 'next/link';
+
 import { LineChart, Line, XAxis, YAxis, CartesianGrid, Tooltip, ResponsiveContainer, PieChart, Pie, Cell } from 'recharts';
 import {
   CurrencyDollarIcon,
@@ -9,8 +11,6 @@ import {
   HomeIcon,
   BeakerIcon,
   CheckCircleIcon,
-  XMarkIcon,
-  EnvelopeIcon,
 } from '@heroicons/react/24/outline';
 
 interface StatCard {
@@ -63,9 +63,9 @@ interface DashboardProps {
   serviceData?: ServiceData[];
   quickActions: QuickAction[];
   recentActivities: Activity[];
-  inviteButton?: React.ReactNode; // ← Chỉ nhận nút từ page
   selectedPeriod?: string;
   onPeriodChange?: (period: 'week' | 'month' | 'year') => void;
+  inviteButton?: React.ReactNode;
 }
 
 export default function Dashboard({
@@ -76,9 +76,9 @@ export default function Dashboard({
   serviceData = [],
   quickActions,
   recentActivities,
-  inviteButton,
   selectedPeriod = 'month',
   onPeriodChange,
+  inviteButton,
 }: DashboardProps) {
   const [hoveredCard, setHoveredCard] = useState<number | null>(null);
 
@@ -95,15 +95,9 @@ export default function Dashboard({
           <p className="text-gray-500 text-sm">{subtitle}</p>
         </div>
         <div className="flex items-center gap-3">
-          {/* Chỉ hiện nếu page truyền inviteButton */}
           {inviteButton}
 
-          <button className="p-2 rounded-lg hover:bg-gray-100 text-gray-600 transition-colors relative">
-            <svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-              <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M15 17h5l-1.405-1.405A2.032 2.032 0 0118 14.158V11a6.002 6.002 0 00-4-5.659V5a2 2 0 10-4 0v.341C7.67 6.165 6 8.388 6 11v3.159c0 .538-.214 1.055-.595 1.436L4 17h5m6 0v1a3 3 0 11-6 0v-1m6 0H9" />
-            </svg>
-            <span className="absolute top-1 right-1 w-2 h-2 bg-red-500 rounded-full"></span>
-          </button>
+         
         </div>
       </div>
 
@@ -188,7 +182,7 @@ export default function Dashboard({
 
           {serviceData.length > 0 && (
             <div className="bg-white rounded-xl p-6 shadow-md border border-gray-100">
-              <h2 className="text-xl font-bold text-gray-900 mb-1">Phân bố dịch vụ</h2>
+              <h2 className="text-xl font-bold text-gray-900 mb-1">Phân bổ dịch vụ</h2>
               <p className="text-xs text-gray-500 mb-4">Tháng này</p>
               <ResponsiveContainer width="100%" height={160}>
                 <PieChart>
@@ -234,17 +228,48 @@ export default function Dashboard({
             <h2 className="text-lg font-bold text-gray-900">Thao tác nhanh</h2>
           </div>
           <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-3">
-            {quickActions.map((action) => (
-              <div
-                key={action.id}
-                onClick={action.onClick}
-                className={`bg-gradient-to-br ${action.color} rounded-xl p-5 cursor-pointer hover:shadow-lg transition-all duration-300 text-white`}
-              >
-                <div className="mb-3">{action.icon}</div>
-                <h3 className="font-bold text-base mb-1">{action.title}</h3>
-                <p className="text-xs opacity-90">{action.description}</p>
-              </div>
-            ))}
+            {quickActions.map((action) => {
+              // Kiểm tra nếu có link hoặc onClick
+              const hasLink = !!action.link && !action.onClick;
+              const hasOnClick = !!action.onClick && !action.link;
+
+              const content = (
+                <div
+                  className={`bg-gradient-to-br ${action.color} rounded-xl p-5 hover:shadow-lg transition-all duration-300 text-white h-full ${
+                    hasLink || hasOnClick ? 'cursor-pointer' : ''
+                  }`}
+                >
+                  <div className="mb-3">{action.icon}</div>
+                  <h3 className="font-bold text-base mb-1">{action.title}</h3>
+                  <p className="text-xs opacity-90">{action.description}</p>
+                </div>
+              );
+
+              // Render với Link nếu có href
+              if (hasLink) {
+                return (
+                  <Link key={action.id} href={action.link!}>
+                    {content}
+                  </Link>
+                );
+              }
+
+              // Render với onClick nếu có
+              if (hasOnClick) {
+                return (
+                  <div key={action.id} onClick={action.onClick}>
+                    {content}
+                  </div>
+                );
+              }
+
+              // Render default
+              return (
+                <div key={action.id}>
+                  {content}
+                </div>
+              );
+            })}
           </div>
         </div>
 
@@ -256,21 +281,27 @@ export default function Dashboard({
             <h2 className="text-lg font-bold text-gray-900">Hoạt động gần đây</h2>
           </div>
           <div className="bg-white rounded-xl shadow-md border border-gray-100 overflow-hidden">
-            {recentActivities.map((activity) => (
-              <div
-                key={activity.id}
-                className="flex items-center gap-3 p-3 border-b border-gray-50 last:border-b-0 hover:bg-teal-50 transition-colors cursor-pointer"
-              >
-                <div className="w-9 h-9 rounded-lg bg-teal-50 flex items-center justify-center flex-shrink-0">
-                  {activity.icon}
+            {recentActivities.length > 0 ? (
+              recentActivities.map((activity) => (
+                <div
+                  key={activity.id}
+                  className="flex items-center gap-3 p-3 border-b border-gray-50 last:border-b-0 hover:bg-teal-50 transition-colors cursor-pointer"
+                >
+                  <div className="w-9 h-9 rounded-lg bg-teal-50 flex items-center justify-center flex-shrink-0">
+                    {activity.icon}
+                  </div>
+                  <div className="flex-1 min-w-0">
+                    <h3 className="font-semibold text-gray-900 text-xs mb-0.5">{activity.title}</h3>
+                    <p className="text-xs text-gray-500 truncate">{activity.description}</p>
+                  </div>
+                  <span className="text-xs text-gray-400 whitespace-nowrap">{activity.time}</span>
                 </div>
-                <div className="flex-1 min-w-0">
-                  <h3 className="font-semibold text-gray-900 text-xs mb-0.5">{activity.title}</h3>
-                  <p className="text-xs text-gray-500 truncate">{activity.description}</p>
-                </div>
-                <span className="text-xs text-gray-400 whitespace-nowrap">{activity.time}</span>
+              ))
+            ) : (
+              <div className="p-6 text-center">
+                <p className="text-sm text-gray-500">Chưa có hoạt động nào</p>
               </div>
-            ))}
+            )}
           </div>
         </div>
       </section>

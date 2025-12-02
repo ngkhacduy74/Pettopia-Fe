@@ -1,6 +1,7 @@
 import axios from 'axios';
 
-const SHIFT_API_URL = 'http://localhost:3000/api/v1/partner/clinic/shift';
+// Lấy base URL từ .env
+const SHIFT_API_URL = `${process.env.NEXT_PUBLIC_PETTOPIA_API_URL}/partner/clinic/shift`;
 
 export interface ClinicShift {
   _id?: string;
@@ -36,11 +37,10 @@ export async function getClinicShifts(page: number = 1, limit: number = 10): Pro
   return response.data as PaginatedResponse<ClinicShift>;
 }
 
-// Thêm mới / Cập nhật ca làm việc
 export async function upsertClinicShift(payload: ClinicShift): Promise<ClinicShift> {
   const token = localStorage.getItem('authToken');
   if (!token) throw new Error('No authentication token found');
-  // Nếu có _id thì update, không thì tạo mới
+
   let response;
   if (payload._id) {
     response = await axios.put(`${SHIFT_API_URL}/${payload._id}`, payload, {
@@ -59,5 +59,3 @@ export async function upsertClinicShift(payload: ClinicShift): Promise<ClinicShi
   }
   return response.data as ClinicShift;
 }
-
-
