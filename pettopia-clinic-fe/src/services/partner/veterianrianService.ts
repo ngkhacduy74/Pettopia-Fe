@@ -1,7 +1,26 @@
+/**
+ * Xóa thành viên (veterinarian) khỏi phòng khám
+ * DELETE `${PARTNER_API_URL}/clinic/members/:memberId`
+ */
+export const deleteClinicVet = async (memberId: string) => {
+  const token = localStorage.getItem('authToken');
+  if (!token) throw new Error('No authentication token found');
+
+  try {
+    const response = await axios.delete(`${PARTNER_API_URL}/clinic/members/${memberId}`, {
+      headers: { token },
+    });
+    return response.data;
+  } catch (error: any) {
+    console.error(`Lỗi khi xóa thành viên phòng khám (vet ${memberId}):`, error?.response?.data || error?.message || error);
+    throw error;
+  }
+};
 import axios from 'axios';
 
 // Lấy base URL từ .env
 const API_URL = `${process.env.NEXT_PUBLIC_PETTOPIA_API_URL}/partner/vet`;
+const PARTNER_API_URL = `${process.env.NEXT_PUBLIC_PETTOPIA_API_URL}/partner`;
 
 export interface VeterinarianForm {
   _id: string;
@@ -114,3 +133,101 @@ export async function updateVeterinarianFormStatus(
     throw new Error(error.response?.data?.message || 'Failed to update status');
   }
 }
+
+// --- Clinic members (vets) ---
+export interface VetMember {
+  member_id: string;
+  role: string;
+  joined_at: string | null;
+  specialty?: string;
+  exp?: number;
+  fullname?: string;
+  email?: string;
+  phone?: string;
+  is_active?: boolean;
+}
+
+export interface ClinicMembersData {
+  clinic_id: string;
+  clinic_name: string;
+  members: VetMember[];
+  total_members: number;
+}
+
+export interface ClinicMembersResponse {
+  status: string;
+  message: string;
+  data: ClinicMembersData;
+}
+
+/**
+ * Lấy danh sách thành viên (veterinarians) của phòng khám
+ * GET `${PARTNER_API_URL}/clinic/members/vets`
+ */
+export const getClinicVets = async () => {
+  const token = localStorage.getItem('authToken');
+  if (!token) throw new Error('No authentication token found');
+
+  try {
+    const response = await axios.get(`${PARTNER_API_URL}/clinic/members/vets`, {
+      headers: { token },
+    });
+    return response.data as ClinicMembersResponse;
+  } catch (error: any) {
+    console.error('Lỗi khi lấy danh sách thành viên phòng khám (vets):', error?.response?.data || error?.message || error);
+    throw error;
+  }
+};
+
+// --- Vet detail ---
+export interface VetCertification {
+  name: string;
+  link?: string;
+}
+
+export interface VetSocialLink {
+  facebook?: string;
+  linkedin?: string;
+}
+
+export interface VetDetail {
+  id: string;
+  is_active: boolean;
+  specialty?: string;
+  subSpecialties: string[];
+  exp?: number;
+  bio?: string;
+  license_number?: string;
+  license_image_url?: string;
+  social_link?: VetSocialLink;
+  certifications?: VetCertification[];
+  clinic_id?: string[];
+  clinic_roles?: string[];
+  createdAt?: string;
+  updatedAt?: string;
+}
+
+export interface VetDetailResponse {
+  status: string;
+  message: string;
+  data: VetDetail;
+}
+
+/**
+ * Lấy thông tin chi tiết bác sĩ (vet)
+ * GET `${API_URL}/{vetId}`
+ */
+export const getVetDetail = async (vetId: string) => {
+  const token = localStorage.getItem('authToken');
+  if (!token) throw new Error('No authentication token found');
+
+  try {
+    const response = await axios.get(`${API_URL}/${vetId}`, {
+      headers: { token },
+    });
+    return response.data as VetDetailResponse;
+  } catch (error: any) {
+    console.error(`Lỗi khi lấy chi tiết bác sĩ (vet ${vetId}):`, error?.response?.data || error?.message || error);
+    throw error;
+  }
+};

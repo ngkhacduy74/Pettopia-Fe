@@ -120,7 +120,7 @@ export default function Sidebar({
     ],
     Clinic: [
       { label: 'Tổng quan', href: '/clinic/dashboard', icon: <HomeIcon className="w-5 h-5" /> },
-      { label: 'Quản lý bác sĩ', href: '/clinic/vet-list', icon: <UserGroupIcon className="w-5 h-5" /> },
+      { label: 'Quản lý bác sĩ', href: '/clinic/vet', icon: <UserGroupIcon className="w-5 h-5" /> },
       { label: 'Ca làm', href: '/clinic/shift', icon: <ClipboardDocumentListIcon className="w-5 h-5" /> },
       { label: 'Dịch vụ', href: '/clinic/service', icon: <ClipboardDocumentListIcon className="w-5 h-5" /> },
       { label: 'Lịch khám', href: '/clinic/appointment', icon: <ClipboardDocumentListIcon className="w-5 h-5" /> },

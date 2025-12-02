@@ -1,4 +1,4 @@
-import React, { useState, useEffect } from 'react';
+import React, { useState, useEffect, useCallback } from 'react';
 import { UserGroupIcon, CheckCircleIcon, ClockIcon } from '@heroicons/react/24/outline';
 import { LineChart, Line, XAxis, YAxis, CartesianGrid, Tooltip, ResponsiveContainer, PieChart, Pie, Cell } from 'recharts';
 import InviteMemberModal from '@/components/InviteMemberModal';
@@ -9,6 +9,24 @@ import {
     HomeIcon,
     BeakerIcon,
 } from '@heroicons/react/24/outline';
+import { getClinicVets, ClinicMembersResponse, VetMember } from '@/services/partner/veterianrianService';
+import Link from 'next/link';
+import { sendInvitation } from '@/services/partner/clinicService';
+
+type StatusType = 'accepted' | 'pending';
+
+interface InvitedVet {
+    id: string;
+    member_id: string;
+    name: string;
+    email: string;
+    phone?: string;
+    specialization: string;
+    status: StatusType;
+    invitedDate: string;
+    avatar: string;
+    is_active?: boolean;
+}
 
 export default function Dashboard() {
     const [showSearch, setShowSearch] = useState(false);
@@ -16,12 +34,66 @@ export default function Dashboard() {
     const [selectedPeriod, setSelectedPeriod] = useState('month');
     const [clinicId, setClinicId] = useState<string | null>(null);
     const [showInviteForm, setShowInviteForm] = useState(false);
+    const [invitedVets, setInvitedVets] = useState<InvitedVet[]>([]);
+    const [loading, setLoading] = useState(true);
+    const [error, setError] = useState<string | null>(null);
 
     useEffect(() => {
         if (typeof window === 'undefined') return;
         const id = window.localStorage?.getItem('clinicId');
         if (id) setClinicId(id);
     }, []);
+
+    const fetchVets = useCallback(async () => {
+        try {
+            setLoading(true);
+            setError(null);
+            
+            const response: ClinicMembersResponse = await getClinicVets();
+            
+            if (response.data && response.data.members) {
+                // Sử dụng trực tiếp dữ liệu từ VetMember (đã có fullname, email, phone, specialty)
+                const vets = response.data.members.map((member: VetMember) => {
+                    // Xác định status dựa trên joined_at
+                    const status: StatusType = member.joined_at ? 'accepted' : 'pending';
+                    
+                    // Format tên: thêm "BS." nếu có fullname, nếu không thì dùng member_id
+                    const displayName = member.fullname 
+                        ? (member.fullname.startsWith('BS.') ? member.fullname : `BS. ${member.fullname}`)
+                        : `Vet ${member.member_id.slice(0, 8)}`;
+                    
+                    return {
+                        id: member.member_id,
+                        member_id: member.member_id,
+                        name: displayName,
+                        email: member.email || '',
+                        phone: member.phone,
+                        specialization: member.specialty || 'Chuyên khoa tổng hợp',
+                        status: status,
+                        invitedDate: member.joined_at 
+                            ? new Date(member.joined_at).toLocaleDateString('vi-VN')
+                            : 'Chưa xác định',
+                        avatar: 'https://images.unsplash.com/photo-1612349317150-e413f6a5b16d?w=150&h=150&fit=crop',
+                        is_active: member.is_active,
+                    } as InvitedVet;
+                });
+                
+                setInvitedVets(vets);
+            } else {
+                setInvitedVets([]);
+            }
+        } catch (err: any) {
+            console.error('Error fetching vets:', err);
+            setError(err.message || 'Không thể tải danh sách bác sĩ');
+            setInvitedVets([]);
+        } finally {
+            setLoading(false);
+        }
+    }, []);
+
+    useEffect(() => {
+        fetchVets();
+    }, [fetchVets]);
 
     // Mock data cho doanh thu
     const revenueData = [
@@ -145,72 +217,17 @@ export default function Dashboard() {
         },
     ];
 
-    interface InvitedVet {
-        id: number;
-        name: string;
-        email: string;
-        specialization: string;
-        status: StatusType;
-        invitedDate: string;
-        avatar: string;
-    }
-
-    // Mock data cho danh sách bác sĩ đã mời
-    const invitedVets: InvitedVet[] = [
-        {
-            id: 1,
-            name: 'BS. Nguyễn Văn A',
-            email: 'nguyenvana@email.com',
-            specialization: 'Chuyên khoa nội',
-            status: 'accepted',
-            invitedDate: '15/10/2025',
-            avatar: 'https://images.unsplash.com/photo-1612349317150-e413f6a5b16d?w=150&h=150&fit=crop',
-        },
-        {
-            id: 2,
-            name: 'BS. Trần Thị B',
-            email: 'tranthib@email.com',
-            specialization: 'Chuyên khoa ngoại',
-            status: 'pending',
-            invitedDate: '18/10/2025',
-            avatar: 'https://images.unsplash.com/photo-1594824476967-48c8b964273f?w=150&h=150&fit=crop',
-        },
-        {
-            id: 3,
-            name: 'BS. Lê Minh C',
-            email: 'leminhc@email.com',
-            specialization: 'Chuyên khoa răng hàm mặt',
-            status: 'accepted',
-            invitedDate: '12/10/2025',
-            avatar: 'https://images.unsplash.com/photo-1622253692010-333f2da6031d?w=150&h=150&fit=crop',
-        },
-        {
-            id: 4,
-            name: 'BS. Phạm Thị D',
-            email: 'phamthid@email.com',
-            specialization: 'Chuyên khoa da liễu',
-            status: 'pending',
-            invitedDate: '19/10/2025',
-            avatar: 'https://images.unsplash.com/photo-1559839734-2b71ea197ec2?w=150&h=150&fit=crop',
-        },
-        {
-            id: 5,
-            name: 'BS. Hoàng Văn E',
-            email: 'hoangvane@email.com',
-            specialization: 'Chuyên khoa tim mạch',
-            status: 'accepted',
-            invitedDate: '10/10/2025',
-            avatar: 'https://images.unsplash.com/photo-1637059824899-a441006a6875?w=150&h=150&fit=crop',
-        },
-    ];
 
     const handleInvite = async (email: string, role: string) => {
-        // Logic gửi lời mời
-        console.log('Sending invite to:', email, 'with role:', role);
-        // Có thể gửi API ở đây
+        try {
+            await sendInvitation(email, role);
+            // Refresh danh sách sau khi gửi lời mời thành công
+            await fetchVets();
+        } catch (err: any) {
+            console.error('Error sending invitation:', err);
+            throw err; // Re-throw để InviteMemberModal xử lý hiển thị lỗi
+        }
     };
-
-    type StatusType = 'accepted' | 'pending';
 
     const getStatusBadge = (status: StatusType) => {
         if (status === 'accepted') {
@@ -221,12 +238,8 @@ export default function Dashboard() {
                 </span>
             );
         }
-        return (
-            <span className="inline-flex items-center gap-1 px-3 py-1 rounded-full text-xs font-medium bg-yellow-100 text-yellow-600">
-                <ClockIcon className="w-4 h-4" />
-                Chờ xác nhận
-            </span>
-        );
+        // Không hiển thị badge khi đang chờ xác nhận
+        return null;
     };
 
     return (
@@ -236,7 +249,7 @@ export default function Dashboard() {
                 <div>
                     <div className="flex items-center gap-3 mb-2">
                         <UserGroupIcon className="w-8 h-8 text-teal-600" />
-                        <h1 className="text-3xl font-bold text-gray-900 mb-1">Quản lý Bác sĩ AAA</h1>
+                        <h1 className="text-3xl font-bold text-gray-900 mb-1">Quản lý Bác sĩ</h1>
                     </div>
                     <p className="text-gray-500 text-sm">Mời và quản lý đội ngũ bác sĩ thú y của phòng khám</p>
                 </div>
@@ -293,42 +306,88 @@ export default function Dashboard() {
 
             {/* Vet List */}
             <div className="bg-white rounded-2xl shadow-lg border border-teal-100 overflow-hidden">
-                <div className="p-6 border-b border-teal-50">
-                    <h3 className="text-xl font-bold text-gray-900">Danh sách Bác sĩ</h3>
-                    <p className="text-sm text-gray-500 mt-1">Tất cả bác sĩ đã được mời vào hệ thống</p>
-                </div>
 
-                <div className="divide-y divide-teal-50">
-                    {invitedVets.map((vet) => (
-                        <div
-                            key={vet.id}
-                            className="p-6 hover:bg-teal-50 transition-colors cursor-pointer flex items-center gap-6"
-                        >
-                            <img
-                                src={vet.avatar}
-                                alt={vet.name}
-                                className="w-16 h-16 rounded-xl object-cover shadow-md"
-                            />
-                            <div className="flex-1">
-                                <div className="flex items-center gap-3 mb-1">
-                                    <h4 className="font-bold text-lg text-gray-900">{vet.name}</h4>
-                                    {getStatusBadge(vet.status)}
-                                </div>
-                                <p className="text-sm text-gray-600 mb-1">{vet.specialization}</p>
-                                <p className="text-sm text-gray-500">{vet.email}</p>
-                            </div>
-                            <div className="text-right">
-                                <p className="text-xs text-gray-400">Ngày mời</p>
-                                <p className="text-sm font-medium text-gray-600">{vet.invitedDate}</p>
-                            </div>
-                            <button className="p-2 hover:bg-teal-100 rounded-lg transition-colors">
-                                <svg className="w-5 h-5 text-gray-600" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                                    <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 5v.01M12 12v.01M12 19v.01M12 6a1 1 0 110-2 1 1 0 010 2zm0 7a1 1 0 110-2 1 1 0 010 2zm0 7a1 1 0 110-2 1 1 0 010 2z" />
-                                </svg>
+
+                {loading && (
+                    <div className="p-12 text-center">
+                        <div className="inline-block animate-spin rounded-full h-12 w-12 border-b-2 border-teal-600"></div>
+                        <p className="text-gray-500 mt-4">Đang tải danh sách bác sĩ...</p>
+                    </div>
+                )}
+
+                {error && (
+                    <div className="p-6">
+                        <div className="bg-red-50 border border-red-200 rounded-xl p-4">
+                            <p className="text-red-800 font-medium">Lỗi: {error}</p>
+                            <button
+                                onClick={fetchVets}
+                                className="mt-2 text-sm text-red-600 hover:text-red-800 underline"
+                            >
+                                Thử lại
                             </button>
                         </div>
-                    ))}
-                </div>
+                    </div>
+                )}
+
+                {!loading && !error && (
+                    <>
+                        {invitedVets.length === 0 ? (
+                            <div className="p-12 text-center">
+                                <UserGroupIcon className="w-16 h-16 text-gray-300 mx-auto mb-4" />
+                                <p className="text-gray-500 text-lg">Chưa có bác sĩ nào trong danh sách</p>
+                                <p className="text-gray-400 text-sm mt-2">Hãy mời bác sĩ tham gia phòng khám của bạn</p>
+                            </div>
+                        ) : (
+                            <div className="divide-y divide-teal-50">
+                                {invitedVets.map((vet) => (
+                                    <Link
+                                        key={vet.id}
+                                        href={`/clinic/vet/${vet.id}`}
+                                        className="block p-6 hover:bg-teal-50 transition-colors cursor-pointer"
+                                    >
+                                        <div className="flex items-center gap-6">
+                                            <div className="flex-1">
+                                                <div className="flex items-center gap-3 mb-1">
+                                                    <h4 className="font-bold text-lg text-gray-900">{vet.name}</h4>
+                                                    {getStatusBadge(vet.status)}
+                                                    {vet.is_active === false && (
+                                                        <span className="inline-flex items-center px-2 py-1 rounded-full text-xs font-medium bg-gray-100 text-gray-600">
+                                                            Không hoạt động
+                                                        </span>
+                                                    )}
+                                                </div>
+                                                <p className="text-sm text-gray-600 mb-1">{vet.specialization}</p>
+                                                <div className="flex items-center gap-4 text-sm text-gray-500">
+                                                    {vet.email && (
+                                                        <span className="flex items-center gap-1">
+                                                            <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                                                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M3 8l7.89 5.26a2 2 0 002.22 0L21 8M5 19h14a2 2 0 002-2V7a2 2 0 00-2-2H5a2 2 0 00-2 2v10a2 2 0 002 2z" />
+                                                            </svg>
+                                                            {vet.email}
+                                                        </span>
+                                                    )}
+                                                    {vet.phone && (
+                                                        <span className="flex items-center gap-1">
+                                                            <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                                                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M3 5a2 2 0 012-2h3.28a1 1 0 01.948.684l1.498 4.493a1 1 0 01-.502 1.21l-2.257 1.13a11.042 11.042 0 005.516 5.516l1.13-2.257a1 1 0 011.21-.502l4.493 1.498a1 1 0 01.684.949V19a2 2 0 01-2 2h-1C9.716 21 3 14.284 3 6V5z" />
+                                                            </svg>
+                                                            {vet.phone}
+                                                        </span>
+                                                    )}
+                                                </div>
+                                            </div>
+                                            <div className="p-2 hover:bg-teal-100 rounded-lg transition-colors inline-flex items-center">
+                                                <svg className="w-5 h-5 text-gray-600" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                                    <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M9 5l7 7-7 7" />
+                                                </svg>
+                                            </div>
+                                        </div>
+                                    </Link>
+                                ))}
+                            </div>
+                        )}
+                    </>
+                )}
             </div>
         </section>
     );

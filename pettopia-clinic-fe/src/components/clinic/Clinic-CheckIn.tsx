@@ -1,8 +1,25 @@
 
 import { useState, useEffect, useMemo } from 'react';
-import { Search, CheckCircle, Clock, Calendar, User, Phone, PawPrint, Loader2, X, ChevronRight, Filter, RefreshCw, AlertCircle } from 'lucide-react';
-import { getAppointments, updateAppointmentStatus, getAppointmentDetail } from '@/services/partner/clinicService';
+import {
+    Search,
+    CheckCircle,
+    Clock,
+    Calendar,
+    User,
+    Phone,
+    PawPrint,
+    Loader2,
+    X,
+    ChevronRight,
+    Filter,
+    RefreshCw,
+    AlertCircle,
+    Stethoscope,
+} from 'lucide-react';
+import { getAppointments, updateAppointmentStatus, getAppointmentDetail, assignVetToAppointment } from '@/services/partner/clinicService';
 import { getCustomerById } from '@/services/customer/customerService';
+import { getClinicVets, ClinicMembersResponse, VetMember } from '@/services/partner/veterianrianService';
+import { useToast } from '@/contexts/ToastContext';
 
 // Interfaces
 interface AppointmentData {
@@ -59,6 +76,10 @@ export default function CheckInPage() {
     const [checkingIn, setCheckingIn] = useState(false);
     const [filterShift, setFilterShift] = useState<'all' | 'morning' | 'afternoon' | 'evening'>('all');
     const [showFilters, setShowFilters] = useState(false);
+    const [clinicVets, setClinicVets] = useState<VetMember[]>([]);
+    const [loadingVets, setLoadingVets] = useState(false);
+    const [selectedVetId, setSelectedVetId] = useState<string>('');
+    const { showSuccess, showError } = useToast();
 
     // Load danh sách lịch hẹn đã xác nhận trong ngày
     const loadTodayAppointments = async () => {
@@ -119,6 +140,25 @@ export default function CheckInPage() {
 
     useEffect(() => {
         loadTodayAppointments();
+        // Load danh sách bác sĩ của phòng khám dùng cho assign-vet
+        const loadVets = async () => {
+            try {
+                setLoadingVets(true);
+                const response: ClinicMembersResponse = await getClinicVets();
+                if (response.data?.members) {
+                    setClinicVets(response.data.members);
+                } else {
+                    setClinicVets([]);
+                }
+            } catch (err) {
+                console.error('Không thể tải danh sách bác sĩ để assign:', err);
+                setClinicVets([]);
+            } finally {
+                setLoadingVets(false);
+            }
+        };
+
+        loadVets();
     }, []);
 
     // Lọc appointments theo search và filter
@@ -196,6 +236,8 @@ export default function CheckInPage() {
         setLoadingDetail(true);
         setShowDetailModal(true);
         setError(null);
+        // Mặc định khi mở modal thì chưa chọn bác sĩ
+        setSelectedVetId('');
         try {
             const response = await getAppointmentDetail(appointmentId);
             if (response.status === 'success' && response.data) {
@@ -221,17 +263,27 @@ export default function CheckInPage() {
         setCheckingIn(true);
         setError(null);
         try {
+            // 1. Nếu có chọn bác sĩ thì gọi assign-vet trước
+            if (selectedVetId) {
+                await assignVetToAppointment(appointmentId, selectedVetId);
+            }
+
+            // 2. Sau đó cập nhật trạng thái lịch hẹn như cũ
             await updateAppointmentStatus(appointmentId, 'Checked_In', 'Khách hàng đã check-in tại quầy lễ tân');
             // Reload danh sách
             await loadTodayAppointments();
             // Đóng modal nếu đang mở
             setShowDetailModal(false);
             setSelectedAppointment(null);
-            alert('✅ Check-in thành công! Khách hàng đã được xác nhận có mặt.');
+            if (selectedVetId) {
+                showSuccess('Check-in thành công và đã gán bác sĩ cho lịch hẹn!');
+            } else {
+                showSuccess('Check-in thành công! Khách hàng đã được xác nhận có mặt.');
+            }
         } catch (err: any) {
-            const errorMsg = err?.message || 'Có lỗi xảy ra khi check-in';
+            const errorMsg = err?.message || 'Có lỗi xảy ra khi check-in hoặc gán bác sĩ';
             setError(errorMsg);
-            alert('❌ ' + errorMsg);
+            showError(errorMsg);
         } finally {
             setCheckingIn(false);
         }
@@ -558,6 +610,47 @@ export default function CheckInPage() {
                                             </div>
                                         </div>
                                     )}
+
+                                    {/* Assign bác sĩ (tùy chọn) */}
+                                    <div className="bg-gray-50 rounded-lg p-4">
+                                        <div className="flex items-center justify-between mb-3">
+                                            <h4 className="font-semibold text-gray-900 flex items-center gap-2">
+                                                <Stethoscope className="text-teal-600" size={18} />
+                                                Chọn bác sĩ phụ trách (tùy chọn)
+                                            </h4>
+                                            {loadingVets && (
+                                                <span className="text-xs text-gray-500 flex items-center gap-1">
+                                                    <Loader2 className="animate-spin" size={14} />
+                                                    Đang tải danh sách bác sĩ...
+                                                </span>
+                                            )}
+                                        </div>
+                                        {clinicVets.length === 0 && !loadingVets ? (
+                                            <p className="text-sm text-gray-500">
+                                                Chưa có bác sĩ nào trong phòng khám hoặc không thể tải danh sách bác sĩ.
+                                            </p>
+                                        ) : (
+                                            <div className="space-y-2">
+                                                <select
+                                                    value={selectedVetId}
+                                                    onChange={(e) => setSelectedVetId(e.target.value)}
+                                                    className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-teal-500 text-sm"
+                                                >
+                                                    <option value="">-- Không gán bác sĩ --</option>
+                                                    {clinicVets.map((vet) => (
+                                                        <option key={vet.member_id} value={vet.member_id}>
+                                                            {vet.fullname || `Vet ${vet.member_id.slice(0, 8)}`} - {vet.specialty || 'Chưa cập nhật chuyên khoa'}
+                                                        </option>
+                                                    ))}
+                                                </select>
+                                                {selectedVetId && (
+                                                    <p className="text-xs text-gray-500">
+                                                        Bác sĩ được chọn sẽ được gán cho lịch hẹn này khi bạn xác nhận Check-in.
+                                                    </p>
+                                                )}
+                                            </div>
+                                        )}
+                                    </div>
 
                                     {/* Dịch vụ */}
                                     {selectedAppointment.service_infos && selectedAppointment.service_infos.length > 0 && (

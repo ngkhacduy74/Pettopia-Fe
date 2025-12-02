@@ -151,6 +151,20 @@ export interface AppointmentDetailResponse {
   data: AppointmentData;
 }
 
+export interface Medication {
+  medication_name: string;
+  dosage: string;
+  instructions?: string;
+}
+
+export interface MedicalRecordPayload {
+  pet_id: string;
+  symptoms: string;
+  diagnosis: string;
+  notes?: string;
+  medications?: Medication[];
+}
+
 export const registerClinic = async (clinicData: ClinicData) => {
   const token = localStorage.getItem('authToken');
   if (!token) throw new Error('No authentication token found');
@@ -326,6 +340,49 @@ export const updateAppointmentStatus = async (
       method: error?.config?.method,
       data: error?.response?.data
     });
+    throw error;
+  }
+};
+
+/**
+ * Gán bác sĩ (vet) cho lịch hẹn
+ * POST `${HEALTHCARE_API_URL}/appointments/{appointmentId}/assign-vet`
+ * body: { vetId: string }
+ */
+export const assignVetToAppointment = async (appointmentId: string, vetId: string) => {
+  const token = localStorage.getItem('authToken');
+  if (!token) throw new Error('No authentication token found');
+
+  try {
+    const url = `${HEALTHCARE_API_URL}/appointments/${appointmentId}/assign-vet`;
+    const response = await axios.post(
+      url,
+      { vetId },
+      { headers: { 'token': token } }
+    );
+    return response.data;
+  } catch (error: any) {
+    console.error(`Lỗi khi gán vet cho lịch hẹn (${appointmentId}):`, error?.response?.data || error?.message || error);
+    throw error;
+  }
+};
+
+/**
+ * Tạo hồ sơ y tế (medical record) cho lịch hẹn
+ * POST `${HEALTHCARE_API_URL}/appointments/{appointmentId}/medical-records`
+ */
+export const createMedicalRecord = async (appointmentId: string, payload: MedicalRecordPayload) => {
+  const token = localStorage.getItem('authToken');
+  if (!token) throw new Error('No authentication token found');
+
+  try {
+    const url = `${HEALTHCARE_API_URL}/appointments/${appointmentId}/medical-records`;
+    const response = await axios.post(url, payload, {
+      headers: { 'token': token, 'Content-Type': 'application/json' },
+    });
+    return response.data;
+  } catch (error: any) {
+    console.error(`Lỗi khi tạo medical record cho lịch hẹn (${appointmentId}):`, error?.response?.data || error?.message || error);
     throw error;
   }
 };
