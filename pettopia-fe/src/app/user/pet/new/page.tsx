@@ -5,7 +5,7 @@ import { useRouter } from 'next/navigation';
 import Link from 'next/link';
 import { motion } from 'framer-motion';
 import { createPet } from '@/services/petcare/petService';
-import { getCustomerById } from '@/services/user/userService';
+import { getCustomerProfile } from '@/services/user/userService';
 
 export default function RegisterPetPage() {
     const router = useRouter();
@@ -226,7 +226,18 @@ export default function RegisterPetPage() {
                 weight: petForm.weight ? Number(petForm.weight) : undefined,
                 dateOfBirth: petForm.dateOfBirth ? new Date(petForm.dateOfBirth).toISOString() : undefined,
                 avatar_url: avatarUrl || undefined,
-                user_id: userData.user_id
+                user_id: userData.user_id,
+                owner: {
+                    id: userData.user_id,
+                    fullname: userData.fullname,
+                    phone: userData.phone,
+                    email: userData.email,
+                    address: {
+                        city: userData.address.city,
+                        district: userData.address.district,
+                        ward: userData.address.ward
+                    }
+                }
             };
 
             const res = await createPet(payload);
@@ -299,54 +310,31 @@ export default function RegisterPetPage() {
         }
     };
 
-    // Trong RegisterPetPage
+    // Trong RegisterPetPage: lấy thông tin khách hàng hiện tại từ /customer/profile
     useEffect(() => {
-        const parseJwt = (token: string | null) => {
-            if (!token) return null;
-            try {
-                const payload = token.split('.')[1];
-                const decoded = JSON.parse(atob(payload.replace(/-/g, '+').replace(/_/g, '/')));
-                return decoded;
-            } catch (e) {
-                console.error('Failed to parse JWT', e);
-                return null;
-            }
-        };
-
         const fetchUserData = async () => {
             try {
-                const token = localStorage.getItem("authToken");
-                let userId = localStorage.getItem("userId");
-
-                // Nếu không có userId, thử lấy từ token (các tên trường khả dĩ)
-                if (!userId && token) {
-                    const decoded = parseJwt(token);
-                    const resolvedId = decoded?.userId ?? decoded?.id ?? decoded?.sub ?? null;
-                    if (resolvedId) {
-                        userId = String(resolvedId);
-                        localStorage.setItem("userId", userId);
-                    }
-                }
-
-                if (!token || !userId) {
-                    console.warn('Missing auth token or userId, redirecting to login');
-                    // tuỳ xử lý: redirect về login hoặc return
+                const token = typeof window !== 'undefined' ? localStorage.getItem('authToken') : null;
+                if (!token) {
+                    console.warn('Missing auth token, redirecting to login');
                     // router.push('/login');
                     return;
                 }
 
-                const data = await getCustomerById(userId);
+                const data = await getCustomerProfile();
 
                 if (!data) {
                     console.warn('Không thể tải thông tin khách hàng');
                     return;
                 }
 
+                const resolvedUserId = data.id || data._id || data.customer_id || '';
+
                 setUserData({
-                    user_id: userId,
+                    user_id: resolvedUserId,
                     fullname: data.fullname || '',
-                    phone: data.phone || '',
-                    email: data.email || '',
+                    phone: typeof data.phone === 'string' ? data.phone : data.phone?.phone_number || '',
+                    email: typeof data.email === 'string' ? data.email : data.email?.email_address || '',
                     address: {
                         city: data.address?.city || '',
                         district: data.address?.district || '',
@@ -750,7 +738,7 @@ export default function RegisterPetPage() {
                                                             </div>
                                                             <div className="bg-white rounded-lg px-2 py-1 border border-gray-400">
                                                                 <p className="text-xs text-gray-700">
-                                                                    ID: {'SAMPLE-' + Math.random().toString(36).substring(2, 6).toUpperCase()}
+                                                                    ID: {'SAMPLE-' + 'ABCD'}
                                                                 </p>
                                                             </div>
                                                         </div>
@@ -905,7 +893,7 @@ export default function RegisterPetPage() {
                                                 <svg className="w-4 h-4" fill="currentColor" viewBox="0 0 20 20">
                                                     <path fillRule="evenodd" d="M18 10a8 8 0 11-16 0 8 8 0 0116 0zm-7-4a1 1 0 11-2 0 1 1 0 012 0zM9 9a1 1 0 000 2v3a1 1 0 001 1h1a1 1 0 100-2v-3a1 1 0 00-1-1H9z" clipRule="evenodd"/>
                                                 </svg>
-                                                <span>Vui lòng kiểm tra và sửa các lỗi trên, sau đó thử lại.</span>
+                                                <span>Ảnh của bạn quá dung lượng hãy gửi ảnh dưới 1mb</span>
                                             </div>
                                         </div>
                                     </div>
