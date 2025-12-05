@@ -125,7 +125,7 @@ export default function Sidebar({
       { label: 'Dịch vụ', href: '/clinic/service', icon: <ClipboardDocumentListIcon className="w-5 h-5" /> },
       { label: 'Lịch khám', href: '/clinic/appointment', icon: <ClipboardDocumentListIcon className="w-5 h-5" /> },
       { label: 'Duyệt Đơn', href: '/clinic/check-in', icon: <ClipboardDocumentListIcon className="w-5 h-5" /> },
-      { label: 'Duyệt gì đó', href: '/clinic/#', icon: <QuestionMarkCircleIcon className="w-5 h-5" /> },
+      { label: 'Duyệt gì đó', href: '/clinic/medical', icon: <QuestionMarkCircleIcon className="w-5 h-5" /> },
     ],
     Vet: [
       { label: 'Trang chính', href: '/vet/main', icon: <HomeIcon className="w-5 h-5" /> },

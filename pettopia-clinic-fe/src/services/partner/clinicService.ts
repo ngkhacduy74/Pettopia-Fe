@@ -387,6 +387,67 @@ export const createMedicalRecord = async (appointmentId: string, payload: Medica
   }
 };
 
+export interface MedicalRecordData {
+  symptoms: string;
+  diagnosis: string;
+  notes?: string;
+  medications?: Medication[];
+}
+
+export interface MedicalRecordResponse {
+  status: string;
+  message: string;
+  data: MedicalRecordData;
+}
+
+/**
+ * Lấy chi tiết hồ sơ bệnh án của một lịch hẹn
+ * GET `${HEALTHCARE_API_URL}/appointments/{appointmentId}/medical-record`
+ */
+export const getMedicalRecord = async (appointmentId: string) => {
+  const token = localStorage.getItem('authToken');
+  if (!token) throw new Error('No authentication token found');
+
+  try {
+    const url = `${HEALTHCARE_API_URL}/appointments/${appointmentId}/medical-record`;
+    const response = await axios.get(url, {
+      headers: { 'token': token },
+    });
+    return response.data as MedicalRecordResponse;
+  } catch (error: any) {
+    console.error(`Lỗi khi lấy hồ sơ bệnh án (${appointmentId}):`, error?.response?.data || error?.message || error);
+    throw error;
+  }
+};
+
+export interface UpdateMedicalRecordPayload {
+  symptoms?: string;
+  diagnosis?: string;
+  notes?: string;
+  medications?: Medication[];
+}
+
+/**
+ * Cập nhật (sửa) hồ sơ bệnh án cho một lịch hẹn
+ * PATCH `${HEALTHCARE_API_URL}/appointments/{appointmentId}/medical-record`
+ * Lưu ý: truyền `appointmentId` (id của lịch hẹn) làm param
+ */
+export const updateMedicalRecord = async (appointmentId: string, payload: UpdateMedicalRecordPayload) => {
+  const token = localStorage.getItem('authToken');
+  if (!token) throw new Error('No authentication token found');
+
+  try {
+    const url = `${HEALTHCARE_API_URL}/appointments/${appointmentId}/medical-record`;
+    const response = await axios.patch(url, payload, {
+      headers: { 'token': token, 'Content-Type': 'application/json' },
+    });
+    return response.data;
+  } catch (error: any) {
+    console.error(`Lỗi khi cập nhật hồ sơ bệnh án (${appointmentId}):`, error?.response?.data || error?.message || error);
+    throw error;
+  }
+};
+
 export const sendInvitation = async (email: string, role: string) => {
   const token = localStorage.getItem('authToken');
   if (!token) throw new Error('No authentication token found');
