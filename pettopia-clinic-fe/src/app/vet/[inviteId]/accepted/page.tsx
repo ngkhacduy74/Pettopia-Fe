@@ -7,15 +7,34 @@ import { acceptInvitation, declineInvitation } from '@/services/partner/clinicSe
 import { useToast } from '@/contexts/ToastContext';
 
 interface Props {
-  inviteId: string;
+  params: Promise<{
+    inviteId: string;
+  }>;
 }
 
-export default function InviteAcceptedClient({ inviteId }: Props) {
+export default function InviteAcceptedClient({ params }: Props) {
+  const [inviteId, setInviteId] = React.useState<string | null>(null);
+
+  React.useEffect(() => {
+    params.then((resolvedParams) => {
+      setInviteId(resolvedParams.inviteId);
+    });
+  }, [params]);
   const router = useRouter();
   const { showSuccess, showError } = useToast();
 
   const [isProcessing, setIsProcessing] = useState(false);
   const [showInviteCode, setShowInviteCode] = useState(false);
+
+  if (!inviteId) {
+    return (
+      <div className="flex items-center justify-center p-6 md:p-10">
+        <div className="max-w-md w-full bg-white rounded-2xl shadow-lg p-8">
+          <p className="text-gray-500 text-center">Đang tải...</p>
+        </div>
+      </div>
+    );
+  }
 
   const maskInviteCode = (code: string) => {
     if (!code) return '••••••••';
