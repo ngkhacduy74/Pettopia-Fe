@@ -334,8 +334,8 @@ function AppointmentList({ appointments, loading, onViewDetail, filters, onFilte
                         }}
                         className="px-6 py-3 bg-teal-600 text-white rounded-lg hover:bg-teal-700 transition font-medium flex items-center gap-2"
                       >
-                        <FileText size={18} />
-                        Tạo hồ sơ
+                        <Eye size={18} />
+                        Xem chi tiết
                       </button>
                       <ChevronRight className="text-gray-400" size={24} />
                     </div>

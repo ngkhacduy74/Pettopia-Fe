@@ -2,7 +2,7 @@
 import React, { useState, useEffect, useCallback, useMemo } from 'react';
 import Link from 'next/link';
 import { useRouter } from 'next/navigation';
-import { deletePet, getPetsByOwner } from '@/services/petcare/petService';
+import { deletePet, getPetsByOwner, getMedicalRecordsByPetId, type MedicalRecord } from '@/services/petcare/petService';
 
 interface Pet {
     id: string | number;
@@ -23,6 +23,8 @@ interface Pet {
     owner?: string;
     ownerId?: string;
     lastCheckup?: string;
+    medicalRecord?: MedicalRecord;
+    lastAppointmentId?: string;
 }
 
 export default function PetListPage() {
@@ -76,7 +78,43 @@ export default function PetListPage() {
         try {
             setLoading(true);
             const petsData = await getPetsByOwner(uid);
-            setPets(petsData);
+            
+            // Lấy medical records cho mỗi pet (chỉ lấy record gần nhất)
+            try {
+                const petsWithMedicalRecords = await Promise.all(
+                    petsData.map(async (pet) => {
+                        try {
+                            // Lấy tất cả medical records của pet, chỉ lấy record đầu tiên (gần nhất)
+                            const medicalRecords = await getMedicalRecordsByPetId(String(pet.id), {
+                                page: 1,
+                                limit: 1, // Chỉ cần 1 record gần nhất
+                                statusFilter: ['Completed', 'Checked_In'] // Có thể có medical record từ các status này
+                            });
+                            
+                            if (medicalRecords.length > 0) {
+                                const latestRecord = medicalRecords[0];
+                                return {
+                                    ...pet,
+                                    medicalRecord: latestRecord.record,
+                                    lastAppointmentId: latestRecord.appointmentId
+                                };
+                            }
+                            return pet;
+                        } catch (error) {
+                            // Nếu lỗi khi lấy medical record, vẫn trả về pet
+                            console.warn(`Error fetching medical record for pet ${pet.id}:`, error);
+                            return pet;
+                        }
+                    })
+                );
+                
+                setPets(petsWithMedicalRecords);
+            } catch (error) {
+                // Nếu không lấy được medical records, vẫn set pets
+                console.warn('Error fetching medical records:', error);
+                setPets(petsData);
+            }
+            
             setError(null);
             setHasFetched(true);
         } catch (err) {
@@ -246,77 +284,44 @@ export default function PetListPage() {
                     </div>
                 </div>
 
-                {/* Pet List - SAME STYLE AS POST LIST */}
-                <div className="bg-white rounded-xl shadow-sm border border-gray-200 overflow-hidden">
-                    {/* Table Header - IDENTICAL TO POST LIST */}
-                    <div className="bg-gradient-to-r from-teal-50 to-cyan-50 border-b border-teal-200 px-6 py-3">
-                        <div className="grid grid-cols-12 gap-6 text-xs font-bold text-teal-700 uppercase tracking-wider">
-                            <div className="col-span-3">Tên thú cưng</div>
-                            <div className="col-span-2">Loài</div>
-                            <div className="col-span-2">Ngày sinh</div>
-                            <div className="col-span-2">Cân nặng</div>
-                            <div className="col-span-2">Tình trạng</div>
-                            <div className="col-span-1 text-right pr-2"></div>
+                {/* Pet List - Card Layout */}
+                <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
+                    {filteredPets.length === 0 ? (
+                        <div className="col-span-full p-12 text-center text-gray-500 bg-white rounded-xl shadow-sm border border-gray-200">
+                            Không có thú cưng nào
                         </div>
-                    </div>
+                    ) : (
+                        filteredPets.map((pet) => (
+                            <div
+                                key={pet.id}
+                                className="bg-white rounded-xl shadow-lg border border-gray-200 hover:shadow-xl transition-all duration-300 overflow-hidden cursor-pointer group"
+                                onClick={() => handleViewDetails(pet.id)}
+                            >
+                                {/* Pet Image */}
+                                <div className="relative h-48 bg-gradient-to-br from-teal-100 to-cyan-100 overflow-hidden">
+                                    <img
+                                        src={pet.avatar_url || pet.imageUrl || pet.image || pet.photo || '/sampleimg/default-pet.jpg'}
+                                        alt={pet.name}
+                                        className="w-full h-full object-cover group-hover:scale-110 transition-transform duration-300"
+                                        onError={(e) => { e.currentTarget.src = '/sampleimg/default-pet.jpg'; }}
+                                    />
+                                    <div className="absolute top-3 right-3">
+                                        <span className={`px-3 py-1 rounded-full text-xs font-medium border backdrop-blur-sm ${getStatusColor(pet.status)}`}>
+                                            {getStatusText(pet.status)}
+                                        </span>
+                                    </div>
+                                </div>
 
-                    {/* List Body */}
-                    <div className="divide-y divide-gray-100">
-                        {filteredPets.length === 0 ? (
-                            <div className="p-12 text-center text-gray-500">
-                                Không có thú cưng nào
-                            </div>
-                        ) : (
-                            filteredPets.map((pet) => (
-                                <div
-                                    key={pet.id}
-                                    className="hover:bg-gray-50 transition-colors duration-150"
-                                >
-                                    <div className="grid grid-cols-12 gap-6 items-center px-6 py-4">
-                                        {/* Name + Avatar */}
-                                        <div
-                                            className="col-span-3 flex items-center gap-3 cursor-pointer"
-                                            onClick={() => handleViewDetails(pet.id)}
-                                        >
-                                            <div className="w-10 h-10 rounded-full overflow-hidden border border-gray-200">
-                                                <img
-                                                    src={pet.avatar_url || pet.imageUrl || pet.image || pet.photo || '/sampleimg/default-pet.jpg'}
-                                                    alt={pet.name}
-                                                    className="w-full h-full object-cover"
-                                                    onError={(e) => { e.currentTarget.src = '/sampleimg/default-pet.jpg'; }}
-                                                />
-                                            </div>
-                                            <div className="font-semibold text-gray-900 truncate">{pet.name}</div>
-                                        </div>
-
-                                        {/* Species */}
-                                        <div className="col-span-2 text-gray-700">
-                                            {(pet.species || pet.type) || 'Chưa rõ'}
-                                        </div>
-
-                                        {/* Birth Date */}
-                                        <div className="col-span-2 text-gray-700">
-                                            {(pet.birthDate || pet.dateOfBirth)
-                                                ? new Date(pet.birthDate || pet.dateOfBirth!).toLocaleDateString('vi-VN')
-                                                : 'Chưa rõ'}
-                                        </div>
-
-                                        {/* Weight */}
-                                        <div className="col-span-2 text-gray-700">
-                                            {pet.weight ? `${pet.weight} kg` : 'Chưa rõ'}
-                                        </div>
-
-                                        {/* Status */}
-                                        <div className="col-span-2">
-                                            <span className={`px-3 py-1 rounded-full text-xs font-medium border whitespace-nowrap ${getStatusColor(pet.status)}`}>
-                                                {getStatusText(pet.status)}
-                                            </span>
-                                        </div>
-
-                                        {/* Actions */}
-                                        <div className="col-span-1 flex gap-1 justify-end">
+                                {/* Pet Info */}
+                                <div className="p-5">
+                                    <div className="flex items-start justify-between mb-3">
+                                        <h3 className="text-xl font-bold text-gray-900 truncate flex-1">{pet.name}</h3>
+                                        <div className="flex gap-1 ml-2" onClick={(e) => e.stopPropagation()}>
                                             <button
-                                                onClick={() => handleEditPet(pet.id)}
+                                                onClick={(e) => {
+                                                    e.stopPropagation();
+                                                    handleEditPet(pet.id);
+                                                }}
                                                 className="p-2 text-teal-600 hover:bg-teal-50 rounded-lg transition-colors"
                                                 title="Chỉnh sửa"
                                             >
@@ -325,7 +330,10 @@ export default function PetListPage() {
                                                 </svg>
                                             </button>
                                             <button
-                                                onClick={(e) => handleDeleteClick(pet, e)}
+                                                onClick={(e) => {
+                                                    e.stopPropagation();
+                                                    handleDeleteClick(pet, e);
+                                                }}
                                                 className="p-2 text-red-600 hover:bg-red-50 rounded-lg transition-colors"
                                                 title="Xóa"
                                             >
@@ -335,10 +343,77 @@ export default function PetListPage() {
                                             </button>
                                         </div>
                                     </div>
+
+                                    <div className="space-y-2 mb-4">
+                                        <div className="flex items-center gap-2 text-sm text-gray-600">
+                                            <svg className="w-4 h-4 text-teal-600" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 6.253v13m0-13C10.832 5.477 9.246 5 7.5 5S4.168 5.477 3 6.253v13C4.168 18.477 5.754 18 7.5 18s3.332.477 4.5 1.253m0-13C13.168 5.477 14.754 5 16.5 5c1.747 0 3.332.477 4.5 1.253v13C19.832 18.477 18.247 18 16.5 18c-1.746 0-3.332.477-4.5 1.253" />
+                                            </svg>
+                                            <span>Loài: <span className="font-medium text-gray-900">{(pet.species || pet.type) || 'Chưa rõ'}</span></span>
+                                        </div>
+                                        {(pet.breed) && (
+                                            <div className="flex items-center gap-2 text-sm text-gray-600">
+                                                <svg className="w-4 h-4 text-teal-600" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                                    <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M7 7h.01M7 3h5c.512 0 1.024.195 1.414.586l7 7a2 2 0 010 2.828l-7 7a2 2 0 01-2.828 0l-7-7A1.994 1.994 0 013 12V7a4 4 0 014-4z" />
+                                                </svg>
+                                                <span>Giống: <span className="font-medium text-gray-900">{pet.breed}</span></span>
+                                            </div>
+                                        )}
+                                        <div className="flex items-center gap-2 text-sm text-gray-600">
+                                            <svg className="w-4 h-4 text-teal-600" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M8 7V3m8 4V3m-9 8h10M5 21h14a2 2 0 002-2V7a2 2 0 00-2-2H5a2 2 0 00-2 2v12a2 2 0 002 2z" />
+                                            </svg>
+                                            <span>Ngày sinh: <span className="font-medium text-gray-900">
+                                                {(pet.birthDate || pet.dateOfBirth)
+                                                    ? new Date(pet.birthDate || pet.dateOfBirth!).toLocaleDateString('vi-VN')
+                                                    : 'Chưa rõ'}
+                                            </span></span>
+                                        </div>
+                                        {pet.weight && (
+                                            <div className="flex items-center gap-2 text-sm text-gray-600">
+                                                <svg className="w-4 h-4 text-teal-600" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                                    <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M3 6l3 1m0 0l-3 9a5.002 5.002 0 006.001 0M6 7l3 9M6 7l6-2m6 2l3-1m-3 1l-3 9a5.002 5.002 0 006.001 0M18 7l3 9m-3-9l-6-2m0-2v2m0 16V5m0 16H9m3 0h3" />
+                                                </svg>
+                                                <span>Cân nặng: <span className="font-medium text-gray-900">{pet.weight} kg</span></span>
+                                            </div>
+                                        )}
+                                    </div>
+
+                                    {/* Medical Record Section */}
+                                    {pet.medicalRecord && (pet.medicalRecord.symptoms || pet.medicalRecord.diagnosis || pet.medicalRecord.prescription) && (
+                                        <div className="mt-4 pt-4 border-t border-gray-200">
+                                            <div className="flex items-center gap-2 mb-2">
+                                                <svg className="w-4 h-4 text-teal-600" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                                    <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M9 12h6m-6 4h6m2 5H7a2 2 0 01-2-2V5a2 2 0 012-2h5.586a1 1 0 01.707.293l5.414 5.414a1 1 0 01.293.707V19a2 2 0 01-2 2z" />
+                                                </svg>
+                                                <span className="text-xs font-semibold text-teal-700 uppercase">Hồ sơ y tế</span>
+                                            </div>
+                                            <div className="space-y-1 text-xs text-gray-600">
+                                                {pet.medicalRecord.diagnosis && (
+                                                    <div className="line-clamp-1">
+                                                        <span className="font-medium">Chẩn đoán: </span>
+                                                        <span className="text-gray-800">{pet.medicalRecord.diagnosis}</span>
+                                                    </div>
+                                                )}
+                                                {pet.medicalRecord.symptoms && (
+                                                    <div className="line-clamp-1">
+                                                        <span className="font-medium">Triệu chứng: </span>
+                                                        <span className="text-gray-800">{pet.medicalRecord.symptoms}</span>
+                                                    </div>
+                                                )}
+                                                {pet.medicalRecord.prescription && (
+                                                    <div className="line-clamp-1">
+                                                        <span className="font-medium">Đơn thuốc: </span>
+                                                        <span className="text-gray-800">{pet.medicalRecord.prescription}</span>
+                                                    </div>
+                                                )}
+                                            </div>
+                                        </div>
+                                    )}
                                 </div>
-                            ))
-                        )}
-                    </div>
+                            </div>
+                        ))
+                    )}
                 </div>
             </div>
 

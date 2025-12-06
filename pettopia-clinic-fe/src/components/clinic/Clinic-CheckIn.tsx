@@ -116,11 +116,12 @@ export default function CheckInPage() {
                     })
                 );
 
-                // Lọc chỉ lấy lịch hẹn hôm nay và status Confirmed
+                // Lọc chỉ lấy lịch hẹn hôm nay và status Confirmed (chưa check-in)
                 const today = new Date().toISOString().split('T')[0];
                 const todayConfirmed = enrichedAppointments.filter((apt: AppointmentData) => {
                     try {
                         const aptDate = new Date(apt.date).toISOString().split('T')[0];
+                        // Chỉ hiển thị appointments chưa check-in (status = Confirmed)
                         return aptDate === today && apt.status === 'Confirmed';
                     } catch {
                         return false;
@@ -262,26 +263,43 @@ export default function CheckInPage() {
 
         setCheckingIn(true);
         setError(null);
+        const vetIdToUse = selectedVetId; // Lưu lại vetId trước khi reset
+        
         try {
             // 1. Nếu có chọn bác sĩ thì gọi assign-vet trước
-            if (selectedVetId) {
-                await assignVetToAppointment(appointmentId, selectedVetId);
+            if (vetIdToUse) {
+                try {
+                    await assignVetToAppointment(appointmentId, vetIdToUse);
+                    console.log('Đã gán bác sĩ cho lịch hẹn:', vetIdToUse);
+                } catch (assignError: any) {
+                    console.error('Lỗi khi gán bác sĩ:', assignError);
+                    // Nếu lỗi gán bác sĩ, vẫn tiếp tục check-in nhưng cảnh báo
+                    showError('Không thể gán bác sĩ, nhưng sẽ tiếp tục check-in. ' + (assignError?.response?.data?.message || assignError?.message || ''));
+                }
             }
 
-            // 2. Sau đó cập nhật trạng thái lịch hẹn như cũ
+            // 2. Cập nhật trạng thái lịch hẹn thành Checked_In
+            console.log('Đang cập nhật status appointment:', appointmentId, '-> Checked_In');
             await updateAppointmentStatus(appointmentId, 'Checked_In', 'Khách hàng đã check-in tại quầy lễ tân');
-            // Reload danh sách
+            console.log('Đã cập nhật status thành công');
+            
+            // 3. Reload danh sách để cập nhật UI
             await loadTodayAppointments();
-            // Đóng modal nếu đang mở
+            
+            // 4. Đóng modal và reset state
             setShowDetailModal(false);
             setSelectedAppointment(null);
-            if (selectedVetId) {
+            setSelectedVetId(''); // Reset vet selection
+            
+            // 5. Hiển thị thông báo thành công
+            if (vetIdToUse) {
                 showSuccess('Check-in thành công và đã gán bác sĩ cho lịch hẹn!');
             } else {
                 showSuccess('Check-in thành công! Khách hàng đã được xác nhận có mặt.');
             }
         } catch (err: any) {
-            const errorMsg = err?.message || 'Có lỗi xảy ra khi check-in hoặc gán bác sĩ';
+            console.error('Lỗi khi check-in:', err);
+            const errorMsg = err?.response?.data?.message || err?.message || 'Có lỗi xảy ra khi check-in';
             setError(errorMsg);
             showError(errorMsg);
         } finally {
@@ -506,15 +524,29 @@ export default function CheckInPage() {
                                             <button
                                                 onClick={(e) => {
                                                     e.stopPropagation();
-                                                    handleCheckIn(apt.id || apt._id || '');
+                                                    const appointmentId = apt.id || apt._id;
+                                                    if (appointmentId) {
+                                                        handleCheckIn(appointmentId);
+                                                    } else {
+                                                        showError('Không tìm thấy ID lịch hẹn');
+                                                    }
                                                 }}
-                                                disabled={checkingIn}
-                                                className="px-6 py-3 bg-teal-600 text-white rounded-lg hover:bg-teal-700 transition font-medium disabled:opacity-50 flex items-center gap-2"
+                                                disabled={checkingIn || apt.status === 'Checked_In' || apt.status === 'checked_in'}
+                                                className={`px-6 py-3 rounded-lg transition font-medium flex items-center gap-2 ${
+                                                    apt.status === 'Checked_In' || apt.status === 'checked_in'
+                                                        ? 'bg-gray-300 text-gray-500 cursor-not-allowed'
+                                                        : 'bg-teal-600 text-white hover:bg-teal-700 disabled:opacity-50'
+                                                }`}
                                             >
                                                 {checkingIn ? (
                                                     <>
                                                         <Loader2 className="animate-spin" size={18} />
                                                         Đang xử lý...
+                                                    </>
+                                                ) : apt.status === 'Checked_In' || apt.status === 'checked_in' ? (
+                                                    <>
+                                                        <CheckCircle size={18} />
+                                                        Đã check-in
                                                     </>
                                                 ) : (
                                                     <>
@@ -674,14 +706,30 @@ export default function CheckInPage() {
 
                                     {/* Nút Check-in */}
                                     <button
-                                        onClick={() => handleCheckIn(selectedAppointment.id)}
-                                        disabled={checkingIn}
-                                        className="w-full px-6 py-4 bg-teal-600 text-white rounded-lg hover:bg-teal-700 transition font-semibold disabled:opacity-50 flex items-center justify-center gap-2 text-lg"
+                                        onClick={() => {
+                                            const appointmentId = selectedAppointment.id || (selectedAppointment as any)._id;
+                                            if (appointmentId) {
+                                                handleCheckIn(appointmentId);
+                                            } else {
+                                                showError('Không tìm thấy ID lịch hẹn');
+                                            }
+                                        }}
+                                        disabled={checkingIn || selectedAppointment.status === 'Checked_In' || selectedAppointment.status === 'checked_in'}
+                                        className={`w-full px-6 py-4 rounded-lg transition font-semibold flex items-center justify-center gap-2 text-lg ${
+                                            selectedAppointment.status === 'Checked_In' || selectedAppointment.status === 'checked_in'
+                                                ? 'bg-gray-300 text-gray-500 cursor-not-allowed'
+                                                : 'bg-teal-600 text-white hover:bg-teal-700 disabled:opacity-50'
+                                        }`}
                                     >
                                         {checkingIn ? (
                                             <>
                                                 <Loader2 className="animate-spin" size={24} />
                                                 Đang xử lý...
+                                            </>
+                                        ) : selectedAppointment.status === 'Checked_In' || selectedAppointment.status === 'checked_in' ? (
+                                            <>
+                                                <CheckCircle size={24} />
+                                                Đã check-in
                                             </>
                                         ) : (
                                             <>

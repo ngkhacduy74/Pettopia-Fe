@@ -123,11 +123,11 @@ export default function UserNavbar({ setShowSearch, showSearch }: UserNavbarProp
     },
     {
       id: 'prescription',
-      name: 'Đơn thuốc',
+      name: 'Lịch sử khám',
       icon: <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 20 20" fill="currentColor" className="size-5"><path d="M9.653 16.915l-.005-.003-.019-.01a20.759 20.759 0 01-1.162-.682 22.045 22.045 0 01-2.582-1.9C4.045 12.733 2 10.352 2 7.5a4.5 4.5 0 018-2.828A4.5 4.5 0 0118 7.5c0 2.852-2.044 5.233-3.885 6.82a22.049 22.049 0 01-3.744 2.582l-.019.01-.005.003h-.002a.739.739 0 01-.69.001l-.002-.001z" /></svg>,
       path: '/user/prescription',
       category: 'Đặt lịch',
-      keywords: ['đơn thuốc', 'prescription', 'medicine', 'thuốc', 'y tế']
+      keywords: ['lịch sử', 'prescription', 'medicine', 'thuốc', 'y tế']
     }
   ];
 
@@ -452,7 +452,7 @@ export default function UserNavbar({ setShowSearch, showSearch }: UserNavbarProp
               <div className="space-y-1">
                 <Link href="/user/appointments/booking">
                   <button className={`w-full flex items-center gap-3 px-3 py-2 rounded-lg text-sm transition-colors cursor-pointer
-                    ${pathname === '/user/user-booking'
+                    ${pathname === '/user/appointments/booking'
                       ? 'bg-gradient-to-r from-teal-500 to-indigo-600 text-white shadow-sm'
                       : 'hover:bg-teal-50 text-gray-700'}`}>
                     <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 20 20" fill="currentColor" className="size-5">
@@ -464,7 +464,7 @@ export default function UserNavbar({ setShowSearch, showSearch }: UserNavbarProp
 
                 <Link href="/user/appointments/list">
                   <button className={`w-full flex items-center gap-3 px-3 py-2 rounded-lg text-sm transition-colors cursor-pointer
-                    ${pathname === '/user/view-appointments'
+                    ${pathname === '/user/appointments/list'
                       ? 'bg-gradient-to-r from-teal-500 to-indigo-600 text-white shadow-sm'
                       : 'hover:bg-teal-50 text-gray-700'}`}>
                     <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 20 20" fill="currentColor" className="size-5">
@@ -474,13 +474,17 @@ export default function UserNavbar({ setShowSearch, showSearch }: UserNavbarProp
                   </button>
                 </Link>
 
-                <button className="w-full flex items-center gap-3 px-3 py-2 rounded-lg hover:bg-teal-50 text-gray-700 text-sm transition-colors">
-                  <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 20 20" fill="currentColor" className="size-5">
-                    <path d="M9.653 16.915l-.005-.003-.019-.01a20.759 20.759 0 01-1.162-.682 22.045 22.045 0 01-2.582-1.9C4.045 12.733 2 10.352 2 7.5a4.5 4.5 0 018-2.828A4.5 4.5 0 0118 7.5c0 2.852-2.044 5.233-3.885 6.82a22.049 22.049 0 01-3.744 2.582l-.019.01-.005.003h-.002a.739.739 0 01-.69.001l-.002-.001z" />
-                  </svg>
-                  <span>Đơn thuốc</span>
-                  <span className="ml-auto text-xs bg-gray-100 text-gray-500 px-2 py-0.5 rounded">Sắp có</span>
-                </button>
+                <Link href="/user/prescription">
+                  <button className={`w-full flex items-center gap-3 px-3 py-2 rounded-lg text-sm transition-colors cursor-pointer
+                    ${pathname === '/user/prescription'
+                      ? 'bg-gradient-to-r from-teal-500 to-indigo-600 text-white shadow-sm'
+                      : 'hover:bg-teal-50 text-gray-700'}`}>
+                    <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 20 20" fill="currentColor" className="size-5">
+                      <path d="M9.653 16.915l-.005-.003-.019-.01a20.759 20.759 0 01-1.162-.682 22.045 22.045 0 01-2.582-1.9C4.045 12.733 2 10.352 2 7.5a4.5 4.5 0 018-2.828A4.5 4.5 0 0118 7.5c0 2.852-2.044 5.233-3.885 6.82a22.049 22.049 0 01-3.744 2.582l-.019.01-.005.003h-.002a.739.739 0 01-.69.001l-.002-.001z" />
+                    </svg>
+                    <span>Lịch sử khám</span>
+                  </button>
+                </Link>
               </div>
             </div>
 

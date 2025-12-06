@@ -470,3 +470,124 @@ export async function callAIChat(userId: string, messages: { role: 'user'; conte
 
     throw new Error('Max retries reached for calling AI API');
 }
+
+// ================ MEDICAL RECORD ================
+export interface MedicalRecord {
+  symptoms?: string;
+  diagnosis?: string;
+  notes?: string;
+  prescription?: string;
+  [key: string]: any;
+}
+
+export interface MedicalRecordResponse {
+  status: string;
+  message?: string;
+  data: MedicalRecord;
+}
+
+export async function getAppointmentMedicalRecord(
+  appointmentId: string
+): Promise<MedicalRecord> {
+  const token = getAuthToken();
+  if (!token) throw new Error('No authentication token found');
+
+  try {
+    const url = `${process.env.NEXT_PUBLIC_PETTOPIA_API_URL}/healthcare/appointments/${encodeURIComponent(
+      appointmentId
+    )}/medical-record`;
+
+    const response = await axios.get(url, {
+      headers: { 'token': token }
+    });
+
+    // API trả về { status, message, data: { ... } }, nên trả về phần data
+    return response.data?.data || response.data;
+  } catch (error: any) {
+    const status = error?.response?.status;
+    if (status === 404) {
+      console.warn('Medical record not found for appointment:', appointmentId);
+      return {};
+    }
+    if (status === 401 || status === 403) {
+      console.warn('Unauthorized to access medical record');
+      throw new Error('Bạn không có quyền xem hồ sơ bệnh án');
+    }
+    logAxiosError('getAppointmentMedicalRecord', error);
+    throw error;
+  }
+}
+
+// ================ GET MEDICAL RECORDS BY PET ID ================
+/**
+ * Lấy tất cả medical records của một pet thông qua appointments
+ * Flow: Lấy appointments -> Filter theo pet_id -> Lấy medical record từ mỗi appointment
+ */
+export interface PetMedicalRecord {
+  appointmentId: string;
+  appointmentDate: string;
+  appointmentStatus: string;
+  record: MedicalRecord;
+}
+
+export async function getMedicalRecordsByPetId(
+  petId: string,
+  options?: {
+    page?: number;
+    limit?: number;
+    statusFilter?: string[]; // Filter appointments by status (e.g., ['Completed', 'Checked_In'])
+  }
+): Promise<PetMedicalRecord[]> {
+  const token = getAuthToken();
+  if (!token) throw new Error('No authentication token found');
+
+  try {
+    // Bước 1: Lấy danh sách appointments
+    const { page = 1, limit = 100, statusFilter } = options || {};
+    const appointmentsData = await getAppointments({ page, limit });
+    const appointments = appointmentsData.data || [];
+
+    // Bước 2: Filter appointments có chứa pet_id này
+    const petAppointments = appointments.filter((apt: Appointment) => 
+      apt.pet_ids?.includes(petId)
+    );
+
+    // Bước 3: Filter theo status nếu có (mặc định lấy tất cả)
+    const filteredAppointments = statusFilter && statusFilter.length > 0
+      ? petAppointments.filter((apt: Appointment) => statusFilter.includes(apt.status))
+      : petAppointments;
+
+    // Bước 4: Lấy medical records từ các appointments
+    const medicalRecordsPromises = filteredAppointments.map(async (apt: Appointment) => {
+      try {
+        const record = await getAppointmentMedicalRecord(apt.id);
+        // Chỉ trả về nếu có medical record (không rỗng)
+        if (record && Object.keys(record).length > 0) {
+          return {
+            appointmentId: apt.id,
+            appointmentDate: apt.date,
+            appointmentStatus: apt.status,
+            record
+          };
+        }
+        return null;
+      } catch (error) {
+        // Bỏ qua lỗi 404 (không có medical record)
+        if ((error as any)?.response?.status === 404) {
+          return null;
+        }
+        console.warn(`Error fetching medical record for appointment ${apt.id}:`, error);
+        return null;
+      }
+    });
+
+    const medicalRecords = (await Promise.all(medicalRecordsPromises))
+      .filter((item): item is PetMedicalRecord => item !== null)
+      .sort((a, b) => new Date(b.appointmentDate).getTime() - new Date(a.appointmentDate).getTime()); // Sắp xếp theo ngày mới nhất
+
+    return medicalRecords;
+  } catch (error) {
+    logAxiosError('getMedicalRecordsByPetId', error);
+    throw error;
+  }
+}
