@@ -270,7 +270,7 @@ export default function EditPetForm() {
             )}
 
             <div className="flex gap-3 pt-4 border-t border-gray-100">
-              <Link href="/user/pet-list" className="flex-1">
+              <Link href="/user/pet/list" className="flex-1">
                 <button
                   type="button"
                   className="w-full border-2 border-gray-300 text-gray-700 rounded-lg py-2 hover:bg-gray-50"

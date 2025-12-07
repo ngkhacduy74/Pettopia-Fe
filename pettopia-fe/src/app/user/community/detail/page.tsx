@@ -218,7 +218,7 @@ export default function PostDetailPage() {
 
   if (loading) {
     return (
-      <div className="min-h-screen bg-gray-50 flex items-center justify-center">
+      <div className="min-h-screen flex items-center justify-center">
         <div className="text-center">
           <div className="animate-spin rounded-full h-12 w-12 border-b-2 border-blue-600 mx-auto mb-4"></div>
           <p className="text-gray-600 font-medium">Đang tải...</p>
@@ -229,7 +229,7 @@ export default function PostDetailPage() {
 
   if (error) {
     return (
-      <div className="min-h-screen bg-gray-50">
+      <div className="min-h-screen">
         <div className="container mx-auto px-4 py-10 max-w-3xl">
           <div className="bg-red-50 border border-red-200 text-red-700 px-4 py-3 rounded-lg">{error}</div>
         </div>
@@ -240,7 +240,7 @@ export default function PostDetailPage() {
   if (!post) return null;
 
   return (
-    <div className="min-h-screen bg-gray-50">
+    <div className="min-h-screen">
       <div className="container mx-auto px-4 py-6 max-w-6xl">
         {/* Back Button */}
         <button
@@ -257,7 +257,25 @@ export default function PostDetailPage() {
           <main className="flex-1 min-w-0 lg:max-w-3xl">
             {/* Post Card */}
             <div className="bg-white rounded-lg shadow border border-gray-200 overflow-hidden mb-4">
-              {/* Header with author info */}
+              {/* Images at the top */}
+              {post.images && post.images.length > 0 && (
+                <div>
+                  <div className={`grid gap-1 ${post.images.length === 1 ? 'grid-cols-1' : 'grid-cols-2'}`}>
+                    {post.images.map((img, i) => (
+                      <img
+                        key={i}
+                        src={img}
+                        alt={`image-${i}`}
+                        className="w-full object-cover cursor-pointer hover:opacity-95 transition-opacity"
+                        style={{ maxHeight: post.images!.length === 1 ? '500px' : '300px' }}
+                        onClick={() => openLightbox(i)}
+                      />
+                    ))}
+                  </div>
+                </div>
+              )}
+
+              {/* Header with author info and date */}
               <div className="px-4 pt-4 pb-3">
                 <div className="flex items-start justify-between">
                   <div className="flex gap-3">
@@ -330,163 +348,136 @@ export default function PostDetailPage() {
                 </div>
               </div>
 
-              {/* Images */}
-              {post.images && post.images.length > 0 && (
-                <div className="mt-3">
-                  <div className={`grid gap-1 ${post.images.length === 1 ? 'grid-cols-1' : 'grid-cols-2'}`}>
-                    {post.images.map((img, i) => (
-                      <img
-                        key={i}
-                        src={img}
-                        alt={`image-${i}`}
-                        className="w-full object-cover cursor-pointer hover:opacity-95 transition-opacity"
-                        style={{ maxHeight: post.images!.length === 1 ? '500px' : '300px' }}
-                        onClick={() => openLightbox(i)}
-                      />
-                    ))}
-                  </div>
-                </div>
-              )}
-
-              {/* Stats bar */}
-              <div className="px-4 py-2 flex items-center justify-between text-xs text-gray-600 border-t border-gray-200 mt-3">
-                <div className="flex items-center gap-1">
-                  {post.likeCount > 0 && (
-                    <>
-                      <div className="flex -space-x-1">
-                        <div className="w-4 h-4 rounded-full bg-blue-500 flex items-center justify-center">
-                          <svg className="w-2.5 h-2.5 text-white" fill="currentColor" viewBox="0 0 20 20">
-                            <path d="M2 10.5a1.5 1.5 0 113 0v6a1.5 1.5 0 01-3 0v-6zM6 10.333v5.43a2 2 0 001.106 1.79l.05.025A4 4 0 008.943 18h5.416a2 2 0 001.962-1.608l1.2-6A2 2 0 0015.56 8H12V4a2 2 0 00-2-2 1 1 0 00-1 1v.667a4 4 0 01-.8 2.4L6.8 7.933a4 4 0 00-.8 2.4z" />
-                          </svg>
-                        </div>
-                      </div>
-                      <span className="ml-1 hover:text-blue-600 cursor-pointer hover:underline">{getLikedUsersText()}</span>
-                    </>
-                  )}
-                </div>
-                <div className="flex items-center gap-3">
-                  {post.commentCount > 0 && (
-                    <span className="hover:text-blue-600 cursor-pointer hover:underline">{post.commentCount} bình luận</span>
-                  )}
-                  <span>{post.viewCount} lượt xem</span>
-                </div>
-              </div>
-
               {/* Action buttons */}
-              <div className="flex items-center justify-around py-1 border-t border-gray-200">
-                <button
-                  onClick={handleToggleLike}
-                  disabled={liking}
-                  className={`flex-1 flex items-center justify-center gap-2 py-2.5 rounded-lg transition-colors ${isLikedByCurrentUser
-                    ? 'text-blue-600 hover:bg-gray-100'
-                    : 'text-gray-600 hover:bg-gray-100'
-                    } disabled:opacity-60 font-semibold text-sm`}
-                >
-                  <svg className="w-5 h-5" fill={isLikedByCurrentUser ? 'currentColor' : 'none'} stroke="currentColor" strokeWidth={2} viewBox="0 0 24 24">
-                    <path strokeLinecap="round" strokeLinejoin="round" d="M14 9V5a3 3 0 00-3-3l-4 9v11h11.28a2 2 0 002-1.7l1.38-9a2 2 0 00-2-2.3zM7 22H4a2 2 0 01-2-2v-7a2 2 0 012-2h3" />
-                  </svg>
-                  <span>{isLikedByCurrentUser ? 'Đã thích' : 'Thích'}</span>
-                </button>
-                <button className="flex-1 flex items-center justify-center gap-2 py-2.5 rounded-lg text-gray-600 hover:bg-gray-100 transition-colors font-semibold text-sm">
-                  <svg className="w-5 h-5" fill="none" stroke="currentColor" strokeWidth={2} viewBox="0 0 24 24">
-                    <path strokeLinecap="round" strokeLinejoin="round" d="M8 12h.01M12 12h.01M16 12h.01M21 12c0 4.418-4.03 8-9 8a9.863 9.863 0 01-4.255-.949L3 20l1.395-3.72C3.512 15.042 3 13.574 3 12c0-4.418 4.03-8 9-8s9 3.582 9 8z" />
-                  </svg>
-                  <span>Bình luận</span>
-                </button>
-                <button className="flex-1 flex items-center justify-center gap-2 py-2.5 rounded-lg text-gray-600 hover:bg-gray-100 transition-colors font-semibold text-sm">
-                  <svg className="w-5 h-5" fill="none" stroke="currentColor" strokeWidth={2} viewBox="0 0 24 24">
-                    <path strokeLinecap="round" strokeLinejoin="round" d="M8.684 13.342C8.886 12.938 9 12.482 9 12c0-.482-.114-.938-.316-1.342m0 2.684a3 3 0 110-2.684m0 2.684l6.632 3.316m-6.632-6l6.632-3.316m0 0a3 3 0 105.367-2.684 3 3 0 00-5.367 2.684zm0 9.316a3 3 0 105.368 2.684 3 3 0 00-5.368-2.684z" />
-                  </svg>
-                  <span>Chia sẻ</span>
-                </button>
-              </div>
-            </div>
-
-            {/* Comments Section */}
-            <div className="bg-white rounded-lg shadow border border-gray-200 overflow-hidden mb-4">
-              {/* Comment input */}
-              <div className="p-4 border-b border-gray-200">
-                <div className="flex gap-3">
-                  <img
-                    src={currentUserId ? `https://api.dicebear.com/7.x/avataaars/svg?seed=${currentUserId}` : `https://api.dicebear.com/7.x/avataaars/svg?seed=default`}
-                    alt="You"
-                    className="w-10 h-10 rounded-full object-cover flex-shrink-0"
-                  />
-                  <div className="flex-1">
-                    <textarea
-                      value={commentInput}
-                      onChange={(e) => setCommentInput(e.target.value)}
-                      placeholder="Thêm bình luận..."
-                      rows={1}
-                      maxLength={200}
-                      className="w-full px-0 py-0 border-0 focus:outline-none focus:ring-0 resize-none text-sm placeholder-gray-500"
-                      onFocus={(e) => {
-                        e.target.rows = 3;
-                      }}
-                      onBlur={(e) => {
-                        if (!commentInput.trim()) e.target.rows = 1;
-                      }}
-                    />
-                    {commentInput.trim() && (
-                      <div className="flex justify-end items-center mt-2 pt-2 border-t border-gray-200">
-                        <button
-                          onClick={handleSubmitComment}
-                          disabled={submittingComment || !commentInput.trim()}
-                          className={`px-4 py-1.5 rounded-full font-semibold text-sm transition-all ${submittingComment || !commentInput.trim()
-                            ? "bg-gray-200 text-gray-400 cursor-not-allowed"
-                            : "bg-blue-600 text-white hover:bg-blue-700"
-                            }`}
-                        >
-                          {submittingComment ? "Đang gửi..." : "Đăng"}
-                        </button>
-                      </div>
-                    )}
-                  </div>
-                </div>
-              </div>
-
-              {/* Comments list */}
-              <div className="divide-y divide-gray-200">
-                {post.comments && post.comments.length > 0 ? (
-                  post.comments.map((c) => (
-                    <div key={c.comment_id} className="p-4 hover:bg-gray-50 transition-colors">
-                      <div className="flex gap-3">
-                        <img
-                          src={c.author?.avatar || `https://api.dicebear.com/7.x/avataaars/svg?seed=${c.author?.user_id || 'user'}`}
-                          alt={c.author?.fullname || "user"}
-                          className="w-10 h-10 rounded-full object-cover flex-shrink-0"
-                          onError={(e) => {
-                            e.currentTarget.src = `https://api.dicebear.com/7.x/avataaars/svg?seed=${c.author?.user_id || 'user'}`;
-                          }}
-                        />
-                        <div className="flex-1 min-w-0">
-                          <div>
-                            <div className="flex items-baseline gap-2">
-                              <span className="font-semibold text-sm text-gray-900 hover:text-blue-600 cursor-pointer">
-                                {c.author?.fullname || "Người dùng"}
-                              </span>
-                              <span className="text-xs text-gray-500">• {communicationService.formatTimeAgo(c.createdAt)}</span>
-                            </div>
-                            <p className="text-xs text-gray-600">Member</p>
-                          </div>
-                          <p className="text-sm text-gray-800 mt-1 whitespace-pre-wrap leading-relaxed">{c.content}</p>
-                          
-                          {/* Comment actions */}
-                          <div className="flex items-center gap-4 mt-2 text-xs font-semibold text-gray-600">
-                            <button className="hover:text-blue-600 transition-colors">Thích</button>
-                            <button className="hover:text-blue-600 transition-colors">Trả lời</button>
-                          </div>
-                        </div>
-                      </div>
+              <div className="space-y-3">
+                {/* Hiển thị số lượt thích */}
+                {post.likeCount > 0 && (
+                  <div className="flex items-center gap-2 px-4">
+                    <div className="w-5 h-5 rounded-full bg-blue-500 flex items-center justify-center">
+                      <svg className="w-3 h-3 text-white" fill="currentColor" viewBox="0 0 20 20">
+                        <path d="M2 10.5a1.5 1.5 0 113 0v6a1.5 1.5 0 01-3 0v-6zM6 10.333v5.43a2 2 0 001.106 1.79l.05.025A4 4 0 008.943 18h5.416a2 2 0 001.962-1.608l1.2-6A2 2 0 0015.56 8H12V4a2 2 0 00-2-2 1 1 0 00-1 1v.667a4 4 0 01-.8 2.4L6.8 7.933a4 4 0 00-.8 2.4z" />
+                      </svg>
                     </div>
-                  ))
-                ) : (
-                  <div className="text-center py-12 text-gray-500 text-sm">
-                    Chưa có bình luận nào. Hãy là người đầu tiên bình luận!
+                    <span className="text-sm text-gray-600 hover:text-blue-600 cursor-pointer hover:underline">
+                      {getLikedUsersText()}
+                    </span>
                   </div>
                 )}
+
+                {/* Nút Thích */}
+                <div className="flex items-center justify-around py-1 border-t border-gray-200">
+                  <button
+                    onClick={handleToggleLike}
+                    disabled={liking}
+                    className={`flex-1 flex items-center justify-center gap-2 py-2.5 rounded-lg transition-colors ${isLikedByCurrentUser
+                        ? 'text-blue-600 hover:bg-blue-50'
+                        : 'text-gray-600 hover:bg-gray-100'
+                      } disabled:opacity-60 font-semibold text-sm`}
+                  >
+                    <svg
+                      className="w-5 h-5"
+                      fill={isLikedByCurrentUser ? 'currentColor' : 'none'}
+                      stroke="currentColor"
+                      strokeWidth={2}
+                      viewBox="0 0 24 24"
+                    >
+                      <path
+                        strokeLinecap="round"
+                        strokeLinejoin="round"
+                        d="M14 9V5a3 3 0 00-3-3l-4 9v11h11.28a2 2 0 002-1.7l1.38-9a2 2 0 00-2-2.3zM7 22H4a2 2 0 01-2-2v-7a2 2 0 012-2h3"
+                      />
+                    </svg>
+                    <span>{isLikedByCurrentUser ? 'Đã thích' : 'Thích'}</span>
+                  </button>
+                </div>
               </div>
-            </div>
+
+              {/* Comments Section */}
+              <div className="bg-white rounded-lg shadow border border-gray-200 overflow-hidden mb-4">
+                {/* Comment input */}
+                <div className="p-4 border-b border-gray-200">
+                  <div className="flex gap-3">
+                    <img
+                      src={currentUserId ? `https://api.dicebear.com/7.x/avataaars/svg?seed=${currentUserId}` : `https://api.dicebear.com/7.x/avataaars/svg?seed=default`}
+                      alt="You"
+                      className="w-10 h-10 rounded-full object-cover flex-shrink-0"
+                    />
+                    <div className="flex-1">
+                      <textarea
+                        value={commentInput}
+                        onChange={(e) => setCommentInput(e.target.value)}
+                        placeholder="Thêm bình luận..."
+                        rows={1}
+                        maxLength={200}
+                        className="w-full px-0 py-0 border-0 focus:outline-none focus:ring-0 resize-none text-sm placeholder-gray-500"
+                        onFocus={(e) => {
+                          e.target.rows = 3;
+                        }}
+                        onBlur={(e) => {
+                          if (!commentInput.trim()) e.target.rows = 1;
+                        }}
+                      />
+                      {commentInput.trim() && (
+                        <div className="flex justify-end items-center mt-2 pt-2 border-t border-gray-200">
+                          <button
+                            onClick={handleSubmitComment}
+                            disabled={submittingComment || !commentInput.trim()}
+                            className={`px-4 py-1.5 rounded-full font-semibold text-sm transition-all ${submittingComment || !commentInput.trim()
+                              ? "bg-gray-200 text-gray-400 cursor-not-allowed"
+                              : "bg-blue-600 text-white hover:bg-blue-700"
+                              }`}
+                          >
+                            {submittingComment ? "Đang gửi..." : "Đăng"}
+                          </button>
+                        </div>
+                      )}
+                    </div>
+                  </div>
+                </div>
+
+                {/* Comments list */}
+                <div className="divide-y divide-gray-200">
+                  {post.comments && post.comments.length > 0 ? (
+                    post.comments.map((c) => (
+                      <div key={c.comment_id} className="p-4 hover:bg-gray-50 transition-colors">
+                        <div className="flex gap-3">
+                          <img
+                            src={c.author?.avatar || `https://api.dicebear.com/7.x/avataaars/svg?seed=${c.author?.user_id || 'user'}`}
+                            alt={c.author?.fullname || "user"}
+                            className="w-10 h-10 rounded-full object-cover flex-shrink-0"
+                            onError={(e) => {
+                              e.currentTarget.src = `https://api.dicebear.com/7.x/avataaars/svg?seed=${c.author?.user_id || 'user'}`;
+                            }}
+                          />
+                          <div className="flex-1 min-w-0">
+                            <div>
+                              <div className="flex items-baseline gap-2">
+                                <span className="font-semibold text-sm text-gray-900 hover:text-blue-600 cursor-pointer">
+                                  {c.author?.fullname || "Người dùng"}
+                                </span>
+                                <span className="text-xs text-gray-500">• {communicationService.formatTimeAgo(c.createdAt)}</span>
+                              </div>
+                              <p className="text-xs text-gray-600">Member</p>
+                            </div>
+                            <p className="text-sm text-gray-800 mt-1 whitespace-pre-wrap leading-relaxed">{c.content}</p>
+
+                            {/* Comment actions */}
+                            <div className="flex items-center gap-4 mt-2 text-xs font-semibold text-gray-600">
+                              <button className="hover:text-blue-600 transition-colors">Thích</button>
+                              <button className="hover:text-blue-600 transition-colors">Trả lời</button>
+                            </div>
+                          </div>
+                        </div>
+                      </div>
+                    ))
+                  ) : (
+                    <div className="text-center py-12 text-gray-500 text-sm">
+                      Chưa có bình luận nào. Hãy là người đầu tiên bình luận!
+                    </div>
+                  )}
+                </div>
+              </div>
+              </div>
           </main>
 
           {/* Right Sidebar - Related Posts */}
@@ -495,7 +486,7 @@ export default function PostDetailPage() {
               <div className="p-4 border-b border-gray-200">
                 <h3 className="font-bold text-lg text-gray-900">Xem bài viết khác</h3>
               </div>
-              
+
               <div className="divide-y divide-gray-200">
                 {loadingRelated ? (
                   <div className="p-4 text-center text-gray-500 text-sm">Đang tải...</div>
@@ -555,7 +546,6 @@ export default function PostDetailPage() {
           <div className="absolute top-4 left-1/2 transform -translate-x-1/2 text-white text-sm font-semibold bg-gray-800 bg-opacity-80 px-4 py-2 rounded-full">
             {lightbox.currentIndex + 1} / {post.images.length}
           </div>
-
           {/* Previous button */}
           {post.images.length > 1 && (
             <button

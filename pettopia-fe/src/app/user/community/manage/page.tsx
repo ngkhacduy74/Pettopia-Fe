@@ -339,29 +339,44 @@ export default function ManagePostsPage() {
             </button>
           </div>
 
-          {/* Stats Cards */}
-          <div className="grid grid-cols-1 md:grid-cols-4 gap-4 mb-6">
-            <div className="bg-gradient-to-br from-teal-600 to-cyan-600 rounded-xl shadow-lg p-3 text-white">
-              <div className="text-teal-100 text-sm font-medium mb-1">Bài viết của bạn</div>
-              <div className="text-3xl font-bold">{posts.length}</div>
-            </div>
-            <div className="bg-gradient-to-br from-teal-600 to-cyan-600 rounded-xl shadow-lg p-3 text-white">
-              <div className="text-green-100 text-sm font-medium mb-1">Đang hiển thị</div>
-              <div className="text-3xl font-bold">{posts.filter(p => p.isHidden === false).length}</div>
-            </div>
-            <div className="bg-gradient-to-br from-teal-600 to-cyan-600 rounded-xl shadow-lg p-3 text-white">
-              <div className="text-orange-100 text-sm font-medium mb-1">Đã ẩn</div>
-              <div className="text-3xl font-bold">{posts.filter(p => p.isHidden === true).length}</div>
-            </div>
-            <div className="bg-gradient-to-br from-teal-600 to-cyan-600 rounded-xl shadow-lg p-3 text-white">
-              <div className="text-red-100 text-sm font-medium mb-1">Có báo cáo</div>
-              <div className="text-3xl font-bold">{posts.filter(p => (p.reportCount || 0) > 0).length}</div>
-            </div>
-          </div>
+                {/* Stats Cards */}
+      <div className="grid grid-cols-1 md:grid-cols-4 gap-4">
+        {/* Card 1: Tổng bài viết - Xanh dương */}
+        <div className="bg-blue-50 rounded-xl shadow-sm p-4 border border-blue-200">
+          <p className="text-sm text-blue-600 font-medium mb-1">Bài viết của bạn</p>
+          <p className="text-3xl font-bold text-blue-900">{posts.length}</p>
+        </div>
+
+        {/* Card 2: Đang hiển thị - Vàng Amber */}
+        <div className="bg-amber-50 rounded-xl shadow-sm p-4 border border-amber-200">
+          <p className="text-sm text-amber-600 font-medium mb-1">Đang hiển thị</p>
+          <p className="text-3xl font-bold text-amber-900">
+            {posts.filter(p => p.isHidden === false).length}
+          </p>
+        </div>
+
+        {/* Card 3: Đã ẩn - Cam Orange */}
+        <div className="bg-orange-50 rounded-xl shadow-sm p-4 border border-orange-200">
+          <p className="text-sm text-orange-600 font-medium mb-1">Đã ẩn</p>
+          <p className="text-3xl font-bold text-orange-900">
+            {posts.filter(p => p.isHidden === true).length}
+          </p>
+        </div>
+
+        {/* Card 4: Có báo cáo - Tím Indigo */}
+        <div className="bg-indigo-50 rounded-xl shadow-sm p-4 border border-indigo-200">
+          <p className="text-sm text-indigo-600 font-medium mb-1">Có báo cáo</p>
+          <p className="text-3xl font-bold text-indigo-900">
+            {posts.filter(p => (p.reportCount || 0) > 0).length}
+          </p>
+        </div>
+      </div>
+
+
 
           {/* Search and Filters */}
-          <div className="bg-white rounded-xl shadow-sm border border-teal-100 p-6 mb-6">
-            <div className="flex flex-wrap gap-4 items-center">
+          <div className=" p-5">
+            <div className="flex flex-wrap gap-2 items-center">
               <div className="flex-1 min-w-[300px]">
                 <input
                   type="text"
@@ -384,7 +399,7 @@ export default function ManagePostsPage() {
           </div>
 
           {/* Filters */}
-          <div className="flex gap-4 items-center mb-6">
+          <div className="flex items-center mb-5">
             <div className="flex gap-2">
               <button
                 onClick={() => setFilterStatus('all')}

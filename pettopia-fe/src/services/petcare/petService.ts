@@ -469,8 +469,6 @@ export async function callAIChat(userId: string, messages: { role: 'user'; conte
     }
 
     throw new Error('Max retries reached for calling AI API');
-<<<<<<< Updated upstream
-=======
 }
 
 // ================ MEDICAL RECORD ================
@@ -593,5 +591,4 @@ export async function getMedicalRecordsByPetId(
     logAxiosError('getMedicalRecordsByPetId', error);
     throw error;
   }
->>>>>>> Stashed changes
 }

@@ -360,7 +360,7 @@ export default function RegisterPetPage() {
         <div className="max-w-7xl mx-auto px-11 py-8">
                     {/* Hero Section */}
                     <div className="mb-6">
-                        <Link href="/user/pet-list" className="inline-flex items-center gap-2 text-teal-600 hover:text-teal-700 transition-colors mb-4">
+                        <Link href="/user/pet/list" className="inline-flex items-center gap-2 text-teal-600 hover:text-teal-700 transition-colors mb-4">
                             <svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                                 <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M15 19l-7-7 7-7" />
                             </svg>
