@@ -2,495 +2,234 @@
 import React, { useState, useEffect } from 'react';
 import { useRouter } from 'next/navigation';
 import { communicationService } from '@/services/communication/communicationService';
-import type { Post } from '@/services/communication/communicationService';
 
-interface Author {
-  user_id: string;
-  fullname: string;
-  avatar: string | null;
-}
-
-interface Category {
-  id: string;
-  name: string;
-  color: string;
-}
-
-const normalizeHiddenFlag = (value: unknown): boolean => {
-  if (typeof value === 'boolean') return value;
-  if (typeof value === 'number') return value === 1;
-  if (typeof value === 'string') {
-    const normalized = value.trim().toLowerCase();
-    return normalized === 'true' || normalized === '1';
-  }
-  return false;
-};
+const SearchIcon = ({ size = 18, className = '', ...props }: { size?: number; className?: string }) => (
+  <svg
+    width={size}
+    height={size}
+    viewBox="0 0 24 24"
+    fill="none"
+    stroke="currentColor"
+    strokeWidth="2"
+    className={className}
+    {...props}
+  >
+    <path d="m21 21-5.197-5.197m0 0A7.5 7.5 0 1 0 5.196 5.196a7.5 7.5 0 0 0 10.607 10.607Z" />
+  </svg>
+);
 
 export default function CommunityPage() {
   const router = useRouter();
-  
-  const [activeTab, setActiveTab] = useState<string>('all');
-  const [searchQuery, setSearchQuery] = useState<string>('');
-  const [posts, setPosts] = useState<Post[]>([]);
-  const [allPosts, setAllPosts] = useState<Post[]>([]);
-  const [trendingPosts, setTrendingPosts] = useState<Post[]>([]);
-  const [loading, setLoading] = useState<boolean>(true);
-  const [error, setError] = useState<string>('');
-  const [currentPage, setCurrentPage] = useState<number>(1);
-  const pageSize = 10;
+  const [posts, setPosts] = useState<any[]>([]);
+  const [loading, setLoading] = useState(true);
+  const [searchQuery, setSearchQuery] = useState('');
 
-  const categories: Category[] = [
-    { id: 'thongbao', name: 'Thông báo', color: 'bg-blue-100 text-blue-600' },
-    { id: 'gopy', name: 'Góp ý', color: 'bg-orange-100 text-orange-600' },
-    { id: 'tintuc', name: 'Tin tức', color: 'bg-cyan-100 text-cyan-600' },
-    { id: 'review', name: 'Review sản phẩm', color: 'bg-purple-100 text-purple-600' },
-    { id: 'chiase', name: 'Chia sẻ kiến thức', color: 'bg-green-100 text-green-600' },
-    { id: 'tuvan', name: 'Tư vấn', color: 'bg-pink-100 text-pink-600' }
-  ];
-
-  // Initialize service with token on mount
   useEffect(() => {
     const token = localStorage.getItem('authToken');
-    if (token) {
-      communicationService.setToken(token);
-    }
-    loadPosts();
-    loadTrendingPosts();
-  }, []);
+    if (token) communicationService.setToken(token);
 
-  // Load posts khi activeTab thay đổi
-  useEffect(() => {
-    // Skip if allPosts is not loaded yet
-    if (allPosts.length === 0) return;
-    
-    // Reset search query khi đổi tab
-    setSearchQuery('');
-    setCurrentPage(1);
-    
-    if (activeTab !== 'all') {
-      loadPostsByTag(activeTab);
-    } else {
-      setPosts(allPosts);
-    }
-  }, [activeTab, allPosts]);
+    const loadPosts = async () => {
+      try {
+        const data = await communicationService.getAllPosts();
+        const normalized = (Array.isArray(data) ? data : [])
+          .filter((p: any) => !p.isHidden)
+          .map((p: any) => ({
+            ...p,
+            tags: communicationService.parseTags(p.tags || []),
+            images: p.images || []
+          }))
+          .sort((a: any, b: any) => new Date(b.createdAt).getTime() - new Date(a.createdAt).getTime());
 
-  // Search debounce
-  useEffect(() => {
-    // Skip if allPosts is not loaded yet
-    if (allPosts.length === 0 && !searchQuery) return;
-    
-    const timer = setTimeout(() => {
-      handleSearch();
-      setCurrentPage(1);
-    }, 500);
-
-    return () => clearTimeout(timer);
-  }, [searchQuery, allPosts]);
-
-  const loadPosts = async () => {
-    try {
-      setLoading(true);
-      setError('');
-      const data = await communicationService.getAllPosts();
-      const normalized = (Array.isArray(data) ? data : [])
-        .map(post => ({
-          ...post,
-          isHidden: normalizeHiddenFlag((post as any)?.isHidden),
-          tags: communicationService.parseTags(post.tags),
-        }))
-        .filter(post => !post.isHidden);
-      setAllPosts(normalized);
-      setPosts(normalized);
-    } catch (err) {
-      setError('Không thể tải bài viết. Vui lòng thử lại sau.');
-      console.error('Error loading posts:', err);
-      setAllPosts([]);
-      setPosts([]);
-    } finally {
-      setLoading(false);
-    }
-  };
-
-  const loadTrendingPosts = async () => {
-    try {
-      const response = await communicationService.getTrendingPosts(5);
-      const postsArray = (Array.isArray(response) ? response : [])
-        .map(post => ({
-          ...post,
-          isHidden: normalizeHiddenFlag((post as any)?.isHidden),
-          tags: communicationService.parseTags(post.tags),
-        }))
-        .filter(post => !post.isHidden);
-      setTrendingPosts(postsArray);
-    } catch (err) {
-      console.error('Error loading trending posts:', err);
-      setTrendingPosts([]);
-    }
-  };
-
-  const loadPostsByTag = (tag: string) => {
-    // Don't show loading spinner for client-side filtering
-    const filtered = allPosts.filter(p => 
-      (p.tags || []).map(t => String(t).toLowerCase()).includes(tag.toLowerCase())
-    );
-    setPosts(filtered);
-  };
-
-  const handleSearch = () => {
-    // Wait for allPosts to be loaded
-    if (allPosts.length === 0 && !searchQuery.trim()) {
-      return;
-    }
-    
-    if (!searchQuery.trim()) {
-      // If search is empty, show all posts or filtered by tag
-      if (activeTab === 'all') {
-        setPosts(allPosts);
-      } else {
-        const filtered = allPosts.filter(p => 
-          (p.tags || []).map(t => String(t).toLowerCase()).includes(activeTab.toLowerCase())
-        );
-        setPosts(filtered);
+        setPosts(normalized);
+      } catch (err) {
+        console.error(err);
+      } finally {
+        setLoading(false);
       }
-      return;
-    }
-    
-    try {
-      // Don't show loading spinner for search (instant)
-      
-      // Search locally from allPosts
-      const query = searchQuery.toLowerCase().trim();
-      let filtered = allPosts.filter(p => {
-        const titleMatch = p.title.toLowerCase().includes(query);
-        const contentMatch = p.content.toLowerCase().includes(query);
-        const authorMatch = p.author.fullname.toLowerCase().includes(query);
-        return titleMatch || contentMatch || authorMatch;
-      });
-      
-      // Apply tag filter if not on 'all' tab
-      if (activeTab !== 'all') {
-        filtered = filtered.filter(p => 
-          (p.tags || []).map(t => String(t).toLowerCase()).includes(activeTab.toLowerCase())
-        );
-      }
-      
-      setPosts(filtered);
-    } catch (err) {
-      setError('Không thể tìm kiếm bài viết.');
-      console.error('Error searching posts:', err);
-      setPosts([]);
-    }
-  };
-
-  const getCategoryBadge = (tags: string[]) => {
-    if (!tags || tags.length === 0) return null;
-    
-    const categoryMap: { [key: string]: { text: string; bgColor: string; textColor: string } } = {
-      'thongbao': { text: 'thảo luận', bgColor: 'bg-blue-100', textColor: 'text-blue-700' },
-      'gopy': { text: 'góp ý', bgColor: 'bg-orange-100', textColor: 'text-orange-700' },
-      'tintuc': { text: 'tin tức', bgColor: 'bg-cyan-100', textColor: 'text-cyan-700' },
-      'review': { text: 'review', bgColor: 'bg-purple-100', textColor: 'text-purple-700' },
-      'chiase': { text: 'download', bgColor: 'bg-green-600', textColor: 'text-white' },
-      'tuvan': { text: 'tư vấn', bgColor: 'bg-pink-100', textColor: 'text-pink-700' }
     };
 
-    const tag = tags[0].toLowerCase();
-    return categoryMap[tag] || { text: tag, bgColor: 'bg-gray-100', textColor: 'text-gray-700' };
+    loadPosts();
+  }, []);
+
+  const getCategoryColor = (tag: string) => {
+    const colors: Record<string, string> = {
+      thongbao: 'bg-pink-100 text-pink-700',
+      gopy: 'bg-orange-100 text-orange-700',
+      tintuc: 'bg-blue-100 text-blue-700',
+      review: 'bg-purple-100 text-purple-700',
+      chiase: 'bg-green-100 text-green-700',
+      tuvan: 'bg-pink-100 text-pink-700',
+      lifestyle: 'bg-pink-100 text-pink-700',
+      sports: 'bg-blue-100 text-blue-700',
+      business: 'bg-green-100 text-green-700',
+    };
+    return colors[tag.toLowerCase()] || 'bg-gray-100 text-gray-700';
   };
 
-  const formatCount = (count: number): string => {
-    if (count >= 1000) {
-      return `${(count / 1000).toFixed(1)}K`;
-    }
-    return count.toString();
-  };
+  const filteredPosts = posts.filter(p =>
+    p.title.toLowerCase().includes(searchQuery.toLowerCase()) ||
+    p.content.toLowerCase().includes(searchQuery.toLowerCase()) ||
+    (p.tags || []).some((tag: string) => tag.toLowerCase().includes(searchQuery.toLowerCase()))
+  );
 
-  const handleViewPostDetail = (postId: string) => {
-    router.push(`/user/community/detail?id=${postId}`);
-  };
-
-  const handleCreatePost = () => {
-    router.push('/user/community/create');
-  };
+  if (loading) {
+    return (
+      <div className="min-h-screen bg-gray-50 flex items-center justify-center">
+        <div className="text-2xl text-gray-600">Đang tải bài viết...</div>
+      </div>
+    );
+  }
 
   return (
-    <>
+    <div className="min-h-screen bg-white-50">
       {/* Header */}
-      <div className="bg-gradient-to-r from-teal-50 to-white border-b border-teal-200 shadow-sm">
-        <div className="max-w-7xl mx-auto px-6 py-6">
-          {/* Title + Search Bar + Create Button */}
-          <div className="flex items-center justify-between gap-6 mb-6">
-            <h1 className="text-4xl font-extrabold text-teal-800 tracking-tight whitespace-nowrap">
-              Community
-            </h1>
-            
-            <div className="flex items-center gap-3 flex-1 max-w-2xl">
-              <div className="bg-white rounded-full shadow-sm border border-teal-100 px-4 py-2 flex items-center gap-3 flex-1">
-                <svg className="w-5 h-5 text-teal-600" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                  <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M21 21l-6-6m2-5a7 7 0 11-14 0 7 7 0 0114 0z" />
-                </svg>
+      <header className="bg-white shadow-sm sticky top-0 z-50 border-b">
+        <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-4">
+          <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-3">
+            <div className="flex items-center gap-4 w-full sm:w-auto">
+              <div className="relative flex-1 sm:flex-none w-full sm:w-auto">
                 <input
                   type="text"
                   placeholder="Tìm kiếm bài viết..."
                   value={searchQuery}
                   onChange={(e) => setSearchQuery(e.target.value)}
-                  className="flex-1 bg-transparent outline-none text-gray-900 placeholder-gray-400"
+                  aria-label="Tìm kiếm bài viết"
+                  className="w-full sm:w-80 md:w-96 pl-11 pr-4 py-2.5 bg-gray-100 rounded-full focus:outline-none focus:ring-2 focus:ring-teal-500 text-gray-800 placeholder-gray-500"
                 />
+                <SearchIcon className="absolute left-4 top-1/2 -translate-y-1/2 text-gray-400 pointer-events-none" />
               </div>
+            </div>
 
+            <div className="flex items-center gap-3 justify-end">
               <button
-                onClick={handleCreatePost}
-                className="bg-teal-600 hover:bg-teal-700 text-white font-semibold px-6 py-2 rounded-full shadow-md transition-all duration-300 hover:scale-105 whitespace-nowrap"
+                onClick={() => router.push('/user/community/create')}
+                className="bg-teal-600 hover:bg-teal-700 text-white font-medium px-5 py-2.5 rounded-full transition text-sm shadow-md"
+                aria-label="Tạo bài viết mới"
               >
-                Tạo bài viết
+                + Viết bài mới
               </button>
             </div>
           </div>
-
-          {/* Categories Buttons */}
-          <div className="flex flex-wrap gap-3">
-            <button
-              onClick={() => setActiveTab('all')}
-              className={`px-4 py-2 rounded-lg transition-all font-semibold ${
-                activeTab === 'all'
-                  ? 'bg-teal-600 text-white shadow-md'
-                  : 'bg-gray-100 text-gray-700 hover:bg-gray-200'
-              }`}
-            >
-              Tất cả
-            </button>
-            {categories.map((cat) => (
-              <button
-                key={cat.id}
-                onClick={() => setActiveTab(cat.id)}
-                className={`px-4 py-2 rounded-lg transition-all font-semibold text-sm ${
-                  activeTab === cat.id
-                    ? 'bg-teal-600 text-white shadow-md'
-                    : `${cat.color} hover:shadow-md`
-                }`}
-              >
-                {cat.name}
-              </button>
-            ))}
-          </div>
         </div>
-      </div>
+      </header>
 
-      <div className="max-w-7xl mx-auto px-6 py-8">
-        <div className="grid grid-cols-1 lg:grid-cols-3 gap-8">
-          {/* Main Content */}
-          <div className="lg:col-span-2">
-            {/* Error Message */}
-            {error && (
-              <div className="bg-red-50 border border-red-200 text-red-700 px-4 py-3 rounded-lg mb-4">
-                {error}
-              </div>
-            )}
+      <div className="max-w-7xl mx-auto px-6 py-10">
+        <div className="grid grid-cols-1 lg:grid-cols-4 gap-8">
+          {/* Main Content - Blog Posts */}
+          <div className="lg:col-span-3">
+            {/* Blog Cards */}
+            <div className="space-y-8">
+              {filteredPosts.length === 0 ? (
+                <div className="text-center py-20 text-gray-500 text-xl">
+                  Không tìm thấy bài viết nào
+                </div>
+              ) : (
+                filteredPosts.map((post) => {
+                  const firstImage = post.images?.[0];
+                  const tag = post.tags?.[0]?.toLowerCase();
+                  const excerpt = post.content?.substring(0, 200) || "Xem chi tiết để đọc nội dung bài viết...";
+                  const date = new Date(post.createdAt);
+                  const authorName = post.author?.fullname || post.author?.user_id || 'Ẩn danh';
 
-            {/* Loading State */}
-            {loading && (
-              <div className="flex justify-center items-center py-12">
-                <div className="animate-spin rounded-full h-12 w-12 border-b-2 border-teal-600"></div>
-              </div>
-            )}
-
-            {/* Empty State */}
-            {!loading && posts.length === 0 && (
-              <div className="bg-white rounded-xl shadow-sm border border-teal-100 p-12 text-center">
-                <svg className="w-16 h-16 text-gray-300 mx-auto mb-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                  <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M9 12h6m-6 4h6m2 5H7a2 2 0 01-2-2V5a2 2 0 012-2h5.586a1 1 0 01.707.293l5.414 5.414a1 1 0 01.293.707V19a2 2 0 01-2 2z" />
-                </svg>
-                <p className="text-gray-500 text-lg mb-2">Không có bài viết nào</p>
-                <p className="text-gray-400 text-sm">
-                  {searchQuery ? 'Thử tìm kiếm với từ khóa khác' : 'Hãy là người đầu tiên tạo bài viết!'}
-                </p>
-              </div>
-            )}
-
-            {/* Posts List - Forum Style */}
-            {!loading && posts.length > 0 && (
-              <div className="bg-white rounded-xl shadow-sm border border-gray-200 overflow-hidden">
-                {posts
-                  .slice((currentPage - 1) * pageSize, currentPage * pageSize)
-                  .map((post, index) => {
-                  const badge = getCategoryBadge(post.tags);
-                  const isLastItem = index === Math.min(pageSize, posts.length - (currentPage - 1) * pageSize) - 1;
-                  
                   return (
-                    <div
+                    <article
                       key={post.post_id}
-                      onClick={() => handleViewPostDetail(post.post_id)}
-                      className={`flex items-start gap-4 p-4 hover:bg-gray-50 cursor-pointer transition-colors ${
-                        !isLastItem ? 'border-b border-gray-200' : ''
-                      }`}
+                      onClick={() => router.push(`/user/community/detail?id=${post.post_id}`)}
+                      className="bg-white rounded-lg overflow-hidden hover:shadow-lg transition-shadow duration-300 cursor-pointer group"
+                      role="article"
+                      aria-labelledby={`post-title-${post.post_id}`}
                     >
-                      {/* Avatar */}
-                      <img
-                        src={post.author.avatar || `https://api.dicebear.com/7.x/avataaars/svg?seed=${post.author.user_id}`}
-                        alt={post.author.fullname}
-                        className="w-12 h-12 rounded-full object-cover flex-shrink-0"
-                        onError={(e) => {
-                          e.currentTarget.src = `https://api.dicebear.com/7.x/avataaars/svg?seed=${post.author.user_id}`;
-                        }}
-                      />
+                      <div className="flex flex-col md:flex-row gap-4 p-4">
+                        {/* Image */}
+                        <div className="relative w-full md:w-48 h-60 md:h-40 flex-shrink-0 overflow-hidden bg-gray-100 rounded-md">
+                          {firstImage ? (
+                            <img
+                              src={firstImage}
+                              alt={post.title || 'Hình ảnh bài viết'}
+                              className="w-full h-full object-cover object-center transition-transform duration-500 group-hover:scale-105"
+                              loading="lazy"
+                            />
+                          ) : (
+                            <div className="w-full h-full flex items-center justify-center bg-gradient-to-br from-teal-50 to-blue-50">
+                              <span className="text-6xl opacity-30">📝</span>
+                            </div>
+                          )}
+                        </div>
 
-                      {/* Content */}
-                      <div className="flex-1 min-w-0">
-                        {/* Badge + Title */}
-                        <div className="flex items-start gap-2 mb-1">
-                          {badge && (
-                            <span className={`${badge.bgColor} ${badge.textColor} text-xs px-2 py-0.5 rounded font-medium flex-shrink-0`}>
-                              {badge.text}
+                        {/* Content */}
+                        <div className="flex-1 min-w-0 flex flex-col justify-center overflow-hidden">
+                          {/* Category Tag */}
+                          {tag && (
+                            <span className={`inline-block px-3 py-1 rounded-md text-xs font-semibold mb-3 w-fit ${getCategoryColor(tag)}`}>
+                              {tag.charAt(0).toUpperCase() + tag.slice(1)}
                             </span>
                           )}
-                          <h3 className="text-base font-semibold text-orange-600 hover:text-orange-700 break-words flex-1">
-                            {post.title.length > 30 ? post.title.substring(0, 30) + '...' : post.title}
+
+                          {/* Title */}
+                          <h3
+                            id={`post-title-${post.post_id}`}
+                            className="text-xl font-bold text-gray-900 group-hover:text-teal-600 transition mb-2 line-clamp-3 break-words overflow-hidden"
+                          >
+                            {post.title}
                           </h3>
-                        </div>
 
-                        {/* Author + Date */}
-                        <div className="flex items-center gap-2 text-sm text-gray-600">
-                          <span className="font-medium">{post.author.fullname}</span>
-                          <span className="text-gray-400">·</span>
-                          <span>{communicationService.formatDate(post.createdAt)}</span>
+                          {/* Excerpt */}
+                          <p className="text-sm text-gray-600 leading-relaxed mb-3 line-clamp-3 break-words overflow-hidden">
+                            {excerpt}
+                            {post.content && post.content.length > 200 && '...'}
+                          </p>
+
+                          {/* Author and Date */}
+                          <div className="flex items-center gap-4 text-xs text-gray-500">
+                            <div className="flex items-center gap-1.5">
+                              <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M16 7a4 4 0 11-8 0 4 4 0 018 0zM12 14a7 7 0 00-7 7h14a7 7 0 00-7-7z" />
+                              </svg>
+                              <span className="font-medium">{authorName}</span>
+                            </div>
+                            <div className="flex items-center gap-1.5">
+                              <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M8 7V3m8 4V3m-9 8h10M5 21h14a2 2 0 002-2V7a2 2 0 00-2-2H5a2 2 0 00-2 2v12a2 2 0 002 2z" />
+                              </svg>
+                              <span>{date.toLocaleDateString('en-US', { month: 'short', day: 'numeric', year: 'numeric' })}</span>
+                            </div>
+                          </div>
                         </div>
                       </div>
-
-                      {/* Stats */}
-                      <div className="flex flex-col items-end gap-2 text-sm text-gray-600 flex-shrink-0">
-                        <div className="flex items-center gap-4">
-                          <div className="text-right">
-                            <div className="font-semibold text-gray-900">{formatCount(post.likeCount)}</div>
-                            <div className="text-xs text-gray-500">Replies:</div>
-                          </div>
-                          <div className="text-right">
-                            <div className="font-semibold text-gray-900">{formatCount(post.viewCount)}</div>
-                            <div className="text-xs text-gray-500">Views:</div>
-                          </div>
-                        </div>
-                        <div className="text-xs text-gray-500">
-                          {communicationService.formatTimeAgo(post.updatedAt)}
-                        </div>
-                      </div>
-                    </div>
+                    </article>
                   );
-                })}
-              </div>
-            )}
-            
-            {/* Pagination */}
-            {!loading && posts.length > 0 && (
-              <div className="flex items-center justify-center gap-2 mt-6">
-                <button
-                  onClick={() => setCurrentPage(p => Math.max(1, p - 1))}
-                  disabled={currentPage === 1}
-                  className={`px-4 py-2 rounded-lg border transition-colors ${
-                    currentPage === 1 
-                      ? 'text-gray-400 border-gray-200 cursor-not-allowed' 
-                      : 'text-teal-700 border-teal-200 hover:bg-teal-50'
-                  }`}
-                >
-                  Trước
-                </button>
-                
-                {Array.from({ length: Math.max(1, Math.ceil(posts.length / pageSize)) }).map((_, idx) => {
-                  const page = idx + 1;
-                  const totalPages = Math.ceil(posts.length / pageSize);
-                  
-                  // Show first page, last page, current page, and pages around current
-                  if (
-                    page === 1 || 
-                    page === totalPages || 
-                    (page >= currentPage - 1 && page <= currentPage + 1)
-                  ) {
-                    return (
-                      <button
-                        key={page}
-                        onClick={() => setCurrentPage(page)}
-                        className={`w-10 h-10 rounded-lg text-sm font-semibold border transition-colors ${
-                          page === currentPage
-                            ? 'bg-teal-600 text-white border-teal-600'
-                            : 'border-teal-200 text-teal-700 hover:bg-teal-50'
-                        }`}
-                      >
-                        {page}
-                      </button>
-                    );
-                  } else if (
-                    page === currentPage - 2 || 
-                    page === currentPage + 2
-                  ) {
-                    return <span key={page} className="px-2 text-gray-400">...</span>;
-                  }
-                  return null;
-                })}
-                
-                <button
-                  onClick={() => setCurrentPage(p => Math.min(Math.ceil(posts.length / pageSize), p + 1))}
-                  disabled={currentPage >= Math.ceil(posts.length / pageSize)}
-                  className={`px-4 py-2 rounded-lg border transition-colors ${
-                    currentPage >= Math.ceil(posts.length / pageSize)
-                      ? 'text-gray-400 border-gray-200 cursor-not-allowed'
-                      : 'text-teal-700 border-teal-200 hover:bg-teal-50'
-                  }`}
-                >
-                  Sau
-                </button>
-              </div>
-            )}
+                })
+              )}
+            </div>
           </div>
 
           {/* Sidebar */}
-          <div className="space-y-6">
-            {/* Trending Posts */}
-            <div className="bg-white rounded-xl shadow-sm border border-teal-100 p-6 sticky top-6">
-              <h3 className="text-xl font-bold text-gray-900 mb-4 flex items-center gap-2">
-                <svg className="w-5 h-5 text-teal-600" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                  <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M13 7h8m0 0v8m0-8l-8 8-4-4-6 6" />
-                </svg>
-                Trending content
-              </h3>
-              <div className="space-y-4">
-                {trendingPosts.length === 0 ? (
-                  <p className="text-gray-500 text-sm">Chưa có bài viết trending</p>
-                ) : (
-                  trendingPosts.map((post, index) => (
-                    <div 
-                      key={post.post_id} 
-                      onClick={() => handleViewPostDetail(post.post_id)}
-                      className="pb-4 border-b border-gray-100 last:border-0 cursor-pointer hover:bg-gray-50 rounded p-2 -m-2 transition-colors"
+          <div className="lg:col-span-1">
+            <div className="space-y-8">
+              {/* Tags */}
+              <div className="bg-white rounded-lg p-6 shadow-sm">
+                <h3 className="text-xl font-bold text-gray-900 mb-4">Tags phổ biến</h3>
+                <div className="flex flex-wrap gap-2">
+                  {Array.from(new Set(posts.flatMap(p => p.tags || []))).slice(0, 15).map((tag) => (
+                    <button
+                      key={tag}
+                      onClick={() => setSearchQuery(tag)}
+                      className="px-3 py-1.5 bg-gray-100 hover:bg-teal-100 hover:text-teal-700 text-gray-700 text-sm rounded-md transition-colors"
                     >
-                      <div className="flex gap-2">
-                        <span className="text-teal-600 font-bold text-lg flex-shrink-0">#{index + 1}</span>
-                        <div className="flex-1 min-w-0">
-                          <h4 className="text-sm font-semibold text-gray-900 hover:text-teal-600 line-clamp-2 break-words">
-                            {post.title.length > 30 ? post.title.substring(0, 30) + '...' : post.title}
-                          </h4>
-                          <div className="flex items-center gap-3 text-xs text-gray-500 mt-1">
-                            <span className="flex items-center gap-1">
-                              <svg className="w-3 h-3" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M4.318 6.318a4.5 4.5 0 000 6.364L12 20.364l7.682-7.682a4.5 4.5 0 00-6.364-6.364L12 7.636l-1.318-1.318a4.5 4.5 0 00-6.364 0z" />
-                              </svg>
-                              {post.likeCount}
-                            </span>
-                            <span className="flex items-center gap-1">
-                              <svg className="w-3 h-3" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M15 12a3 3 0 11-6 0 3 3 0 016 0z" />
-                                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M2.458 12C3.732 7.943 7.523 5 12 5c4.478 0 8.268 2.943 9.542 7-1.274 4.057-5.064 7-9.542 7-4.477 0-8.268-2.943-9.542-7z" />
-                              </svg>
-                              {post.viewCount}
-                            </span>
-                          </div>
-                        </div>
-                      </div>
-                    </div>
-                  ))
-                )}
+                      {tag}
+                    </button>
+                  ))}
+                </div>
               </div>
             </div>
           </div>
         </div>
+
+        {/* Footer */}
+        <div className="mt-16 text-center text-gray-500">
+          <p>© 2025 Community Blog — {posts.length} bài viết và đang phát triển</p>
+        </div>
       </div>
-    </>
+    </div>
   );
 }

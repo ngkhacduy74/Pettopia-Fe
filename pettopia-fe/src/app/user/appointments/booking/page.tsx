@@ -36,6 +36,7 @@ export default function AppointmentBooking() {
   const [selectedDate, setSelectedDate] = useState('');
   const [selectedShift, setSelectedShift] = useState('');
   const [selectedServices, setSelectedServices] = useState<string[]>([]);
+  const [selectedPet, setSelectedPet] = useState<string>('');
   const [petServiceMap, setPetServiceMap] = useState<PetServiceMap>({});
   const [showSuccess, setShowSuccess] = useState(false);
   const [isSubmitting, setIsSubmitting] = useState(false);
@@ -201,32 +202,31 @@ export default function AppointmentBooking() {
     }
   }, [selectedDate, shifts, selectedShift]);
 
-  const toggleService = (serviceId: string) => {
-    setSelectedServices(prev => {
-      if (prev.includes(serviceId)) {
-        const newMap = { ...petServiceMap };
-        Object.keys(newMap).forEach(petId => {
-          newMap[petId] = newMap[petId].filter(id => id !== serviceId);
-          if (newMap[petId].length === 0) delete newMap[petId];
-        });
-        setPetServiceMap(newMap);
-        return prev.filter(id => id !== serviceId);
-      }
-      return [...prev, serviceId];
-    });
+  const togglePet = (petId: string) => {
+    if (selectedPet === petId) {
+      setSelectedPet('');
+      setPetServiceMap({});
+      setSelectedServices([]);
+    } else {
+      setSelectedPet(petId);
+      // Giữ lại các dịch vụ đã chọn nếu có
+      const currentServices = selectedServices.length > 0 ? selectedServices : [];
+      setPetServiceMap({ [petId]: currentServices });
+    }
   };
 
-  const togglePetService = (petId: string, serviceId: string) => {
-    setPetServiceMap(prev => {
-      const map = { ...prev };
-      if (!map[petId]) map[petId] = [];
-      if (map[petId].includes(serviceId)) {
-        map[petId] = map[petId].filter(id => id !== serviceId);
-        if (map[petId].length === 0) delete map[petId];
-      } else {
-        map[petId].push(serviceId);
-      }
-      return map;
+  const toggleService = (serviceId: string) => {
+    if (!selectedPet) return;
+    
+    setSelectedServices(prev => {
+      const newServices = prev.includes(serviceId)
+        ? prev.filter(id => id !== serviceId)
+        : [...prev, serviceId];
+      
+      // Cập nhật petServiceMap với pet đã chọn
+      setPetServiceMap({ [selectedPet]: newServices });
+      
+      return newServices;
     });
   };
 
@@ -238,8 +238,8 @@ export default function AppointmentBooking() {
         const chosen = shifts.find(s => s.id === selectedShift);
         return !isShiftPast(chosen, selectedDate);
       }
-      case 3: return selectedServices.length > 0;
-      case 4: return Object.keys(petServiceMap).length > 0;
+      case 3: return selectedPet !== '';
+      case 4: return selectedServices.length > 0;
       default: return true;
     }
   };
@@ -272,6 +272,7 @@ export default function AppointmentBooking() {
         setSelectedClinic('');
         setSelectedDate('');
         setSelectedShift('');
+        setSelectedPet('');
         setSelectedServices([]);
         setPetServiceMap({});
         setIsSubmitting(false);
@@ -309,8 +310,8 @@ export default function AppointmentBooking() {
           <div className="grid grid-cols-5 gap-4 text-center mt-4 text-sm font-medium">
             <span className={currentStep >= 1 ? 'text-teal-600' : 'text-gray-500'}>Phòng khám</span>
             <span className={currentStep >= 2 ? 'text-teal-600' : 'text-gray-500'}>Ngày & Ca</span>
-            <span className={currentStep >= 3 ? 'text-teal-600' : 'text-gray-500'}>Dịch vụ</span>
-            <span className={currentStep >= 4 ? 'text-teal-600' : 'text-gray-500'}>Thú cưng</span>
+            <span className={currentStep >= 3 ? 'text-teal-600' : 'text-gray-500'}>Thú cưng</span>
+            <span className={currentStep >= 4 ? 'text-teal-600' : 'text-gray-500'}>Dịch vụ</span>
             <span className={currentStep >= 5 ? 'text-teal-600' : 'text-gray-500'}>Xác nhận</span>
           </div>
         </div>
@@ -421,93 +422,97 @@ export default function AppointmentBooking() {
             </div>
           )}
 
-          {/* BƯỚC 3: Chọn dịch vụ */}
+          {/* BƯỚC 3: Chọn thú cưng */}
           {currentStep === 3 && (
             <div>
-              <h2 className="text-3xl font-bold mb-8">Chọn dịch vụ</h2>
-              {servicesLoading ? (
-                <p className="text-center py-12">Đang tải dịch vụ...</p>
-              ) : services.length === 0 ? (
-                <p className="text-center py-12 text-gray-500">Phòng khám chưa có dịch vụ</p>
-              ) : (
-                <div className="grid md:grid-cols-2 gap-6">
-                  {services.map(service => (
-                    <div
-                      key={service.id}
-                      onClick={() => toggleService(service.id)}
-                      className={`p-6 rounded-xl border-2 cursor-pointer transition-all ${selectedServices.includes(service.id) ? 'border-teal-600 bg-teal-50' : 'border-gray-200 hover:border-teal-400'}`}
-                    >
-                      <div className="flex justify-between items-start">
-                        <div>
-                          <h3 className="text-xl font-bold">{service.name}</h3>
-                          {service.description && <p className="text-gray-600 text-sm mt-2 line-clamp-2">{service.description}</p>}
-                          <p className="text-gray-600 mt-3">Thời gian: {formatDuration(service.duration)}</p>
-                          <p className="text-2xl font-bold text-teal-600 mt-4">{service.price.toLocaleString('vi-VN')} ₫</p>
-                        </div>
-                        {selectedServices.includes(service.id) && (
-                          <svg className="w-8 h-8 text-teal-600" fill="currentColor" viewBox="0 0 20 20">
-                            <path fillRule="evenodd" d="M10 18a8 8 0 100-16 8 8 0 000 16zm3.707-9.293a1 1 0 00-1.414-1.414L9 10.586 7.707 9.293a1 1 0 00-1.414 1.414l2 2a1 1 0 001.414 0l4-4z" clipRule="evenodd" />
-                        </svg>
-                        )}
-                      </div>
-                    </div>
-                  ))}
-
-                  {/* DEBUG: Hiển thị dịch vụ đã chọn */}
-                  {/* <div className="col-span-2">
-                    <h4 className="text-lg font-bold text-gray-800 mb-4">Dịch vụ đã chọn (debug)</h4>
-                    <ul className="list-disc list-inside space-y-1">
-                      {selectedServices.map(sId => {
-                        const svc = services.find(s => s.id === sId);
-                        return svc ? <li key={sId} className="text-gray-700">{svc.name}</li> : null;
-                      })}
-                    </ul>
-                  </div> */}
-                </div>
-              )}
-            </div>
-          )}
-
-          {/* BƯỚC 4: Chọn thú cưng */}
-          {currentStep === 4 && (
-            <div>
-              <h2 className="text-3xl font-bold mb-8">Chọn thú cưng cho từng dịch vụ</h2>
+              <h2 className="text-3xl font-bold mb-8">Chọn thú cưng</h2>
               {petsLoading ? (
                 <p className="text-center py-12">Đang tải thú cưng...</p>
               ) : pets.length === 0 ? (
                 <p className="text-center py-12 text-red-600">Bạn chưa có thú cưng nào</p>
               ) : (
-                <div className="space-y-10">
-                  {selectedServices.map(serviceId => {
-                    const service = services.find(s => s.id === serviceId);
-                    if (!service) return null;
-                    return (
-                      <div key={serviceId} className="border-2 border-gray-200 rounded-2xl p-8">
-                        <h3 className="text-2xl font-bold mb-2">{service.name}</h3>
-                        <p className="text-teal-600 font-medium">{formatDuration(service.duration)} • {service.price.toLocaleString('vi-VN')} ₫</p>
-                        <div className="grid md:grid-cols-3 gap-4 mt-6">
-                          {pets.map(pet => (
-                            <div
-                              key={pet.id}
-                              onClick={() => togglePetService(pet.id, serviceId)}
-                              className={`p-4 rounded-xl border-2 cursor-pointer flex items-center gap-3 transition-all ${petServiceMap[pet.id]?.includes(serviceId) ? 'border-teal-600 bg-teal-50' : 'border-gray-200 hover:border-teal-400'}`}
-                            >
-                              <img
-                                src={pet.avatar_url || '/sampleimg/default-pet.jpg'}
-                                alt={pet.name}
-                                className="w-12 h-12 rounded-full object-cover flex-shrink-0"
-                              />
-                              <div className="flex-1 min-w-0">
-                                <h4 className="font-bold text-base truncate">{pet.name}</h4>
-                                <p className="text-sm text-gray-600 truncate">{pet.species} • {pet.breed}</p>
-                              </div>
-                            </div>
-                          ))}
+                <div className="grid md:grid-cols-3 gap-6">
+                  {pets.map(pet => (
+                    <div
+                      key={pet.id}
+                      onClick={() => togglePet(pet.id)}
+                      className={`p-6 rounded-xl border-2 cursor-pointer transition-all ${selectedPet === pet.id ? 'border-teal-600 bg-teal-50' : 'border-gray-200 hover:border-teal-400'}`}
+                    >
+                      <div className="flex items-center gap-4">
+                        <img
+                          src={pet.avatar_url || '/sampleimg/default-pet.jpg'}
+                          alt={pet.name}
+                          className="w-16 h-16 rounded-full object-cover flex-shrink-0"
+                        />
+                        <div className="flex-1 min-w-0">
+                          <h3 className="text-xl font-bold truncate">{pet.name}</h3>
+                          <p className="text-gray-600 text-sm mt-1 truncate">{pet.species} • {pet.breed}</p>
+                        </div>
+                        {selectedPet === pet.id && (
+                          <svg className="w-8 h-8 text-teal-600 flex-shrink-0" fill="currentColor" viewBox="0 0 20 20">
+                            <path fillRule="evenodd" d="M10 18a8 8 0 100-16 8 8 0 000 16zm3.707-9.293a1 1 0 00-1.414-1.414L9 10.586 7.707 9.293a1 1 0 00-1.414 1.414l2 2a1 1 0 001.414 0l4-4z" clipRule="evenodd" />
+                          </svg>
+                        )}
+                      </div>
+                    </div>
+                  ))}
+                </div>
+              )}
+            </div>
+          )}
+
+          {/* BƯỚC 4: Chọn dịch vụ */}
+          {currentStep === 4 && (
+            <div>
+              <h2 className="text-3xl font-bold mb-8">Chọn dịch vụ cho thú cưng</h2>
+              {!selectedPet ? (
+                <p className="text-center py-12 text-orange-600">Vui lòng chọn thú cưng ở bước trước</p>
+              ) : servicesLoading ? (
+                <p className="text-center py-12">Đang tải dịch vụ...</p>
+              ) : services.length === 0 ? (
+                <p className="text-center py-12 text-gray-500">Phòng khám chưa có dịch vụ</p>
+              ) : (
+                <>
+                  <div className="mb-6 p-4 bg-teal-50 rounded-xl border border-teal-200">
+                    <p className="text-sm text-gray-600">Thú cưng đã chọn:</p>
+                    {(() => {
+                      const pet = pets.find(p => p.id === selectedPet);
+                      return pet ? (
+                        <div className="flex items-center gap-3 mt-2">
+                          <img
+                            src={pet.avatar_url || '/sampleimg/default-pet.jpg'}
+                            alt={pet.name}
+                            className="w-10 h-10 rounded-full object-cover"
+                          />
+                          <span className="font-bold text-teal-700">{pet.name} ({pet.breed})</span>
+                        </div>
+                      ) : null;
+                    })()}
+                  </div>
+                  <div className="grid md:grid-cols-2 gap-6">
+                    {services.map(service => (
+                      <div
+                        key={service.id}
+                        onClick={() => toggleService(service.id)}
+                        className={`p-6 rounded-xl border-2 cursor-pointer transition-all ${selectedServices.includes(service.id) ? 'border-teal-600 bg-teal-50' : 'border-gray-200 hover:border-teal-400'}`}
+                      >
+                        <div className="flex justify-between items-start">
+                          <div>
+                            <h3 className="text-xl font-bold">{service.name}</h3>
+                            {service.description && <p className="text-gray-600 text-sm mt-2 line-clamp-2">{service.description}</p>}
+                            <p className="text-gray-600 mt-3">Thời gian: {formatDuration(service.duration)}</p>
+                            <p className="text-2xl font-bold text-teal-600 mt-4">{service.price.toLocaleString('vi-VN')} ₫</p>
+                          </div>
+                          {selectedServices.includes(service.id) && (
+                            <svg className="w-8 h-8 text-teal-600" fill="currentColor" viewBox="0 0 20 20">
+                              <path fillRule="evenodd" d="M10 18a8 8 0 100-16 8 8 0 000 16zm3.707-9.293a1 1 0 00-1.414-1.414L9 10.586 7.707 9.293a1 1 0 00-1.414 1.414l2 2a1 1 0 001.414 0l4-4z" clipRule="evenodd" />
+                            </svg>
+                          )}
                         </div>
                       </div>
-                    );
-                  })}
-                </div>
+                    ))}
+                  </div>
+                </>
               )}
             </div>
           )}
@@ -543,29 +548,35 @@ export default function AppointmentBooking() {
                 {/* Chi tiết dịch vụ */}
                 <div className="bg-gray-50 rounded-xl p-5">
                   <h3 className="font-bold text-base mb-4">Chi tiết dịch vụ</h3>
-                  {Object.entries(petServiceMap).map(([petId, serviceIds]) => {
-                    const pet = pets.find(p => p.id === petId);
-                    if (!pet) return null;
-                    return (
-                      <div key={petId} className="mb-5 pb-4 border-b last:border-0 last:mb-0 last:pb-0">
-                        <h4 className="text-base font-bold text-teal-700 mb-2">
-                          {pet.name} <span className="font-normal text-gray-600 text-sm">({pet.breed})</span>
-                        </h4>
-                        {serviceIds.map(sId => {
-                          const service = services.find(s => s.id === sId);
-                          if (!service) return null;
-                          return (
-                            <div key={sId} className="flex justify-between py-1 text-sm">
-                              <span>• {service.name}</span>
-                              <span className="font-semibold text-teal-600">
-                                {service.price.toLocaleString('vi-VN')} ₫
-                              </span>
-                            </div>
-                          );
-                        })}
-                      </div>
-                    );
-                  })}
+                  {selectedPet && petServiceMap[selectedPet] ? (
+                    <>
+                      {(() => {
+                        const pet = pets.find(p => p.id === selectedPet);
+                        if (!pet) return null;
+                        return (
+                          <div className="mb-4 pb-4 border-b">
+                            <h4 className="text-base font-bold text-teal-700 mb-2">
+                              {pet.name} <span className="font-normal text-gray-600 text-sm">({pet.breed})</span>
+                            </h4>
+                            {petServiceMap[selectedPet].map(sId => {
+                              const service = services.find(s => s.id === sId);
+                              if (!service) return null;
+                              return (
+                                <div key={sId} className="flex justify-between py-1 text-sm">
+                                  <span>• {service.name}</span>
+                                  <span className="font-semibold text-teal-600">
+                                    {service.price.toLocaleString('vi-VN')} ₫
+                                  </span>
+                                </div>
+                              );
+                            })}
+                          </div>
+                        );
+                      })()}
+                    </>
+                  ) : (
+                    <p className="text-gray-500">Chưa có thông tin</p>
+                  )}
                 </div>
 
                 {/* Tổng tiền */}

@@ -4,14 +4,14 @@ import { useRouter } from 'next/navigation';
 import { communicationService } from '@/services/communication/communicationService';
 import { parseJwt } from '@/utils/jwt';
 
-interface Category {
+interface Tag {
   id: string;
   name: string;
   color: string;
 }
 
 interface ValidationErrors {
-  category?: string;
+  tag?: string;
   title?: string;
   content?: string;
   images?: string;
@@ -20,14 +20,14 @@ interface ValidationErrors {
 export default function CreatePostPage() {
   const [title, setTitle] = useState<string>('');
   const [content, setContent] = useState<string>('');
-  const [selectedCategory, setSelectedCategory] = useState<string>('');
+  const [selectedTag, setSelectedTag] = useState<string>('');
   const [imagePreviews, setImagePreviews] = useState<string[]>([]);
   const [imageFiles, setImageFiles] = useState<File[]>([]);
   const [submitting, setSubmitting] = useState<boolean>(false);
   const [errors, setErrors] = useState<ValidationErrors>({});
   const router = useRouter();
 
-  const categories: Category[] = [
+  const tags: Tag[] = [
     { id: 'thongbao', name: 'Thông báo', color: 'bg-blue-100 text-blue-600' },
     { id: 'gopy', name: 'Góp ý', color: 'bg-orange-100 text-orange-600' },
     { id: 'tintuc', name: 'Tin tức iNet', color: 'bg-cyan-100 text-cyan-600' },
@@ -109,7 +109,7 @@ export default function CreatePostPage() {
   const validateForm = (): ValidationErrors => {
     const newErrors: ValidationErrors = {};
 
-    if (!selectedCategory) newErrors.category = 'Vui lòng chọn danh mục';
+    if (!selectedTag) newErrors.tag = 'Vui lòng chọn tag';
 
     const trimmedTitle = title.trim();
     if (!trimmedTitle) {
@@ -149,7 +149,7 @@ export default function CreatePostPage() {
         user_id: currentUserId || undefined,
         title: title.trim(),
         content: content.trim(),
-        tags: [selectedCategory],
+        tags: [selectedTag],
         imageFiles,
       });
 
@@ -186,28 +186,28 @@ export default function CreatePostPage() {
       <div className="max-w-4xl mx-auto px-6 py-10">
         <div className="space-y-8">
 
-          {/* Danh mục */}
-          <div className={`bg-white rounded-xl shadow-sm border p-6 ${errors.category ? 'border-red-300 ring-2 ring-red-200' : 'border-teal-100'}`}>
+          {/* Tag */}
+          <div className={`bg-white rounded-xl shadow-sm border p-6 ${errors.tag ? 'border-red-300 ring-2 ring-red-200' : 'border-teal-100'}`}>
             <label className="block text-sm font-semibold text-gray-900 mb-4">
-              Danh mục <span className="text-red-500">*</span>
+              Tag <span className="text-red-500">*</span>
             </label>
-            {errors.category && <p className="text-red-600 text-sm mb-3">{errors.category}</p>}
+            {errors.tag && <p className="text-red-600 text-sm mb-3">{errors.tag}</p>}
             <div className="grid grid-cols-2 md:grid-cols-3 gap-3">
-              {categories.map(cat => (
+              {tags.map(tag => (
                 <button
-                  key={cat.id}
+                  key={tag.id}
                   type="button"
                   onClick={() => {
-                    setSelectedCategory(cat.id);
-                    setErrors(prev => ({...prev, category: undefined}));
+                    setSelectedTag(tag.id);
+                    setErrors(prev => ({...prev, tag: undefined}));
                   }}
                   className={`p-4 rounded-lg font-medium transition-all ${
-                    selectedCategory === cat.id
+                    selectedTag === tag.id
                       ? 'bg-teal-600 text-white ring-2 ring-teal-300 shadow-lg'
-                      : `${cat.color} hover:shadow-md`
+                      : `${tag.color} hover:shadow-md`
                   }`}
                 >
-                  {cat.name}
+                  {tag.name}
                 </button>
               ))}
             </div>

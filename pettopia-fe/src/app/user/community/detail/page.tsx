@@ -22,6 +22,8 @@ export default function PostDetailPage() {
   const [submittingComment, setSubmittingComment] = useState<boolean>(false);
   const [liking, setLiking] = useState<boolean>(false);
   const [lightbox, setLightbox] = useState<LightboxState>({ isOpen: false, currentIndex: 0 });
+  const [relatedPosts, setRelatedPosts] = useState<Post[]>([]);
+  const [loadingRelated, setLoadingRelated] = useState<boolean>(false);
 
   const token = useMemo(() => (typeof window !== "undefined" ? localStorage.getItem("authToken") : null), []);
   const currentUserId = useMemo(() => {
@@ -54,6 +56,27 @@ export default function PostDetailPage() {
       }
     };
     loadDetail();
+  }, [postId]);
+
+  useEffect(() => {
+    const loadRelatedPosts = async () => {
+      try {
+        setLoadingRelated(true);
+        const allPosts = await communicationService.getAllPosts();
+        const filtered = allPosts
+          .filter((p: Post) => !p.isHidden && p.post_id !== postId)
+          .sort((a: Post, b: Post) => new Date(b.createdAt).getTime() - new Date(a.createdAt).getTime())
+          .slice(0, 5);
+        setRelatedPosts(filtered);
+      } catch (e: any) {
+        console.error("Load related posts error:", e);
+      } finally {
+        setLoadingRelated(false);
+      }
+    };
+    if (postId) {
+      loadRelatedPosts();
+    }
   }, [postId]);
 
   const parsedTags = useMemo(() => communicationService.parseTags(post?.tags || []), [post?.tags]);
@@ -218,9 +241,17 @@ export default function PostDetailPage() {
 
   return (
     <div className="min-h-screen bg-gray-50">
-
-
       <div className="container mx-auto px-4 py-6 max-w-6xl">
+        {/* Back Button */}
+        <button
+          onClick={() => router.back()}
+          className="mb-4 flex items-center gap-2 text-gray-600 hover:text-gray-900 transition-colors"
+        >
+          <svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+            <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M15 19l-7-7 7-7" />
+          </svg>
+          <span className="font-medium">Quay lại</span>
+        </button>
         <div className="flex flex-col lg:flex-row gap-4">
           {/* Main Content Area */}
           <main className="flex-1 min-w-0 lg:max-w-3xl">
@@ -462,48 +493,43 @@ export default function PostDetailPage() {
           <aside className="lg:w-80 flex-shrink-0">
             <div className="bg-white rounded-lg shadow border border-gray-200 overflow-hidden sticky top-6">
               <div className="p-4 border-b border-gray-200">
-                <h3 className="font-bold text-lg text-gray-900">Tin tức hôm nay</h3>
+                <h3 className="font-bold text-lg text-gray-900">Xem bài viết khác</h3>
               </div>
               
               <div className="divide-y divide-gray-200">
-                {/* Related post items */}
-                <div className="p-4 hover:bg-gray-50 transition-colors cursor-pointer">
-                  <h4 className="font-semibold text-sm text-gray-900 mb-1 line-clamp-2">
-                    Mười câu hỏi bạn nên trả lời trung thực
-                  </h4>
-                  <p className="text-xs text-gray-500">2 giờ trước</p>
-                </div>
-
-                <div className="p-4 hover:bg-gray-50 transition-colors cursor-pointer">
-                  <h4 className="font-semibold text-sm text-gray-900 mb-1 line-clamp-2">
-                    Năm sự thật không thể tin nổi về tiền
-                  </h4>
-                  <p className="text-xs text-gray-500">3 giờ trước</p>
-                </div>
-
-                <div className="p-4 hover:bg-gray-50 transition-colors cursor-pointer">
-                  <h4 className="font-semibold text-sm text-gray-900 mb-1 line-clamp-2">
-                    Những Pinterest Board tốt nhất để học về kinh doanh
-                  </h4>
-                  <p className="text-xs text-gray-500">4 giờ trước</p>
-                </div>
-
-                <div className="p-4 hover:bg-gray-50 transition-colors cursor-pointer">
-                  <h4 className="font-semibold text-sm text-gray-900 mb-1 line-clamp-2">
-                    Kỹ năng bạn có thể học từ kinh doanh
-                  </h4>
-                  <p className="text-xs text-gray-500">6 giờ trước</p>
-                </div>
+                {loadingRelated ? (
+                  <div className="p-4 text-center text-gray-500 text-sm">Đang tải...</div>
+                ) : relatedPosts.length > 0 ? (
+                  relatedPosts.map((relatedPost) => (
+                    <div
+                      key={relatedPost.post_id}
+                      onClick={() => router.push(`/user/community/detail?id=${relatedPost.post_id}`)}
+                      className="p-4 hover:bg-gray-50 transition-colors cursor-pointer"
+                    >
+                      <h4 className="font-semibold text-sm text-gray-900 mb-1 line-clamp-2">
+                        {relatedPost.title}
+                      </h4>
+                      <p className="text-xs text-gray-500">{communicationService.formatTimeAgo(relatedPost.createdAt)}</p>
+                    </div>
+                  ))
+                ) : (
+                  <div className="p-4 text-center text-gray-500 text-sm">Không có bài viết nào</div>
+                )}
               </div>
 
-              <div className="p-4 border-t border-gray-200">
-                <button className="w-full text-sm font-semibold text-gray-600 hover:text-blue-600 flex items-center justify-center gap-1 transition-colors">
-                  <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                    <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M5 12h.01M12 12h.01M19 12h.01M6 12a1 1 0 11-2 0 1 1 0 012 0zm7 0a1 1 0 11-2 0 1 1 0 012 0zm7 0a1 1 0 11-2 0 1 1 0 012 0z" />
-                  </svg>
-                  Xem tất cả tin mới nhất
-                </button>
-              </div>
+              {relatedPosts.length > 0 && (
+                <div className="p-4 border-t border-gray-200">
+                  <button
+                    onClick={() => router.push('/user/community')}
+                    className="w-full text-sm font-semibold text-gray-600 hover:text-blue-600 flex items-center justify-center gap-1 transition-colors"
+                  >
+                    <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                      <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M5 12h.01M12 12h.01M19 12h.01M6 12a1 1 0 11-2 0 1 1 0 012 0zm7 0a1 1 0 11-2 0 1 1 0 012 0zm7 0a1 1 0 11-2 0 1 1 0 012 0z" />
+                    </svg>
+                    Xem tất cả bài viết
+                  </button>
+                </div>
+              )}
             </div>
           </aside>
         </div>
