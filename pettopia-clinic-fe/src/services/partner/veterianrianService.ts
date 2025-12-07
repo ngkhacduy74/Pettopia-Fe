@@ -1,26 +1,9 @@
-/**
- * Xóa thành viên (veterinarian) khỏi phòng khám
- * DELETE `${PARTNER_API_URL}/clinic/members/:memberId`
- */
-export const deleteClinicVet = async (memberId: string) => {
-  const token = localStorage.getItem('authToken');
-  if (!token) throw new Error('No authentication token found');
-
-  try {
-    const response = await axios.delete(`${PARTNER_API_URL}/clinic/members/${memberId}`, {
-      headers: { token },
-    });
-    return response.data;
-  } catch (error: any) {
-    console.error(`Lỗi khi xóa thành viên phòng khám (vet ${memberId}):`, error?.response?.data || error?.message || error);
-    throw error;
-  }
-};
 import axios from 'axios';
 
 // Lấy base URL từ .env
 const API_URL = `${process.env.NEXT_PUBLIC_PETTOPIA_API_URL}/partner/vet`;
 const PARTNER_API_URL = `${process.env.NEXT_PUBLIC_PETTOPIA_API_URL}/partner`;
+const HEALTHCARE_API_URL = `${process.env.NEXT_PUBLIC_PETTOPIA_API_URL}/healthcare`;
 
 export interface VeterinarianForm {
   _id: string;
@@ -179,6 +162,25 @@ export const getClinicVets = async () => {
   }
 };
 
+/**
+ * Xóa thành viên (veterinarian) khỏi phòng khám
+ * DELETE `${PARTNER_API_URL}/clinic/members/:memberId`
+ */
+export const deleteClinicVet = async (memberId: string) => {
+  const token = localStorage.getItem('authToken');
+  if (!token) throw new Error('No authentication token found');
+
+  try {
+    const response = await axios.delete(`${PARTNER_API_URL}/clinic/members/${memberId}`, {
+      headers: { token },
+    });
+    return response.data;
+  } catch (error: any) {
+    console.error(`Lỗi khi xóa thành viên phòng khám (vet ${memberId}):`, error?.response?.data || error?.message || error);
+    throw error;
+  }
+};
+
 // --- Vet detail ---
 export interface VetCertification {
   name: string;
@@ -228,6 +230,137 @@ export const getVetDetail = async (vetId: string) => {
     return response.data as VetDetailResponse;
   } catch (error: any) {
     console.error(`Lỗi khi lấy chi tiết bác sĩ (vet ${vetId}):`, error?.response?.data || error?.message || error);
+    throw error;
+  }
+};
+
+// --- Vet Schedule/Appointments ---
+export interface VetAppointment {
+  _id: string;
+  id: string;
+  booking_group_id: string;
+  user_id: string;
+  pet_ids: string[];
+  clinic_id: string;
+  service_ids: string[];
+  date: string;
+  shift: 'Morning' | 'Afternoon' | 'Evening';
+  status: 'Pending' | 'Confirmed' | 'Checked_In' | 'Completed' | 'Cancelled';
+  createdAt: string;
+  updatedAt: string;
+  vet_id: string;
+  cancel_reason?: string;
+}
+
+export interface VetAppointmentsResponse {
+  status: string;
+  message: string;
+  data: VetAppointment[];
+}
+
+/**
+ * Lấy danh sách lịch hẹn được phân công cho bác sĩ thú y
+ * GET `${HEALTHCARE_API_URL}/appointments/vet/me?status={status}`
+ */
+export const getVetAppointments = async (status?: string): Promise<VetAppointmentsResponse> => {
+  const token = localStorage.getItem('authToken');
+  if (!token) throw new Error('No authentication token found');
+
+  try {
+    const url = status 
+      ? `${HEALTHCARE_API_URL}/appointments/vet/me?status=${status}`
+      : `${HEALTHCARE_API_URL}/appointments/vet/me`;
+    
+    const response = await axios.get<VetAppointmentsResponse>(url, {
+      headers: { token },
+    });
+    return response.data;
+  } catch (error: any) {
+    console.error('Lỗi khi lấy danh sách lịch hẹn được phân công:', error?.response?.data || error?.message || error);
+    throw error;
+  }
+};
+
+/**
+ * Lấy danh sách lịch hẹn được phân công cho bác sĩ thú y với phân trang
+ * GET `${HEALTHCARE_API_URL}/appointments/vet/me?status={status}&page={page}&limit={limit}`
+ */
+export const getVetAppointmentsWithPagination = async (
+  status?: string,
+  page: number = 1,
+  limit: number = 10
+): Promise<VetAppointmentsResponse> => {
+  const token = localStorage.getItem('authToken');
+  if (!token) throw new Error('No authentication token found');
+
+  try {
+    const params = new URLSearchParams();
+    if (status) params.append('status', status);
+    params.append('page', page.toString());
+    params.append('limit', limit.toString());
+
+    const response = await axios.get<VetAppointmentsResponse>(
+      `${HEALTHCARE_API_URL}/appointments/vet/me?${params.toString()}`,
+      {
+        headers: { token },
+      }
+    );
+    return response.data;
+  } catch (error: any) {
+    console.error('Lỗi khi lấy danh sách lịch hẹn được phân công:', error?.response?.data || error?.message || error);
+    throw error;
+  }
+};
+
+// --- Medical Records ---
+export interface Medication {
+  medication_name: string;
+  dosage: string;
+  instructions?: string;
+}
+
+export interface MedicalRecordPayload {
+  pet_id: string;
+  symptoms: string;
+  diagnosis: string;
+  notes?: string;
+  medications?: Medication[];
+}
+
+export interface MedicalRecordResponse {
+  status: string;
+  message: string;
+  data?: any;
+}
+
+/**
+ * Cập nhật hồ sơ bệnh án cho lịch hẹn
+ * POST `${HEALTHCARE_API_URL}/appointments/{appointmentId}/medical-records`
+ */
+export const updateMedicalRecord = async (
+  appointmentId: string,
+  payload: MedicalRecordPayload
+): Promise<MedicalRecordResponse> => {
+  const token = localStorage.getItem('authToken');
+  if (!token) throw new Error('No authentication token found');
+
+  try {
+    const response = await axios.post(
+      `${HEALTHCARE_API_URL}/appointments/${appointmentId}/medical-records`,
+      payload,
+      {
+        headers: {
+          'Content-Type': 'application/json',
+          token,
+        },
+      }
+    );
+    return response.data as MedicalRecordResponse;
+  } catch (error: any) {
+    console.error(
+      `Lỗi khi cập nhật hồ sơ bệnh án cho lịch hẹn (${appointmentId}):`,
+      error?.response?.data || error?.message || error
+    );
     throw error;
   }
 };

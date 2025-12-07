@@ -6,7 +6,9 @@ import Link from 'next/link';
 import {
   getAppointmentDetail,
   updateAppointmentStatus,
+  getAppointmentMedicalRecord,
   type AppointmentDetail,
+  type MedicalRecord,
 } from '@/services/petcare/petService';
 
 // Predefined cancel reasons
@@ -27,6 +29,8 @@ export default function AppointmentDetailPage() {
   const [appointment, setAppointment] = useState<AppointmentDetail | null>(null);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
+  const [medicalRecord, setMedicalRecord] = useState<MedicalRecord | null>(null);
+  const [loadingMedicalRecord, setLoadingMedicalRecord] = useState(false);
 
   // New states for cancel modal
   const [showCancelModal, setShowCancelModal] = useState(false);
@@ -43,6 +47,27 @@ export default function AppointmentDetailPage() {
         setError(null);
         const data = await getAppointmentDetail(appointmentId); // returns data object (AppointmentDetail)
         setAppointment(data);
+        
+        // Fetch medical record if appointment is completed or checked in
+        // Medical records có thể có cho các status: Completed, Checked_In
+        if (data.status === 'Completed' || data.status === 'Checked_In') {
+          try {
+            setLoadingMedicalRecord(true);
+            const medicalRecordData = await getAppointmentMedicalRecord(appointmentId);
+            // Kiểm tra xem có dữ liệu medical record không (không phải object rỗng)
+            if (medicalRecordData && Object.keys(medicalRecordData).length > 0) {
+              setMedicalRecord(medicalRecordData);
+            } else {
+              setMedicalRecord(null);
+            }
+          } catch (err: any) {
+            // Medical record might not exist, that's okay
+            console.log('No medical record found for this appointment');
+            setMedicalRecord(null);
+          } finally {
+            setLoadingMedicalRecord(false);
+          }
+        }
       } catch (err: any) {
         setError(err?.response?.data?.message || 'Không thể tải thông tin lịch hẹn');
         console.error('Error fetching appointment:', err);
@@ -130,6 +155,7 @@ export default function AppointmentDetailPage() {
       Confirmed: 'Đã xác nhận',
       Cancelled: 'Đã hủy',
       Completed: 'Hoàn thành',
+      Checked_In: 'Đã check-in',
     };
     return statusMap[status] || status;
   };
@@ -140,6 +166,7 @@ export default function AppointmentDetailPage() {
       Confirmed: 'bg-emerald-500',
       Cancelled: 'bg-red-500',
       Completed: 'bg-blue-500',
+      Checked_In: 'bg-purple-500',
     };
     return colorMap[status || ''] || 'bg-gray-500';
   };
@@ -275,6 +302,80 @@ export default function AppointmentDetailPage() {
               {(appointment.service_infos || []).length === 0 && <p className="text-gray-600">Không có dịch vụ</p>}
             </div>
           </div>
+
+          {/* Medical Record - Show if appointment is completed or checked in */}
+          {(appointment.status === 'Completed' || appointment.status === 'Checked_In') && (
+            <div className="bg-gradient-to-br from-teal-50 to-cyan-50 rounded-xl p-4 border border-teal-200">
+              <div className="flex items-center justify-between mb-3">
+                <div className="flex items-center gap-2">
+                  <svg className="w-5 h-5 text-teal-600" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                    <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M9 12h6m-6 4h6m2 5H7a2 2 0 01-2-2V5a2 2 0 012-2h5.586a1 1 0 01.707.293l5.414 5.414a1 1 0 01.293.707V19a2 2 0 01-2 2z" />
+                  </svg>
+                  <h3 className="font-bold text-gray-900">Hồ sơ bệnh án</h3>
+                </div>
+                <Link
+                  href={`/user/appointments/${appointmentId}/medical-record`}
+                  className="text-sm text-teal-600 hover:text-teal-700 font-medium flex items-center gap-1"
+                >
+                  Xem chi tiết
+                  <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                    <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M9 5l7 7-7 7" />
+                  </svg>
+                </Link>
+              </div>
+              
+              {loadingMedicalRecord ? (
+                <div className="text-center py-4">
+                  <div className="inline-block w-6 h-6 border-2 border-teal-600 border-t-transparent rounded-full animate-spin"></div>
+                  <p className="text-sm text-gray-600 mt-2">Đang tải hồ sơ...</p>
+                </div>
+              ) : medicalRecord ? (
+                <div className="space-y-4">
+                  {medicalRecord.symptoms && (
+                    <div>
+                      <h4 className="text-sm font-semibold text-gray-700 mb-1">Triệu chứng:</h4>
+                      <p className="text-sm text-gray-800 bg-white p-3 rounded-lg border border-gray-200 whitespace-pre-wrap">
+                        {medicalRecord.symptoms}
+                      </p>
+                    </div>
+                  )}
+                  
+                  {medicalRecord.diagnosis && (
+                    <div>
+                      <h4 className="text-sm font-semibold text-gray-700 mb-1">Chẩn đoán:</h4>
+                      <p className="text-sm text-gray-800 bg-white p-3 rounded-lg border border-gray-200 whitespace-pre-wrap">
+                        {medicalRecord.diagnosis}
+                      </p>
+                    </div>
+                  )}
+                  
+                  {medicalRecord.prescription && (
+                    <div>
+                      <h4 className="text-sm font-semibold text-gray-700 mb-1">Đơn thuốc:</h4>
+                      <p className="text-sm text-gray-800 bg-white p-3 rounded-lg border border-gray-200 whitespace-pre-wrap">
+                        {medicalRecord.prescription}
+                      </p>
+                    </div>
+                  )}
+                  
+                  {medicalRecord.notes && (
+                    <div>
+                      <h4 className="text-sm font-semibold text-gray-700 mb-1">Ghi chú:</h4>
+                      <p className="text-sm text-gray-800 bg-white p-3 rounded-lg border border-gray-200 whitespace-pre-wrap">
+                        {medicalRecord.notes}
+                      </p>
+                    </div>
+                  )}
+                  
+                  {!medicalRecord.symptoms && !medicalRecord.diagnosis && !medicalRecord.prescription && !medicalRecord.notes && (
+                    <p className="text-sm text-gray-600 text-center py-4">Chưa có thông tin hồ sơ bệnh án</p>
+                  )}
+                </div>
+              ) : (
+                <p className="text-sm text-gray-600 text-center py-4">Chưa có hồ sơ bệnh án cho lịch hẹn này</p>
+              )}
+            </div>
+          )}
 
           {/* Footer / actions */}
           <div className="flex gap-4 pt-4 border-t">

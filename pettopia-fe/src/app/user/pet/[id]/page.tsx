@@ -3,8 +3,9 @@
 import { useState, useRef, useEffect } from 'react';
 import { motion, useInView } from 'framer-motion';
 import { useParams, useRouter } from 'next/navigation';
+import Link from 'next/link';
 
-import { getPetById, getAppointments } from '@/services/petcare/petService';
+import { getPetById, getAppointments, getMedicalRecordsByPetId, type MedicalRecord, type PetMedicalRecord } from '@/services/petcare/petService';
 
 interface Owner {
   user_id: string;
@@ -16,14 +17,6 @@ interface Owner {
     district?: string;
     ward?: string;
   };
-}
-
-interface MedicalRecord {
-  record_id?: string;
-  last_visit_date?: string;
-  diagnoses?: string;
-  treatment?: Array<{ medicine?: string; dosage?: string; frequency?: string; duration?: string }>;
-  notes?: string;
 }
 
 interface Pet {
@@ -54,38 +47,11 @@ export default function UserPetPage() {
 
     const [petData, setPetData] = useState<Pet | null>(null);
     const [upcomingAppointments, setUpcomingAppointments] = useState<any[]>([]);
+    const [medicalRecords, setMedicalRecords] = useState<PetMedicalRecord[]>([]);
     const [loading, setLoading] = useState(true);
     const [error, setError] = useState<string | null>(null);
+    const [loadingMedicalRecords, setLoadingMedicalRecords] = useState(false);
 
-    // Mock data tạm thời cho "Tính năng quản lý"
-    const mockFeatures = [
-        {
-            id: 'log',
-            title: 'Nhật ký thú cưng',
-            description: 'Ghi chép những khoảnh khắc đáng nhớ, hoạt động hàng ngày và những điều đặc biệt về thú cưng của bạn.',
-            bullets: [
-                'Theo dõi hoạt động hàng ngày',
-                'Ghi chú thói quen ăn uống',
-                'Lưu trữ kỷ niệm đặc biệt'
-            ],
-            actionText: 'Xem nhật ký'
-        },
-        {
-            id: 'medical',
-            title: 'Hồ sơ bệnh án',
-            description: 'Theo dõi lịch sử khám bệnh, điều trị và tình trạng sức khỏe tổng thể của thú cưng.',
-            meta: {
-                last_visit: petData?.medical_record?.last_visit_date || 'Chưa có thông tin',
-                diagnoses: petData?.medical_record?.diagnoses || 'Chưa có chẩn đoán'
-            },
-            bullets: [
-                'Hồ sơ bệnh án điện tử',
-                'Lịch sử điều trị',
-                'Theo dõi thuốc men'
-            ],
-            actionText: 'Xem hồ sơ'
-        }
-    ];
 
     useEffect(() => {
         if (!petId) return;
@@ -115,9 +81,9 @@ export default function UserPetPage() {
 
                 // Lấy danh sách lịch hẹn sắp tới
                 try {
-                    const appointmentsData = await getAppointments({ page: 1, limit: 10 });
+                    const appointmentsData = await getAppointments({ page: 1, limit: 200 });
                     const appointments = appointmentsData.data || [];
-                    // Filter appointments của pet này nếu cần
+                    // Filter appointments của pet này
                     const petAppointments = appointments.filter((apt: any) => 
                         apt.pet_ids?.includes(petId as string)
                     );
@@ -125,6 +91,23 @@ export default function UserPetPage() {
                 } catch {
                     // Nếu lấy appointments thất bại, để trống danh sách
                     setUpcomingAppointments([]);
+                }
+
+                // Lấy medical records từ các appointments (bao gồm Completed, Checked_In, etc.)
+                setLoadingMedicalRecords(true);
+                try {
+                    const records = await getMedicalRecordsByPetId(petId as string, {
+                        page: 1,
+                        limit: 100,
+                        // Có thể filter theo status nếu cần, hoặc để undefined để lấy tất cả
+                        // statusFilter: ['Completed', 'Checked_In']
+                    });
+                    setMedicalRecords(records);
+                } catch (err) {
+                    console.error('Error fetching medical records:', err);
+                    setMedicalRecords([]);
+                } finally {
+                    setLoadingMedicalRecords(false);
                 }
             } catch (e) {
                 console.error('Error fetching pet data:', e);
@@ -290,49 +273,107 @@ export default function UserPetPage() {
                     </section>
 
                     <section ref={servicesRef} className="mb-20">
-                        <h2 className="text-3xl font-bold text-gray-900 mb-8 text-center">Tính năng quản lý</h2>
-                        <div className="grid md:grid-cols-2 gap-8">
-                            {mockFeatures.map((f, i) => (
-                                <motion.div
-                                    key={f.id}
-                                    initial={{ y: 50, opacity: 0 }}
-                                    whileInView={{ y: 0, opacity: 1 }}
-                                    viewport={{ once: true, amount: 0.3 }}
-                                    transition={{ duration: 0.6, delay: i * 0.2 }}
-                                    className="bg-white rounded-2xl p-8 shadow-lg border border-teal-100 hover:shadow-xl transition cursor-pointer flex flex-col"
-                                >
-                                    <div className="flex items-start mb-6">
-                                        <div className="w-14 h-14 bg-gradient-to-br from-teal-100 to-cyan-100 rounded-full flex items-center justify-center mr-4 flex-shrink-0">
-                                            <svg className="w-8 h-8 text-teal-600" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                                                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 6.253v13m0-13C10.832 5.477 9.246 5 7.5 5S4.168 5.477 3 6.253v13C4.168 18.477 5.754 18 7.5 18s3.332.477 4.5 1.253" />
-                                            </svg>
-                                        </div>
-                                        <h3 className="text-2xl font-bold text-gray-900">{f.title}</h3>
-                                    </div>
-                                    <p className="text-gray-600 mb-6">{f.description}</p>
-                                    {f.meta && (
-                                        <div className="bg-teal-50 rounded-lg p-4 mb-4">
-                                            <div className="flex justify-between items-center mb-2">
-                                                <span className="text-sm text-gray-600">Khám gần nhất:</span>
-                                                <span className="text-sm font-semibold">{f.meta.last_visit}</span>
+                        <h2 className="text-3xl font-bold text-gray-900 mb-8 text-center">Hồ sơ bệnh án</h2>
+                        
+                        {loadingMedicalRecords ? (
+                            <div className="text-center py-12">
+                                <div className="inline-block w-12 h-12 border-4 border-teal-600 border-t-transparent rounded-full animate-spin mb-4"></div>
+                                <p className="text-gray-600">Đang tải hồ sơ bệnh án...</p>
+                            </div>
+                        ) : medicalRecords.length > 0 ? (
+                            <div className="space-y-6">
+                                {medicalRecords.map((item, index) => (
+                                    <motion.div
+                                        key={item.appointmentId}
+                                        initial={{ y: 50, opacity: 0 }}
+                                        whileInView={{ y: 0, opacity: 1 }}
+                                        viewport={{ once: true, amount: 0.3 }}
+                                        transition={{ duration: 0.6, delay: index * 0.1 }}
+                                        className="bg-white rounded-2xl p-6 shadow-lg border border-teal-100 hover:shadow-xl transition"
+                                    >
+                                        <div className="flex items-center justify-between mb-4 pb-4 border-b border-gray-200">
+                                            <div className="flex items-center gap-3">
+                                                <div className="w-12 h-12 bg-gradient-to-br from-teal-100 to-cyan-100 rounded-full flex items-center justify-center">
+                                                    <svg className="w-6 h-6 text-teal-600" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                                        <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M9 12h6m-6 4h6m2 5H7a2 2 0 01-2-2V5a2 2 0 012-2h5.586a1 1 0 01.707.293l5.414 5.414a1 1 0 01.293.707V19a2 2 0 01-2 2z" />
+                                                    </svg>
+                                                </div>
+                                                <div>
+                                                    <h3 className="text-lg font-bold text-gray-900">Lần khám: {formatDate(item.appointmentDate)}</h3>
+                                                    <p className="text-sm text-gray-600">Mã lịch hẹn: {item.appointmentId.slice(0, 8)}...</p>
+                                                </div>
                                             </div>
-                                            <p className="text-sm text-gray-700">{f.meta.diagnoses}</p>
-                                        </div>
-                                    )}
-                                    <div className="space-y-3 flex-grow">
-                                        {f.bullets.map((b, idx) => (
-                                            <div key={idx} className="flex items-start text-sm text-gray-600">
-                                                <svg className="w-5 h-5 mr-2 text-teal-600 flex-shrink-0 mt-0.5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                                                    <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M5 13l4 4L19 7" />
-                                                </svg>
-                                                <span>{b}</span>
+                                            <div className="flex items-center gap-3">
+                                                <Link 
+                                                    href={`/user/appointments/${item.appointmentId}/medical-record`}
+                                                    className="text-teal-600 hover:text-teal-700 text-sm font-medium flex items-center gap-1"
+                                                >
+                                                    Xem hồ sơ bệnh án
+                                                    <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                                        <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M9 12h6m-6 4h6m2 5H7a2 2 0 01-2-2V5a2 2 0 012-2h5.586a1 1 0 01.707.293l5.414 5.414a1 1 0 01.293.707V19a2 2 0 01-2 2z" />
+                                                    </svg>
+                                                </Link>
+                                                <Link 
+                                                    href={`/user/appointments/${item.appointmentId}`}
+                                                    className="text-gray-600 hover:text-gray-700 text-sm font-medium flex items-center gap-1"
+                                                >
+                                                    Xem lịch hẹn
+                                                    <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                                        <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M9 5l7 7-7 7" />
+                                                    </svg>
+                                                </Link>
                                             </div>
-                                        ))}
-                                    </div>
-                                    <button className="mt-6 w-full bg-teal-600 text-white py-3 rounded-lg font-semibold hover:bg-teal-700 transition h-12">{f.actionText}</button>
-                                </motion.div>
-                            ))}
-                        </div>
+                                        </div>
+                                        
+                                        <div className="grid md:grid-cols-2 gap-4">
+                                            {item.record.symptoms && (
+                                                <div>
+                                                    <h4 className="text-sm font-semibold text-gray-700 mb-2">Triệu chứng:</h4>
+                                                    <p className="text-sm text-gray-800 bg-gray-50 p-3 rounded-lg border border-gray-200 whitespace-pre-wrap">
+                                                        {item.record.symptoms}
+                                                    </p>
+                                                </div>
+                                            )}
+                                            
+                                            {item.record.diagnosis && (
+                                                <div>
+                                                    <h4 className="text-sm font-semibold text-gray-700 mb-2">Chẩn đoán:</h4>
+                                                    <p className="text-sm text-gray-800 bg-gray-50 p-3 rounded-lg border border-gray-200 whitespace-pre-wrap">
+                                                        {item.record.diagnosis}
+                                                    </p>
+                                                </div>
+                                            )}
+                                            
+                                            {item.record.prescription && (
+                                                <div>
+                                                    <h4 className="text-sm font-semibold text-gray-700 mb-2">Đơn thuốc:</h4>
+                                                    <p className="text-sm text-gray-800 bg-gray-50 p-3 rounded-lg border border-gray-200 whitespace-pre-wrap">
+                                                        {item.record.prescription}
+                                                    </p>
+                                                </div>
+                                            )}
+                                            
+                                            {item.record.notes && (
+                                                <div>
+                                                    <h4 className="text-sm font-semibold text-gray-700 mb-2">Ghi chú:</h4>
+                                                    <p className="text-sm text-gray-800 bg-gray-50 p-3 rounded-lg border border-gray-200 whitespace-pre-wrap">
+                                                        {item.record.notes}
+                                                    </p>
+                                                </div>
+                                            )}
+                                        </div>
+                                    </motion.div>
+                                ))}
+                            </div>
+                        ) : (
+                            <div className="bg-white rounded-2xl p-12 shadow-lg border border-teal-100 text-center">
+                                <svg className="w-16 h-16 text-gray-400 mx-auto mb-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                    <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M9 12h6m-6 4h6m2 5H7a2 2 0 01-2-2V5a2 2 0 012-2h5.586a1 1 0 01.707.293l5.414 5.414a1 1 0 01.293.707V19a2 2 0 01-2 2z" />
+                                </svg>
+                                <h3 className="text-xl font-semibold text-gray-900 mb-2">Chưa có hồ sơ bệnh án</h3>
+                                <p className="text-gray-600">Hồ sơ bệnh án sẽ được hiển thị sau khi các lịch hẹn được hoàn thành.</p>
+                            </div>
+                        )}
                     </section>
 
                     {/* <section className="mb-20">
@@ -448,7 +489,7 @@ export default function UserPetPage() {
                                         <div className="mt-6 pt-6 border-t border-gray-200">
                                             <h4 className="font-semibold text-gray-900 mb-4">Điều trị hiện tại</h4>
                                             <div className="space-y-3">
-                                                {petData.medical_record.treatment.map((med, index) => (
+                                                {petData.medical_record.treatment.map((med: { medicine?: string; dosage?: string; frequency?: string; duration?: string }, index: number) => (
                                                     <div key={index} className="bg-teal-50 rounded-lg p-4">
                                                         <div className="flex justify-between items-start mb-2">
                                                             <h5 className="font-semibold text-gray-900 truncate">{med.medicine || 'Chưa rõ'}</h5>
