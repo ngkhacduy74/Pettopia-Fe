@@ -236,12 +236,8 @@ export default function ClinicCreateForm() {
   };
 
   return (
-    <form onSubmit={handleSubmit(onSubmit)} className="max-w-4xl mx-auto p-6 space-y-10 bg-white rounded-xl shadow-sm">
-      <div>
-        <h1 className="text-4xl font-bold text-teal-600">Clinic Profile</h1>
-        <p className="mt-2 text-sm text-gray-600">Fill in the details to create your clinic profile.</p>
-      </div>
-
+    <form onSubmit={handleSubmit(onSubmit)} className="max-w-4xl mx-auto p-6 space-y-1">
+  
       {serverError && (
         <div className="bg-red-50 border border-red-200 text-red-700 px-4 py-3 rounded-lg text-sm flex justify-between items-center">
           <span>{serverError}</span>
@@ -263,7 +259,7 @@ export default function ClinicCreateForm() {
               minLength: { value: 3, message: 'Tối thiểu 3 ký tự' },
             })}
             placeholder="PetCare Clinic"
-            className="w-full px-3 py-2 border border-gray-300 rounded-md focus:ring-2 focus:ring-teal-500 focus:border-teal-500 transition"
+            className="w-full px-3 py-2 border border-gray-300 rounded-md focus:ring-teal-500 focus:border-teal-500 transition"
           />
           {errors.clinic_name && <p className="mt-1 text-xs text-red-600">{errors.clinic_name.message}</p>}
         </div>
@@ -278,7 +274,7 @@ export default function ClinicCreateForm() {
             })}
             type="email"
             placeholder="clinic@example.com"
-            className="w-full px-3 py-2 border border-gray-300 rounded-md focus:ring-2 focus:ring-teal-500 focus:border-teal-500"
+            className="w-full px-3 py-2 border border-gray-300 rounded-md focus:ring-teal-500 focus:border-teal-500"
           />
           {errors.email_address && <p className="mt-1 text-xs text-red-600">{errors.email_address.message}</p>}
         </div>
@@ -292,7 +288,7 @@ export default function ClinicCreateForm() {
               pattern: { value: /^(?:\+84|0)(3[2-9]|5[6|8|9]|7[0|6-9]|8[1-9]|9[0-9])[0-9]{7}$/, message: 'Số điện thoại không hợp lệ' },
             })}
             placeholder="+84901234567"
-            className="w-full px-3 py-2 border border-gray-300 rounded-md focus:ring-2 focus:ring-teal-500 focus:border-teal-500"
+            className="w-full px-3 py-2 border border-gray-300 rounded-md  focus:ring-teal-500 focus:border-teal-500"
           />
           {errors.phone_number && <p className="mt-1 text-xs text-red-600">{errors.phone_number.message}</p>}
         </div>
@@ -310,7 +306,7 @@ export default function ClinicCreateForm() {
               setValueAs: v => v.toUpperCase().trim(),
             })}
             placeholder="1234567890 hoặc 123/HNY"
-            className="w-full px-3 py-2 border border-gray-300 rounded-md focus:ring-2 focus:ring-teal-500 focus:border-teal-500 font-mono text-sm"
+            className="w-full px-3 py-2 border border-gray-300 rounded-md focus:ring-teal-500 focus:border-teal-500 font-mono text-sm"
           />
           {errors.license_number && <p className="mt-1 text-xs text-red-600">{errors.license_number.message}</p>}
         </div>
@@ -322,7 +318,7 @@ export default function ClinicCreateForm() {
             <select
               {...register('city', { required: 'Vui lòng chọn tỉnh/thành phố' })}
               disabled={isLoadingProvinces}
-              className="w-full px-3 py-2 pr-10 border border-gray-300 rounded-md focus:ring-2 focus:ring-teal-500 focus:border-teal-500 appearance-none"
+              className="w-full px-3 py-2 pr-10 border border-gray-300 rounded-md focus:ring-teal-500 focus:border-teal-500 appearance-none"
             >
               <option value="">
                 {isLoadingProvinces ? 'Đang tải...' : provinces.length === 0 ? 'Không có dữ liệu' : 'Chọn tỉnh/thành phố'}
@@ -344,7 +340,7 @@ export default function ClinicCreateForm() {
               <select
                 {...register('district', { required: 'Vui lòng chọn quận/huyện' })}
                 disabled={isLoadingDistricts || districts.length === 0}
-                className="w-full px-3 py-2 pr-10 border border-gray-300 rounded-md focus:ring-2 focus:ring-teal-500 focus:border-teal-500 appearance-none"
+                className="w-full px-3 py-2 pr-10 border border-gray-300 rounded-md focus:ring-teal-500 focus:border-teal-500 appearance-none"
               >
                 <option value="">
                   {isLoadingDistricts ? 'Đang tải...' : districts.length === 0 ? 'Không có dữ liệu' : 'Chọn quận/huyện'}
@@ -367,7 +363,7 @@ export default function ClinicCreateForm() {
               <select
                 {...register('ward', { required: 'Vui lòng chọn phường/xã' })}
                 disabled={isLoadingWards || wards.length === 0}
-                className="w-full px-3 py-2 pr-10 border border-gray-300 rounded-md focus:ring-2 focus:ring-teal-500 focus:border-teal-500 appearance-none"
+                className="w-full px-3 py-2 pr-10 border border-gray-300 rounded-md focus:ring-teal-500 focus:border-teal-500 appearance-none"
               >
                 <option value="">
                   {isLoadingWards ? 'Đang tải...' : wards.length === 0 ? 'Không có dữ liệu' : 'Chọn phường/xã'}
@@ -389,7 +385,7 @@ export default function ClinicCreateForm() {
             <input
               {...register('address_detail', { required: 'Vui lòng nhập địa chỉ chi tiết' })}
               placeholder="Số nhà, đường..."
-              className="w-full px-3 py-2 border border-gray-300 rounded-md focus:ring-2 focus:ring-teal-500 focus:border-teal-500"
+              className="w-full px-3 py-2 border border-gray-300 rounded-md focus:ring-teal-500 focus:border-teal-500"
             />
             {errors.address_detail && <p className="mt-1 text-xs text-red-600">{errors.address_detail.message}</p>}
           </div>
@@ -404,7 +400,7 @@ export default function ClinicCreateForm() {
               pattern: { value: /^[A-Za-zÀ-ỹ\s]+$/, message: 'Chỉ chữ cái và khoảng trắng' },
             })}
             placeholder="Nguyễn Văn A"
-            className="w-full px-3 py-2 border border-gray-300 rounded-md focus:ring-2 focus:ring-teal-500 focus:border-teal-500"
+            className="w-full px-3 py-2 border border-gray-300 rounded-md focus:ring-teal-500 focus:border-teal-500"
           />
           {errors.representative_name && <p className="mt-1 text-xs text-red-600">{errors.representative_name.message}</p>}
         </div>
@@ -418,7 +414,7 @@ export default function ClinicCreateForm() {
               pattern: { value: /^[0-9]{9,12}$/, message: '9-12 chữ số' },
             })}
             placeholder="012345678901"
-            className="w-full px-3 py-2 border border-gray-300 rounded-md focus:ring-2 focus:ring-teal-500 focus:border-teal-500 font-mono"
+            className="w-full px-3 py-2 border border-gray-300 rounded-md focus:ring-teal-500 focus:border-teal-500 font-mono"
           />
           {errors.identify_number && <p className="mt-1 text-xs text-red-600">{errors.identify_number.message}</p>}
         </div>
@@ -432,7 +428,7 @@ export default function ClinicCreateForm() {
               validate: v => v.split(',').map(s => s.trim()).filter(Boolean).length > 0 || 'Phải có ít nhất 1 giấy phép',
             })}
             placeholder="1234, 5678"
-            className="w-full px-3 py-2 border border-gray-300 rounded-md focus:ring-2 focus:ring-teal-500 focus:border-teal-500"
+            className="w-full px-3 py-2 border border-gray-300 rounded-md focus:ring-teal-500 focus:border-teal-500"
           />
           {errors.responsible_licenses && <p className="mt-1 text-xs text-red-600">{errors.responsible_licenses.message}</p>}
         </div>
@@ -445,7 +441,7 @@ export default function ClinicCreateForm() {
               validate: v => !v || new Date(v) <= new Date() || 'Không được chọn ngày tương lai',
             })}
             type="date"
-            className="w-full px-3 py-2 border border-gray-300 rounded-md focus:ring-2 focus:ring-teal-500 focus:border-teal-500"
+            className="w-full px-3 py-2 border border-gray-300 rounded-md focus:ring-teal-500 focus:border-teal-500"
           />
           {errors.license_issued_date && <p className="mt-1 text-xs text-red-600">{errors.license_issued_date.message}</p>}
         </div>

@@ -1,7 +1,7 @@
 // app/clinic/dashboard/page.tsx
 'use client'
 import React, { useState, useEffect } from 'react';
-import Dashboard from '@/components/Dashboard';
+import MyGuide from '@/components/user/MyGuide';
 import {
   CurrencyDollarIcon,
   CalendarIcon,
@@ -124,16 +124,6 @@ export default function ClinicDashboardPage() {
   ];
 
   return (
-    <Dashboard
-      title="Dashboard Phòng khám"
-      subtitle="Tổng quan hoạt động phòng khám thú y"
-      statsCards={statsCards}
-      revenueData={revenueData}
-      serviceData={serviceData}
-      quickActions={quickActions}
-      recentActivities={recentActivities}
-      selectedPeriod={selectedPeriod}
-      onPeriodChange={setSelectedPeriod}
-    />
+    <MyGuide/>
   );
 }

@@ -133,9 +133,9 @@ export default function Sidebar({
 
     ],
     User: [
-      { label: 'My Guide', href: '/user/dashboard', icon: <HomeIcon className="w-5 h-5" /> },
-      { label: 'Submit veterinarian form', href: '/user/submit-vet-certificate', icon: <DocumentTextIcon className="w-5 h-5" /> },
-      { label: 'Submit clinic form', href: '/user/submit-clinic-certificate', icon: <DocumentTextIcon className="w-5 h-5" /> },
+      { label: 'Hướng dẫn', href: '/user/dashboard', icon: <HomeIcon className="w-5 h-5" /> },
+      { label: 'Nộp hồ sơ bác sĩ', href: '/user/submit-vet-certificate', icon: <DocumentTextIcon className="w-5 h-5" /> },
+      { label: 'Nộp hồ sơ phòng khám', href: '/user/submit-clinic-certificate', icon: <DocumentTextIcon className="w-5 h-5" /> },
     ],
   };
 

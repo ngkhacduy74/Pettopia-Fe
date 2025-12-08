@@ -1,9 +1,10 @@
 'use client';
 
-import React, { useState, useEffect, JSX } from "react";
+import React, { useState, useEffect } from "react";
 import Link from "next/link";
 import { useRouter } from "next/navigation";
 import { getCustomerProfile } from "@/services/user/userService";
+import { Mail, MapPin, Calendar, Phone, Home, Clock, Edit3 } from 'lucide-react';
 
 interface User {
   id: string;
@@ -22,11 +23,16 @@ interface User {
   createdAt?: string;
 }
 
-export default function UserProfilePage(): JSX.Element {
+export default function UserProfilePage() {
   const router = useRouter();
   const [user, setUser] = useState<User | null>(null);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
+  const [lightbox, setLightbox] = useState<{ isOpen: boolean; currentIndex: number }>({
+    isOpen: false,
+    currentIndex: 0
+  });
+  const displayImages = user?.avatar_url ? [user.avatar_url] : [];
 
   useEffect(() => {
     const fetchUserData = async () => {
@@ -54,7 +60,7 @@ export default function UserProfilePage(): JSX.Element {
           username: data.username,
           email: typeof data.email === 'string' ? data.email : data.email?.email_address || '',
           phone: typeof data.phone === 'string' ? data.phone : data.phone?.phone_number || '',
-          avatar_url: data.avatar_url || data.avatar || '/sampleimg/default-avatar.jpg',
+          avatar_url: data.avatar_url || data.avatar || undefined,
           address: data.address || { city: '', district: '', ward: '', detail: '' },
           dob: data.dob || '',
           createdAt: data.createdAt || data.created_at || ''
@@ -73,78 +79,19 @@ export default function UserProfilePage(): JSX.Element {
     fetchUserData();
   }, [router]);
 
-  if (loading) {
-    return (
-      <div style={{ 
-        minHeight: '100vh', 
-        background: '#f5f5f5',
-        display: 'flex',
-        alignItems: 'center',
-        justifyContent: 'center'
-      }}>
-        <div style={{ textAlign: 'center' }}>
-          <div style={{
-            width: '40px',
-            height: '40px',
-            border: '4px solid #e0e0e0',
-            borderTop: '4px solid #333',
-            borderRadius: '50%',
-            animation: 'spin 1s linear infinite',
-            margin: '0 auto 16px'
-          }}></div>
-          <div style={{ fontSize: '14px', color: '#666' }}>Đang tải...</div>
-        </div>
-        <style>{`
-          @keyframes spin {
-            0% { transform: rotate(0deg); }
-            100% { transform: rotate(360deg); }
-          }
-        `}</style>
-      </div>
-    );
-  }
-
-  if (error || !user) {
-    return (
-      <div style={{ 
-        minHeight: '100vh', 
-        background: '#f5f5f5',
-        display: 'flex',
-        alignItems: 'center',
-        justifyContent: 'center',
-        padding: '20px'
-      }}>
-        <div style={{
-          background: 'white',
-          padding: '32px',
-          borderRadius: '8px',
-          boxShadow: '0 2px 8px rgba(0,0,0,0.1)',
-          textAlign: 'center',
-          maxWidth: '400px'
-        }}>
-          <h2 style={{ margin: '0 0 16px 0', color: '#333', fontSize: '18px' }}>
-            {error || "Không thể tải thông tin"}
-          </h2>
-          <Link href="/login" style={{ textDecoration: 'none' }}>
-            <button style={{
-              padding: '10px 24px',
-              background: '#333',
-              color: '#fff',
-              border: 'none',
-              borderRadius: '6px',
-              cursor: 'pointer',
-              fontSize: '14px'
-            }}>
-              Đăng nhập
-            </button>
-          </Link>
-        </div>
-      </div>
-    );
-  }
+  useEffect(() => {
+    const handleKeyDown = (e: KeyboardEvent) => {
+      if (!lightbox.isOpen) return;
+      if (e.key === 'Escape') closeLightbox();
+      if (e.key === 'ArrowLeft') goToPrevImage();
+      if (e.key === 'ArrowRight') goToNextImage();
+    };
+    window.addEventListener('keydown', handleKeyDown);
+    return () => window.removeEventListener('keydown', handleKeyDown);
+  }, [lightbox.isOpen, displayImages]);
 
   const formatAddress = () => {
-    if (!user.address) return 'Chưa cập nhật';
+    if (!user?.address) return 'Chưa cập nhật';
     const parts = [
       user.address.detail,
       user.address.ward,
@@ -157,194 +104,251 @@ export default function UserProfilePage(): JSX.Element {
   const formatDate = (dateString?: string) => {
     if (!dateString) return 'Chưa cập nhật';
     try {
-      return new Date(dateString).toLocaleDateString('vi-VN');
+      return new Date(dateString).toLocaleDateString('vi-VN', {
+        year: 'numeric',
+        month: 'long',
+        day: 'numeric'
+      });
     } catch {
       return dateString;
     }
   };
 
+  const getInitials = (name?: string) => {
+    if (!name) return 'NN';
+    const parts = name.trim().split(/\s+/).filter(Boolean);
+    if (parts.length === 0) return 'NN';
+    if (parts.length === 1) return parts[0].slice(0, 2).toUpperCase();
+    return (parts[0][0] + parts[parts.length - 1][0]).toUpperCase();
+  };
+
+  const closeLightbox = () => {
+    setLightbox({ isOpen: false, currentIndex: 0 });
+  };
+
+  const goToPrevImage = () => {
+    if (!displayImages || displayImages.length === 0) return;
+    setLightbox(prev => ({
+      ...prev,
+      currentIndex: prev.currentIndex > 0 ? prev.currentIndex - 1 : displayImages.length - 1
+    }));
+  };
+
+  const goToNextImage = () => {
+    if (!displayImages || displayImages.length === 0) return;
+    setLightbox(prev => ({
+      ...prev,
+      currentIndex: prev.currentIndex < displayImages.length - 1 ? prev.currentIndex + 1 : 0
+    }));
+  };
+
+  if (loading) {
+    return (
+      <div className="min-h-screen bg-white flex items-center justify-center">
+        <div className="text-center">
+          <div className="w-12 h-12 border-4 border-gray-200 border-t-gray-800 rounded-full animate-spin mx-auto mb-4"></div>
+          <div className="text-sm text-gray-600">Đang tải...</div>
+        </div>
+      </div>
+    );
+  }
+
+  if (error || !user) {
+    return (
+      <div className="min-h-screen bg-white flex items-center justify-center p-5">
+        <div className="bg-white border-2 border-gray-200 rounded-lg p-8 text-center max-w-md">
+          <h2 className="text-lg font-semibold text-gray-900 mb-4">
+            {error || "Không thể tải thông tin"}
+          </h2>
+          <Link href="/login">
+            <button className="px-6 py-2 bg-gray-900 text-white rounded-lg hover:bg-gray-700 transition-colors">
+              Đăng nhập
+            </button>
+          </Link>
+        </div>
+      </div>
+    );
+  }
+
   return (
-    <div style={{ 
-      minHeight: '100vh', 
-      background: '#f5f5f5',
-      padding: '40px 20px'
-    }}>
-      <div style={{
-        maxWidth: '800px',
-        margin: '0 auto'
-      }}>
-        {/* Profile Header */}
-        <div style={{
-          background: 'white',
-          borderRadius: '8px',
-          padding: '32px',
-          marginBottom: '20px',
-          boxShadow: '0 1px 3px rgba(0,0,0,0.1)'
-        }}>
-          <div style={{
-            display: 'flex',
-            gap: '24px',
-            alignItems: 'flex-start',
-            flexWrap: 'wrap'
-          }}>
-            <img
-              src={user.avatar_url || '/sampleimg/default-avatar.jpg'}
-              alt={user.fullname}
-              style={{
-                width: '120px',
-                height: '120px',
-                borderRadius: '50%',
-                objectFit: 'cover',
-                flexShrink: 0,
-                border: '3px solid #f5f5f5'
-              }}
-            />
-            
-            <div style={{ flex: 1, minWidth: '250px' }}>
-              <h1 style={{ 
-                margin: '0 0 8px 0', 
-                fontSize: '28px', 
-                fontWeight: 600,
-                color: '#1a1a1a'
-              }}>
-                {user.fullname}
-              </h1>
-              
+    <div className="min-h-screen">
+      {/* Hero Banner */}
+      <div className="relative">
+        <div
+          className="h-48 bg-cover bg-center"
+          style={{ backgroundImage: "url('/sampleimg/bg-green.jpg')" }}
+        />
+
+        {/* Avatar */}
+        <div className="absolute -bottom-16 left-8">
+          <div className="w-32 h-32 rounded-full border-4 border-white overflow-hidden">
+            {user.avatar_url ? (
+              <img
+                src={user.avatar_url}
+                alt={user.fullname}
+                className="w-full h-full object-cover"
+              />
+            ) : (
+              <div className="w-full h-full bg-gradient-to-br from-teal-500 to-cyan-600 flex items-center justify-center text-white text-3xl font-bold">
+                {getInitials(user.fullname)}
+              </div>
+            )}
+          </div>
+        </div>
+      </div>
+
+      {/* Main Content */}
+      <div className="max-w-7xl mx-auto px-8 pt-20 pb-12">
+        <div className="grid grid-cols-1 lg:grid-cols-3 gap-8">
+
+          {/* Left Column - Main Info */}
+          <div className="lg:col-span-2">
+            {/* Name & Basic Info */}
+            <div className="mb-8">
+              <div className="flex items-center gap-3 mb-2">
+                <h1 className="text-3xl font-bold text-gray-900">{user.fullname}</h1>
+                <span className="w-6 h-6 rounded-full bg-gray-800 flex items-center justify-center text-white text-xs">✓</span>
+              </div>
+
               {user.username && (
-                <div style={{ 
-                  color: '#666', 
-                  fontSize: '15px',
-                  marginBottom: '16px'
-                }}>
-                  @{user.username}
-                </div>
+                <p className="text-gray-600 mb-4">@{user.username}</p>
               )}
 
-              <Link href="/user/edit-profile" style={{ textDecoration: 'none' }}>
-                <button
-                  style={{
-                    padding: '10px 20px',
-                    background: '#548c99ff',
-                    color: '#fff',
-                    border: 'none',
-                    borderRadius: '6px',
-                    cursor: 'pointer',
-                    fontSize: '14px',
-                    fontWeight: 500
-                  }}
-                  onMouseOver={(e) => e.currentTarget.style.background = '#333'}
-                  onMouseOut={(e) => e.currentTarget.style.background = '#1a1a1a'}
-                >
+              <div className="flex flex-wrap gap-6 text-sm text-gray-600 mb-6">
+                <div className="flex items-center gap-2">
+                  <MapPin className="w-4 h-4" />
+                  <span>{user.address?.city || 'Việt Nam'}</span>
+                </div>
+                <div className="flex items-center gap-2">
+                  <Clock className="w-4 h-4" />
+                  <span>Tham gia {formatDate(user.createdAt)}</span>
+                </div>
+              </div>
+
+              <Link href="/user/edit-profile">
+                <button className="px-6 py-2.5 border-2 text-gray-900 font-medium rounded-lg hover:bg-teal-600 hover:text-white transition-colors flex items-center gap-2">
+                  <Edit3 className="w-4 h-4" />
                   Chỉnh sửa hồ sơ
                 </button>
               </Link>
             </div>
+
+            {/* Navigation Tabs */}
+            <div className="border-b border-gray-200">
+              <div className="flex gap-8 overflow-x-auto">
+                <button className="pb-4 border-b-2 border-gray-900 font-medium text-gray-900 whitespace-nowrap">Tổng quan</button>
+                <button className="pb-4 text-gray-600 hover:text-gray-900 whitespace-nowrap">Hoạt động</button>
+                <button className="pb-4 text-gray-600 hover:text-gray-900 whitespace-nowrap">Bài viết</button>
+                <button className="pb-4 text-gray-600 hover:text-gray-900 whitespace-nowrap">Ảnh</button>
+              </div>
+            </div>
+
+            {/* Content Area */}
+            <div className="mt-8 space-y-6">
+              <div className="border border-gray-200 rounded-lg p-6">
+                <h3 className="text-lg font-bold text-gray-900 mb-4">Giới thiệu</h3>
+                <p className="text-gray-600 leading-relaxed">
+                  Chào mừng bạn đến với trang cá nhân của tôi. Tôi đam mê công nghệ và luôn tìm kiếm những điều mới mẻ để học hỏi và phát triển bản thân.
+                </p>
+              </div>
+
+              <div className="border border-gray-200 rounded-lg p-6">
+                <h3 className="text-lg font-bold text-gray-900 mb-4">Hoạt động gần đây</h3>
+                <div className="space-y-4">
+                  <div className="flex gap-4 pb-4 border-b border-gray-100">
+                    <div className="w-10 h-10 rounded-full bg-gray-200 flex-shrink-0"></div>
+                    <div className="flex-1">
+                      <p className="text-sm text-gray-600 mb-1">Đã cập nhật thông tin cá nhân</p>
+                      <p className="text-xs text-gray-400">2 ngày trước</p>
+                    </div>
+                  </div>
+                  <div className="flex gap-4 pb-4 border-b border-gray-100">
+                    <div className="w-10 h-10 rounded-full bg-gray-200 flex-shrink-0"></div>
+                    <div className="flex-1">
+                      <p className="text-sm text-gray-600 mb-1">Đã thêm ảnh đại diện mới</p>
+                      <p className="text-xs text-gray-400">1 tuần trước</p>
+                    </div>
+                  </div>
+                </div>
+              </div>
+            </div>
           </div>
-        </div>
 
-        {/* Info Section */}
-        <div style={{
-          background: 'white',
-          borderRadius: '8px',
-          padding: '32px',
-          boxShadow: '0 1px 3px rgba(0,0,0,0.1)'
-        }}>
-          <h2 style={{ 
-            margin: '0 0 24px 0', 
-            fontSize: '18px', 
-            fontWeight: 600,
-            color: '#1a1a1a',
-            borderBottom: '1px solid #e0e0e0',
-            paddingBottom: '12px'
-          }}>
-            Thông tin cá nhân
-          </h2>
+          {/* Right Column - Sidebar */}
+          <div className="space-y-6">
 
-          <div style={{ display: 'flex', flexDirection: 'column', gap: '20px' }}>
-            {/* Email */}
-            <div>
-              <div style={{ 
-                fontSize: '12px', 
-                color: '#888',
-                marginBottom: '6px',
-                fontWeight: 500,
-                textTransform: 'uppercase',
-                letterSpacing: '0.5px'
-              }}>
-                Email
-              </div>
-              <div style={{ fontSize: '15px', color: '#333' }}>
-                {user.email || 'Chưa cập nhật'}
+            {/* Personal Info Section */}
+            <div className="border border-gray-200 rounded-lg p-6">
+              <h2 className="text-xl font-bold mb-6 text-gray-900">Thông tin cá nhân</h2>
+
+              <div className="space-y-5">
+                <div className="flex items-start gap-3">
+                  <Mail className="w-5 h-5 text-gray-400 mt-0.5 flex-shrink-0" />
+                  <div className="flex-1 min-w-0">
+                    <div className="text-xs text-gray-500 mb-1 uppercase tracking-wide">Email</div>
+                    <div className="text-sm text-gray-900 break-words">{user.email || 'Chưa cập nhật'}</div>
+                  </div>
+                </div>
+
+                <div className="flex items-start gap-3">
+                  <Phone className="w-5 h-5 text-gray-400 mt-0.5 flex-shrink-0" />
+                  <div className="flex-1">
+                    <div className="text-xs text-gray-500 mb-1 uppercase tracking-wide">Số điện thoại</div>
+                    <div className="text-sm text-gray-900">{user.phone || 'Chưa cập nhật'}</div>
+                  </div>
+                </div>
+
+                <div className="flex items-start gap-3">
+                  <Calendar className="w-5 h-5 text-gray-400 mt-0.5 flex-shrink-0" />
+                  <div className="flex-1">
+                    <div className="text-xs text-gray-500 mb-1 uppercase tracking-wide">Ngày sinh</div>
+                    <div className="text-sm text-gray-900">{formatDate(user.dob)}</div>
+                  </div>
+                </div>
+
+                <div className="flex items-start gap-3">
+                  <Home className="w-5 h-5 text-gray-400 mt-0.5 flex-shrink-0" />
+                  <div className="flex-1 min-w-0">
+                    <div className="text-xs text-gray-500 mb-1 uppercase tracking-wide">Địa chỉ</div>
+                    <div className="text-sm text-gray-900 break-words leading-relaxed">
+                      {formatAddress()}
+                    </div>
+                  </div>
+                </div>
               </div>
             </div>
 
-            {/* Phone */}
-            <div>
-              <div style={{ 
-                fontSize: '12px', 
-                color: '#888',
-                marginBottom: '6px',
-                fontWeight: 500,
-                textTransform: 'uppercase',
-                letterSpacing: '0.5px'
-              }}>
-                Số điện thoại
-              </div>
-              <div style={{ fontSize: '15px', color: '#333' }}>
-                {user.phone || 'Chưa cập nhật'}
-              </div>
-            </div>
+            {/* Like stats + Action
+            <div className="border-t border-gray-200">
+              {post.likeCount > 0 && (
+                <div className="px-4 py-2 flex items-center gap-2 text-xs text-gray-600">
+                  <div className="flex -space-x-1">
+                    <div className="w-4 h-4 rounded-full bg-blue-500 flex items-center justify-center">
+                      <svg className="w-2.5 h-2.5 text-white" fill="currentColor" viewBox="0 0 20 20">
+                        <path d="M2 10.5a1.5 1.5 0 113 0v6a1.5 1.5 0 01-3 0v-6zM6 10.333v5.43a2 2 0 001.106 1.79l.05.025A4 4 0 008.943 18h5.416a2 2 0 001.962-1.608l1.2-6A2 2 0 0015.56 8H12V4a2 2 0 00-2-2 1 1 0 00-1 1v.667a4 4 0 01-.8 2.4L6.8 7.933a4 4 0 00-.8 2.4z" />
+                      </svg>
+                    </div>
+                  </div>
+                  <span className="ml-1 hover:text-blue-600 cursor-pointer hover:underline">{getLikedUsersText()}</span>
+                </div>
+              )}
 
-            {/* DOB */}
-            <div>
-              <div style={{ 
-                fontSize: '12px', 
-                color: '#888',
-                marginBottom: '6px',
-                fontWeight: 500,
-                textTransform: 'uppercase',
-                letterSpacing: '0.5px'
-              }}>
-                Ngày sinh
+              <div className="flex items-center justify-around py-1">
+                <button
+                  onClick={handleToggleLike}
+                  disabled={liking}
+                  className={`flex-1 flex items-center justify-center gap-2 py-2.5 rounded-lg transition-colors ${isLikedByCurrentUser
+                    ? 'text-blue-600 hover:bg-gray-100'
+                    : 'text-gray-600 hover:bg-gray-100'
+                    } disabled:opacity-60 font-semibold text-sm`}
+                >
+                  <svg className="w-5 h-5" fill={isLikedByCurrentUser ? 'currentColor' : 'none'} stroke="currentColor" strokeWidth={2} viewBox="0 0 24 24">
+                    <path strokeLinecap="round" strokeLinejoin="round" d="M14 9V5a3 3 0 00-3-3l-4 9v11h11.28a2 2 0 002-1.7l1.38-9a2 2 0 00-2-2.3zM7 22H4a2 2 0 01-2-2v-7a2 2 0 012-2h3" />
+                  </svg>
+                  <span>{isLikedByCurrentUser ? 'Đã thích' : 'Thích'}</span>
+                </button>
               </div>
-              <div style={{ fontSize: '15px', color: '#333' }}>
-                {formatDate(user.dob)}
-              </div>
-            </div>
-
-            {/* Address */}
-            <div>
-              <div style={{ 
-                fontSize: '12px', 
-                color: '#888',
-                marginBottom: '6px',
-                fontWeight: 500,
-                textTransform: 'uppercase',
-                letterSpacing: '0.5px'
-              }}>
-                Địa chỉ
-              </div>
-              <div style={{ fontSize: '15px', color: '#333', lineHeight: 1.6 }}>
-                {formatAddress()}
-              </div>
-            </div>
-
-            {/* Join Date */}
-            <div>
-              <div style={{ 
-                fontSize: '12px', 
-                color: '#888',
-                marginBottom: '6px',
-                fontWeight: 500,
-                textTransform: 'uppercase',
-                letterSpacing: '0.5px'
-              }}>
-                Ngày tham gia
-              </div>
-              <div style={{ fontSize: '15px', color: '#333' }}>
-                {formatDate(user.createdAt)}
-              </div>
-            </div>
+            </div> */}
           </div>
         </div>
       </div>

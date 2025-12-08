@@ -100,12 +100,7 @@ export default function VetCreateForm() {
   };
 
   return (
-    <form onSubmit={handleSubmit(onSubmit)} className="max-w-4xl mx-auto p-6 space-y-10 bg-white rounded-xl shadow-sm">
-      <div>
-        <h1 className="text-4xl font-bold text-teal-600">Veterinarian Profile</h1>
-        <p className="mt-2 text-sm text-gray-600">Fill in the details to complete your veterinarian profile.</p>
-      </div>
-
+    <form onSubmit={handleSubmit(onSubmit)} className="max-w-4xl mx-auto p-6 space-y-10">
       {serverError && (
         <div className="bg-red-50 border border-red-200 text-red-700 px-4 py-3 rounded-lg text-sm">
           {serverError}
@@ -122,7 +117,7 @@ export default function VetCreateForm() {
               minLength: { value: 3, message: 'Tối thiểu 3 ký tự' },
             })}
             placeholder="VD: Thú y nội khoa"
-            className="w-full px-3 py-2 border border-gray-300 rounded-md focus:ring-2 focus:ring-teal-500 focus:border-teal-500 transition"
+            className="w-full px-3 py-2 border border-gray-300 rounded-md focus:ring-teal-500 focus:border-teal-500 transition"
           />
           {errors.specialty && <p className="mt-1 text-xs text-red-600">{errors.specialty.message}</p>}
         </div>
@@ -143,7 +138,7 @@ export default function VetCreateForm() {
                     setSubSpecialties(newSpecialties);
                   }}
                   placeholder={`VD: Chẩn đoán hình ảnh ${index + 1}`}
-                  className="flex-1 px-3 py-2 border border-gray-300 rounded-md focus:ring-2 focus:ring-teal-500 focus:border-teal-500"
+                  className="flex-1 px-3 py-2 border border-gray-300 rounded-md focus:ring-teal-500 focus:border-teal-500"
                 />
                 <button
                   type="button"
@@ -181,7 +176,7 @@ export default function VetCreateForm() {
             min="0"
             max="50"
             placeholder="5"
-            className="w-full px-3 py-2 border border-gray-300 rounded-md focus:ring-2 focus:ring-teal-500 focus:border-teal-500"
+            className="w-full px-3 py-2 border border-gray-300 rounded-md focus:ring-teal-500 focus:border-teal-500"
           />
           {errors.exp && <p className="mt-1 text-xs text-red-600">{errors.exp.message}</p>}
         </div>
@@ -199,7 +194,7 @@ export default function VetCreateForm() {
               })}
               type="url"
               placeholder="https://facebook.com/bacsi.thuy"
-              className="w-full px-3 py-2 border border-gray-300 rounded-md focus:ring-2 focus:ring-teal-500 focus:border-teal-500"
+              className="w-full px-3 py-2 border border-gray-300 rounded-md focus:ring-teal-500 focus:border-teal-500"
             />
             {errors.facebook && <p className="mt-1 text-xs text-red-600">{errors.facebook.message}</p>}
           </div>
@@ -215,7 +210,7 @@ export default function VetCreateForm() {
               })}
               type="url"
               placeholder="https://linkedin.com/in/bacsi-thuy"
-              className="w-full px-3 py-2 border border-gray-300 rounded-md focus:ring-2 focus:ring-teal-500 focus:border-teal-500"
+              className="w-full px-3 py-2 border border-gray-300 rounded-md focus:ring-teal-500 focus:border-teal-500"
             />
             {errors.linkedin && <p className="mt-1 text-xs text-red-600">{errors.linkedin.message}</p>}
           </div>
@@ -231,7 +226,7 @@ export default function VetCreateForm() {
             })}
             rows={4}
             placeholder="Viết vài câu về kinh nghiệm, phong cách làm việc..."
-            className="w-full px-3 py-2 border border-gray-300 rounded-md focus:ring-2 focus:ring-teal-500 focus:border-teal-500 resize-none"
+            className="w-full px-3 py-2 border border-gray-300 rounded-md focus:ring-teal-500 focus:border-teal-500 resize-none"
           />
           {errors.bio && <p className="mt-1 text-xs text-red-600">{errors.bio.message}</p>}
         </div>
@@ -247,13 +242,13 @@ export default function VetCreateForm() {
                     required: index === 0 ? 'Vui lòng nhập tên chứng chỉ' : false,
                   })}
                   placeholder="Tên chứng chỉ"
-                  className="flex-1 px-3 py-2 border border-gray-300 rounded-md focus:ring-2 focus:ring-teal-500 focus:border-teal-500"
+                  className="flex-1 px-3 py-2 border border-gray-300 rounded-md focus:ring-teal-500 focus:border-teal-500"
                 />
                 <input
                   {...register(`certifications.${index}.link` as const)}
                   placeholder="Link (tùy chọn)"
                   type="url"
-                  className="flex-1 px-3 py-2 border border-gray-300 rounded-md focus:ring-2 focus:ring-teal-500 focus:border-teal-500"
+                  className="flex-1 px-3 py-2 border border-gray-300 rounded-md focus:ring-teal-500 focus:border-teal-500"
                 />
                 {certFields.length > 1 && (
                   <button
@@ -294,7 +289,7 @@ export default function VetCreateForm() {
               setValueAs: v => v.toUpperCase().trim(),
             })}
             placeholder="1234567890 hoặc 123/HNY"
-            className="w-full px-3 py-2 border border-gray-300 rounded-md focus:ring-2 focus:ring-teal-500 focus:border-teal-500 font-mono text-sm"
+            className="w-full px-3 py-2 border border-gray-300 rounded-md focus:ring-teal-500 focus:border-teal-500 font-mono text-sm"
           />
           {errors.license_number && <p className="mt-1 text-xs text-red-600">{errors.license_number.message}</p>}
         </div>
@@ -311,7 +306,7 @@ export default function VetCreateForm() {
             })}
             type="url"
             placeholder="https://example.com/license.jpg"
-            className="w-full px-3 py-2 border border-gray-300 rounded-md focus:ring-2 focus:ring-teal-500 focus:border-teal-500"
+            className="w-full px-3 py-2 border border-gray-300 rounded-md focus:ring-teal-500 focus:border-teal-500"
           />
           {errors.license_image_url && <p className="mt-1 text-xs text-red-600">{errors.license_image_url.message}</p>}
         </div>
