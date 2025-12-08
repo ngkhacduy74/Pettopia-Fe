@@ -46,6 +46,7 @@ export default function Sidebar({
   onOpenSettings,
 }: ClinicNavbarProps) {
   const pathname = usePathname();
+  const router = useRouter();
   const [isDropdownOpen, setIsDropdownOpen] = useState(false);
   const [isRoleSwitcherOpen, setIsRoleSwitcherOpen] = useState(false);
   const [userData, setUserData] = useState<UserData | null>(null);
@@ -251,7 +252,13 @@ export default function Sidebar({
               <button
                 onClick={() => {
                   setIsDropdownOpen(false);
-                  alert('Profile clicked');
+                  const profilePath = 
+                    detectedRole === 'Admin' ? '/admin/profile' :
+                    detectedRole === 'Staff' ? '/staff/profile' :
+                    detectedRole === 'Clinic' ? '/clinic/profile' :
+                    detectedRole === 'Vet' ? '/vet/profile' :
+                    '/user/profile';
+                  router.push(profilePath);
                 }}
                 className="w-full flex items-center gap-3 px-4 py-3 hover:bg-teal-50 rounded-lg transition-colors text-left text-sm"
               >
