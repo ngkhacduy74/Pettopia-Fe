@@ -11,7 +11,7 @@ const rolePermissions: { [key: string]: string[] } = {
 };
 
 // Middleware function to handle role-based authorization
-export function middleware(request: NextRequest) {
+export function proxy(request: NextRequest) {
   // Get user roles from cookie
   const userRoleJson = request.cookies.get('userRole')?.value || null;
   let userRole: string[] = [];
