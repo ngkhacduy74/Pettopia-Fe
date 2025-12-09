@@ -113,7 +113,6 @@ export default function Sidebar({
     ],
     Staff: [
       { label: 'Trang chủ', href: '/staff/dashboard', icon: <HomeIcon className="w-5 h-5" /> },
-      { label: 'Quản lý lịch khám', href: '/staff/appointments', icon: <ClipboardDocumentListIcon className="w-5 h-5" /> },
       { label: 'Xét duyệt Phòng khám', href: '/staff/request-clinic-list', icon: <ClipboardDocumentListIcon className="w-5 h-5" /> },
       { label: 'Xét duyệt Bác Sĩ', href: '/staff/request-vet-list', icon: <ClipboardDocumentListIcon className="w-5 h-5" /> },
       { label: 'Quản lý bài viết', href: '/staff/post-report', icon: <ClipboardDocumentListIcon className="w-5 h-5" /> },

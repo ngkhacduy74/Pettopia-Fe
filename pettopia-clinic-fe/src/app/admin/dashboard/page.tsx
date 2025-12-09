@@ -82,22 +82,22 @@ export default function ClinicDashboardPage() {
       color: 'from-teal-600 to-cyan-600',
       link: '/admin/manager-user',
     },
-    // {
-    //   id: 2,
-    //   title: 'Tiêm phòng',
-    //   description: 'Lịch tiêm và vaccine',
-    //   icon: <BeakerIcon className="h-6 w-6 text-white" />,
-    //   color: 'from-cyan-600 to-blue-600',
-    //   link: '/clinic/vaccination',
-    // },
-    // {
-    //   id: 3,
-    //   title: 'Ký gửi',
-    //   description: 'Quản lý chăm sóc Pet',
-    //   icon: <HomeIcon className="h-6 w-6 text-white" />,
-    //   color: 'from-blue-600 to-teal-600',
-    //   link: '/clinic/boarding',
-    // },
+    {
+      id: 2,
+      title: 'Quản lý bệnh viện',
+      description: 'Danh sách các bệnh viện',
+      icon: <BeakerIcon className="h-6 w-6 text-white" />,
+      color: 'from-cyan-600 to-blue-600',
+      link: '/admin/manager-clinic',
+    },
+    {
+      id: 3,
+      title: 'Kênh giao tiếp',
+      description: 'Cộng đồng Pettoipia',
+      icon: <HomeIcon className="h-6 w-6 text-white" />,
+      color: 'from-blue-600 to-teal-600',
+      link: '#',
+    },
   ];
 
   const recentActivities = [

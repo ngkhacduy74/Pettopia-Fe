@@ -148,18 +148,18 @@ export default function LoginForm() {
             {/* Tên đăng nhập */}
             <div>
               <label htmlFor="username" className="block text-sm font-medium text-gray-700 mb-2">
-                Tên đăng nhập
+                Tên đăng nhập hoặc Email
               </label>
               <input
                 id="username"
                 {...register('username', { required: true })}
                 type="text"
-                placeholder="Nhập tên đăng nhập"
+                placeholder="Nhập tên đăng nhập hoặc email"
                 className="block w-full px-4 py-2.5 bg-gray-50 border border-gray-200 rounded-lg text-gray-900 placeholder:text-gray-400 focus:bg-white focus:border-teal-500 focus:ring-2 focus:ring-teal-100 focus:outline-none transition-all text-sm"
               />
               {errors.username && (
                 <p className="text-xs text-red-500 mt-1.5 flex items-center gap-1">
-                  <span>●</span> Vui lòng nhập tên đăng nhập
+                  <span>●</span> Vui lòng nhập tên đăng nhập hoặc email
                 </p>
               )}
             </div>
