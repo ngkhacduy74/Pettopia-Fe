@@ -359,10 +359,18 @@ export default function UserNavbar({ setShowSearch, showSearch }: UserNavbarProp
               <div className="space-y-1">
                 <Link href="/user/pet/list">
                   <button
+<<<<<<< Updated upstream
                     className={`w-full flex ${isSidebarCollapsed ? 'justify-center' : 'items-center'} gap-3 px-3 py-2 rounded-lg text-sm transition-colors cursor-pointer${pathname === '/user/pet/list'
                         ? 'bg-gradient-to-r from-teal-500 to-cyan-600 text-white shadow-sm'
                         : 'text-gray-700 hover:bg-gray-100'
                       }`}
+                      }`}
+=======
+                    className={`w-full flex ${isSidebarCollapsed ? 'justify-center' : 'items-center'} gap-3 px-3 py-2 rounded-lg text-sm transition-colors ${pathname === '/user/pet/list'
+                        ? 'bg-gradient-to-r from-teal-500 to-cyan-600 text-white shadow-sm'
+                        : 'text-gray-700 hover:bg-gray-100'
+                      }`}
+>>>>>>> Stashed changes
                     title="Danh sách thú cưng"
                   >
                     <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 20 20" fill="currentColor" className="size-5 flex-shrink-0">
