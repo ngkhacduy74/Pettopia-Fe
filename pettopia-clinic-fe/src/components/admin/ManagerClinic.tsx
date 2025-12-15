@@ -18,7 +18,7 @@ import {
   deactivateClinic,
   type ClinicItem,
 } from '@/services/partner/clinicService';
-import ToastItem, { type Toast as ToastModel } from '@/components/Toast';
+import ToastItem, { type Toast as ToastModel } from '@/components/common/Toast';
 
 interface ClinicView {
   id: string;

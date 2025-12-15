@@ -3,7 +3,7 @@
 import { useState, useEffect, useMemo } from 'react';
 import { useSearchParams, useRouter } from 'next/navigation';
 import { Calendar, Filter, ChevronLeft, ChevronRight, X, CheckCircle, XCircle, Clock, Loader2, Sun, Sunset, Moon, RefreshCw } from 'lucide-react';
-import NotificationBell from '@/components/NotificationBell';
+import NotificationBell from '@/components/common/NotificationBell';
 import { useToast } from '@/contexts/ToastContext';
 import { getAppointments, updateAppointmentStatus, getAppointmentDetail, type AppointmentData } from '@/services/partner/clinicService';
 import { getCustomerById } from '@/services/customer/customerService';

@@ -1,7 +1,7 @@
 'use client';
 
 import { useState } from 'react';
-import Sidebar from '@/components/sidebar/Sidebar';
+import Sidebar from '@/components/common/Sidebar';
 import { ToastProvider } from '@/contexts/ToastContext';
 
 export default function Layout({

@@ -1,7 +1,7 @@
 'use client';
 
 import React, { useState, useEffect } from 'react';
-import Sidebar from '@/components/sidebar/Sidebar';
+import Sidebar from '@/components/common/Sidebar';
 import ClinicVetDetail from '@/components/clinic/Clinic-VetDetail';
 import { getVetDetail, VetDetail } from '@/services/partner/veterianrianService';
 import { use } from 'react';

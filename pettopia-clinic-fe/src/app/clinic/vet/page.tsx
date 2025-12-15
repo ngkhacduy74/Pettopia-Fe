@@ -2,7 +2,7 @@
 
 
 import React, { useState } from 'react';
-import Sidebar from '@/components/sidebar/Sidebar';
+import Sidebar from '@/components/common/Sidebar';
 import dynamic from 'next/dynamic';
 
 const ClinicInviteVet = dynamic(() => import('@/components/clinic/Clinic-InviteVet'));

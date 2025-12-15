@@ -15,7 +15,7 @@ import {
 } from '@heroicons/react/24/outline';
 
 import { getClinicDetail, type ClinicItem } from '@/services/partner/clinicService';
-import ToastItem, { type Toast as ToastModel } from '@/components/Toast';
+import ToastItem, { type Toast as ToastModel } from '@/components/common/Toast';
 
 interface ClinicDetailProps {
   id: string;

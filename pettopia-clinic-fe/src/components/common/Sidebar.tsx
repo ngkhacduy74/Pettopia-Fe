@@ -17,7 +17,7 @@ import { usePathname } from 'next/navigation';
 import { parseJwt, isTokenExpired } from '@/utils/jwt';
 import { useRouter } from 'next/navigation';
 import { logoutUser } from '@/services/auth/authService';
-import RoleSwitcher from '@/components/RoleSwitcher';
+import RoleSwitcher from '@/components/common/RoleSwitcher';
 
 interface UserData {
   userId: string;

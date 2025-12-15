@@ -14,7 +14,7 @@ import {
 } from '@heroicons/react/24/outline';
 
 import { getCustomerById, updateCustomerStatus, addCustomerRole } from '@/services/customer/customerService';
-import ToastItem, { type Toast as ToastModel } from '@/components/Toast';
+import ToastItem, { type Toast as ToastModel } from '@/components/common/Toast';
 
 interface UserDetailProps {
   id: string;

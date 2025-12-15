@@ -2,9 +2,9 @@
 'use client'
 import React, { useState, useEffect } from 'react';
 import Link from 'next/link';
-import Dashboard from '@/components/Dashboard';
-import InviteMemberModal from '@/components/InviteMemberModal';
-import InviteMemberButton from '@/components/InviteMemberButton';
+import Dashboard from '@/components/common/Dashboard';
+import InviteMemberModal from '@/components/clinic/InviteMemberModal';
+import InviteMemberButton from '@/components/clinic/InviteMemberButton';
 import { sendInvitation } from '@/services/partner/clinicService';
 import {
   CurrencyDollarIcon,

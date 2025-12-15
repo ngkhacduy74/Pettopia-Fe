@@ -1,7 +1,7 @@
 // app/clinic/dashboard/page.tsx
 'use client'
 import React, { useState, useEffect } from 'react';
-import Dashboard from '@/components/Dashboard';
+import Dashboard from '@/components/common/Dashboard';
 import {
   CurrencyDollarIcon,
   CalendarIcon,

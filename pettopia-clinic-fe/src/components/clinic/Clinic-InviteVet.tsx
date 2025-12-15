@@ -1,8 +1,8 @@
 import React, { useState, useEffect, useCallback } from 'react';
 import { UserGroupIcon, CheckCircleIcon, ClockIcon } from '@heroicons/react/24/outline';
 import { LineChart, Line, XAxis, YAxis, CartesianGrid, Tooltip, ResponsiveContainer, PieChart, Pie, Cell } from 'recharts';
-import InviteMemberModal from '@/components/InviteMemberModal';
-import InviteMemberButton from '@/components/InviteMemberButton';
+import InviteMemberModal from '@/components/clinic/InviteMemberModal';
+import InviteMemberButton from '@/components/clinic/InviteMemberButton';
 import {
     CurrencyDollarIcon,
     CalendarIcon,
