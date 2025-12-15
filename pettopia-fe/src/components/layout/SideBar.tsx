@@ -7,6 +7,12 @@ import Link from 'next/link';
 import { usePathname, useRouter } from 'next/navigation';
 import { getPetsByOwner, type PetDetailResponse } from '@/services/petcare/petService';
 import SearchModal, { type MenuItem } from '@/components/layout/SearchModal';
+import { Pacifico } from 'next/font/google';
+
+const pacifico = Pacifico({
+  subsets: ['latin'],
+  weight: '400',
+});
 
 interface UserData {
   userId: string;
@@ -274,7 +280,10 @@ export default function UserNavbar({ setShowSearch, showSearch }: UserNavbarProp
                       <img src="/sampleimg/logo.png" alt="Pettopia Logo" className="w-8 h-8" />
                     </div>
                     <div className="flex flex-col min-w-0">
-                      <span className="text-lg font-bold bg-gradient-to-r from-teal-600 to-cyan-600 bg-clip-text text-transparent truncate">Pettopia</span>
+                      <span className={`${pacifico.className} text-lg font-bold bg-gradient-to-r from-teal-600 to-cyan-600 bg-clip-text text-transparent truncate`}>
+                        Pettopia
+                      </span>
+
                     </div>
                   </div>
                 </Link>
@@ -350,11 +359,15 @@ export default function UserNavbar({ setShowSearch, showSearch }: UserNavbarProp
               <div className="space-y-1">
                 <Link href="/user/pet/list">
                   <button
+<<<<<<< Updated upstream
                     className={`w-full flex ${isSidebarCollapsed ? 'justify-center' : 'items-center'} gap-3 px-3 py-2 rounded-lg text-sm transition-colors cursor-pointer ${
                       pathname === '/user/pet/list'
+=======
+                    className={`w-full flex ${isSidebarCollapsed ? 'justify-center' : 'items-center'} gap-3 px-3 py-2 rounded-lg text-sm transition-colors ${pathname === '/user/pet/list'
+>>>>>>> Stashed changes
                         ? 'bg-gradient-to-r from-teal-500 to-cyan-600 text-white shadow-sm'
                         : 'text-gray-700 hover:bg-gray-100'
-                    }`}
+                      }`}
                     title="Danh sách thú cưng"
                   >
                     <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 20 20" fill="currentColor" className="size-5 flex-shrink-0">
@@ -544,29 +557,29 @@ export default function UserNavbar({ setShowSearch, showSearch }: UserNavbarProp
             {/* User Menu */}
             {isUserMenuOpen && (
               <div className="absolute bottom-full right-0 mb-2 bg-white rounded-lg shadow-lg border border-gray-200 py-1 z-50 w-48">
-              <button onClick={handleProfileClick} className="w-full flex items-center gap-3 px-4 py-3 hover:bg-teal-50 transition-colors text-left">
-                <svg className="w-5 h-5 text-teal-600 flex-shrink-0" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                  <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M16 7a4 4 0 11-8 0 4 4 0 018 0zM12 14a7 7 0 00-7 7h14a7 7 0 00-7-7z" />
-                </svg>
-                <span className="text-sm font-medium text-gray-900">Hồ sơ</span>
-              </button>
-              <button onClick={handleSettingsClick} className="w-full flex items-center gap-3 px-4 py-3 hover:bg-teal-50 transition-colors text-left">
-                <svg className="w-5 h-5 text-teal-600 flex-shrink-0" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                  <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M10.325 4.317c.426-1.756 2.924-1.756 3.35 0a1.724 1.724 0 002.573 1.066c1.543-.94 3.31.826 2.37 2.37a1.724 1.724 0 001.065 2.572c1.756.426 1.756 2.924 0 3.35a1.724 1.724 0 00-1.066 2.573c.94 1.543-.826 3.31-2.37 2.37a1.724 1.724 0 00-2.572 1.065c-.426 1.756-2.924 1.756-3.35 0a1.724 1.724 0 00-2.573-1.066c-1.543.94-3.31-.826-2.37-2.37a1.724 1.724 0 00-1.065-2.572c-1.756-.426-1.756-2.924 0-3.35a1.724 1.724 0 001.066-2.573c-.94-1.543.826-3.31 2.37-2.37.996.608 2.296.07 2.572-1.065z" />
-                  <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M15 12a3 3 0 11-6 0 3 3 0 016 0z" />
-                </svg>
-                <span className="text-sm font-medium text-gray-900">Cài đặt</span>
-              </button>
-              <div className="border-t border-gray-100 my-1"></div>
-              <button onClick={handleLogoutClick} className="w-full flex items-center gap-3 px-4 py-3 hover:bg-red-50 transition-colors text-left">
-                <svg className="w-5 h-5 text-red-600 flex-shrink-0" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                  <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M17 16l4-4m0 0l-4-4m4 4H7m6 4v1a3 3 0 01-3 3H6a3 3 0 01-3-3V7a3 3 0 013-3h4a3 3 0 013 3v1" />
-                </svg>
-                <span className="text-sm font-medium text-red-600">Đăng xuất</span>
-              </button>
-            </div>
-          )}
-        </div>
+                <button onClick={handleProfileClick} className="w-full flex items-center gap-3 px-4 py-3 hover:bg-teal-50 transition-colors text-left">
+                  <svg className="w-5 h-5 text-teal-600 flex-shrink-0" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                    <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M16 7a4 4 0 11-8 0 4 4 0 018 0zM12 14a7 7 0 00-7 7h14a7 7 0 00-7-7z" />
+                  </svg>
+                  <span className="text-sm font-medium text-gray-900">Hồ sơ</span>
+                </button>
+                <button onClick={handleSettingsClick} className="w-full flex items-center gap-3 px-4 py-3 hover:bg-teal-50 transition-colors text-left">
+                  <svg className="w-5 h-5 text-teal-600 flex-shrink-0" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                    <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M10.325 4.317c.426-1.756 2.924-1.756 3.35 0a1.724 1.724 0 002.573 1.066c1.543-.94 3.31.826 2.37 2.37a1.724 1.724 0 001.065 2.572c1.756.426 1.756 2.924 0 3.35a1.724 1.724 0 00-1.066 2.573c.94 1.543-.826 3.31-2.37 2.37a1.724 1.724 0 00-2.572 1.065c-.426 1.756-2.924 1.756-3.35 0a1.724 1.724 0 00-2.573-1.066c-1.543.94-3.31-.826-2.37-2.37a1.724 1.724 0 00-1.065-2.572c-1.756-.426-1.756-2.924 0-3.35a1.724 1.724 0 001.066-2.573c-.94-1.543.826-3.31 2.37-2.37.996.608 2.296.07 2.572-1.065z" />
+                    <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M15 12a3 3 0 11-6 0 3 3 0 016 0z" />
+                  </svg>
+                  <span className="text-sm font-medium text-gray-900">Cài đặt</span>
+                </button>
+                <div className="border-t border-gray-100 my-1"></div>
+                <button onClick={handleLogoutClick} className="w-full flex items-center gap-3 px-4 py-3 hover:bg-red-50 transition-colors text-left">
+                  <svg className="w-5 h-5 text-red-600 flex-shrink-0" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                    <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M17 16l4-4m0 0l-4-4m4 4H7m6 4v1a3 3 0 01-3 3H6a3 3 0 01-3-3V7a3 3 0 013-3h4a3 3 0 013 3v1" />
+                  </svg>
+                  <span className="text-sm font-medium text-red-600">Đăng xuất</span>
+                </button>
+              </div>
+            )}
+          </div>
 
           {/* Upgrade Button */}
           {!isSidebarCollapsed && (
