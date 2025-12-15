@@ -18,6 +18,8 @@ interface User {
     city?: string;
     district?: string;
     ward?: string;
+    detail?: string;
+    description?: string;
   };
   dob?: string;
   createdAt?: string;
@@ -32,6 +34,7 @@ interface FormData {
     city: string;
     district: string;
     ward: string;
+    detail: string;
   };
 }
 
@@ -57,6 +60,7 @@ const fallbackWards: Ward[] = [
 export default function EditProfilePage() {
   const router = useRouter();
   const pathname = usePathname();
+  const today = new Date().toISOString().split('T')[0];
   const [user, setUser] = useState<User | null>(null);
   const [formData, setFormData] = useState<FormData>({
     fullname: '',
@@ -66,7 +70,8 @@ export default function EditProfilePage() {
     address: {
       city: '',
       district: '',
-      ward: ''
+      ward: '',
+      detail: ''
     }
   });
   const [loading, setLoading] = useState(true);
@@ -248,7 +253,8 @@ export default function EditProfilePage() {
           address: {
             city: data.address?.city || '',
             district: data.address?.district || '',
-            ward: data.address?.ward || ''
+            ward: data.address?.ward || '',
+            detail: data.address?.detail || data.address?.description || ''
           },
           dob: data.dob || '',
           createdAt: data.createdAt || data.created_at || ''
@@ -267,7 +273,8 @@ export default function EditProfilePage() {
           address: {
             city: mapped.address?.city ?? '',
             district: mapped.address?.district ?? '',
-            ward: mapped.address?.ward ?? ''
+            ward: mapped.address?.ward ?? '',
+            detail: mapped.address?.detail ?? mapped.address?.description ?? ''
           }
         });
       } catch (err: any) {
@@ -285,7 +292,7 @@ export default function EditProfilePage() {
   // This useEffect is removed to avoid unnecessary API calls
 
   const setValue = (field: string, value: string) => {
-    if (field === 'district' || field === 'ward') {
+    if (field === 'district' || field === 'ward' || field === 'detail') {
       setFormData(prev => ({
         ...prev,
         address: {
@@ -313,7 +320,8 @@ export default function EditProfilePage() {
       address: {
         city: selectedProvince?.name || '',
         district: '',
-        ward: ''
+        ward: '',
+        detail: prev.address.detail
       }
     }));
     setSelectedDistrictCode('');
@@ -344,6 +352,16 @@ export default function EditProfilePage() {
       address: {
         ...prev.address,
         ward: selectedWard?.name || ''
+      }
+    }));
+  };
+
+  const handleAddressDetailChange = (e: React.ChangeEvent<HTMLInputElement>) => {
+    setFormData(prev => ({
+      ...prev,
+      address: {
+        ...prev.address,
+        detail: e.target.value
       }
     }));
   };
@@ -410,7 +428,8 @@ export default function EditProfilePage() {
         address: {
           city: user.address?.city || '',
           district: user.address?.district || '',
-          ward: user.address?.ward || ''
+          ward: user.address?.ward || '',
+          detail: user.address?.detail || user.address?.description || ''
         }
       }));
     }
@@ -429,22 +448,36 @@ export default function EditProfilePage() {
       return;
     }
 
+    if (formData.dob) {
+      const selectedDate = new Date(formData.dob);
+      const now = new Date();
+      if (selectedDate > now) {
+        setError('Ngày sinh không được lớn hơn hiện tại');
+        return;
+      }
+    }
+
     try {
       setSubmitting(true);
       setError(null);
       setSuccess(null);
 
-      const updateData = {
+      const updateData: Record<string, any> = {
         fullname: formData.fullname,
         email: formData.email,
         phone: formData.phone || undefined,
-        dob: formData.dob || undefined,
-        address: {
+        dob: formData.dob || undefined
+      };
+
+      // Chỉ gửi address khi user đang chỉnh sửa địa chỉ
+      if (isEditingAddress) {
+        updateData.address = {
           city: formData.address.city || undefined,
           district: formData.address.district || undefined,
-          ward: formData.address.ward || undefined
-        }
-      };
+          ward: formData.address.ward || undefined,
+          description: formData.address.detail || undefined
+        };
+      }
 
       const result = await updateCustomerProfile(updateData);
       
@@ -592,6 +625,7 @@ export default function EditProfilePage() {
               name="dob"
               value={formData.dob}
               onChange={handleInputChange}
+              max={today}
               className="w-full px-4 py-2.5 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-teal-500 focus:border-transparent"
             />
           </div>
@@ -619,9 +653,9 @@ export default function EditProfilePage() {
                   <Home className="w-5 h-5 text-gray-400 mt-0.5 flex-shrink-0" />
                   <div className="flex-1 min-w-0">
                     <div className="text-sm text-gray-900 leading-relaxed">
-                      {formData.address.city || formData.address.district || formData.address.ward ? (
+                      {formData.address.city || formData.address.district || formData.address.ward || formData.address.detail ? (
                         <div>
-                          {[formData.address.ward, formData.address.district, formData.address.city]
+                          {[formData.address.detail, formData.address.ward, formData.address.district, formData.address.city]
                             .filter(Boolean)
                             .join(', ')}
                         </div>
@@ -636,6 +670,19 @@ export default function EditProfilePage() {
               // Edit mode - show dropdowns
               <div className="space-y-4">
                 <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
+                  <div>
+                    <label htmlFor="address-detail" className="block text-sm font-semibold text-gray-900 mb-2">
+                      Địa chỉ chi tiết
+                    </label>
+                    <input
+                      type="text"
+                      id="address-detail"
+                      value={formData.address.detail}
+                      onChange={handleAddressDetailChange}
+                      placeholder="Số nhà, tên đường..."
+                      className="w-full px-4 py-2.5 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-teal-500 focus:border-transparent"
+                    />
+                  </div>
                   <div>
                     <label htmlFor="city" className="block text-sm font-semibold text-gray-900 mb-2">
                       Tỉnh/Thành phố
