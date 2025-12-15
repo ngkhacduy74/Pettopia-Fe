@@ -78,9 +78,9 @@ export default function RegisterPetPage() {
                 return;
             }
             
-            // Validate file size (max 5MB)
-            if (file.size > 5 * 1024 * 1024) {
-                alert('Kích thước file không được vượt quá 5MB');
+            // Validate file size (max 1MB)
+            if (file.size > 2 * 1024 * 1024) {
+                alert('Kích thước file không được vượt quá 1MB');
                 return;
             }
 
@@ -893,7 +893,7 @@ export default function RegisterPetPage() {
                                                 <svg className="w-4 h-4" fill="currentColor" viewBox="0 0 20 20">
                                                     <path fillRule="evenodd" d="M18 10a8 8 0 11-16 0 8 8 0 0116 0zm-7-4a1 1 0 11-2 0 1 1 0 012 0zM9 9a1 1 0 000 2v3a1 1 0 001 1h1a1 1 0 100-2v-3a1 1 0 00-1-1H9z" clipRule="evenodd"/>
                                                 </svg>
-                                                <span>Ảnh của bạn quá dung lượng hãy gửi ảnh dưới 1mb</span>
+                                                <span>Ảnh của bạn có thể quá dung lượng. Vui lòng chọn ảnh dưới 5MB hoặc thử một ảnh khác.</span>
                                             </div>
                                         </div>
                                     </div>
