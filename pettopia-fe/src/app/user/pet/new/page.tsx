@@ -68,7 +68,7 @@ export default function RegisterPetPage() {
         }
     };
 
-    // Handle file upload
+    // Handle file upload (chỉ dùng để preview + giữ File, không gửi base64 lên backend)
     const handleFileUpload = (e: React.ChangeEvent<HTMLInputElement>) => {
         const file = e.target.files?.[0];
         if (file) {
@@ -78,15 +78,17 @@ export default function RegisterPetPage() {
                 return;
             }
             
-            // Validate file size (max 1MB)
-            if (file.size > 2 * 1024 * 1024) {
-                alert('Kích thước file không được vượt quá 1MB');
+            // Validate file size (max 2MB - đồng bộ với thông báo bên dưới)
+            if (file.size > 5 * 1024 * 1024) {
+                alert('Kích thước file không được vượt quá 5MB');
                 return;
             }
 
             setAvatarFile(file);
+            // Lưu file để gửi lên backend dạng multipart giống trang community
+            setAvatarFile(file);
             
-            // Create preview URL
+            // Tạo preview (base64) chỉ để hiển thị UI
             const reader = new FileReader();
             reader.onload = (e) => {
                 setAvatarPreview(e.target?.result as string);
@@ -209,10 +211,13 @@ export default function RegisterPetPage() {
                 return map[petForm.species] || petForm.species;
             })();
 
-            // Handle avatar - if file upload, convert to base64
-            let avatarUrl = undefined;
+            // Handle avatar:
+            // - Nếu upload file: gửi File trực tiếp (multipart/form-data) giống trang community/create
+            // - Nếu nhập URL: gửi URL như cũ
+            let avatarUrl: string | undefined = undefined;
+            let avatarFileToSend: File | undefined = undefined;
             if (avatarUploadMethod === 'file' && avatarFile) {
-                avatarUrl = avatarPreview;
+                avatarFileToSend = avatarFile;
             } else if (avatarUploadMethod === 'url' && petForm.avatar_url) {
                 avatarUrl = petForm.avatar_url;
             }
@@ -226,6 +231,7 @@ export default function RegisterPetPage() {
                 weight: petForm.weight ? Number(petForm.weight) : undefined,
                 dateOfBirth: petForm.dateOfBirth ? new Date(petForm.dateOfBirth).toISOString() : undefined,
                 avatar_url: avatarUrl || undefined,
+                avatarFile: avatarFileToSend,
                 user_id: userData.user_id,
                 owner: {
                     id: userData.user_id,
@@ -572,17 +578,7 @@ export default function RegisterPetPage() {
                                             >
                                                 📁 Upload File
                                             </button>
-                                            <button
-                                                type="button"
-                                                onClick={() => setAvatarUploadMethod('url')}
-                                                className={`px-3 py-1.5 text-sm rounded-lg border transition-colors ${
-                                                    avatarUploadMethod === 'url'
-                                                        ? 'bg-teal-600 text-white border-teal-600'
-                                                        : 'bg-white text-gray-700 border-gray-300 hover:bg-gray-50'
-                                                }`}
-                                            >
-                                                🔗 Nhập URL
-                                            </button>
+                                     
                                         </div>
 
                                         {/* File Upload */}

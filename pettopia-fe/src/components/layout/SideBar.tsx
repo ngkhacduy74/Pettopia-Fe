@@ -350,7 +350,7 @@ export default function UserNavbar({ setShowSearch, showSearch }: UserNavbarProp
               <div className="space-y-1">
                 <Link href="/user/pet/list">
                   <button
-                    className={`w-full flex ${isSidebarCollapsed ? 'justify-center' : 'items-center'} gap-3 px-3 py-2 rounded-lg text-sm transition-colors ${
+                    className={`w-full flex ${isSidebarCollapsed ? 'justify-center' : 'items-center'} gap-3 px-3 py-2 rounded-lg text-sm transition-colors cursor-pointer ${
                       pathname === '/user/pet/list'
                         ? 'bg-gradient-to-r from-teal-500 to-cyan-600 text-white shadow-sm'
                         : 'text-gray-700 hover:bg-gray-100'

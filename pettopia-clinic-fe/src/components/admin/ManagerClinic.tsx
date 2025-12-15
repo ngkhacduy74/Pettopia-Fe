@@ -134,15 +134,6 @@ export default function ManagerClinic() {
             />
           </div>
 
-          <div className="flex items-center gap-3">
-            <button
-              type="button"
-              className="px-4 py-2 bg-gradient-to-r from-teal-500 to-cyan-600 text-white rounded-xl hover:shadow-lg transition-all duration-200 font-medium"
-              onClick={() => { /* reserved for later */ }}
-            >
-              Duyệt phòng khám
-            </button>
-          </div>
         </div>
       </div>
 

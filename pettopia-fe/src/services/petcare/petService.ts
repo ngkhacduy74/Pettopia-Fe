@@ -24,11 +24,39 @@ export interface CreatePetPayload {
     weight?: number;
     dateOfBirth?: string;
     avatar_url?: string;
+    /**
+     * File ảnh avatar – nếu có, sẽ được gửi dạng multipart/form-data
+     * giống cách community/create gửi imageFiles.
+     */
+    avatarFile?: File;
     owner?: string | Record<string, unknown>;
 }
 
 export async function createPet(payload: CreatePetPayload) {
-    const response = await axios.post(PET_API_URL + '/create', payload, authHeaders());
+    // Nếu có avatarFile thì gửi dạng multipart/form-data giống community
+    if (typeof window !== 'undefined' && payload.avatarFile instanceof File) {
+        const formData = new FormData();
+        formData.append('name', payload.name);
+        formData.append('species', payload.species);
+        if (payload.breed) formData.append('breed', payload.breed);
+        if (payload.gender) formData.append('gender', payload.gender);
+        if (payload.color) formData.append('color', payload.color);
+        if (typeof payload.weight === 'number') formData.append('weight', String(payload.weight));
+        if (payload.dateOfBirth) formData.append('dateOfBirth', payload.dateOfBirth);
+        if (payload.avatar_url) formData.append('avatar_url', payload.avatar_url);
+        if (payload.owner) formData.append('owner', JSON.stringify(payload.owner));
+
+        // File ảnh – tên field có thể cần chỉnh theo spec backend (ví dụ: 'avatar' hoặc 'avatarFile')
+        formData.append('avatar', payload.avatarFile);
+
+        const base = authHeaders();
+        const response = await axios.post(PET_API_URL + '/create', formData, base);
+        return response.data;
+    }
+
+    // Không có file, gửi JSON như cũ
+    const { avatarFile, ...rest } = payload as any;
+    const response = await axios.post(PET_API_URL + '/create', rest, authHeaders());
     return response.data;
 }
 
