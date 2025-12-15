@@ -3,7 +3,7 @@
 import dynamic from 'next/dynamic'
 import { useState } from 'react'
 
-const UserNavbarLazy = dynamic(() => import('@/components/UserNavbar'), {
+const UserNavbarLazy = dynamic(() => import('@/components/layout/SideBar'), {
   loading: () => (
     <div className="w-64 bg-white border-r border-teal-100 flex flex-col shadow-sm">
       <div className="p-3 border-b border-teal-100">

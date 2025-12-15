@@ -1,4 +1,4 @@
-'use client'
+'use client';
 
 import { useState, useEffect, useRef, JSX } from 'react';
 import { parseJwt, isTokenExpired } from '@/utils/jwt';
