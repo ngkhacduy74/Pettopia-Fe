@@ -2,27 +2,34 @@
 
 import { useSearchParams } from 'next/navigation';
 import Link from 'next/link';
+import { useEffect, useState } from 'react';
 
 export default function CheckoutPage() {
   const searchParams = useSearchParams();
-  const plan = searchParams.get('plan');
-  const billing = searchParams.get('billing');
+  const [loading, setLoading] = useState(true);
+  const [paymentStatus, setPaymentStatus] = useState<'pending' | 'success' | 'failed'>('pending');
 
-  const planDetails = {
-    plus: {
-      name: 'Pettopia Plus',
-      monthlyPrice: 49000,
-      yearlyPrice: 490000,
-    },
-    premium: {
-      name: 'Pettopia Premium',
-      monthlyPrice: 99000,
-      yearlyPrice: 990000,
-    },
-  };
+  useEffect(() => {
+    // Check payment status from query params or localStorage
+    const status = searchParams.get('status');
+    if (status === 'success') {
+      setPaymentStatus('success');
+    } else if (status === 'failed') {
+      setPaymentStatus('failed');
+    }
+    setLoading(false);
+  }, [searchParams]);
 
-  const currentPlan = planDetails[plan as keyof typeof planDetails];
-  const price = billing === 'yearly' ? currentPlan?.yearlyPrice : currentPlan?.monthlyPrice;
+  if (loading) {
+    return (
+      <div className="min-h-screen bg-gradient-to-br from-gray-50 to-gray-100 flex items-center justify-center">
+        <div className="text-center">
+          <div className="animate-spin rounded-full h-12 w-12 border-b-2 border-teal-600 mx-auto"></div>
+          <p className="mt-4 text-gray-600">Đang xử lý...</p>
+        </div>
+      </div>
+    );
+  }
 
   return (
     <div className="min-h-screen bg-gradient-to-br from-gray-50 to-gray-100">
@@ -36,153 +43,54 @@ export default function CheckoutPage() {
           </button>
         </Link>
 
-        <div className="grid lg:grid-cols-3 gap-8">
-          {/* Checkout Form */}
-          <div className="lg:col-span-2">
-            <div className="bg-white rounded-2xl border-2 border-teal-200 p-8">
-              <h2 className="text-3xl font-bold text-gray-900 mb-8">Thanh toán</h2>
-
-              {/* Plan Summary */}
-              <div className="bg-teal-50 border border-teal-200 rounded-lg p-6 mb-8">
-                <p className="text-sm text-gray-600 mb-2">Gói được chọn</p>
-                <p className="text-2xl font-bold text-gray-900">{currentPlan?.name}</p>
-                <p className="text-sm text-gray-600 mt-2">
-                  {billing === 'yearly' ? 'Thanh toán hàng năm' : 'Thanh toán hàng tháng'}
-                </p>
+        <div className="bg-white rounded-2xl border-2 border-teal-200 p-8 max-w-2xl mx-auto">
+          {paymentStatus === 'success' ? (
+            <div className="text-center">
+              <div className="mb-4 flex justify-center">
+                <svg className="w-16 h-16 text-green-500" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                  <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M9 12l2 2 4-4m6 2a9 9 0 11-18 0 9 9 0 0118 0z" />
+                </svg>
               </div>
-
-              {/* Payment Form */}
-              <form className="space-y-6">
-                <div>
-                  <label className="block text-sm font-semibold text-gray-900 mb-2">
-                    Họ và tên
-                  </label>
-                  <input
-                    type="text"
-                    placeholder="Nguyễn Văn A"
-                    className="w-full px-4 py-3 border-2 border-gray-200 rounded-lg focus:border-teal-500 focus:outline-none"
-                  />
-                </div>
-
-                <div>
-                  <label className="block text-sm font-semibold text-gray-900 mb-2">
-                    Email
-                  </label>
-                  <input
-                    type="email"
-                    placeholder="user@example.com"
-                    className="w-full px-4 py-3 border-2 border-gray-200 rounded-lg focus:border-teal-500 focus:outline-none"
-                  />
-                </div>
-
-                <div>
-                  <label className="block text-sm font-semibold text-gray-900 mb-2">
-                    Số điện thoại
-                  </label>
-                  <input
-                    type="tel"
-                    placeholder="+84 1234567890"
-                    className="w-full px-4 py-3 border-2 border-gray-200 rounded-lg focus:border-teal-500 focus:outline-none"
-                  />
-                </div>
-
-                <div className="border-t-2 border-gray-200 pt-6">
-                  <h3 className="text-lg font-semibold text-gray-900 mb-4">Thông tin thanh toán</h3>
-
-                  <div>
-                    <label className="block text-sm font-semibold text-gray-900 mb-2">
-                      Số thẻ
-                    </label>
-                    <input
-                      type="text"
-                      placeholder="1234 5678 9012 3456"
-                      className="w-full px-4 py-3 border-2 border-gray-200 rounded-lg focus:border-teal-500 focus:outline-none font-mono"
-                    />
-                  </div>
-
-                  <div className="grid grid-cols-2 gap-4 mt-4">
-                    <div>
-                      <label className="block text-sm font-semibold text-gray-900 mb-2">
-                        Ngày hết hạn
-                      </label>
-                      <input
-                        type="text"
-                        placeholder="MM/YY"
-                        className="w-full px-4 py-3 border-2 border-gray-200 rounded-lg focus:border-teal-500 focus:outline-none font-mono"
-                      />
-                    </div>
-                    <div>
-                      <label className="block text-sm font-semibold text-gray-900 mb-2">
-                        CVC
-                      </label>
-                      <input
-                        type="text"
-                        placeholder="123"
-                        className="w-full px-4 py-3 border-2 border-gray-200 rounded-lg focus:border-teal-500 focus:outline-none font-mono"
-                      />
-                    </div>
-                  </div>
-                </div>
-
-                <div className="flex items-start gap-3">
-                  <input type="checkbox" id="terms" className="mt-1" defaultChecked />
-                  <label htmlFor="terms" className="text-sm text-gray-600">
-                    Tôi đồng ý với các <a href="#" className="text-teal-600 hover:underline">điều khoản dịch vụ</a> và <a href="#" className="text-teal-600 hover:underline">chính sách bảo mật</a>
-                  </label>
-                </div>
-
-                <button
-                  type="submit"
-                  className="w-full py-3 bg-gradient-to-r from-teal-600 to-cyan-600 text-white rounded-lg font-semibold hover:shadow-lg transition-all"
-                >
-                  Thanh toán {price?.toLocaleString('vi-VN')}₫
+              <h2 className="text-3xl font-bold text-gray-900 mb-2">Thanh toán thành công</h2>
+              <p className="text-gray-600 mb-8">
+                Cảm ơn bạn đã nâng cấp. Tài khoản của bạn sẽ được cập nhật ngay.
+              </p>
+              <Link href="/user/dashboard">
+                <button className="px-8 py-3 bg-teal-600 text-white rounded-lg font-semibold hover:bg-teal-700 transition-colors">
+                  Về trang chủ
                 </button>
-              </form>
-
-              <p className="text-xs text-gray-500 text-center mt-6">
-                Thanh toán được bảo vệ bằng mã hóa SSL
+              </Link>
+            </div>
+          ) : paymentStatus === 'failed' ? (
+            <div className="text-center">
+              <div className="mb-4 flex justify-center">
+                <svg className="w-16 h-16 text-red-500" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                  <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 8v4m0 4v.01M21 12a9 9 0 11-18 0 9 9 0 0118 0z" />
+                </svg>
+              </div>
+              <h2 className="text-3xl font-bold text-gray-900 mb-2">Thanh toán thất bại</h2>
+              <p className="text-gray-600 mb-8">
+                Đã xảy ra lỗi khi xử lý thanh toán của bạn. Vui lòng thử lại.
+              </p>
+              <Link href="/user/upgrade">
+                <button className="px-8 py-3 bg-teal-600 text-white rounded-lg font-semibold hover:bg-teal-700 transition-colors">
+                  Thử lại
+                </button>
+              </Link>
+            </div>
+          ) : (
+            <div className="text-center">
+              <div className="mb-4 flex justify-center">
+                <svg className="w-16 h-16 text-blue-500 animate-pulse" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                  <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 8c-1.657 0-3 .895-3 2s1.343 2 3 2 3 .895 3 2-1.343 2-3 2m0-8c1.11 0 2.08.402 2.599 1M12 8V7m0 1v8m0 0v1m0-1c-1.11 0-2.08-.402-2.599-1M21 12a9 9 0 11-18 0 9 9 0 0118 0z" />
+                </svg>
+              </div>
+              <h2 className="text-3xl font-bold text-gray-900 mb-2">Đang chuyển hướng thanh toán</h2>
+              <p className="text-gray-600 mb-8">
+                Bạn sẽ được chuyển đến trang thanh toán trong giây lát...
               </p>
             </div>
-          </div>
-
-          {/* Order Summary */}
-          <div>
-            <div className="bg-white rounded-2xl border-2 border-teal-200 p-6 sticky top-8">
-              <h3 className="text-lg font-semibold text-gray-900 mb-6">Đơn hàng</h3>
-
-              <div className="space-y-4 pb-6 border-b-2 border-gray-200">
-                <div className="flex justify-between">
-                  <span className="text-gray-600">{currentPlan?.name}</span>
-                  <span className="font-semibold text-gray-900">
-                    {price?.toLocaleString('vi-VN')}₫
-                  </span>
-                </div>
-
-                {billing === 'yearly' && (
-                  <div className="flex justify-between">
-                    <span className="text-gray-600">Tiết kiệm (17%)</span>
-                    <span className="font-semibold text-teal-600">
-                      -{(price! * 0.17).toLocaleString('vi-VN')}₫
-                    </span>
-                  </div>
-                )}
-              </div>
-
-              <div className="flex justify-between mt-6 mb-6">
-                <span className="font-semibold text-gray-900">Tổng cộng</span>
-                <span className="text-2xl font-bold bg-gradient-to-r from-teal-600 to-cyan-600 bg-clip-text text-transparent">
-                  {price?.toLocaleString('vi-VN')}₫
-                </span>
-              </div>
-
-              {billing === 'yearly' && (
-                <div className="bg-teal-50 border border-teal-200 rounded-lg p-4 text-sm text-gray-600">
-                  <p className="font-semibold text-gray-900 mb-1">💡 Tiết kiệm thêm</p>
-                  <p>Bạn tiết kiệm {((price! / 12) * 0.17 * 12).toLocaleString('vi-VN')}₫ so với thanh toán hàng tháng</p>
-                </div>
-              )}
-            </div>
-          </div>
+          )}
         </div>
       </div>
     </div>

@@ -17,7 +17,7 @@ interface User {
     city?: string;
     district?: string;
     ward?: string;
-    detail?: string;
+    description?: string;
   };
   dob?: string;
   createdAt?: string;
@@ -61,7 +61,7 @@ export default function UserProfilePage() {
           email: typeof data.email === 'string' ? data.email : data.email?.email_address || '',
           phone: typeof data.phone === 'string' ? data.phone : data.phone?.phone_number || '',
           avatar_url: data.avatar_url || data.avatar || undefined,
-          address: data.address || { city: '', district: '', ward: '', detail: '' },
+          address: data.address || { city: '', district: '', ward: '', description: '' },
           dob: data.dob || '',
           createdAt: data.createdAt || data.created_at || ''
         };
@@ -93,7 +93,7 @@ export default function UserProfilePage() {
   const formatAddress = () => {
     if (!user?.address) return 'Chưa cập nhật';
     const parts = [
-      user.address.detail,
+      user.address.description,
       user.address.ward,
       user.address.district,
       user.address.city

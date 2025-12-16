@@ -338,14 +338,7 @@ export default function RequestTable({ title }: RequestTableProps) {
                                 <h1 className="text-3xl font-bold bg-gradient-to-r from-teal-500 to-teal-600 bg-clip-text text-transparent">{title}</h1>
                                 <p className="text-gray-600 mt-2">Quản lý đăng ký và phê duyệt phòng khám</p>
                             </div>
-                            <div className="mt-4 md:mt-0">
-                                <button className="bg-gradient-to-r from-indigo-600 to-indigo-700 hover:from-indigo-700 hover:to-indigo-800 text-white font-medium py-2.5 px-5 rounded-lg transition duration-200 ease-in-out shadow-md hover:shadow-lg flex items-center space-x-2">
-                                    <svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                                        <path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M12 4v16m8-8H4" />
-                                    </svg>
-                                    <span>Thêm mới</span>
-                                </button>
-                            </div>
+                            
                         </div>
 
                         {/* Search and Filter */}

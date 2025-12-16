@@ -3,36 +3,43 @@
 import { useState } from 'react';
 import Link from 'next/link';
 import { useRouter } from 'next/navigation';
+import { PaymentService } from '@/services/payment/PaymentService';
 
 export default function UpgradePage() {
   const router = useRouter();
-  const [selectedPlan, setSelectedPlan] = useState<'plus' | 'premium' | null>(null);
+  const [selectedPlan, setSelectedPlan] = useState<'premium' | null>(null);
 
   const plans = [
     {
-      id: 'plus',
-      name: 'Pettopia Plus',
-      monthlyPrice: 49000,
-      yearlyPrice: 490000,
-      description: 'Cho những người yêu thích thú cưng',
-      features: [
-        'Tư vấn trực tuyến với bác sĩ thú y',
-        'Lịch sử khám chi tiết',
-        'Ưu tiên đặt lịch khám',
-        'Thông báo sức khỏe thú cưng',
-        'Lưu trữ hồ sơ không giới hạn',
-      ],
-      icon: '⭐',
-      color: 'from-yellow-400 to-orange-500',
-    },
-    {
-      id: 'premium',
+      id: 'premium-monthly',
       name: 'Pettopia Premium',
-      monthlyPrice: 99000,
-      yearlyPrice: 990000,
+      price: 39000,
+      period: '1 tháng',
+      billingType: 'monthly',
       description: 'Quản lý toàn diện sức khỏe thú cưng',
       features: [
-        'Tất cả tính năng của Plus',
+        'Tư vấn trực tuyến với bác sĩ thú y',
+        'Tư vấn 24/7 với bác sĩ thú y',
+        'Video call khám bệnh',
+        'Ghi chép chẩn đoán AI',
+        'Quản lý thuốc tự động',
+        'Ưu tiên cao nhất',
+        'Hỗ trợ khách hàng VIP',
+      ],
+      icon: '💎',
+      color: 'from-purple-500 to-pink-500',
+      popular: false,
+      discount: null,
+    },
+    {
+      id: 'premium-quarterly',
+      name: 'Pettopia Premium',
+      price: 115000,
+      period: '3 tháng',
+      billingType: 'quarterly',
+      description: 'Quản lý toàn diện sức khỏe thú cưng',
+      features: [
+        'Tư vấn trực tuyến với bác sĩ thú y',
         'Tư vấn 24/7 với bác sĩ thú y',
         'Video call khám bệnh',
         'Ghi chép chẩn đoán AI',
@@ -43,15 +50,48 @@ export default function UpgradePage() {
       icon: '💎',
       color: 'from-purple-500 to-pink-500',
       popular: true,
+      discount: 'Tiết kiệm 1%',
+    },
+    {
+      id: 'premium-yearly',
+      name: 'Pettopia Premium',
+      price: 399000,
+      period: '1 năm',
+      billingType: 'yearly',
+      description: 'Quản lý toàn diện sức khỏe thú cưng',
+      features: [
+        'Tư vấn trực tuyến với bác sĩ thú y',
+        'Tư vấn 24/7 với bác sĩ thú y',
+        'Video call khám bệnh',
+        'Ghi chép chẩn đoán AI',
+        'Quản lý thuốc tự động',
+        'Ưu tiên cao nhất',
+        'Hỗ trợ khách hàng VIP',
+      ],
+      icon: '💎',
+      color: 'from-purple-500 to-pink-500',
+      popular: false,
+      discount: 'Tiết kiệm 17%',
     },
   ];
 
-  const [billingCycle, setBillingCycle] = useState<'monthly' | 'yearly'>('monthly');
+  const handleUpgrade = async (planId: string, amount: number) => {
+    try {
+      setSelectedPlan(planId as 'premium');
+      
+      const response = await PaymentService.createPayment({
+        amount: amount,
+        description: 'Nâng cấp Pettopia Premium',
+      });
 
-  const handleUpgrade = (planId: string) => {
-    setSelectedPlan(planId as 'plus' | 'premium');
-    // Redirect to payment page
-    router.push(`/user/upgrade/checkout?plan=${planId}&billing=${billingCycle}`);
+      if (response.data.checkoutUrl) {
+        window.location.href = response.data.checkoutUrl;
+      }
+    } catch (error) {
+      console.error('Payment error:', error);
+      setSelectedPlan(null);
+      alert('Lỗi khi tạo thanh toán. Vui lòng thử lại.');
+    }
   };
 
   return (
@@ -67,48 +107,19 @@ export default function UpgradePage() {
             <p className="text-xl text-gray-600 mb-8">
               Trải nghiệm đầy đủ Pettopia với các tính năng vượt trội
             </p>
-
-            {/* Billing Toggle */}
-            <div className="flex items-center justify-center gap-4 mb-12">
-              <button
-                onClick={() => setBillingCycle('monthly')}
-                className={`px-6 py-2 rounded-lg font-medium transition-all ${
-                  billingCycle === 'monthly'
-                    ? 'bg-teal-600 text-white shadow-lg'
-                    : 'bg-white text-gray-700 border border-gray-300 hover:border-teal-300'
-                }`}
-              >
-                Hàng tháng
-              </button>
-              <button
-                onClick={() => setBillingCycle('yearly')}
-                className={`px-6 py-2 rounded-lg font-medium transition-all relative ${
-                  billingCycle === 'yearly'
-                    ? 'bg-teal-600 text-white shadow-lg'
-                    : 'bg-white text-gray-700 border border-gray-300 hover:border-teal-300'
-                }`}
-              >
-                Hàng năm
-                {billingCycle === 'yearly' && (
-                  <span className="absolute -top-3 -right-3 bg-gradient-to-r from-teal-500 to-cyan-600 text-white text-xs font-bold px-2 py-1 rounded-full">
-                    Tiết kiệm 17%
-                  </span>
-                )}
-              </button>
-            </div>
           </div>
         </div>
       </div>
 
       {/* Plans Grid */}
       <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-12">
-        <div className="grid md:grid-cols-2 gap-8 lg:gap-12">
+        <div className="grid md:grid-cols-3 gap-8 lg:gap-8">
           {plans.map((plan) => (
             <div
               key={plan.id}
               className={`relative rounded-2xl border-2 transition-all duration-300 overflow-hidden ${
                 plan.popular
-                  ? 'border-teal-500 shadow-2xl scale-105'
+                  ? 'border-teal-500 shadow-2xl md:scale-105'
                   : 'border-teal-200 shadow-lg hover:shadow-xl hover:border-teal-400'
               } bg-white`}
             >
@@ -116,6 +127,13 @@ export default function UpgradePage() {
               {plan.popular && (
                 <div className="absolute top-0 right-0 left-0 bg-gradient-to-r from-teal-600 to-cyan-600 text-white text-center py-2 text-sm font-semibold">
                   Phổ biến nhất
+                </div>
+              )}
+
+              {/* Discount Badge */}
+              {plan.discount && (
+                <div className="absolute top-4 right-4 bg-gradient-to-r from-red-500 to-orange-500 text-white text-xs font-bold px-3 py-1 rounded-full">
+                  {plan.discount}
                 </div>
               )}
 
@@ -133,15 +151,19 @@ export default function UpgradePage() {
                 <div className="mb-8">
                   <div className="flex items-baseline gap-2 mb-2">
                     <span className="text-5xl font-bold bg-gradient-to-r from-teal-600 to-cyan-600 bg-clip-text text-transparent">
-                      {billingCycle === 'monthly' ? plan.monthlyPrice.toLocaleString('vi-VN') : plan.yearlyPrice.toLocaleString('vi-VN')}
+                      {plan.price.toLocaleString('vi-VN')}
                     </span>
-                    <span className="text-gray-600 font-medium">
-                      {billingCycle === 'monthly' ? '₫/tháng' : '₫/năm'}
-                    </span>
+                    <span className="text-gray-600 font-medium">₫/{plan.period}</span>
                   </div>
-                  {billingCycle === 'yearly' && (
+                  {plan.billingType === 'quarterly' && (
                     <p className="text-sm text-gray-500">
-                      {(plan.yearlyPrice / 12).toLocaleString('vi-VN')}₫ per month
+  {Math.round(plan.price / 3).toLocaleString('vi-VN')}₫ per month
+</p>
+
+                  )}
+                  {plan.billingType === 'yearly' && (
+                    <p className="text-sm text-gray-500">
+                      {(plan.price / 12).toLocaleString('vi-VN')}₫ per month
                     </p>
                   )}
                 </div>
@@ -160,7 +182,7 @@ export default function UpgradePage() {
 
                 {/* CTA Button */}
                 <button
-                  onClick={() => handleUpgrade(plan.id)}
+                  onClick={() => handleUpgrade(plan.id, plan.price)}
                   className={`w-full py-3 rounded-lg font-semibold transition-all duration-300 ${
                     plan.popular
                       ? 'bg-gradient-to-r from-teal-600 to-cyan-600 text-white hover:shadow-lg hover:scale-105'
@@ -177,6 +199,59 @@ export default function UpgradePage() {
               </div>
             </div>
           ))}
+        </div>
+
+        {/* Comparison Table */}
+        <div className="mt-20">
+          <h2 className="text-3xl font-bold text-gray-900 text-center mb-12">
+            So sánh tính năng
+          </h2>
+
+          <div className="border-2 border-teal-200 rounded-xl overflow-hidden">
+            <table className="w-full">
+              <thead>
+                <tr className="border-b-2 border-teal-200 bg-teal-50">
+                  <th className="px-6 py-4 text-left font-semibold text-gray-900">Tính năng</th>
+                  <th className="px-6 py-4 text-center font-semibold text-gray-900">Free</th>
+                  <th className="px-6 py-4 text-center font-semibold text-gray-900">Premium</th>
+                </tr>
+              </thead>
+              <tbody>
+                {[
+                  { feature: 'Tư vấn trực tuyến với bác sĩ thú y', free: false, premium: true },
+                  { feature: 'Lịch sử khám chi tiết', free: true, premium: true },
+                  { feature: 'Ưu tiên đặt lịch khám', free: false, premium: true },
+                  { feature: 'Tư vấn 24/7 với bác sĩ thú y', free: false, premium: true },
+                  { feature: 'Video call khám bệnh', free: false, premium: true },
+                  { feature: 'Ghi chép chẩn đoán AI', free: false, premium: true },
+                  { feature: 'Quản lý thuốc tự động', free: false, premium: true },
+                  { feature: 'Hỗ trợ khách hàng VIP', free: false, premium: true },
+                ].map((row, index) => (
+                  <tr key={index} className={`border-b border-gray-200 ${index % 2 === 0 ? 'bg-white' : 'bg-gray-50'}`}>
+                    <td className="px-6 py-4 font-medium text-gray-900">{row.feature}</td>
+                    <td className="px-6 py-4 text-center">
+                      {row.free ? (
+                        <svg className="w-5 h-5 text-teal-600 mx-auto" fill="currentColor" viewBox="0 0 20 20">
+                          <path fillRule="evenodd" d="M16.707 5.293a1 1 0 010 1.414l-8 8a1 1 0 01-1.414 0l-4-4a1 1 0 011.414-1.414L8 12.586l7.293-7.293a1 1 0 011.414 0z" clipRule="evenodd" />
+                        </svg>
+                      ) : (
+                        <svg className="w-5 h-5 text-gray-300 mx-auto" fill="currentColor" viewBox="0 0 20 20">
+                          <path fillRule="evenodd" d="M4.293 4.293a1 1 0 011.414 0L10 8.586l4.293-4.293a1 1 0 111.414 1.414L11.414 10l4.293 4.293a1 1 0 01-1.414 1.414L10 11.414l-4.293 4.293a1 1 0 01-1.414-1.414L8.586 10 4.293 5.707a1 1 0 010-1.414z" clipRule="evenodd" />
+                        </svg>
+                      )}
+                    </td>
+                    <td className="px-6 py-4 text-center">
+                      {row.premium && (
+                        <svg className="w-5 h-5 text-teal-600 mx-auto" fill="currentColor" viewBox="0 0 20 20">
+                          <path fillRule="evenodd" d="M16.707 5.293a1 1 0 010 1.414l-8 8a1 1 0 01-1.414 0l-4-4a1 1 0 011.414-1.414L8 12.586l7.293-7.293a1 1 0 011.414 0z" clipRule="evenodd" />
+                        </svg>
+                      )}
+                    </td>
+                  </tr>
+                ))}
+              </tbody>
+            </table>
+          </div>
         </div>
 
         {/* FAQ Section */}
@@ -201,7 +276,7 @@ export default function UpgradePage() {
               },
               {
                 question: 'Tôi nên chọn gói nào?',
-                answer: 'Pettopia Plus là tốt nhất cho những người bắt đầu, trong khi Pettopia Premium lý tưởng cho những người quản lý nhiều thú cưng hoặc có nhu cầu sức khỏe phức tạp.',
+                answer: 'Pettopia Premium là lựa chọn tuyệt vời cho tất cả những chủ thú cưng. Bạn có thể chọn thanh toán hàng tháng, hàng 3 tháng hoặc hàng năm tùy theo nhu cầu của mình.',
               },
             ].map((faq, index) => (
               <details
@@ -222,59 +297,6 @@ export default function UpgradePage() {
                 <p className="mt-4 text-gray-600">{faq.answer}</p>
               </details>
             ))}
-          </div>
-        </div>
-
-        {/* Comparison Table */}
-        <div className="mt-20">
-          <h2 className="text-3xl font-bold text-gray-900 text-center mb-12">
-            So sánh tính năng
-          </h2>
-
-          <div className="border-2 border-teal-200 rounded-xl overflow-hidden">
-            <table className="w-full">
-              <thead>
-                <tr className="border-b-2 border-teal-200 bg-teal-50">
-                  <th className="px-6 py-4 text-left font-semibold text-gray-900">Tính năng</th>
-                  <th className="px-6 py-4 text-center font-semibold text-gray-900">Plus</th>
-                  <th className="px-6 py-4 text-center font-semibold text-gray-900">Premium</th>
-                </tr>
-              </thead>
-              <tbody>
-                {[
-                  { feature: 'Tư vấn trực tuyến', plus: true, premium: true },
-                  { feature: 'Lịch sử khám chi tiết', plus: true, premium: true },
-                  { feature: 'Ưu tiên đặt lịch', plus: true, premium: true },
-                  { feature: 'Tư vấn 24/7', plus: false, premium: true },
-                  { feature: 'Video call khám bệnh', plus: false, premium: true },
-                  { feature: 'Ghi chép chẩn đoán AI', plus: false, premium: true },
-                  { feature: 'Quản lý thuốc tự động', plus: false, premium: true },
-                  { feature: 'Hỗ trợ VIP', plus: false, premium: true },
-                ].map((row, index) => (
-                  <tr key={index} className={`border-b border-gray-200 ${index % 2 === 0 ? 'bg-white' : 'bg-gray-50'}`}>
-                    <td className="px-6 py-4 font-medium text-gray-900">{row.feature}</td>
-                    <td className="px-6 py-4 text-center">
-                      {row.plus ? (
-                        <svg className="w-5 h-5 text-teal-600 mx-auto" fill="currentColor" viewBox="0 0 20 20">
-                          <path fillRule="evenodd" d="M16.707 5.293a1 1 0 010 1.414l-8 8a1 1 0 01-1.414 0l-4-4a1 1 0 011.414-1.414L8 12.586l7.293-7.293a1 1 0 011.414 0z" clipRule="evenodd" />
-                        </svg>
-                      ) : (
-                        <svg className="w-5 h-5 text-gray-300 mx-auto" fill="currentColor" viewBox="0 0 20 20">
-                          <path fillRule="evenodd" d="M4.293 4.293a1 1 0 011.414 0L10 8.586l4.293-4.293a1 1 0 111.414 1.414L11.414 10l4.293 4.293a1 1 0 01-1.414 1.414L10 11.414l-4.293 4.293a1 1 0 01-1.414-1.414L8.586 10 4.293 5.707a1 1 0 010-1.414z" clipRule="evenodd" />
-                        </svg>
-                      )}
-                    </td>
-                    <td className="px-6 py-4 text-center">
-                      {row.premium && (
-                        <svg className="w-5 h-5 text-teal-600 mx-auto" fill="currentColor" viewBox="0 0 20 20">
-                          <path fillRule="evenodd" d="M16.707 5.293a1 1 0 010 1.414l-8 8a1 1 0 01-1.414 0l-4-4a1 1 0 011.414-1.414L8 12.586l7.293-7.293a1 1 0 011.414 0z" clipRule="evenodd" />
-                        </svg>
-                      )}
-                    </td>
-                  </tr>
-                ))}
-              </tbody>
-            </table>
           </div>
         </div>
       </div>

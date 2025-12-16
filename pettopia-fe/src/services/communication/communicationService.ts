@@ -105,8 +105,10 @@ class CommunicationService {
       'Content-Type': contentType,
     };
 
-    if (this.token) {
-      headers['Authorization'] = `Bearer ${this.token}`;
+    // Get token from localStorage
+    const token = typeof window !== 'undefined' ? localStorage.getItem('authToken') : null;
+    if (token) {
+      headers['token'] = token;
     }
 
     return headers;
@@ -191,7 +193,7 @@ class CommunicationService {
     const response = await fetch(`${this.baseUrl}/create`, {
       method: 'POST',
       headers: {
-        ...(this.token && { 'Authorization': `Bearer ${this.token}` }),
+        ...(typeof window !== 'undefined' && localStorage.getItem('authToken') && { 'token': localStorage.getItem('authToken')! }),
         // Do NOT set Content-Type here; browser will set correct multipart boundary
       },
       body: formData,
@@ -225,7 +227,7 @@ class CommunicationService {
     const response = await fetch(`${this.baseUrl}/${postId}`, {
       method: 'PATCH',
       headers: {
-        ...(this.token && { 'Authorization': `Bearer ${this.token}` }),
+        ...(typeof window !== 'undefined' && localStorage.getItem('authToken') && { 'token': localStorage.getItem('authToken')! }),
         // Do NOT set Content-Type; browser will set multipart boundary
       },
       body: formData,
@@ -460,7 +462,7 @@ class CommunicationService {
     const response = await fetch(`${API_BASE_URL}/upload/image`, {
       method: 'POST',
       headers: {
-        ...(this.token && { 'Authorization': `Bearer ${this.token}` }),
+        ...(typeof window !== 'undefined' && localStorage.getItem('authToken') && { 'token': localStorage.getItem('authToken')! }),
       },
       body: formData,
     });

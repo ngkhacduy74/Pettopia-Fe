@@ -18,7 +18,6 @@ interface User {
     city?: string;
     district?: string;
     ward?: string;
-    detail?: string;
     description?: string;
   };
   dob?: string;
@@ -34,7 +33,7 @@ interface FormData {
     city: string;
     district: string;
     ward: string;
-    detail: string;
+    description: string;
   };
 }
 
@@ -71,7 +70,7 @@ export default function EditProfilePage() {
       city: '',
       district: '',
       ward: '',
-      detail: ''
+      description: ''
     }
   });
   const [loading, setLoading] = useState(true);
@@ -254,7 +253,7 @@ export default function EditProfilePage() {
             city: data.address?.city || '',
             district: data.address?.district || '',
             ward: data.address?.ward || '',
-            detail: data.address?.detail || data.address?.description || ''
+            description: data.address?.description || ''
           },
           dob: data.dob || '',
           createdAt: data.createdAt || data.created_at || ''
@@ -274,7 +273,7 @@ export default function EditProfilePage() {
             city: mapped.address?.city ?? '',
             district: mapped.address?.district ?? '',
             ward: mapped.address?.ward ?? '',
-            detail: mapped.address?.detail ?? mapped.address?.description ?? ''
+            description: mapped.address?.description ?? ''
           }
         });
       } catch (err: any) {
@@ -292,7 +291,7 @@ export default function EditProfilePage() {
   // This useEffect is removed to avoid unnecessary API calls
 
   const setValue = (field: string, value: string) => {
-    if (field === 'district' || field === 'ward' || field === 'detail') {
+    if (field === 'district' || field === 'ward' || field === 'description') {
       setFormData(prev => ({
         ...prev,
         address: {
@@ -321,7 +320,7 @@ export default function EditProfilePage() {
         city: selectedProvince?.name || '',
         district: '',
         ward: '',
-        detail: prev.address.detail
+        description: prev.address.description
       }
     }));
     setSelectedDistrictCode('');
@@ -356,12 +355,12 @@ export default function EditProfilePage() {
     }));
   };
 
-  const handleAddressDetailChange = (e: React.ChangeEvent<HTMLInputElement>) => {
+  const handleAddressDescriptionChange = (e: React.ChangeEvent<HTMLInputElement>) => {
     setFormData(prev => ({
       ...prev,
       address: {
         ...prev.address,
-        detail: e.target.value
+        description: e.target.value
       }
     }));
   };
@@ -429,7 +428,7 @@ export default function EditProfilePage() {
           city: user.address?.city || '',
           district: user.address?.district || '',
           ward: user.address?.ward || '',
-          detail: user.address?.detail || user.address?.description || ''
+          description: user.address?.description || user.address?.description || ''
         }
       }));
     }
@@ -475,7 +474,7 @@ export default function EditProfilePage() {
           city: formData.address.city || undefined,
           district: formData.address.district || undefined,
           ward: formData.address.ward || undefined,
-          description: formData.address.detail || undefined
+          description: formData.address.description || undefined
         };
       }
 
@@ -653,9 +652,9 @@ export default function EditProfilePage() {
                   <Home className="w-5 h-5 text-gray-400 mt-0.5 flex-shrink-0" />
                   <div className="flex-1 min-w-0">
                     <div className="text-sm text-gray-900 leading-relaxed">
-                      {formData.address.city || formData.address.district || formData.address.ward || formData.address.detail ? (
+                      {formData.address.city || formData.address.district || formData.address.ward || formData.address.description ? (
                         <div>
-                          {[formData.address.detail, formData.address.ward, formData.address.district, formData.address.city]
+                          {[formData.address.description, formData.address.ward, formData.address.district, formData.address.city]
                             .filter(Boolean)
                             .join(', ')}
                         </div>
@@ -670,19 +669,6 @@ export default function EditProfilePage() {
               // Edit mode - show dropdowns
               <div className="space-y-4">
                 <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
-                  <div>
-                    <label htmlFor="address-detail" className="block text-sm font-semibold text-gray-900 mb-2">
-                      Địa chỉ chi tiết
-                    </label>
-                    <input
-                      type="text"
-                      id="address-detail"
-                      value={formData.address.detail}
-                      onChange={handleAddressDetailChange}
-                      placeholder="Số nhà, tên đường..."
-                      className="w-full px-4 py-2.5 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-teal-500 focus:border-transparent"
-                    />
-                  </div>
                   <div>
                     <label htmlFor="city" className="block text-sm font-semibold text-gray-900 mb-2">
                       Tỉnh/Thành phố
@@ -728,8 +714,10 @@ export default function EditProfilePage() {
                       </select>
                     </div>
                   )}
+                </div>
 
-                  {selectedDistrictCode && (
+                {selectedDistrictCode && (
+                  <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
                     <div>
                       <label htmlFor="ward" className="block text-sm font-semibold text-gray-900 mb-2">
                         Phường/Xã
@@ -751,8 +739,22 @@ export default function EditProfilePage() {
                         ))}
                       </select>
                     </div>
-                  )}
-                </div>
+
+                    <div>
+                      <label htmlFor="address-description" className="block text-sm font-semibold text-gray-900 mb-2">
+                        Chi tiết
+                      </label>
+                      <input
+                        type="text"
+                        id="address-description"
+                        value={formData.address.description}
+                        onChange={handleAddressDescriptionChange}
+                        placeholder="Số nhà, tên đường..."
+                        className="w-full px-4 py-2.5 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-teal-500 focus:border-transparent"
+                      />
+                    </div>
+                  </div>
+                )}
                 
                 <div className="flex gap-3">
                   <button
