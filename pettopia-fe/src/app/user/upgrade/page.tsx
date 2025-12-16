@@ -13,7 +13,7 @@ export default function UpgradePage() {
     {
       id: 'premium-monthly',
       name: 'Pettopia Premium',
-      price: 99000,
+      price: 39000,
       period: '1 tháng',
       billingType: 'monthly',
       description: 'Quản lý toàn diện sức khỏe thú cưng',
@@ -34,7 +34,7 @@ export default function UpgradePage() {
     {
       id: 'premium-quarterly',
       name: 'Pettopia Premium',
-      price: 297000,
+      price: 115000,
       period: '3 tháng',
       billingType: 'quarterly',
       description: 'Quản lý toàn diện sức khỏe thú cưng',
@@ -55,7 +55,7 @@ export default function UpgradePage() {
     {
       id: 'premium-yearly',
       name: 'Pettopia Premium',
-      price: 990000,
+      price: 399000,
       period: '1 năm',
       billingType: 'yearly',
       description: 'Quản lý toàn diện sức khỏe thú cưng',
@@ -157,8 +157,9 @@ export default function UpgradePage() {
                   </div>
                   {plan.billingType === 'quarterly' && (
                     <p className="text-sm text-gray-500">
-                      {(plan.price / 3).toLocaleString('vi-VN')}₫ per month
-                    </p>
+  {Math.round(plan.price / 3).toLocaleString('vi-VN')}₫ per month
+</p>
+
                   )}
                   {plan.billingType === 'yearly' && (
                     <p className="text-sm text-gray-500">

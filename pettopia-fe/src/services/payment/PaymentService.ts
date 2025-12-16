@@ -29,9 +29,9 @@ interface PaymentResponse {
 
 export const PaymentService = {
   async createPayment(payload: PaymentRequest): Promise<PaymentResponse> {
-    const token = localStorage.getItem('authToken');
+    const authToken = localStorage.getItem('authToken');
 
-    if (!token) {
+    if (!authToken) {
       throw new Error('Token not found');
     }
 
@@ -39,7 +39,7 @@ export const PaymentService = {
       method: 'POST',
       headers: {
         'Content-Type': 'application/json',
-        Authorization: `Bearer ${token}`,
+        token: `${authToken}`,
       },
       body: JSON.stringify(payload),
     });
