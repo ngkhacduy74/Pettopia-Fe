@@ -5,7 +5,7 @@ import { motion, useInView } from 'framer-motion';
 import { useParams, useRouter } from 'next/navigation';
 import Link from 'next/link';
 
-import { getPetById, getAppointments, getMedicalRecordsByPetId, type MedicalRecord, type PetMedicalRecord } from '@/services/petcare/petService';
+import { getPetById, getAppointments, type MedicalRecord, type PetMedicalRecord, type PetDetailResponse } from '@/services/petcare/petService';
 
 interface Owner {
   user_id: string;
@@ -48,10 +48,9 @@ export default function UserPetPage() {
 
     const [petData, setPetData] = useState<Pet | null>(null);
     const [upcomingAppointments, setUpcomingAppointments] = useState<any[]>([]);
-    const [medicalRecords, setMedicalRecords] = useState<PetMedicalRecord[]>([]);
+    const [medicalRecords, setMedicalRecords] = useState<any[]>([]);
     const [loading, setLoading] = useState(true);
     const [error, setError] = useState<string | null>(null);
-    const [loadingMedicalRecords, setLoadingMedicalRecords] = useState(false);
 
 
     useEffect(() => {
@@ -61,8 +60,8 @@ export default function UserPetPage() {
             setLoading(true);
             setError(null);
             try {
-                // Gọi petService để lấy thông tin thú cưng
-                const data = await getPetById(petId as string);
+                // Gọi petService để lấy thông tin thú cưng (đã bao gồm medical records)
+                const data: PetDetailResponse = await getPetById(petId as string);
                 const apiData = data as Record<string, any>;
 
                 setPetData({
@@ -94,21 +93,32 @@ export default function UserPetPage() {
                     setUpcomingAppointments([]);
                 }
 
-                // Lấy medical records từ các appointments (bao gồm Completed, Checked_In, etc.)
-                setLoadingMedicalRecords(true);
-                try {
-                    const records = await getMedicalRecordsByPetId(petId as string, {
-                        page: 1,
-                        limit: 100,
-                        // Có thể filter theo status nếu cần, hoặc để undefined để lấy tất cả
-                        // statusFilter: ['Completed', 'Checked_In']
+                // Sử dụng medical records từ getPetById (đã được cải tiến)
+                if (data.medical_records && Array.isArray(data.medical_records)) {
+                    // Chuyển đổi format từ PetMedicalRecord (có medicalRecord và medications) 
+                    // sang format hiển thị (có appointmentId, appointmentDate, record)
+                    const formattedRecords = data.medical_records.map((mr) => {
+                        return {
+                            appointmentId: mr.medicalRecord?.appointment_id || '',
+                            appointmentDate: mr.medicalRecord?.createdAt || '',
+                            appointmentStatus: 'Completed' as const, // Mặc định vì đã có medical record
+                            record: {
+                                symptoms: mr.medicalRecord?.symptoms || '',
+                                diagnosis: mr.medicalRecord?.diagnosis || '',
+                                notes: mr.medicalRecord?.notes || '',
+                                prescription: mr.medications?.map((m) => 
+                                    `${m.medication_name} - ${m.dosage} - ${m.instructions}`
+                                ).join('\n') || ''
+                            }
+                        };
                     });
-                    setMedicalRecords(records);
-                } catch (err) {
-                    console.error('Error fetching medical records:', err);
+                    // Sắp xếp theo ngày mới nhất
+                    formattedRecords.sort((a, b) => 
+                        new Date(b.appointmentDate).getTime() - new Date(a.appointmentDate).getTime()
+                    );
+                    setMedicalRecords(formattedRecords);
+                } else {
                     setMedicalRecords([]);
-                } finally {
-                    setLoadingMedicalRecords(false);
                 }
             } catch (e) {
                 console.error('Error fetching pet data:', e);
@@ -119,6 +129,7 @@ export default function UserPetPage() {
                 }
                 setPetData(null);
                 setUpcomingAppointments([]);
+                setMedicalRecords([]);
             } finally {
                 setLoading(false);
             }
@@ -276,7 +287,7 @@ export default function UserPetPage() {
                     <section ref={servicesRef} className="mb-20">
                         <h2 className="text-3xl font-bold text-gray-900 mb-8 text-center">Hồ sơ bệnh án</h2>
                         
-                        {loadingMedicalRecords ? (
+                        {loading ? (
                             <div className="text-center py-12">
                                 <div className="inline-block w-12 h-12 border-4 border-teal-600 border-t-transparent rounded-full animate-spin mb-4"></div>
                                 <p className="text-gray-600">Đang tải hồ sơ bệnh án...</p>

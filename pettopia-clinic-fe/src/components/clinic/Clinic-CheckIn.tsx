@@ -15,6 +15,9 @@ import {
     RefreshCw,
     AlertCircle,
     Stethoscope,
+    Sun,
+    Sunset,
+    Moon,
 } from 'lucide-react';
 import { getAppointments, updateAppointmentStatus, getAppointmentDetail, assignVetToAppointment } from '@/services/partner/clinicService';
 import { getCustomerById } from '@/services/customer/customerService';
@@ -117,10 +120,10 @@ export default function CheckInPage() {
                 );
 
                 // Lọc chỉ lấy lịch hẹn hôm nay và status Confirmed (chưa check-in)
-                const today = new Date().toISOString().split('T')[0];
+                const today = new Date().toLocaleDateString('sv-SE', { timeZone: 'Asia/Ho_Chi_Minh' });
                 const todayConfirmed = enrichedAppointments.filter((apt: AppointmentData) => {
                     try {
-                        const aptDate = new Date(apt.date).toISOString().split('T')[0];
+                        const aptDate = new Date(apt.date).toLocaleDateString('sv-SE', { timeZone: 'Asia/Ho_Chi_Minh' });
                         // Chỉ hiển thị appointments chưa check-in (status = Confirmed)
                         return aptDate === today && apt.status === 'Confirmed';
                     } catch {
@@ -168,7 +171,7 @@ export default function CheckInPage() {
 
         // Filter by shift
         if (filterShift !== 'all') {
-            filtered = filtered.filter(apt => apt.shift === filterShift);
+            filtered = filtered.filter(apt => apt.shift?.toLowerCase() === filterShift);
         }
 
         // Search filter
@@ -188,8 +191,8 @@ export default function CheckInPage() {
         // Sort by shift: morning -> afternoon -> evening
         const shiftOrder = { morning: 1, afternoon: 2, evening: 3 };
         filtered.sort((a, b) => {
-            const orderA = shiftOrder[a.shift as keyof typeof shiftOrder] || 999;
-            const orderB = shiftOrder[b.shift as keyof typeof shiftOrder] || 999;
+            const orderA = shiftOrder[a.shift?.toLowerCase() as keyof typeof shiftOrder] || 999;
+            const orderB = shiftOrder[b.shift?.toLowerCase() as keyof typeof shiftOrder] || 999;
             return orderA - orderB;
         });
 
@@ -212,6 +215,15 @@ export default function CheckInPage() {
             case 'afternoon': return 'bg-orange-100 text-orange-800 border-orange-300';
             case 'evening': return 'bg-indigo-100 text-indigo-800 border-indigo-300';
             default: return 'bg-gray-100 text-gray-800 border-gray-300';
+        }
+    };
+
+    const getShiftIcon = (shift: string) => {
+        switch (shift?.toLowerCase()) {
+            case 'morning': return <Sun size={16} />;
+            case 'afternoon': return <Sunset size={16} />;
+            case 'evening': return <Moon size={16} />;
+            default: return <Clock size={16} />;
         }
     };
 
@@ -316,6 +328,7 @@ export default function CheckInPage() {
                         <div>
                             <h1 className="text-gray-600 mt-2">
                                 {new Date().toLocaleDateString('vi-VN', {
+                                    timeZone: 'Asia/Ho_Chi_Minh',
                                     weekday: 'long',
                                     day: 'numeric',
                                     month: 'long',
@@ -360,19 +373,19 @@ export default function CheckInPage() {
                         <div className="bg-amber-50 rounded-lg p-4 border border-amber-200">
                             <p className="text-sm text-amber-600 font-medium">Ca sáng</p>
                             <p className="text-2xl font-bold text-amber-900">
-                                {appointments.filter(a => a.shift === 'morning').length}
+                                {appointments.filter(a => a.shift?.toLowerCase() === 'morning').length}
                             </p>
                         </div>
                         <div className="bg-orange-50 rounded-lg p-4 border border-orange-200">
                             <p className="text-sm text-orange-600 font-medium">Ca chiều</p>
                             <p className="text-2xl font-bold text-orange-900">
-                                {appointments.filter(a => a.shift === 'afternoon').length}
+                                {appointments.filter(a => a.shift?.toLowerCase() === 'afternoon').length}
                             </p>
                         </div>
                         <div className="bg-indigo-50 rounded-lg p-4 border border-indigo-200">
                             <p className="text-sm text-indigo-600 font-medium">Ca tối</p>
                             <p className="text-2xl font-bold text-indigo-900">
-                                {appointments.filter(a => a.shift === 'evening').length}
+                                {appointments.filter(a => a.shift?.toLowerCase() === 'evening').length}
                             </p>
                         </div>
                     </div>
@@ -480,39 +493,38 @@ export default function CheckInPage() {
                             {filteredAppointments.map((apt) => (
                                 <div
                                     key={apt.id || apt._id}
-                                    className="p-6 hover:bg-gray-50 transition cursor-pointer"
+                                    className="p-4 hover:bg-gray-50 transition cursor-pointer"
                                     onClick={() => handleViewDetail(apt.id || apt._id || '')}
                                 >
                                     <div className="flex items-start justify-between">
                                         <div className="flex-1">
-                                            <div className="flex items-center gap-3 mb-3">
-                                                <span className={`px-3 py-1 rounded-full text-xs font-medium border ${getShiftColor(apt.shift)}`}>
+                                            <div className="flex items-center gap-3 mb-2">
+                                                <span className={`px-2 py-1 rounded-full text-xs font-medium border ${getShiftColor(apt.shift)} flex items-center gap-1`}>
+                                                    {getShiftIcon(apt.shift)}
                                                     {getShiftLabel(apt.shift)}
-                                                </span>
-                                                <span className="text-sm text-gray-500">
-                                                    {formatTime(apt.date)}
                                                 </span>
                                             </div>
 
-                                            <div className="space-y-2">
-                                                <div className="flex items-center gap-2">
-                                                    <User className="text-gray-400" size={18} />
-                                                    <span className="font-semibold text-gray-900">
-                                                        {apt.customer_name || 'Khách hàng'}
-                                                    </span>
-                                                </div>
-
-                                                {apt.phone && (
+                                            <div className="space-y-1">
+                                                <div className="flex items-center gap-4">
                                                     <div className="flex items-center gap-2">
-                                                        <Phone className="text-gray-400" size={18} />
-                                                        <span className="text-gray-600">{apt.phone}</span>
+                                                        <User className="text-gray-400" size={16} />
+                                                        <span className="font-semibold text-gray-900">
+                                                            {apt.customer_name || 'Khách hàng'}
+                                                        </span>
                                                     </div>
-                                                )}
+                                                    {apt.phone && (
+                                                        <div className="flex items-center gap-2">
+                                                            <Phone className="text-gray-400" size={16} />
+                                                            <span className="text-gray-600 text-sm">{apt.phone}</span>
+                                                        </div>
+                                                    )}
+                                                </div>
 
                                                 {apt.pet_ids && apt.pet_ids.length > 0 && (
                                                     <div className="flex items-center gap-2">
-                                                        <PawPrint className="text-gray-400" size={18} />
-                                                        <span className="text-gray-600">
+                                                        <PawPrint className="text-gray-400" size={16} />
+                                                        <span className="text-gray-600 text-sm">
                                                             {apt.pet_ids.length} thú cưng
                                                         </span>
                                                     </div>
@@ -521,41 +533,7 @@ export default function CheckInPage() {
                                         </div>
 
                                         <div className="flex items-center gap-3">
-                                            <button
-                                                onClick={(e) => {
-                                                    e.stopPropagation();
-                                                    const appointmentId = apt.id || apt._id;
-                                                    if (appointmentId) {
-                                                        handleCheckIn(appointmentId);
-                                                    } else {
-                                                        showError('Không tìm thấy ID lịch hẹn');
-                                                    }
-                                                }}
-                                                disabled={checkingIn || apt.status === 'Checked_In' || apt.status === 'checked_in'}
-                                                className={`px-6 py-3 rounded-lg transition font-medium flex items-center gap-2 ${
-                                                    apt.status === 'Checked_In' || apt.status === 'checked_in'
-                                                        ? 'bg-gray-300 text-gray-500 cursor-not-allowed'
-                                                        : 'bg-teal-600 text-white hover:bg-teal-700 disabled:opacity-50'
-                                                }`}
-                                            >
-                                                {checkingIn ? (
-                                                    <>
-                                                        <Loader2 className="animate-spin" size={18} />
-                                                        Đang xử lý...
-                                                    </>
-                                                ) : apt.status === 'Checked_In' || apt.status === 'checked_in' ? (
-                                                    <>
-                                                        <CheckCircle size={18} />
-                                                        Đã check-in
-                                                    </>
-                                                ) : (
-                                                    <>
-                                                        <CheckCircle size={18} />
-                                                        Check-in
-                                                    </>
-                                                )}
-                                            </button>
-                                            <ChevronRight className="text-gray-400" size={24} />
+                                            <ChevronRight className="text-gray-400" size={20} />
                                         </div>
                                     </div>
                                 </div>

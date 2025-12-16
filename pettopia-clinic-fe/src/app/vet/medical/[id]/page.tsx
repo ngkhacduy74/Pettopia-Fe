@@ -3,61 +3,20 @@
 import React, { useState, useEffect } from 'react';
 import { useRouter, useParams } from 'next/navigation';
 import { ArrowLeft, Heart, ClipboardList, Pill, FileText, Calendar, Loader2, Save, Plus, X, User, Phone, Mail, MapPin } from 'lucide-react';
-import { getAppointmentDetail, getMedicalRecord } from '@/services/partner/clinicService';
-import { updateMedicalRecord, type MedicalRecordPayload, type Medication } from '@/services/partner/veterianrianService';
+import {
+  updateMedicalRecord,
+  getVetPetDetail,
+  getVetAppointmentDetail,
+  type MedicalRecordPayload,
+  type Medication,
+  type VetPetDetail,
+  type VetPetMedicalRecord,
+  type VetAppointmentDetail,
+} from '@/services/partner/veterianrianService';
 import { useToast } from '@/contexts/ToastContext';
 
-interface AppointmentDetail {
-  id: string;
-  date: string;
-  shift: string;
-  status: string;
-  user_info: {
-    fullname: string;
-    phone_number: string;
-    email?: string;
-  };
-  clinic_info: {
-    clinic_name: string;
-    email: {
-      email_address: string;
-    };
-    phone: {
-      phone_number: string;
-    };
-    address: {
-      city: string;
-      district: string;
-      ward: string;
-      detail: string;
-    };
-    representative: {
-      name: string;
-    };
-  };
-  service_infos: Array<{
-    name: string;
-    description: string;
-    price: number;
-    duration: number;
-  }>;
-  pet_infos: Array<{
-    id: string;
-    name: string;
-    species: string;
-    gender: string;
-    breed: string;
-    color: string;
-    weight: number;
-    dateOfBirth: string;
-    owner: {
-      fullname: string;
-      phone: string;
-      email: string;
-    };
-    avatar_url?: string;
-  }>;
-}
+// Using VetAppointmentDetail type from service
+type AppointmentDetail = VetAppointmentDetail;
 
 export default function VetMedicalRecordDetailPage() {
   const router = useRouter();
@@ -66,6 +25,8 @@ export default function VetMedicalRecordDetailPage() {
   const { showSuccess, showError } = useToast();
 
   const [appointmentDetail, setAppointmentDetail] = useState<AppointmentDetail | null>(null);
+  const [petDetail, setPetDetail] = useState<VetPetDetail | null>(null);
+  const [medicalRecords, setMedicalRecords] = useState<VetPetMedicalRecord[]>([]);
   const [loading, setLoading] = useState(true);
   const [saving, setSaving] = useState(false);
   const [existingRecord, setExistingRecord] = useState<any>(null);
@@ -84,22 +45,35 @@ export default function VetMedicalRecordDetailPage() {
 
   useEffect(() => {
     if (appointmentId) {
-      fetchAppointmentDetail();
-      checkExistingRecord();
+      fetchData();
     }
   }, [appointmentId]);
 
-  const fetchAppointmentDetail = async () => {
+  const fetchData = async () => {
     try {
       setLoading(true);
-      const response = await getAppointmentDetail(appointmentId);
+      const response = await getVetAppointmentDetail(appointmentId);
       if (response.status === 'success' && response.data) {
-        const detail = response.data as any;
-        // Đảm bảo luôn có id
-        if (detail._id && !detail.id) {
-          detail.id = detail._id;
+        const detail = response.data;
+        setAppointmentDetail(detail);
+
+        const petId = detail?.pet_infos?.[0]?.id;
+        if (petId) {
+          // Lấy medical record ID từ appointment detail nếu có
+          const medicalRecordId = detail?.pet_infos?.[0]?.medical_records?.[0];
+          console.log('Medical Record ID from appointment:', medicalRecordId);
+          
+          await fetchPetDetail(petId);
+        } else {
+          setPetDetail(null);
+          setMedicalRecords([]);
+          setExistingRecord(null);
+          setHasRecord(false);
+          setSymptoms('');
+          setDiagnosis('');
+          setNotes('');
+          setMedications([]);
         }
-        setAppointmentDetail(detail as AppointmentDetail);
       }
     } catch (error: any) {
       console.error('Lỗi khi lấy chi tiết appointment:', error);
@@ -109,22 +83,78 @@ export default function VetMedicalRecordDetailPage() {
     }
   };
 
-  const checkExistingRecord = async () => {
+  const fetchPetDetail = async (petId: string) => {
     try {
-      const response = await getMedicalRecord(appointmentId);
-      if (response.data) {
-        setExistingRecord(response.data);
-        setHasRecord(true);
-        setSymptoms(response.data.symptoms || '');
-        setDiagnosis(response.data.diagnosis || '');
-        setNotes(response.data.notes || '');
-        setMedications(response.data.medications || []);
+      const data = await getVetPetDetail(petId);
+      setPetDetail(data);
+      setMedicalRecords(data.medical_records || []);
+
+      // Lấy medical record ID từ appointment detail (pet_infos[0].medical_records[0])
+      const medicalRecordId = appointmentDetail?.pet_infos?.[0]?.medical_records?.[0];
+      
+      if (medicalRecordId) {
+        // Tìm medical record trong pet detail bằng ID
+        const recordForAppointment = data.medical_records?.find(
+          (mr) => mr.medicalRecord?.id === medicalRecordId || mr.medicalRecord?._id === medicalRecordId
+        );
+
+        if (recordForAppointment?.medicalRecord) {
+          const record = recordForAppointment.medicalRecord;
+          setExistingRecord(record);
+          setHasRecord(true);
+          setSymptoms(record.symptoms || '');
+          setDiagnosis(record.diagnosis || '');
+          setNotes(record.notes || '');
+          setMedications(recordForAppointment.medications || []);
+        } else {
+          // Fallback: tìm theo appointment_id nếu không tìm thấy bằng ID
+          const recordByAppointmentId = data.medical_records?.find(
+            (mr) => mr.medicalRecord?.appointment_id === appointmentId
+          );
+          
+          if (recordByAppointmentId?.medicalRecord) {
+            const record = recordByAppointmentId.medicalRecord;
+            setExistingRecord(record);
+            setHasRecord(true);
+            setSymptoms(record.symptoms || '');
+            setDiagnosis(record.diagnosis || '');
+            setNotes(record.notes || '');
+            setMedications(recordByAppointmentId.medications || []);
+          } else {
+            setExistingRecord(null);
+            setHasRecord(false);
+            setSymptoms('');
+            setDiagnosis('');
+            setNotes('');
+            setMedications([]);
+          }
+        }
+      } else {
+        // Fallback: tìm theo appointment_id nếu không có medical_records trong pet_infos
+        const recordForAppointment = data.medical_records?.find(
+          (mr) => mr.medicalRecord?.appointment_id === appointmentId
+        );
+
+        if (recordForAppointment?.medicalRecord) {
+          const record = recordForAppointment.medicalRecord;
+          setExistingRecord(record);
+          setHasRecord(true);
+          setSymptoms(record.symptoms || '');
+          setDiagnosis(record.diagnosis || '');
+          setNotes(record.notes || '');
+          setMedications(recordForAppointment.medications || []);
+        } else {
+          setExistingRecord(null);
+          setHasRecord(false);
+          setSymptoms('');
+          setDiagnosis('');
+          setNotes('');
+          setMedications([]);
+        }
       }
     } catch (error: any) {
-      // Nếu không có record thì không làm gì, cho phép tạo mới
-      if (error?.response?.status !== 404) {
-        console.error('Lỗi khi kiểm tra hồ sơ:', error);
-      }
+      console.error('Lỗi khi lấy chi tiết thú cưng:', error);
+      showError(error?.response?.data?.message || 'Không thể tải thông tin thú cưng');
     }
   };
 
@@ -164,7 +194,7 @@ export default function VetMedicalRecordDetailPage() {
     try {
       setSaving(true);
       const payload: MedicalRecordPayload = {
-        pet_id: appointmentDetail?.pet_infos[0]?.id || '',
+        pet_id: appointmentDetail?.pet_infos?.[0]?.id || '',
         symptoms: symptoms.trim(),
         diagnosis: diagnosis.trim(),
         notes: notes.trim() || undefined,
@@ -175,7 +205,9 @@ export default function VetMedicalRecordDetailPage() {
       showSuccess(hasRecord ? 'Cập nhật hồ sơ bệnh án thành công!' : 'Tạo hồ sơ bệnh án thành công!');
       
       // Refresh để hiển thị record vừa tạo
-      await checkExistingRecord();
+      if (petDetail?.id) {
+        await fetchPetDetail(petDetail.id);
+      }
     } catch (error: any) {
       console.error('Lỗi khi tạo/cập nhật hồ sơ bệnh án:', error);
       showError(error?.response?.data?.message || 'Không thể tạo/cập nhật hồ sơ bệnh án');
@@ -253,14 +285,18 @@ export default function VetMedicalRecordDetailPage() {
           <div className="p-6 space-y-4">
             <div>
               <h3 className="text-sm font-semibold text-gray-700 mb-2">Khách hàng</h3>
-              <div className="flex items-center gap-2 text-gray-600">
-                <User size={16} />
-                <span>{appointmentDetail.user_info.fullname}</span>
-              </div>
-              <div className="flex items-center gap-2 text-gray-600 mt-1">
-                <Phone size={16} />
-                <span>{appointmentDetail.user_info.phone_number}</span>
-              </div>
+              {appointmentDetail.user_info && (
+                <>
+                  <div className="flex items-center gap-2 text-gray-600">
+                    <User size={16} />
+                    <span>{appointmentDetail.user_info.fullname}</span>
+                  </div>
+                  <div className="flex items-center gap-2 text-gray-600 mt-1">
+                    <Phone size={16} />
+                    <span>{appointmentDetail.user_info.phone_number}</span>
+                  </div>
+                </>
+              )}
             </div>
 
             {appointmentDetail.pet_infos && appointmentDetail.pet_infos.length > 0 && (
@@ -269,7 +305,9 @@ export default function VetMedicalRecordDetailPage() {
                 {appointmentDetail.pet_infos.map((pet, index) => (
                   <div key={pet.id} className="bg-gray-50 rounded-lg p-3 mb-2">
                     <p className="font-medium text-gray-900">{pet.name}</p>
-                    <p className="text-sm text-gray-600">{pet.species} - {pet.breed}</p>
+                    <p className="text-sm text-gray-600">
+                      {pet.species} {pet.breed ? `- ${pet.breed}` : ''}
+                    </p>
                   </div>
                 ))}
               </div>
@@ -279,9 +317,16 @@ export default function VetMedicalRecordDetailPage() {
               <div>
                 <h3 className="text-sm font-semibold text-gray-700 mb-2">Dịch vụ</h3>
                 {appointmentDetail.service_infos.map((service, index) => (
-                  <div key={index} className="bg-gray-50 rounded-lg p-3 mb-2">
+                  <div key={service.id || index} className="bg-gray-50 rounded-lg p-3 mb-2">
                     <p className="font-medium text-gray-900">{service.name}</p>
-                    <p className="text-sm text-gray-600">{service.description}</p>
+                    {service.description && (
+                      <p className="text-sm text-gray-600">{service.description}</p>
+                    )}
+                    {service.price && (
+                      <p className="text-sm text-gray-600 mt-1">
+                        Giá: {service.price.toLocaleString('vi-VN')} VNĐ
+                      </p>
+                    )}
                   </div>
                 ))}
               </div>

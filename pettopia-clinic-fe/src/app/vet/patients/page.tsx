@@ -102,26 +102,14 @@ export default function VetPatientsPage() {
       }
 
       // Check for existing medical record
-      try {
-        const appointmentId = appointment.id || appointment._id;
-        const recordResponse = await getMedicalRecord(appointmentId);
-        if (recordResponse.data) {
-          setSymptoms(recordResponse.data.symptoms || '');
-          setDiagnosis(recordResponse.data.diagnosis || '');
-          setNotes(recordResponse.data.notes || '');
-          setMedications(recordResponse.data.medications || []);
-        } else {
-          // Reset form if no record
-          setSymptoms('');
-          setDiagnosis('');
-          setNotes('');
-          setMedications([]);
-        }
-      } catch (error: any) {
-        // No existing record, reset form
-        if (error?.response?.status !== 404) {
-          console.error('Lỗi khi kiểm tra hồ sơ:', error);
-        }
+      const recordResponse = await getMedicalRecord(appointmentId);
+      if (recordResponse && recordResponse.data) {
+        setSymptoms(recordResponse.data.symptoms || '');
+        setDiagnosis(recordResponse.data.diagnosis || '');
+        setNotes(recordResponse.data.notes || '');
+        setMedications(recordResponse.data.medications || []);
+      } else {
+        // Reset form if no record
         setSymptoms('');
         setDiagnosis('');
         setNotes('');
@@ -329,7 +317,7 @@ export default function VetPatientsPage() {
                     </button>
                   ) : appointment.status === 'Completed' ? (
                     <button
-                      onClick={() => router.push(`/vet/medical/${appointment.id || appointment._id}`)}
+                      onClick={() => router.push(`/vet/medical/${appointment.id}`)}
                       className="flex items-center gap-2 px-4 py-2 bg-gray-600 text-white rounded-lg hover:bg-gray-700 transition-colors font-medium"
                     >
                       <Eye size={18} />

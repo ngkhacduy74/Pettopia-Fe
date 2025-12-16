@@ -60,6 +60,36 @@ export async function createPet(payload: CreatePetPayload) {
     return response.data;
 }
 
+export interface Medication {
+    _id: string;
+    medical_record_id: string;
+    medication_name: string;
+    dosage: string;
+    instructions: string;
+    id: string;
+    __v: number;
+    createdAt: string;
+    updatedAt: string;
+}
+
+export interface MedicalRecordDetail {
+    _id: string;
+    appointment_id: string;
+    pet_id: string;
+    symptoms: string;
+    diagnosis: string;
+    notes: string;
+    id: string;
+    createdAt: string;
+    updatedAt: string;
+    __v: number;
+}
+
+export interface PetMedicalRecord {
+    medicalRecord: MedicalRecordDetail;
+    medications: Medication[];
+}
+
 export interface PetDetailResponse {
     id: string;
     name: string;
@@ -73,6 +103,7 @@ export interface PetDetailResponse {
     owner?: any;
     createdAt?: string;
     updatedAt?: string;
+    medical_records?: PetMedicalRecord[];
 }
 
 export async function getPetById(petId: string): Promise<PetDetailResponse> {
@@ -315,11 +346,12 @@ export interface ClinicsResponse {
   };
 }
 
-export async function getClinics(page = 1, limit = 100): Promise<Clinic[]> {
+export async function getClinics(page = 1, limit = 10): Promise<Clinic[]> {
   try {
     const url = `${process.env.NEXT_PUBLIC_PETTOPIA_API_URL}/partner/clinic?page=${page}&limit=${limit}`;
     const response = await axios.get(url, authHeaders());
-    return response.data?.data?.items || response.data?.data || [];
+    const clinics = response.data?.data?.items || response.data?.data || [];
+    return clinics.filter((clinic: Clinic) => clinic.is_active);
   } catch (error) {
     logAxiosError('getClinics', error);
     throw error;
@@ -406,6 +438,55 @@ export async function bookAppointment(payload: BookingPayload) {
     return response.data;
   } catch (error) {
     logAxiosError('bookAppointment', error);
+    throw error;
+  }
+}
+
+// ================ APPOINTMENT RATING ================
+export interface RatingPayload {
+  star: number;
+  notes: string;
+  service_ids: string[];
+}
+
+export async function rateAppointment(appointmentId: string, payload: RatingPayload) {
+  try {
+    const url = `${process.env.NEXT_PUBLIC_PETTOPIA_API_URL}/api/v1/healthcare/appointments/${encodeURIComponent(appointmentId)}/rating`;
+    const response = await axios.post(url, payload, authHeaders());
+    return response.data;
+  } catch (error) {
+    logAxiosError('rateAppointment', error);
+    throw error;
+  }
+}
+
+// ================ GET CLINIC RATING ================
+export interface ClinicRating {
+  id: string;
+  clinic_id: string;
+  appointment_id: string;
+  user_id: string;
+  star: number;
+  notes: string;
+  service_ids: string[];
+  createdAt: string;
+  updatedAt: string;
+  [key: string]: any;
+}
+
+export interface ClinicRatingResponse {
+  status: string;
+  message?: string;
+  data: ClinicRating[];
+}
+
+export async function getClinicRating(clinicId: string): Promise<ClinicRating[]> {
+  try {
+    const url = `${process.env.NEXT_PUBLIC_PETTOPIA_API_URL}/api/v1/healthcare/clinic/${encodeURIComponent(clinicId)}/rating`;
+    const response = await axios.get(url, authHeaders());
+    return response.data?.data || response.data;
+  } catch (error) {
+    logAxiosError('getClinicRating', error);
     throw error;
   }
 }

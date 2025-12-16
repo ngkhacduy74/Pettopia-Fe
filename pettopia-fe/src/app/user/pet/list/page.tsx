@@ -2,7 +2,7 @@
 import React, { useState, useEffect, useCallback } from 'react';
 import Link from 'next/link';
 import { useRouter } from 'next/navigation';
-import { deletePet, getPetsByOwner, getMedicalRecordsByPetId, type MedicalRecord } from '@/services/petcare/petService';
+import { deletePet, getPetsByOwner, type MedicalRecord, type PetDetailResponse } from '@/services/petcare/petService';
 
 interface Pet {
     id: string | number;
@@ -72,44 +72,40 @@ export default function PetListPage() {
     const fetchPets = useCallback(async (uid: string) => {
         try {
             setLoading(true);
-            const petsData = await getPetsByOwner(uid);
+            const petsData: PetDetailResponse[] = await getPetsByOwner(uid);
             
-            // Lấy medical records cho mỗi pet (chỉ lấy record gần nhất)
-            try {
-                const petsWithMedicalRecords = await Promise.all(
-                    petsData.map(async (pet) => {
-                        try {
-                            // Lấy tất cả medical records của pet, chỉ lấy record đầu tiên (gần nhất)
-                            const medicalRecords = await getMedicalRecordsByPetId(String(pet.id), {
-                                page: 1,
-                                limit: 1, // Chỉ cần 1 record gần nhất
-                                statusFilter: ['Completed', 'Checked_In'] // Có thể có medical record từ các status này
-                            });
-                            
-                            if (medicalRecords.length > 0) {
-                                const latestRecord = medicalRecords[0];
-                                return {
-                                    ...pet,
-                                    medicalRecord: latestRecord.record,
-                                    lastAppointmentId: latestRecord.appointmentId
-                                };
-                            }
-                            return pet;
-                        } catch (error) {
-                            // Nếu lỗi khi lấy medical record, vẫn trả về pet
-                            console.warn(`Error fetching medical record for pet ${pet.id}:`, error);
-                            return pet;
-                        }
-                    })
-                );
-                
-                setPets(petsWithMedicalRecords);
-            } catch (error) {
-                // Nếu không lấy được medical records, vẫn set pets
-                console.warn('Error fetching medical records:', error);
-                setPets(petsData);
-            }
+            // Sử dụng medical records từ getPetsByOwner (đã được cải tiến)
+            const petsWithMedicalRecords = petsData.map((pet) => {
+                // Lấy medical record gần nhất từ danh sách medical_records
+                if (pet.medical_records && Array.isArray(pet.medical_records) && pet.medical_records.length > 0) {
+                    // Sắp xếp theo ngày tạo mới nhất
+                    const sortedRecords = [...pet.medical_records].sort((a, b) => {
+                        const dateA = new Date(a.medicalRecord?.createdAt || 0).getTime();
+                        const dateB = new Date(b.medicalRecord?.createdAt || 0).getTime();
+                        return dateB - dateA;
+                    });
+                    
+                    const latestRecord = sortedRecords[0];
+                    // Chuyển đổi format để tương thích với component
+                    const medicalRecord: MedicalRecord = {
+                        symptoms: latestRecord.medicalRecord?.symptoms || '',
+                        diagnosis: latestRecord.medicalRecord?.diagnosis || '',
+                        notes: latestRecord.medicalRecord?.notes || '',
+                        prescription: latestRecord.medications?.map((m) => 
+                            `${m.medication_name} - ${m.dosage} - ${m.instructions}`
+                        ).join('\n') || ''
+                    };
+                    
+                    return {
+                        ...pet,
+                        medicalRecord,
+                        lastAppointmentId: latestRecord.medicalRecord?.appointment_id || ''
+                    };
+                }
+                return pet;
+            });
             
+            setPets(petsWithMedicalRecords);
             setError(null);
             setHasFetched(true);
         } catch (err) {

@@ -364,3 +364,213 @@ export const updateMedicalRecord = async (
     throw error;
   }
 };
+
+// --- Pet detail for vets (includes medical records) ---
+
+const PET_API_V1_URL = `${process.env.NEXT_PUBLIC_PETTOPIA_API_URL}/api/v1/pet`;
+
+export interface PetOwnerAddress {
+  city?: string;
+  district?: string;
+  ward?: string;
+}
+
+export interface PetOwner {
+  user_id: string;
+  fullname: string;
+  phone?: string;
+  email?: string;
+  address?: PetOwnerAddress;
+}
+
+export interface VetSideMedicalRecordDetail {
+  _id: string;
+  appointment_id: string;
+  pet_id: string;
+  symptoms: string;
+  diagnosis: string;
+  notes?: string;
+  id: string;
+  createdAt: string;
+  updatedAt: string;
+  __v: number;
+}
+
+export interface VetSideMedicationDetail {
+  _id: string;
+  medical_record_id: string;
+  medication_name: string;
+  dosage: string;
+  instructions?: string;
+  id: string;
+  __v: number;
+  createdAt: string;
+  updatedAt: string;
+}
+
+export interface VetPetMedicalRecord {
+  medicalRecord: VetSideMedicalRecordDetail;
+  medications: VetSideMedicationDetail[];
+}
+
+export interface VetPetDetail {
+  id: string;
+  name: string;
+  species: string;
+  gender: string;
+  breed: string;
+  color: string;
+  weight: number;
+  dateOfBirth: string;
+  owner: PetOwner;
+  avatar_url?: string;
+  medical_records?: VetPetMedicalRecord[];
+}
+
+/**
+ * Lấy chi tiết thú cưng (pet) cho bác sĩ, bao gồm medical_records
+ * GET `${PET_API_V1_URL}/{petId}`
+ */
+export const getVetPetDetail = async (petId: string): Promise<VetPetDetail> => {
+  const token = localStorage.getItem('authToken');
+  if (!token) throw new Error('No authentication token found');
+
+  try {
+    const url = `${PET_API_V1_URL}/${encodeURIComponent(petId)}`;
+    const response = await axios.get(url, {
+      headers: { token },
+    });
+
+    // API có thể trả về { data: {...} } hoặc trực tiếp object
+    return (response.data?.data || response.data) as VetPetDetail;
+  } catch (error: any) {
+    console.error(
+      `Lỗi khi lấy chi tiết thú cưng (pet ${petId}):`,
+      error?.response?.data || error?.message || error
+    );
+    throw error;
+  }
+};
+
+// --- Vet Appointment Detail ---
+export interface VetAppointmentUserInfo {
+  fullname: string;
+  phone_number: string;
+  email?: string;
+}
+
+export interface VetAppointmentClinicInfo {
+  _id?: string;
+  id: string;
+  clinic_name: string;
+  email: {
+    email_address: string;
+    verified?: boolean;
+  };
+  phone: {
+    phone_number: string;
+    verified?: boolean;
+  };
+  license_number: string;
+  address: {
+    city: string;
+    district: string;
+    ward: string;
+    detail: string;
+  };
+  representative?: {
+    name?: string;
+    email?: {
+      email_address?: string;
+    };
+    phone?: {
+      phone_number?: string;
+    };
+    identify_number?: string;
+    responsible_licenses?: string[];
+    license_issued_date?: string;
+  };
+  is_active?: boolean;
+  member_ids?: string[];
+  createdAt?: string;
+  updatedAt?: string;
+  user_account_id?: string;
+  __v?: number;
+  [key: string]: any;
+}
+
+export interface VetAppointmentServiceInfo {
+  _id?: string;
+  id: string;
+  clinic_id?: string;
+  name: string;
+  description?: string;
+  price: number;
+  duration: number;
+  is_active?: boolean;
+  createdAt?: string;
+  updatedAt?: string;
+  __v?: number;
+  [key: string]: any;
+}
+
+export interface VetAppointmentPetInfo {
+  id: string;
+  name: string;
+  species: string;
+  gender?: string;
+  breed?: string;
+  color?: string;
+  weight?: number;
+  dateOfBirth?: string;
+  avatar_url?: string;
+  owner?: PetOwner;
+  medical_records?: string[]; // Array of medical record IDs
+  [key: string]: any;
+}
+
+export interface VetAppointmentDetail {
+  id: string;
+  date: string;
+  shift: 'Morning' | 'Afternoon' | 'Evening' | string;
+  status: 'Pending_Confirmation' | 'Confirmed' | 'Checked_In' | 'Completed' | 'Cancelled' | string;
+  vet_id?: string;
+  user_info?: VetAppointmentUserInfo;
+  clinic_info?: VetAppointmentClinicInfo;
+  service_infos?: VetAppointmentServiceInfo[];
+  pet_infos?: VetAppointmentPetInfo[];
+  createdAt?: string;
+  updatedAt?: string;
+  [key: string]: any;
+}
+
+export interface VetAppointmentDetailResponse {
+  status: string;
+  message: string;
+  data: VetAppointmentDetail;
+}
+
+/**
+ * Lấy chi tiết lịch hẹn cho bác sĩ thú y
+ * GET `/api/v1/healthcare/appointments/{appointmentId}`
+ */
+export const getVetAppointmentDetail = async (
+  appointmentId: string
+): Promise<VetAppointmentDetailResponse> => {
+  const token = localStorage.getItem('authToken');
+  if (!token) throw new Error('No authentication token found');
+
+  try {
+    const url = `${process.env.NEXT_PUBLIC_PETTOPIA_API_URL}/api/v1/healthcare/appointments/${encodeURIComponent(appointmentId)}`;
+    const response = await axios.get<VetAppointmentDetailResponse>(url, {
+      headers: { token },
+    });
+    return response.data;
+  } catch (error: any) {
+    console.error(
+      `Lỗi khi lấy chi tiết lịch hẹn (appointment ${appointmentId}):`,
+      error?.response?.data || error?.message || error
+    );
+    throw error;
+  }
+};

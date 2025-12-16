@@ -77,22 +77,22 @@ export async function getCustomerById(id: string | number) {
     const respData = error.response?.data;
     const errorMsg = respData?.message || respData || error.message || 'Unknown error';
 
-    // Log detailed info for debugging
-    console.error(`getCustomerById failed (id=${id}) status=${status}`, respData || error.message);
-
-    // If the customer is not found or caller is unauthorized, return null so callers can continue
+    // If the customer is not found, unauthorized, or server error, return null so callers can continue
     if (status === 404) {
-      console.warn("Khách hàng không tìm thấy:", errorMsg);
       return null;
     }
 
     if (status === 401 || status === 403) {
-      console.warn("Không có quyền truy cập chi tiết khách hàng:", errorMsg);
       return null;
     }
 
-    // For other errors, rethrow so upstream can handle/retry
-    throw new Error(errorMsg);
+    // For server errors (500, 502, 503, etc.), also return null instead of throwing
+    if (status >= 500) {
+      return null;
+    }
+
+    // For other errors, return null to prevent breaking the UI
+    return null;
   }
 }
 

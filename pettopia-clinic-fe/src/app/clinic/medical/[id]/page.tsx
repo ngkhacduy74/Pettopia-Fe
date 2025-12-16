@@ -97,17 +97,12 @@ export default function MedicalRecordDetailPage() {
   };
 
   const fetchMedicalRecord = async () => {
-    try {
-      const response = await getMedicalRecord(appointmentId);
-      if (response.data) {
-        setMedicalRecord(response.data);
-        setHasRecord(true);
-      }
-    } catch (error: any) {
-      // Nếu không có record thì chỉ hiển thị thông báo
-      if (error?.response?.status !== 404) {
-        console.error('Lỗi khi lấy hồ sơ bệnh án:', error);
-      }
+    const response = await getMedicalRecord(appointmentId);
+    if (response && response.data) {
+      setMedicalRecord(response.data);
+      setHasRecord(true);
+    } else {
+      setHasRecord(false);
     }
   };
 
@@ -122,7 +117,7 @@ export default function MedicalRecordDetailPage() {
 
   if (loading) {
     return (
-      <div className="min-h-screen bg-gray-50 p-4 md:p-8 flex items-center justify-center">
+      <div className="min-h-screen p-4 md:p-8 flex items-center justify-center">
         <div className="flex flex-col items-center gap-4">
           <Loader2 className="animate-spin text-blue-600" size={32} />
           <p className="text-gray-600">Đang tải chi tiết...</p>
@@ -133,7 +128,7 @@ export default function MedicalRecordDetailPage() {
 
   if (!appointmentDetail) {
     return (
-      <div className="min-h-screen bg-gray-50 p-4 md:p-8">
+      <div className="min-h-screen p-4 md:p-8">
         <div className="max-w-4xl mx-auto">
           <button
             onClick={() => router.back()}
@@ -142,7 +137,7 @@ export default function MedicalRecordDetailPage() {
             <ArrowLeft size={20} />
             Quay lại
           </button>
-          <div className="bg-white rounded-lg shadow-sm border border-gray-200 p-12 text-center">
+          <div className="rounded-lg shadow-sm border border-gray-200 p-12 text-center">
             <p className="text-gray-500 text-lg">Không tìm thấy thông tin lịch hẹn</p>
           </div>
         </div>
@@ -151,11 +146,11 @@ export default function MedicalRecordDetailPage() {
   }
 
   return (
-    <div className="min-h-screen bg-gray-50 p-4 md:p-8">
+    <div >
       <div className="max-w-4xl mx-auto">
         <button
           onClick={() => router.back()}
-          className="flex items-center gap-2 text-blue-600 hover:text-blue-700 mb-4 font-medium"
+          className="flex items-center text-teal-500 hover:text-teal-600 mb-4 font-medium cursor-pointer"
         >
           <ArrowLeft size={20} />
           Quay lại

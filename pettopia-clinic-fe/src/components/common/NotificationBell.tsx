@@ -45,15 +45,20 @@ export default function NotificationBell({ notificationCount }: NotificationBell
                     .slice(0, 10) // Lấy 10 mới nhất
                     .map(async (apt: AppointmentData) => {
                         // Lấy customer name
-                        let customerName = 'Khách hàng';
+                        let customerName = '';
                         const customerId = apt.customer || apt.user_id;
                         if (customerId) {
                             try {
                                 const customerData = await getCustomerById(customerId);
-                                customerName = customerData?.data?.fullname || customerData?.fullname || customerName;
+                                customerName = customerData?.data?.fullname || customerData?.fullname || '';
                             } catch (err) {
                                 console.warn(`Không thể lấy thông tin khách hàng ${customerId}:`, err);
                             }
+                        }
+
+                        // Nếu không có tên khách hàng, bỏ qua notification này
+                        if (!customerName.trim()) {
+                            return null;
                         }
 
                         // Format date và time
@@ -96,7 +101,7 @@ export default function NotificationBell({ notificationCount }: NotificationBell
                         };
                     });
 
-                const loadedNotifications = await Promise.all(notificationPromises);
+                const loadedNotifications = (await Promise.all(notificationPromises)).filter(n => n !== null) as Notification[];
                 // Sắp xếp theo thời gian tạo (mới nhất trước)
                 loadedNotifications.sort((a, b) => b.createdAtDate.getTime() - a.createdAtDate.getTime());
                 setNotifications(loadedNotifications);
@@ -112,7 +117,7 @@ export default function NotificationBell({ notificationCount }: NotificationBell
     useEffect(() => {
         loadNotifications();
         // Refresh mỗi 30 giây
-        const interval = setInterval(loadNotifications, 30000);
+        const interval = setInterval(loadNotifications, 300000);
         
         // Refresh khi window focus (khi quay lại tab)
         const handleFocus = () => {

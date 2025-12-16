@@ -8,10 +8,12 @@ import {
   getShiftsByClinic,
   getPetsByOwner,
   bookAppointment,
+  getClinicRating,
   type Clinic,
   type Service,
   type Shift,
   type PetDetailResponse,
+  type ClinicRating,
 } from '@/services/petcare/petService';
 
 type Pet = PetDetailResponse;
@@ -52,6 +54,12 @@ export default function AppointmentBooking() {
   const [shiftsLoading, setShiftsLoading] = useState(false);
   const [petsLoading, setPetsLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
+
+  // Clinic detail modal
+  const [showClinicDetail, setShowClinicDetail] = useState(false);
+  const [selectedClinicForDetail, setSelectedClinicForDetail] = useState<Clinic | null>(null);
+  const [clinicRatings, setClinicRatings] = useState<ClinicRating[]>([]);
+  const [ratingsLoading, setRatingsLoading] = useState(false);
 
   // Load clinics
   useEffect(() => {
@@ -290,6 +298,27 @@ export default function AppointmentBooking() {
   const availableCities = [...new Set(clinics.map(c => c.address.city))];
   const filteredClinics = selectedCity === 'all' ? clinics : clinics.filter(c => c.address.city === selectedCity);
 
+  const handleViewClinicDetail = async (clinic: Clinic) => {
+    setSelectedClinicForDetail(clinic);
+    setShowClinicDetail(true);
+    setRatingsLoading(true);
+    try {
+      const ratings = await getClinicRating(clinic.id);
+      setClinicRatings(ratings);
+    } catch (err) {
+      console.error('Error loading clinic ratings:', err);
+      setClinicRatings([]);
+    } finally {
+      setRatingsLoading(false);
+    }
+  };
+
+  const closeClinicDetail = () => {
+    setShowClinicDetail(false);
+    setSelectedClinicForDetail(null);
+    setClinicRatings([]);
+  };
+
   return (
     <>
       <div className="max-w-6xl mx-auto p-6 lg:p-12">
@@ -364,15 +393,32 @@ export default function AppointmentBooking() {
                               <p className="text-gray-600 text-sm mt-2">Điện thoại: {clinic.phone.phone_number}</p>
                             </div>
                           </div>
-                          {selectedClinic === clinic.id && (
-                            <svg className="w-8 h-8 text-teal-600" fill="currentColor" viewBox="0 0 20 20">
-                              <path fillRule="evenodd" d="M10 18a8 8 0 100-16 8 8 0 000 16zm3.707-9.293a1 1 0 00-1.414-1.414L9 10.586 7.707 9.293a1 1 0 00-1.414 1.414l2 2a1 1 0 001.414 0l4-4z" clipRule="evenodd" />
-                            </svg>
-                          )}
+                          <div className="flex flex-col items-end gap-2">
+                            <button
+                              onClick={(e) => {
+                                e.stopPropagation();
+                                handleViewClinicDetail(clinic);
+                              }}
+                              className="px-4 py-2 text-sm bg-gray-100 hover:bg-gray-200 rounded-lg font-medium transition"
+                            >
+                              Xem chi tiết
+                            </button>
+                            {selectedClinic === clinic.id && (
+                              <svg className="w-8 h-8 text-teal-600" fill="currentColor" viewBox="0 0 20 20">
+                                <path fillRule="evenodd" d="M10 18a8 8 0 100-16 8 8 0 000 16zm3.707-9.293a1 1 0 00-1.414-1.414L9 10.586 7.707 9.293a1 1 0 00-1.414 1.414l2 2a1 1 0 001.414 0l4-4z" clipRule="evenodd" />
+                              </svg>
+                            )}
+                          </div>
                         </div>
                       </div>
                     ))}
                   </div>
+                  {filteredClinics.length === 0 && (
+                    <div className="text-center py-16 text-gray-600">
+                      <p>Không có phòng khám nào khả dụng.</p>
+                      <p>Liên hệ với số điện thoại 1900-XXXX để được hỗ trợ.</p>
+                    </div>
+                  )}
                 </>
               )}
             </div>
@@ -693,6 +739,110 @@ export default function AppointmentBooking() {
             <p className="mt-6 text-sm text-gray-500">
               Bạn sẽ nhận thông báo qua ứng dụng và SMS sớm nhé
             </p>
+          </div>
+        </div>
+      )}
+
+      {/* Modal chi tiết phòng khám */}
+      {showClinicDetail && selectedClinicForDetail && (
+        <div className="fixed inset-0 bg-black/60 backdrop-blur-sm flex items-center justify-center z-50 p-4">
+          <div className="bg-white rounded-3xl p-8 max-w-4xl w-full max-h-[90vh] overflow-y-auto shadow-2xl animate-in fade-in zoom-in duration-300">
+            <div className="flex justify-between items-start mb-6">
+              <h3 className="text-3xl font-bold text-gray-800">{selectedClinicForDetail.clinic_name}</h3>
+              <button
+                onClick={closeClinicDetail}
+                className="p-2 hover:bg-gray-100 rounded-full transition"
+              >
+                <svg className="w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                  <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M6 18L18 6M6 6l12 12" />
+                </svg>
+              </button>
+            </div>
+
+            <div className="grid md:grid-cols-2 gap-8">
+              {/* Thông tin cơ bản */}
+              <div>
+                <h4 className="text-xl font-bold mb-4">Thông tin phòng khám</h4>
+                <div className="space-y-3">
+                  <div>
+                    <p className="text-sm text-gray-600">Địa chỉ</p>
+                    <p className="font-medium">{formatAddress(selectedClinicForDetail.address)}</p>
+                  </div>
+                  <div>
+                    <p className="text-sm text-gray-600">Điện thoại</p>
+                    <p className="font-medium">{selectedClinicForDetail.phone.phone_number}</p>
+                  </div>
+                  <div>
+                    <p className="text-sm text-gray-600">Email</p>
+                    <p className="font-medium">{selectedClinicForDetail.email.email_address}</p>
+                  </div>
+                  <div>
+                    <p className="text-sm text-gray-600">Giấy phép</p>
+                    <p className="font-medium">{selectedClinicForDetail.license_number}</p>
+                  </div>
+                  <div>
+                    <p className="text-sm text-gray-600">Trạng thái</p>
+                    <span className={`px-3 py-1 rounded-full text-sm font-medium ${selectedClinicForDetail.is_active ? 'bg-green-100 text-green-800' : 'bg-red-100 text-red-800'}`}>
+                      {selectedClinicForDetail.is_active ? 'Hoạt động' : 'Tạm ngừng'}
+                    </span>
+                  </div>
+                </div>
+              </div>
+
+              {/* Đánh giá */}
+              <div>
+                <h4 className="text-xl font-bold mb-4">Đánh giá từ khách hàng</h4>
+                {ratingsLoading ? (
+                  <div className="text-center py-8">
+                    <div className="inline-block animate-spin rounded-full h-8 w-8 border-b-4 border-teal-600"></div>
+                    <p className="mt-2 text-gray-600">Đang tải đánh giá...</p>
+                  </div>
+                ) : clinicRatings.length === 0 ? (
+                  <p className="text-gray-500 italic">Chưa có đánh giá nào</p>
+                ) : (
+                  <div className="space-y-4 max-h-96 overflow-y-auto">
+                    {clinicRatings.map((rating) => (
+                      <div key={rating.id} className="bg-gray-50 rounded-xl p-4">
+                        <div className="flex items-center gap-2 mb-2">
+                          <div className="flex">
+                            {[1, 2, 3, 4, 5].map((star) => (
+                              <svg
+                                key={star}
+                                className={`w-5 h-5 ${star <= rating.star ? 'text-yellow-400' : 'text-gray-300'}`}
+                                fill="currentColor"
+                                viewBox="0 0 20 20"
+                              >
+                                <path d="M9.049 2.927c.3-.921 1.603-.921 1.902 0l1.07 3.292a1 1 0 00.95.69h3.462c.969 0 1.371 1.24.588 1.81l-2.8 2.034a1 1 0 00-.364 1.118l1.07 3.292c.3.921-.755 1.688-1.54 1.118l-2.8-2.034a1 1 0 00-1.175 0l-2.8 2.034c-.784.57-1.838-.197-1.539-1.118l1.07-3.292a1 1 0 00-.364-1.118L2.98 8.72c-.783-.57-.38-1.81.588-1.81h3.461a1 1 0 00.951-.69l1.07-3.292z" />
+                              </svg>
+                            ))}
+                          </div>
+                          <span className="text-sm text-gray-600">
+                            {new Date(rating.createdAt).toLocaleDateString('vi-VN')}
+                          </span>
+                        </div>
+                        {rating.notes && (
+                          <p className="text-gray-700 text-sm mb-2">{rating.notes}</p>
+                        )}
+                        {rating.service_ids && rating.service_ids.length > 0 && (
+                          <div className="text-xs text-gray-500">
+                            Dịch vụ: {rating.service_ids.join(', ')}
+                          </div>
+                        )}
+                      </div>
+                    ))}
+                  </div>
+                )}
+              </div>
+            </div>
+
+            <div className="flex justify-end mt-8">
+              <button
+                onClick={() => setSelectedClinic(selectedClinicForDetail.id)}
+                className="px-6 py-3 bg-teal-600 text-white rounded-xl font-medium hover:bg-teal-700 transition"
+              >
+                Chọn phòng khám này
+              </button>
+            </div>
           </div>
         </div>
       )}

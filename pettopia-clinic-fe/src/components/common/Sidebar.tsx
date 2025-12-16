@@ -109,14 +109,14 @@ export default function Sidebar({
       { label: 'Tổng quan', href: '/admin/dashboard', icon: <HomeIcon className="w-5 h-5" /> },
       { label: 'Quản lí người dùng', href: '/admin/manager-user', icon: <UsersIcon className="w-5 h-5" /> },
       { label: 'Quản lí bệnh viện', href: '/admin/manager-clinic', icon: <UsersIcon className="w-5 h-5" /> },
-      { label: 'Kênh giao tiếp', href: '/admin/community', icon: <UsersIcon className="w-5 h-5" /> }
+    
     ],
     Staff: [
       { label: 'Trang chủ', href: '/staff/dashboard', icon: <HomeIcon className="w-5 h-5" /> },
       { label: 'Xét duyệt Phòng khám', href: '/staff/request-clinic-list', icon: <ClipboardDocumentListIcon className="w-5 h-5" /> },
       { label: 'Xét duyệt Bác Sĩ', href: '/staff/request-vet-list', icon: <ClipboardDocumentListIcon className="w-5 h-5" /> },
       { label: 'Quản lý bài viết', href: '/staff/post-report', icon: <ClipboardDocumentListIcon className="w-5 h-5" /> },
-      { label: 'Cộng đồng', href: '#', icon: <UsersIcon className="w-5 h-5" /> }
+
     ],
     Clinic: [
       { label: 'Tổng quan', href: '/clinic/dashboard', icon: <HomeIcon className="w-5 h-5" /> },
@@ -125,7 +125,7 @@ export default function Sidebar({
       { label: 'Dịch vụ', href: '/clinic/service', icon: <ClipboardDocumentListIcon className="w-5 h-5" /> },
       { label: 'Lịch khám', href: '/clinic/appointment', icon: <ClipboardDocumentListIcon className="w-5 h-5" /> },
       { label: 'Duyệt Đơn', href: '/clinic/check-in', icon: <ClipboardDocumentListIcon className="w-5 h-5" /> },
-      { label: 'Duyệt gì đó', href: '/clinic/medical', icon: <QuestionMarkCircleIcon className="w-5 h-5" /> },
+      { label: 'Lịch sử khám', href: '/clinic/medical', icon: <QuestionMarkCircleIcon className="w-5 h-5" /> },
     ],
     Vet: [
       { label: 'Trang chính', href: '/vet/main', icon: <HomeIcon className="w-5 h-5" /> },
