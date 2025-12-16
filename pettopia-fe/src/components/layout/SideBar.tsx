@@ -59,6 +59,7 @@ export default function UserNavbar({ setShowSearch, showSearch }: UserNavbarProp
   const [loadingPets, setLoadingPets] = useState(false);
   const [isSidebarCollapsed, setIsSidebarCollapsed] = useState(false);
   const [isUserMenuOpen, setIsUserMenuOpen] = useState(false);
+  const [hoveredTooltip, setHoveredTooltip] = useState<string | null>(null);
 
   interface MenuItem {
     id: string;
@@ -263,10 +264,40 @@ export default function UserNavbar({ setShowSearch, showSearch }: UserNavbarProp
       }
     }, 500);
   };
+
+  // Tooltip component - uses button ref for positioning
+  const buttonRefs = useRef<{ [key: string]: HTMLButtonElement | null }>({});
+  const Tooltip = ({ id, text }: { id: string; text: string }) => {
+    const [position, setPosition] = useState({ top: 0, left: 0 });
+
+    useEffect(() => {
+      if (hoveredTooltip === id && buttonRefs.current[id]) {
+        const btn = buttonRefs.current[id];
+        const rect = btn.getBoundingClientRect();
+        setPosition({
+          top: rect.top + rect.height / 2,
+          left: rect.right + 12,
+        });
+      }
+    }, [hoveredTooltip, id]);
+
+    if (hoveredTooltip !== id) return null;
+    return (
+      <div className="fixed px-3 py-2 bg-gradient-to-r from-gray-900 to-gray-800 text-white text-sm rounded-lg whitespace-nowrap pointer-events-none z-[9999] shadow-xl animate-in fade-in duration-200 border border-gray-700"
+        style={{
+          top: `${position.top}px`,
+          left: `${position.left}px`,
+          transform: 'translateY(-50%)',
+        }}>
+        {text}
+        <div className="absolute right-full top-1/2 -translate-y-1/2 w-2 h-2 bg-gray-900 rotate-45" />
+      </div>
+    );
+  };
   return (
     <>
       {/* Sidebar */}
-      <div className={`${isSidebarCollapsed ? 'w-20' : 'w-64'} bg-white border-r border-gray-200 flex flex-col transition-all duration-300 ease-in-out h-screen sticky top-0`}>
+      <div className={`${isSidebarCollapsed ? 'w-20' : 'w-64'} bg-white border-r border-gray-200 flex flex-col transition-all duration-300 ease-in-out h-screen sticky top-0 overflow-visible`}>
         {/* Header */}
         <div className="p-4 border-b border-gray-200 flex flex-col gap-2">
           {!isSidebarCollapsed && (
@@ -350,38 +381,49 @@ export default function UserNavbar({ setShowSearch, showSearch }: UserNavbarProp
         </div>
 
         {/* Main Nav */}
-        <nav className="flex-1 overflow-y-auto">
-          <div className={`${isSidebarCollapsed ? 'px-2 py-4 space-y-2' : 'space-y-4 px-2 py-4'}`}>
+        <nav className="flex-1 overflow-visible">
+          <div className={`${isSidebarCollapsed ? 'px-2 py-4 space-y-2' : 'space-y-4 px-2 py-4'} overflow-y-auto max-h-full overflow-x-visible`}>
             {/* Thú cưng Section */}
             <div>
-              {!isSidebarCollapsed && <div className="text-xs text-teal-600 font-semibold px-3 mb-2 uppercase tracking-wide">Thú cưng của tôi</div>}
+              {!isSidebarCollapsed && <div className="text-xs text-teal-600 font-semibold px-3 mb-2 uppercase tracking-wide">Thú cưng</div>}
               {isSidebarCollapsed && <div className="h-px bg-gradient-to-r from-transparent via-teal-500 to-transparent mx-2 mb-2"></div>}
               <div className="space-y-1">
                 <Link href="/user/pet/list">
-                  <button
-                    className={`w-full flex ${isSidebarCollapsed ? 'justify-center' : 'items-center'} gap-3 px-3 py-2 rounded-lg text-sm transition-colors cursor-pointer ${pathname === '/user/pet/list'
+                  <div className="relative overflow-visible">
+                    <button
+                      ref={(el) => { if (el) buttonRefs.current['pet-list'] = el; }}
+                      className={`w-full flex ${isSidebarCollapsed ? 'justify-center' : 'items-center'} gap-3 px-3 py-2 rounded-lg text-sm transition-colors cursor-pointer ${pathname === '/user/pet/list'
                         ? 'bg-gradient-to-r from-teal-500 to-cyan-600 text-white shadow-sm'
                         : 'text-gray-700 hover:bg-gray-100'
                       }`}
-                    title="Danh sách thú cưng"
-                  >
-                    <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 20 20" fill="currentColor" className="size-5 flex-shrink-0">
-                      <path d="M10 9a3 3 0 100-6 3 3 0 000 6zM6 8a2 2 0 11-4 0 2 2 0 014 0zM1.49 15.326a.78.78 0 01-.358-.442 3 3 0 014.308-3.516 6.484 6.484 0 00-1.905 3.959c-.023.222-.014.442.025.654a4.97 4.97 0 01-2.07-.655zM16.44 15.98a4.97 4.97 0 002.07-.654.78.78 0 00.357-.442 3 3 0 00-4.308-3.517 6.484 6.484 0 011.907 3.96 2.32 2.32 0 01-.026.654zM18 8a2 2 0 11-4 0 2 2 0 014 0zM5.304 16.19a.844.844 0 01-.277-.71 5 5 0 019.947 0 .843.843 0 01-.277.71A6.975 6.975 0 0110 18a6.974 6.974 0 01-4.696-1.81z" />
-                    </svg>
-                    {!isSidebarCollapsed && <span>Danh sách thú cưng</span>}
-                  </button>
+                      onMouseEnter={() => setHoveredTooltip('pet-list')}
+                      onMouseLeave={() => setHoveredTooltip(null)}
+                    >
+                      <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 20 20" fill="currentColor" className="size-5 flex-shrink-0">
+                        <path d="M10 9a3 3 0 100-6 3 3 0 000 6zM6 8a2 2 0 11-4 0 2 2 0 014 0zM1.49 15.326a.78.78 0 01-.358-.442 3 3 0 014.308-3.516 6.484 6.484 0 00-1.905 3.959c-.023.222-.014.442.025.654a4.97 4.97 0 01-2.07-.655zM16.44 15.98a4.97 4.97 0 002.07-.654.78.78 0 00.357-.442 3 3 0 00-4.308-3.517 6.484 6.484 0 011.907 3.96 2.32 2.32 0 01-.026.654zM18 8a2 2 0 11-4 0 2 2 0 014 0zM5.304 16.19a.844.844 0 01-.277-.71 5 5 0 019.947 0 .843.843 0 01-.277.71A6.975 6.975 0 0110 18a6.974 6.974 0 01-4.696-1.81z" />
+                      </svg>
+                      {!isSidebarCollapsed && <span>Danh sách thú cưng</span>}
+                    </button>
+                    <Tooltip id="pet-list" text="Danh sách thú cưng" />
+                  </div>
                 </Link>
 
                 <Link href="/user/pet/new">
-                  <button className={`w-full flex ${isSidebarCollapsed ? 'justify-center' : 'items-center'} gap-3 px-3 py-2 rounded-lg text-sm transition-colors cursor-pointer
-                    ${pathname === '/user/pet/new'
-                      ? 'bg-gradient-to-r from-teal-500 to-cyan-600 text-white shadow-sm'
-                      : 'hover:bg-gray-100 text-gray-700'}`}>
-                    <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 20 20" fill="currentColor" className="size-5 flex-shrink-0">
-                      <path d="M10.75 4.75a.75.75 0 00-1.5 0v4.5h-4.5a.75.75 0 000 1.5h4.5v4.5a.75.75 0 001.5 0v-4.5h4.5a.75.75 0 000-1.5h-4.5v-4.5z" />
-                    </svg>
-                    {!isSidebarCollapsed && <span>Đăng ký thú cưng mới</span>}
-                  </button>
+                  <div className="relative overflow-visible">
+                    <button className={`w-full flex ${isSidebarCollapsed ? 'justify-center' : 'items-center'} gap-3 px-3 py-2 rounded-lg text-sm transition-colors cursor-pointer
+                      ${pathname === '/user/pet/new'
+                        ? 'bg-gradient-to-r from-teal-500 to-cyan-600 text-white shadow-sm'
+                        : 'hover:bg-gray-100 text-gray-700'}`}
+                      ref={(el) => { if (el) buttonRefs.current['pet-new'] = el; }}
+                      onMouseEnter={() => setHoveredTooltip('pet-new')}
+                      onMouseLeave={() => setHoveredTooltip(null)}>
+                      <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 20 20" fill="currentColor" className="size-5 flex-shrink-0">
+                        <path d="M10.75 4.75a.75.75 0 00-1.5 0v4.5h-4.5a.75.75 0 000 1.5h4.5v4.5a.75.75 0 001.5 0v-4.5h4.5a.75.75 0 000-1.5h-4.5v-4.5z" />
+                      </svg>
+                      {!isSidebarCollapsed && <span>Đăng ký thú cưng mới</span>}
+                    </button>
+                    <Tooltip id="pet-new" text="Đăng ký thú cưng mới" />
+                  </div>
                 </Link>
               </div>
             </div>
@@ -392,28 +434,40 @@ export default function UserNavbar({ setShowSearch, showSearch }: UserNavbarProp
               {isSidebarCollapsed && <div className="h-px bg-gradient-to-r from-transparent via-teal-500 to-transparent mx-2 mb-2"></div>}
               <div className="space-y-1">
                 <Link href="/user/community">
-                  <button className={`w-full flex ${isSidebarCollapsed ? 'justify-center' : 'items-center'} gap-3 px-3 py-2 rounded-lg text-sm transition-colors cursor-pointer
-                    ${pathname === '/user/community'
-                      ? 'bg-gradient-to-r from-teal-500 to-teal-700 text-white shadow-sm'
-                      : 'hover:bg-gray-100 text-gray-700'}`}>
-                    <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 20 20" fill="currentColor" className="size-5 flex-shrink-0">
-                      <path d="M10 9a3 3 0 100-6 3 3 0 000 6zM6 8a2 2 0 11-4 0 2 2 0 014 0zM1.49 15.326a.78.78 0 01-.358-.442 3 3 0 014.308-3.516 6.484 6.484 0 00-1.905 3.959c-.023.222-.014.442.025.654a4.97 4.97 0 01-2.07-.655zM16.44 15.98a4.97 4.97 0 002.07-.654.78.78 0 00.357-.442 3 3 0 00-4.308-3.517 6.484 6.484 0 011.907 3.96 2.32 2.32 0 01-.026.654zM18 8a2 2 0 11-4 0 2 2 0 014 0zM5.304 16.19a.844.844 0 01-.277-.71 5 5 0 019.947 0 .843.843 0 01-.277.71A6.975 6.975 0 0110 18a6.974 6.974 0 01-4.696-1.81z" />
-                    </svg>
-                    {!isSidebarCollapsed && <span>Cộng đồng Pettopia</span>}
-                  </button>
+                  <div className="relative overflow-visible">
+                    <button className={`w-full flex ${isSidebarCollapsed ? 'justify-center' : 'items-center'} gap-3 px-3 py-2 rounded-lg text-sm transition-colors cursor-pointer
+                      ${pathname === '/user/community'
+                        ? 'bg-gradient-to-r from-teal-500 to-teal-700 text-white shadow-sm'
+                        : 'hover:bg-gray-100 text-gray-700'}`}
+                      ref={(el) => { if (el) buttonRefs.current['community'] = el; }}
+                      onMouseEnter={() => setHoveredTooltip('community')}
+                      onMouseLeave={() => setHoveredTooltip(null)}>
+                      <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 20 20" fill="currentColor" className="size-5 flex-shrink-0">
+                        <path d="M10 9a3 3 0 100-6 3 3 0 000 6zM6 8a2 2 0 11-4 0 2 2 0 014 0zM1.49 15.326a.78.78 0 01-.358-.442 3 3 0 014.308-3.516 6.484 6.484 0 00-1.905 3.959c-.023.222-.014.442.025.654a4.97 4.97 0 01-2.07-.655zM16.44 15.98a4.97 4.97 0 002.07-.654.78.78 0 00.357-.442 3 3 0 00-4.308-3.517 6.484 6.484 0 011.907 3.96 2.32 2.32 0 01-.026.654zM18 8a2 2 0 11-4 0 2 2 0 014 0zM5.304 16.19a.844.844 0 01-.277-.71 5 5 0 019.947 0 .843.843 0 01-.277.71A6.975 6.975 0 0110 18a6.974 6.974 0 01-4.696-1.81z" />
+                      </svg>
+                      {!isSidebarCollapsed && <span>Cộng đồng Pettopia</span>}
+                    </button>
+                    <Tooltip id="community" text="Cộng đồng Pettopia" />
+                  </div>
                 </Link>
 
                 <Link href="/user/community/manage">
-                  <button className={`w-full flex ${isSidebarCollapsed ? 'justify-center' : 'items-center'} gap-3 px-3 py-2 rounded-lg text-sm transition-colors cursor-pointer
-                    ${pathname === '/user/community/manage'
-                      ? 'bg-gradient-to-r from-teal-500 to-teal-700 text-white shadow-sm'
-                      : 'hover:bg-gray-100 text-gray-700'}`}>
-                    <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 20 20" fill="currentColor" className="size-5 flex-shrink-0">
-                      <path d="M3 4a1 1 0 011-1h12a1 1 0 011 1v2a1 1 0 01-1 1H4a1 1 0 01-1-1V4zM3 8a1 1 0 011-1h12a1 1 0 011 1v8a1 1 0 01-1 1H4a1 1 0 01-1-1V8zM4 9v6h12V9H4z" />
-                      <path d="M7 11h2v2H7v-2zm4 0h2v2h-2v-2zm4 0h2v2h-2v-2z" />
-                    </svg>
-                    {!isSidebarCollapsed && <span>Quản lý bài viết</span>}
-                  </button>
+                  <div className="relative">
+                    <button className={`w-full flex ${isSidebarCollapsed ? 'justify-center' : 'items-center'} gap-3 px-3 py-2 rounded-lg text-sm transition-colors cursor-pointer
+                      ${pathname === '/user/community/manage'
+                        ? 'bg-gradient-to-r from-teal-500 to-teal-700 text-white shadow-sm'
+                        : 'hover:bg-gray-100 text-gray-700'}`}
+                      ref={(el) => { if (el) buttonRefs.current['manage-post'] = el; }}
+                      onMouseEnter={() => setHoveredTooltip('manage-post')}
+                      onMouseLeave={() => setHoveredTooltip(null)}>
+                      <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 20 20" fill="currentColor" className="size-5 flex-shrink-0">
+                        <path d="M3 4a1 1 0 011-1h12a1 1 0 011 1v2a1 1 0 01-1 1H4a1 1 0 01-1-1V4zM3 8a1 1 0 011-1h12a1 1 0 011 1v8a1 1 0 01-1 1H4a1 1 0 01-1-1V8zM4 9v6h12V9H4z" />
+                        <path d="M7 11h2v2H7v-2zm4 0h2v2h-2v-2zm4 0h2v2h-2v-2z" />
+                      </svg>
+                      {!isSidebarCollapsed && <span>Quản lý bài viết</span>}
+                    </button>
+                    <Tooltip id="manage-post" text="Quản lý bài viết" />
+                  </div>
                 </Link>
               </div>
             </div>
@@ -424,39 +478,57 @@ export default function UserNavbar({ setShowSearch, showSearch }: UserNavbarProp
               {isSidebarCollapsed && <div className="h-px bg-gradient-to-r from-transparent via-teal-500 to-transparent mx-2 mb-2"></div>}
               <div className="space-y-1">
                 <Link href="/user/appointments/booking">
-                  <button className={`w-full flex ${isSidebarCollapsed ? 'justify-center' : 'items-center'} gap-3 px-3 py-2 rounded-lg text-sm transition-colors cursor-pointer
-                    ${pathname === '/user/appointments/booking'
-                      ? 'bg-gradient-to-r from-teal-500 to-indigo-600 text-white shadow-sm'
-                      : 'hover:bg-gray-100 text-gray-700'}`}>
-                    <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 20 20" fill="currentColor" className="size-5 flex-shrink-0">
-                      <path fillRule="evenodd" d="M5.75 2a.75.75 0 01.75.75V4h7V2.75a.75.75 0 011.5 0V4h.25A2.75 2.75 0 0118 6.75v8.5A2.75 2.75 0 0115.25 18H4.75A2.75 2.75 0 012 15.25v-8.5A2.75 2.75 0 014.75 4H5V2.75A.75.75 0 015.75 2zm-1 5.5c-.69 0-1.25.56-1.25 1.25v6.5c0 .69.56 1.25 1.25 1.25h10.5c.69 0 1.25-.56 1.25-1.25v-6.5c0-.69-.56-1.25-1.25-1.25H4.75z" clipRule="evenodd" />
-                    </svg>
-                    {!isSidebarCollapsed && <span>Đặt lịch khám</span>}
-                  </button>
+                  <div className="relative">
+                    <button className={`w-full flex ${isSidebarCollapsed ? 'justify-center' : 'items-center'} gap-3 px-3 py-2 rounded-lg text-sm transition-colors cursor-pointer
+                      ${pathname === '/user/appointments/booking'
+                        ? 'bg-gradient-to-r from-teal-500 to-indigo-600 text-white shadow-sm'
+                        : 'hover:bg-gray-100 text-gray-700'}`}
+                      ref={(el) => { if (el) buttonRefs.current['booking'] = el; }}
+                      onMouseEnter={() => setHoveredTooltip('booking')}
+                      onMouseLeave={() => setHoveredTooltip(null)}>
+                      <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 20 20" fill="currentColor" className="size-5 flex-shrink-0">
+                        <path fillRule="evenodd" d="M5.75 2a.75.75 0 01.75.75V4h7V2.75a.75.75 0 011.5 0V4h.25A2.75 2.75 0 0118 6.75v8.5A2.75 2.75 0 0115.25 18H4.75A2.75 2.75 0 012 15.25v-8.5A2.75 2.75 0 014.75 4H5V2.75A.75.75 0 015.75 2zm-1 5.5c-.69 0-1.25.56-1.25 1.25v6.5c0 .69.56 1.25 1.25 1.25h10.5c.69 0 1.25-.56 1.25-1.25v-6.5c0-.69-.56-1.25-1.25-1.25H4.75z" clipRule="evenodd" />
+                      </svg>
+                      {!isSidebarCollapsed && <span>Đặt lịch khám</span>}
+                    </button>
+                    <Tooltip id="booking" text="Đặt lịch khám" />
+                  </div>
                 </Link>
 
                 <Link href="/user/appointments/list">
-                  <button className={`w-full flex ${isSidebarCollapsed ? 'justify-center' : 'items-center'} gap-3 px-3 py-2 rounded-lg text-sm transition-colors cursor-pointer
-                    ${pathname === '/user/appointments/list'
-                      ? 'bg-gradient-to-r from-teal-500 to-indigo-600 text-white shadow-sm'
-                      : 'hover:bg-gray-100 text-gray-700'}`}>
-                    <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 20 20" fill="currentColor" className="size-5 flex-shrink-0">
-                      <path d="M10.5 1.5H5.75A2.75 2.75 0 003 4.25v11A2.75 2.75 0 005.75 18h8.5A2.75 2.75 0 0117 15.25v-11A2.75 2.75 0 0114.25 1.5H10.5z" />
-                    </svg>
-                    {!isSidebarCollapsed && <span>Xem lịch khám</span>}
-                  </button>
+                  <div className="relative">
+                    <button className={`w-full flex ${isSidebarCollapsed ? 'justify-center' : 'items-center'} gap-3 px-3 py-2 rounded-lg text-sm transition-colors cursor-pointer
+                      ${pathname === '/user/appointments/list'
+                        ? 'bg-gradient-to-r from-teal-500 to-indigo-600 text-white shadow-sm'
+                        : 'hover:bg-gray-100 text-gray-700'}`}
+                      ref={(el) => { if (el) buttonRefs.current['appointments-list'] = el; }}
+                      onMouseEnter={() => setHoveredTooltip('appointments-list')}
+                      onMouseLeave={() => setHoveredTooltip(null)}>
+                      <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 20 20" fill="currentColor" className="size-5 flex-shrink-0">
+                        <path d="M10.5 1.5H5.75A2.75 2.75 0 003 4.25v11A2.75 2.75 0 005.75 18h8.5A2.75 2.75 0 0117 15.25v-11A2.75 2.75 0 0114.25 1.5H10.5z" />
+                      </svg>
+                      {!isSidebarCollapsed && <span>Xem lịch khám</span>}
+                    </button>
+                    <Tooltip id="appointments-list" text="Xem lịch khám" />
+                  </div>
                 </Link>
 
                 <Link href="/user/prescription">
-                  <button className={`w-full flex ${isSidebarCollapsed ? 'justify-center' : 'items-center'} gap-3 px-3 py-2 rounded-lg text-sm transition-colors cursor-pointer
-                    ${pathname === '/user/prescription'
-                      ? 'bg-gradient-to-r from-teal-500 to-indigo-600 text-white shadow-sm'
-                      : 'hover:bg-gray-100 text-gray-700'}`}>
-                    <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 20 20" fill="currentColor" className="size-5 flex-shrink-0">
-                      <path d="M9.653 16.915l-.005-.003-.019-.01a20.759 20.759 0 01-1.162-.682 22.045 22.045 0 01-2.582-1.9C4.045 12.733 2 10.352 2 7.5a4.5 4.5 0 018-2.828A4.5 4.5 0 0118 7.5c0 2.852-2.044 5.233-3.885 6.82a22.049 22.049 0 01-3.744 2.582l-.019.01-.005.003h-.002a.739.739 0 01-.69.001l-.002-.001z" />
-                    </svg>
-                    {!isSidebarCollapsed && <span>Lịch sử khám</span>}
-                  </button>
+                  <div className="relative">
+                    <button className={`w-full flex ${isSidebarCollapsed ? 'justify-center' : 'items-center'} gap-3 px-3 py-2 rounded-lg text-sm transition-colors cursor-pointer
+                      ${pathname === '/user/prescription'
+                        ? 'bg-gradient-to-r from-teal-500 to-indigo-600 text-white shadow-sm'
+                        : 'hover:bg-gray-100 text-gray-700'}`}
+                      ref={(el) => { if (el) buttonRefs.current['prescription'] = el; }}
+                      onMouseEnter={() => setHoveredTooltip('prescription')}
+                      onMouseLeave={() => setHoveredTooltip(null)}>
+                      <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 20 20" fill="currentColor" className="size-5 flex-shrink-0">
+                        <path d="M9.653 16.915l-.005-.003-.019-.01a20.759 20.759 0 01-1.162-.682 22.045 22.045 0 01-2.582-1.9C4.045 12.733 2 10.352 2 7.5a4.5 4.5 0 018-2.828A4.5 4.5 0 0118 7.5c0 2.852-2.044 5.233-3.885 6.82a22.049 22.049 0 01-3.744 2.582l-.019.01-.005.003h-.002a.739.739 0 01-.69.001l-.002-.001z" />
+                      </svg>
+                      {!isSidebarCollapsed && <span>Lịch sử khám</span>}
+                    </button>
+                    <Tooltip id="prescription" text="Lịch sử khám" />
+                  </div>
                 </Link>
               </div>
             </div>
@@ -466,7 +538,7 @@ export default function UserNavbar({ setShowSearch, showSearch }: UserNavbarProp
         {/* Recent Pets */}
         {pets.length > 0 && (
           <div>
-            {!isSidebarCollapsed && <div className="text-xs text-teal-600 font-semibold px-3 mb-2 uppercase tracking-wide">Xem gần đây</div>}
+            {!isSidebarCollapsed && <div className="text-xs text-teal-600 font-semibold px-3 mb-2 uppercase tracking-wide">Thú cưng của tôi</div>}
             {isSidebarCollapsed && <div className="h-px bg-gradient-to-r from-transparent via-teal-500 to-transparent mx-2 mb-2"></div>}
             <div className={`${isSidebarCollapsed ? 'px-2' : ''} space-y-1`}>
               {loadingPets ? (
@@ -551,7 +623,7 @@ export default function UserNavbar({ setShowSearch, showSearch }: UserNavbarProp
 
             {/* User Menu */}
             {isUserMenuOpen && (
-              <div className="absolute bottom-full right-0 mb-2 bg-white rounded-lg shadow-lg border border-gray-200 py-1 z-50 w-48">
+              <div className={`absolute ${isSidebarCollapsed ? 'left-full ml-2 bottom-0' : 'left-4 right-4 bottom-16'} bg-white rounded-lg shadow-2xl border border-gray-200 py-1 z-50 w-48`}>
                 <button onClick={handleProfileClick} className="w-full flex items-center gap-3 px-4 py-3 hover:bg-teal-50 transition-colors text-left">
                   <svg className="w-5 h-5 text-teal-600 flex-shrink-0" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                     <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M16 7a4 4 0 11-8 0 4 4 0 018 0zM12 14a7 7 0 00-7 7h14a7 7 0 00-7-7z" />
