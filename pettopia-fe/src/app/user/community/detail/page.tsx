@@ -463,8 +463,6 @@ export default function PostDetailPage() {
 
                             {/* Comment actions */}
                             <div className="flex items-center gap-4 mt-2 text-xs font-semibold text-gray-600">
-                              <button className="hover:text-blue-600 transition-colors">Thích</button>
-                              <button className="hover:text-blue-600 transition-colors">Trả lời</button>
                             </div>
                           </div>
                         </div>

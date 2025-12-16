@@ -919,7 +919,7 @@ export default function AppointmentsPage() {
                                     {/* Nút thao tác */}
                                     {appointmentDetail.status === 'Pending_Confirmation' && (
                                         <div className="bg-gray-50 rounded-lg p-4 border-t-2 border-teal-500">
-                                            <h3 className="text-lg font-semibold text-gray-900 mb-4">Thao tác</h3>
+                                           
                                             <div className="flex gap-3">
                                                 <button
                                                     onClick={() => appointmentDetail.id && handleUpdateStatus(appointmentDetail.id, 'Confirmed')}
