@@ -16,6 +16,7 @@ interface Owner {
     city?: string;
     district?: string;
     ward?: string;
+    description?: string;
   };
 }
 

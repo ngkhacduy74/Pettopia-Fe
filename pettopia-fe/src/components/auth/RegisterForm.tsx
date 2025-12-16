@@ -64,6 +64,29 @@ export default function RegisterForm() {
   const [showPassword, setShowPassword] = useState(false);
   const [showConfirmPassword, setShowConfirmPassword] = useState(false);
 
+  // Validation function for password
+  const validatePassword = (password: string): string | true => {
+    if (!password) {
+      return "Vui lòng nhập mật khẩu";
+    }
+    if (password.length <= 6) {
+      return "Mật khẩu phải dài hơn 6 ký tự";
+    }
+    if (!/[A-Z]/.test(password)) {
+      return "Mật khẩu cần ít nhất 1 chữ viết hoa (A-Z)";
+    }
+    if (!/[a-z]/.test(password)) {
+      return "Mật khẩu cần ít nhất 1 chữ viết thường (a-z)";
+    }
+    if (!/[0-9]/.test(password)) {
+      return "Mật khẩu cần ít nhất 1 số (0-9)";
+    }
+    if (!/[!@#$%^&*()_+\-=\[\]{};':"\\|,.<>\/?]/.test(password)) {
+      return "Mật khẩu cần ít nhất 1 ký tự đặc biệt (!@#$%^&*)";
+    }
+    return true;
+  };
+
   const selectedCity = watch("city");
   const selectedDistrict = watch("district");
 
@@ -162,6 +185,14 @@ export default function RegisterForm() {
 
   const onSubmit = async (data: FormData) => {
     try {
+      // Validate password
+      const passwordValidation = validatePassword(data.password);
+      if (passwordValidation !== true) {
+        setPasswordError(passwordValidation);
+        return;
+      }
+
+      // Check if passwords match
       if (data.password !== confirmPassword) {
         setPasswordError("Mật khẩu nhập lại không khớp.");
         return;
@@ -474,7 +505,7 @@ export default function RegisterForm() {
                   <input
                     id="password"
                     type={showPassword ? "text" : "password"}
-                    {...register("password", { required: true, minLength: 6 })}
+                    {...register("password", { validate: validatePassword })}
                     className="block w-full px-4 py-2.5 pr-11 bg-gray-50 border border-gray-200 rounded-lg text-gray-900 placeholder:text-gray-400 focus:bg-white focus:border-teal-500 focus:ring-2 focus:ring-teal-100 focus:outline-none transition-all text-sm"
                     placeholder="Nhập mật khẩu"
                   />
@@ -487,7 +518,7 @@ export default function RegisterForm() {
                     {showPassword ? <EyeSlashIcon className="h-5 w-5" /> : <EyeIcon className="h-5 w-5" />}
                   </button>
                 </div>
-                {errors.password && <p className="text-xs text-red-500 mt-1.5 flex items-center gap-1"><span>●</span> Mật khẩu phải có ít nhất 6 ký tự</p>}
+                {errors.password && <p className="text-xs text-red-500 mt-1.5 flex items-center gap-1"><span>●</span> {errors.password.message}</p>}
               </div>
 
               <div>
@@ -500,6 +531,7 @@ export default function RegisterForm() {
                     id="confirmPassword"
                     value={confirmPassword}
                     onChange={(e) => setConfirmPassword(e.target.value)}
+                    onPaste={(e) => e.preventDefault()}
                     className="block w-full px-4 py-2.5 pr-11 bg-gray-50 border border-gray-200 rounded-lg text-gray-900 placeholder:text-gray-400 focus:bg-white focus:border-teal-500 focus:ring-2 focus:ring-teal-100 focus:outline-none transition-all text-sm"
                     placeholder="Nhập lại mật khẩu"
                     required
