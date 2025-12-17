@@ -245,7 +245,7 @@ export interface VetAppointment {
   service_ids: string[];
   date: string;
   shift: 'Morning' | 'Afternoon' | 'Evening';
-  status: 'Pending' | 'Confirmed' | 'Checked_In' | 'Completed' | 'Cancelled';
+  status: 'Pending' | 'Confirmed' | 'Checked_In' | 'In_Progress' | 'Completed' | 'Cancelled';
   createdAt: string;
   updatedAt: string;
   vet_id: string;
@@ -367,7 +367,7 @@ export const updateMedicalRecord = async (
 
 // --- Pet detail for vets (includes medical records) ---
 
-const PET_API_V1_URL = `${process.env.NEXT_PUBLIC_PETTOPIA_API_URL}/api/v1/pet`;
+const PET_API_V1_URL = `${process.env.NEXT_PUBLIC_PETTOPIA_API_URL}/pet`;
 
 export interface PetOwnerAddress {
   city?: string;
@@ -533,7 +533,7 @@ export interface VetAppointmentDetail {
   id: string;
   date: string;
   shift: 'Morning' | 'Afternoon' | 'Evening' | string;
-  status: 'Pending_Confirmation' | 'Confirmed' | 'Checked_In' | 'Completed' | 'Cancelled' | string;
+  status: 'Pending_Confirmation' | 'Confirmed' | 'Checked_In' | 'In_Progress' | 'Completed' | 'Cancelled' | string;
   vet_id?: string;
   user_info?: VetAppointmentUserInfo;
   clinic_info?: VetAppointmentClinicInfo;
@@ -561,7 +561,7 @@ export const getVetAppointmentDetail = async (
   if (!token) throw new Error('No authentication token found');
 
   try {
-    const url = `${process.env.NEXT_PUBLIC_PETTOPIA_API_URL}/api/v1/healthcare/appointments/${encodeURIComponent(appointmentId)}`;
+    const url = `${process.env.NEXT_PUBLIC_PETTOPIA_API_URL}/healthcare/appointments/${encodeURIComponent(appointmentId)}`;
     const response = await axios.get<VetAppointmentDetailResponse>(url, {
       headers: { token },
     });

@@ -2,7 +2,20 @@
 
 import React, { useState, useEffect } from 'react';
 import { useRouter, useParams } from 'next/navigation';
-import { ArrowLeft, Heart, ClipboardList, Pill, FileText, Calendar, Loader2, Save, Plus, X, User, Phone, Mail, MapPin } from 'lucide-react';
+import {
+  ArrowLeft,
+  Heart,
+  ClipboardList,
+  Pill,
+  FileText,
+  Calendar,
+  Loader2,
+  Save,
+  Plus,
+  X,
+  User,
+  Phone
+} from 'lucide-react';
 import {
   updateMedicalRecord,
   getVetPetDetail,
@@ -31,6 +44,7 @@ export default function VetMedicalRecordDetailPage() {
   const [saving, setSaving] = useState(false);
   const [existingRecord, setExistingRecord] = useState<any>(null);
   const [hasRecord, setHasRecord] = useState(false);
+  const [showMedicalModal, setShowMedicalModal] = useState(false);
 
   // Form state
   const [symptoms, setSymptoms] = useState('');
@@ -256,11 +270,11 @@ export default function VetMedicalRecordDetailPage() {
   }
 
   return (
-    <div className="min-h-screen bg-gray-50 p-4 md:p-8">
-      <div className="max-w-4xl mx-auto">
+    <div className=" p-4 md:p-8">
+      <div className="">
         <button
           onClick={() => router.back()}
-          className="flex items-center gap-2 text-teal-600 hover:text-teal-700 mb-4 font-medium"
+          className="flex gap-2 text-teal-600 hover:text-teal-700 mb-2 font-medium"
         >
           <ArrowLeft size={20} />
           Quay lại
@@ -334,181 +348,278 @@ export default function VetMedicalRecordDetailPage() {
           </div>
         </div>
 
-        {/* Form tạo hồ sơ bệnh án */}
-        <div className="bg-white rounded-lg shadow-sm border border-gray-200">
-          <div className="p-6 border-b border-gray-200">
-            <div className="flex items-start justify-between">
+        {/* Thông tin thú cưng & lịch sử hồ sơ bệnh án */}
+        {petDetail && (
+          <div className="bg-white rounded-lg shadow-sm border border-gray-200 mb-6">
+            <div className="p-6 border-b border-gray-200 flex items-center justify-between">
               <div>
-                <h1 className="text-2xl font-bold text-teal-600 mb-1">HỒ SƠ BỆNH ÁN</h1>
-                <p className="text-gray-600">Medical Record</p>
+                <h2 className="text-xl font-bold text-gray-900 mb-1">Thông tin thú cưng</h2>
+                <p className="text-gray-600 text-sm">
+                  {petDetail.name} • {petDetail.species}
+                  {petDetail.breed ? ` • ${petDetail.breed}` : ''}
+                </p>
               </div>
-              <div className="text-right">
-                <div className="flex items-center justify-end gap-2 text-gray-600 mb-1">
-                  <Calendar size={16} />
-                  <span>{formatDate(appointmentDetail.date)}</span>
-                </div>
-                <p className="text-sm text-gray-500">ID: {appointmentDetail.id.slice(0, 8)}</p>
-              </div>
-            </div>
-          </div>
-
-          {hasRecord && existingRecord && (
-            <div className="p-6 bg-green-50 border-b border-green-200">
-              <p className="text-green-700 font-medium">✓ Hồ sơ bệnh án đã được tạo. Bạn có thể cập nhật.</p>
-            </div>
-          )}
-
-          <form onSubmit={handleSubmit} className="p-6 space-y-6">
-            {/* Triệu Chứng */}
-            <div>
-              <div className="flex items-center gap-3 mb-3">
-                <div className="w-10 h-10 bg-red-100 rounded-lg flex items-center justify-center">
-                  <Heart className="text-red-600" size={20} />
-                </div>
-                <h2 className="text-lg font-semibold">Triệu Chứng</h2>
-              </div>
-              <textarea
-                value={symptoms}
-                onChange={(e) => setSymptoms(e.target.value)}
-                className="w-full bg-gray-50 rounded-lg p-4 border border-gray-200 focus:outline-none focus:ring-2 focus:ring-teal-500"
-                rows={4}
-                placeholder="Nhập triệu chứng của bệnh nhân..."
-                required
-              />
-            </div>
-
-            {/* Chẩn Đoán */}
-            <div>
-              <div className="flex items-center gap-3 mb-3">
-                <div className="w-10 h-10 bg-green-100 rounded-lg flex items-center justify-center">
-                  <ClipboardList className="text-green-600" size={20} />
-                </div>
-                <h2 className="text-lg font-semibold">Chẩn Đoán</h2>
-              </div>
-              <textarea
-                value={diagnosis}
-                onChange={(e) => setDiagnosis(e.target.value)}
-                className="w-full bg-gray-50 rounded-lg p-4 border border-gray-200 focus:outline-none focus:ring-2 focus:ring-teal-500"
-                rows={4}
-                placeholder="Nhập chẩn đoán..."
-                required
-              />
-            </div>
-
-            {/* Đơn Thuốc */}
-            <div>
-              <div className="flex items-center gap-3 mb-3">
-                <div className="w-10 h-10 bg-purple-100 rounded-lg flex items-center justify-center">
-                  <Pill className="text-purple-600" size={20} />
-                </div>
-                <h2 className="text-lg font-semibold">Đơn Thuốc</h2>
-              </div>
-
-              {/* Form thêm thuốc */}
-              <div className="bg-gray-50 rounded-lg p-4 mb-4 space-y-3">
-                <div className="grid md:grid-cols-3 gap-3">
-                  <input
-                    type="text"
-                    value={medName}
-                    onChange={(e) => setMedName(e.target.value)}
-                    placeholder="Tên thuốc"
-                    className="px-3 py-2 border border-gray-200 rounded-lg focus:outline-none focus:ring-2 focus:ring-teal-500"
-                  />
-                  <input
-                    type="text"
-                    value={medDosage}
-                    onChange={(e) => setMedDosage(e.target.value)}
-                    placeholder="Liều lượng"
-                    className="px-3 py-2 border border-gray-200 rounded-lg focus:outline-none focus:ring-2 focus:ring-teal-500"
-                  />
-                  <input
-                    type="text"
-                    value={medInstructions}
-                    onChange={(e) => setMedInstructions(e.target.value)}
-                    placeholder="Hướng dẫn sử dụng"
-                    className="px-3 py-2 border border-gray-200 rounded-lg focus:outline-none focus:ring-2 focus:ring-teal-500"
-                  />
-                </div>
-                <button
-                  type="button"
-                  onClick={handleAddMedication}
-                  className="flex items-center gap-2 text-teal-600 hover:text-teal-700 font-medium"
-                >
-                  <Plus size={18} />
-                  Thêm thuốc
-                </button>
-              </div>
-
-              {/* Danh sách thuốc đã thêm */}
-              {medications.length > 0 && (
-                <div className="space-y-3">
-                  {medications.map((med, index) => (
-                    <div key={index} className="bg-gray-50 rounded-lg p-4 border border-gray-200">
-                      <div className="flex items-start justify-between">
-                        <div className="flex-1">
-                          <h3 className="font-medium text-gray-900 mb-2">{med.medication_name}</h3>
-                          <p className="text-sm text-gray-600">
-                            <span className="font-medium">Liều lượng:</span> {med.dosage}
-                          </p>
-                          {med.instructions && (
-                            <p className="text-sm text-gray-600 mt-1">
-                              <span className="font-medium">Hướng dẫn:</span> {med.instructions}
-                            </p>
-                          )}
-                        </div>
-                        <button
-                          type="button"
-                          onClick={() => handleRemoveMedication(index)}
-                          className="p-1 text-red-600 hover:bg-red-50 rounded-lg transition-colors ml-4"
-                        >
-                          <X size={18} />
-                        </button>
-                      </div>
-                    </div>
-                  ))}
+              {petDetail.owner && (
+                <div className="text-right text-sm text-gray-600">
+                  <p className="font-medium flex items-center justify-end gap-1">
+                    <User size={14} />
+                    {petDetail.owner.fullname}
+                  </p>
+                  {petDetail.owner.phone && (
+                    <p className="flex items-center justify-end gap-1 mt-1">
+                      <Phone size={14} />
+                      {petDetail.owner.phone}
+                    </p>
+                  )}
                 </div>
               )}
             </div>
 
-            {/* Ghi Chú */}
-            <div>
-              <div className="flex items-center gap-3 mb-3">
-                <div className="w-10 h-10 bg-yellow-100 rounded-lg flex items-center justify-center">
-                  <FileText className="text-yellow-600" size={20} />
-                </div>
-                <h2 className="text-lg font-semibold">Ghi Chú</h2>
-              </div>
-              <textarea
-                value={notes}
-                onChange={(e) => setNotes(e.target.value)}
-                className="w-full bg-gray-50 rounded-lg p-4 border border-gray-200 focus:outline-none focus:ring-2 focus:ring-teal-500"
-                rows={3}
-                placeholder="Ghi chú thêm (tùy chọn)..."
-              />
-            </div>
+            <div className="p-6">
+              <h3 className="text-sm font-semibold text-gray-700 mb-3">
+                Lịch sử hồ sơ bệnh án
+              </h3>
 
-            {/* Submit Button */}
-            <div className="pt-6 border-t border-gray-200">
-              <button
-                type="submit"
-                disabled={saving}
-                className="w-full flex items-center justify-center gap-2 bg-teal-600 text-white px-6 py-3 rounded-lg hover:bg-teal-700 transition-colors font-medium disabled:opacity-50 disabled:cursor-not-allowed"
-              >
-                {saving ? (
-                  <>
-                    <Loader2 className="animate-spin" size={20} />
-                    Đang lưu...
-                  </>
-                ) : (
-                  <>
-                    <Save size={20} />
-                    {hasRecord ? 'Cập nhật hồ sơ bệnh án' : 'Tạo hồ sơ bệnh án'}
-                  </>
-                )}
-              </button>
+              {medicalRecords && medicalRecords.length > 0 ? (
+                <div className="space-y-3">
+                  {medicalRecords.map((mr) => (
+                    <div
+                      key={mr.medicalRecord.id || mr.medicalRecord._id}
+                      className="border border-gray-100 rounded-lg p-3 bg-gray-50"
+                    >
+                      <div className="flex items-center justify-between mb-1">
+                        <p className="font-medium text-gray-900">
+                          {mr.medicalRecord.diagnosis || 'Chẩn đoán không xác định'}
+                        </p>
+                        <span className="flex items-center gap-1 text-xs text-gray-500">
+                          <Calendar size={12} />
+                          {formatDate(mr.medicalRecord.createdAt)}
+                        </span>
+                      </div>
+                      <p className="text-sm text-gray-700">
+                        <span className="font-medium">Triệu chứng:</span>{' '}
+                        {mr.medicalRecord.symptoms}
+                      </p>
+                      {mr.medicalRecord.notes && (
+                        <p className="text-sm text-gray-600 mt-1">
+                          <span className="font-medium">Ghi chú:</span> {mr.medicalRecord.notes}
+                        </p>
+                      )}
+                    </div>
+                  ))}
+                </div>
+              ) : (
+                <p className="text-sm text-gray-500">
+                  Chưa có hồ sơ bệnh án nào cho thú cưng này.
+                </p>
+              )}
+
+              <div className="mt-4 flex justify-end">
+                <button
+                  type="button"
+                  onClick={() => setShowMedicalModal(true)}
+                  className="inline-flex items-center gap-2 px-4 py-2 bg-teal-600 text-white text-sm font-medium rounded-lg hover:bg-teal-700 transition-colors"
+                >
+                  <FileText size={16} />
+                  {hasRecord ? 'Cập nhật hồ sơ bệnh án' : 'Tạo hồ sơ bệnh án'}
+                </button>
+              </div>
             </div>
-          </form>
-        </div>
+          </div>
+        )}
+
+        {/* Modal tạo/cập nhật hồ sơ bệnh án */}
+        {showMedicalModal && (
+          <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/50 p-4">
+            <div className="bg-white rounded-lg shadow-xl max-w-2xl w-full max-h-[90vh] overflow-y-auto">
+              <div className="flex items-center justify-between p-4 border-b border-gray-200">
+                <div>
+                  <h1 className="text-xl font-bold text-teal-600 mb-1">
+                    {hasRecord ? 'Cập nhật hồ sơ bệnh án' : 'Tạo hồ sơ bệnh án'}
+                  </h1>
+                  <p className="text-gray-600 text-sm">Medical Record</p>
+                </div>
+                <button
+                  type="button"
+                  onClick={() => setShowMedicalModal(false)}
+                  className="p-2 rounded-lg hover:bg-gray-100"
+                >
+                  <X size={20} className="text-gray-500" />
+                </button>
+              </div>
+
+              {hasRecord && existingRecord && (
+                <div className="px-4 py-3 bg-green-50 border-b border-green-200 text-sm text-green-700">
+                  ✓ Hồ sơ bệnh án đã được tạo trước đó. Bạn có thể chỉnh sửa thông tin bên dưới.
+                </div>
+              )}
+
+              <form onSubmit={handleSubmit} className="p-4 space-y-5">
+                {/* Triệu Chứng */}
+                <div>
+                  <div className="flex items-center gap-3 mb-3">
+                    <div className="w-9 h-9 bg-red-100 rounded-lg flex items-center justify-center">
+                      <Heart className="text-red-600" size={18} />
+                    </div>
+                    <h2 className="text-base font-semibold">Triệu Chứng</h2>
+                  </div>
+                  <textarea
+                    value={symptoms}
+                    onChange={(e) => setSymptoms(e.target.value)}
+                    className="w-full bg-gray-50 rounded-lg p-3 border border-gray-200 focus:outline-none focus:ring-2 focus:ring-teal-500 text-sm"
+                    rows={4}
+                    placeholder="Nhập triệu chứng của bệnh nhân..."
+                    required
+                  />
+                </div>
+
+                {/* Chẩn Đoán */}
+                <div>
+                  <div className="flex items-center gap-3 mb-3">
+                    <div className="w-9 h-9 bg-green-100 rounded-lg flex items-center justify-center">
+                      <ClipboardList className="text-green-600" size={18} />
+                    </div>
+                    <h2 className="text-base font-semibold">Chẩn Đoán</h2>
+                  </div>
+                  <textarea
+                    value={diagnosis}
+                    onChange={(e) => setDiagnosis(e.target.value)}
+                    className="w-full bg-gray-50 rounded-lg p-3 border border-gray-200 focus:outline-none focus:ring-2 focus:ring-teal-500 text-sm"
+                    rows={4}
+                    placeholder="Nhập chẩn đoán..."
+                    required
+                  />
+                </div>
+
+                {/* Đơn Thuốc */}
+                <div>
+                  <div className="flex items-center gap-3 mb-3">
+                    <div className="w-9 h-9 bg-purple-100 rounded-lg flex items-center justify-center">
+                      <Pill className="text-purple-600" size={18} />
+                    </div>
+                    <h2 className="text-base font-semibold">Đơn Thuốc</h2>
+                  </div>
+
+                  {/* Form thêm thuốc */}
+                  <div className="bg-gray-50 rounded-lg p-3 mb-3 space-y-3">
+                    <div className="grid md:grid-cols-3 gap-3">
+                      <input
+                        type="text"
+                        value={medName}
+                        onChange={(e) => setMedName(e.target.value)}
+                        placeholder="Tên thuốc"
+                        className="px-3 py-2 border border-gray-200 rounded-lg focus:outline-none focus:ring-2 focus:ring-teal-500 text-sm"
+                      />
+                      <input
+                        type="text"
+                        value={medDosage}
+                        onChange={(e) => setMedDosage(e.target.value)}
+                        placeholder="Liều lượng"
+                        className="px-3 py-2 border border-gray-200 rounded-lg focus:outline-none focus:ring-2 focus:ring-teal-500 text-sm"
+                      />
+                      <input
+                        type="text"
+                        value={medInstructions}
+                        onChange={(e) => setMedInstructions(e.target.value)}
+                        placeholder="Hướng dẫn sử dụng"
+                        className="px-3 py-2 border border-gray-200 rounded-lg focus:outline-none focus:ring-2 focus:ring-teal-500 text-sm"
+                      />
+                    </div>
+                    <button
+                      type="button"
+                      onClick={handleAddMedication}
+                      className="flex items-center gap-2 text-teal-600 hover:text-teal-700 font-medium text-sm"
+                    >
+                      <Plus size={16} />
+                      Thêm thuốc
+                    </button>
+                  </div>
+
+                  {/* Danh sách thuốc đã thêm */}
+                  {medications.length > 0 && (
+                    <div className="space-y-3">
+                      {medications.map((med, index) => (
+                        <div
+                          key={index}
+                          className="bg-gray-50 rounded-lg p-3 border border-gray-200 text-sm"
+                        >
+                          <div className="flex items-start justify-between">
+                            <div className="flex-1">
+                              <h3 className="font-medium text-gray-900 mb-1">
+                                {med.medication_name}
+                              </h3>
+                              <p className="text-gray-600">
+                                <span className="font-medium">Liều lượng:</span> {med.dosage}
+                              </p>
+                              {med.instructions && (
+                                <p className="text-gray-600 mt-1">
+                                  <span className="font-medium">Hướng dẫn:</span>{' '}
+                                  {med.instructions}
+                                </p>
+                              )}
+                            </div>
+                            <button
+                              type="button"
+                              onClick={() => handleRemoveMedication(index)}
+                              className="p-1 text-red-600 hover:bg-red-50 rounded-lg transition-colors ml-4"
+                            >
+                              <X size={16} />
+                            </button>
+                          </div>
+                        </div>
+                      ))}
+                    </div>
+                  )}
+                </div>
+
+                {/* Ghi Chú */}
+                <div>
+                  <div className="flex items-center gap-3 mb-3">
+                    <div className="w-9 h-9 bg-yellow-100 rounded-lg flex items-center justify-center">
+                      <FileText className="text-yellow-600" size={18} />
+                    </div>
+                    <h2 className="text-base font-semibold">Ghi Chú</h2>
+                  </div>
+                  <textarea
+                    value={notes}
+                    onChange={(e) => setNotes(e.target.value)}
+                    className="w-full bg-gray-50 rounded-lg p-3 border border-gray-200 focus:outline-none focus:ring-2 focus:ring-teal-500 text-sm"
+                    rows={3}
+                    placeholder="Ghi chú thêm (tùy chọn)..."
+                  />
+                </div>
+
+                {/* Submit Button */}
+                <div className="pt-4 border-t border-gray-200 flex justify-end gap-3">
+                  <button
+                    type="button"
+                    onClick={() => setShowMedicalModal(false)}
+                    className="px-4 py-2 border border-gray-300 text-gray-700 rounded-lg hover:bg-gray-50 text-sm font-medium"
+                  >
+                    Đóng
+                  </button>
+                  <button
+                    type="submit"
+                    disabled={saving}
+                    className="inline-flex items-center justify-center gap-2 bg-teal-600 text-white px-4 py-2 rounded-lg hover:bg-teal-700 transition-colors font-medium disabled:opacity-50 disabled:cursor-not-allowed text-sm"
+                  >
+                    {saving ? (
+                      <>
+                        <Loader2 className="animate-spin" size={18} />
+                        Đang lưu...
+                      </>
+                    ) : (
+                      <>
+                        <Save size={18} />
+                        {hasRecord ? 'Cập nhật hồ sơ bệnh án' : 'Tạo hồ sơ bệnh án'}
+                      </>
+                    )}
+                  </button>
+                </div>
+              </form>
+            </div>
+          </div>
+        )}
       </div>
     </div>
   );
