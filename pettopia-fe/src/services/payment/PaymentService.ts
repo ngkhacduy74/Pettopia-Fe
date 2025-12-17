@@ -27,6 +27,13 @@ interface PaymentResponse {
   orderId: string;
 }
 
+interface PaymentStatusResponse {
+  success: boolean;
+  message: string;
+  status: string;
+  orderCode: number;
+}
+
 export const PaymentService = {
   async createPayment(payload: PaymentRequest): Promise<PaymentResponse> {
     const authToken = localStorage.getItem('authToken');
@@ -55,5 +62,50 @@ export const PaymentService = {
     }
 
     return data;
+  },
+
+  async getPaymentStatus(orderCode: string): Promise<PaymentStatusResponse> {
+    const authToken = localStorage.getItem('authToken');
+
+    console.log('getPaymentStatus - orderCode:', orderCode);
+    console.log('getPaymentStatus - authToken exists:', !!authToken);
+
+    if (!authToken) {
+      throw new Error('Token not found');
+    }
+
+    const statusUrl = `http://localhost:3333/api/v1/payments/${orderCode}/status`;
+    console.log('Fetching from:', statusUrl);
+
+    try {
+      const response = await fetch(statusUrl, {
+        method: 'GET',
+        headers: {
+          'Content-Type': 'application/json',
+          token: `${authToken}`,
+        },
+      });
+
+      console.log('Payment status API response status:', response.status);
+
+      if (!response.ok) {
+        const errorText = await response.text();
+        console.error('Payment status API error:', response.statusText, errorText);
+        throw new Error(`Payment status API error: ${response.statusText}`);
+      }
+
+      const data: PaymentStatusResponse = await response.json();
+      console.log('Payment status API response data:', data);
+
+      // Check if the response is successful based on 'success' field
+      if (!data.success) {
+        throw new Error(data.message || 'Payment status check failed');
+      }
+
+      return data;
+    } catch (error: any) {
+      console.error('getPaymentStatus error:', error);
+      throw error;
+    }
   },
 };

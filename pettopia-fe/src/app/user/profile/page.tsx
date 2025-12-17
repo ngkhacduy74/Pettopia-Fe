@@ -3,8 +3,8 @@
 import React, { useState, useEffect } from "react";
 import Link from "next/link";
 import { useRouter } from "next/navigation";
-import { getCustomerProfile } from "@/services/user/userService";
-import { Mail, MapPin, Calendar, Phone, Home, Clock, Edit3 } from 'lucide-react';
+import { getCustomerProfile, getVipStatus } from "@/services/user/userService";
+import { Mail, MapPin, Calendar, Phone, Home, Clock, Edit3, Crown } from 'lucide-react';
 
 interface User {
   id: string;
@@ -23,11 +23,18 @@ interface User {
   createdAt?: string;
 }
 
+interface VipStatus {
+  is_vip: boolean;
+  vip_expires_at?: string | null;
+  remaining_days: number;
+}
+
 export default function UserProfilePage() {
   const router = useRouter();
   const [user, setUser] = useState<User | null>(null);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
+  const [vipStatus, setVipStatus] = useState<VipStatus | null>(null);
   const [lightbox, setLightbox] = useState<{ isOpen: boolean; currentIndex: number }>({
     isOpen: false,
     currentIndex: 0
@@ -80,6 +87,25 @@ export default function UserProfilePage() {
   }, [router]);
 
   useEffect(() => {
+    const fetchVipStatus = async () => {
+      try {
+        const vipData = await getVipStatus();
+        if (vipData) {
+          setVipStatus(vipData);
+        }
+      } catch (err: any) {
+        console.error('Error fetching VIP status:', err);
+        setVipStatus(null);
+      }
+    };
+
+    const hasToken = typeof window !== "undefined" ? !!localStorage.getItem("authToken") : false;
+    if (hasToken) {
+      fetchVipStatus();
+    }
+  }, []);
+
+  useEffect(() => {
     const handleKeyDown = (e: KeyboardEvent) => {
       if (!lightbox.isOpen) return;
       if (e.key === 'Escape') closeLightbox();
@@ -120,6 +146,19 @@ export default function UserProfilePage() {
     if (parts.length === 0) return 'NN';
     if (parts.length === 1) return parts[0].slice(0, 2).toUpperCase();
     return (parts[0][0] + parts[parts.length - 1][0]).toUpperCase();
+  };
+
+  const formatVipExpirationDate = (dateString?: string | null) => {
+    if (!dateString) return 'Chưa cập nhật';
+    try {
+      return new Date(dateString).toLocaleDateString('vi-VN', {
+        year: 'numeric',
+        month: 'long',
+        day: 'numeric'
+      });
+    } catch {
+      return dateString;
+    }
   };
 
   const closeLightbox = () => {
@@ -276,6 +315,53 @@ export default function UserProfilePage() {
 
           {/* Right Column - Sidebar */}
           <div className="space-y-6">
+
+            {/* VIP Status Section */}
+            {vipStatus && (
+              <div className="border border-gray-200 rounded-lg p-6">
+                {vipStatus.is_vip ? (
+                  <>
+                    <div className="flex items-center justify-between mb-6">
+                      <div className="flex items-center gap-2">
+                        <Crown className="w-6 h-6 text-amber-500" />
+                        <h2 className="text-xl font-bold text-amber-500">Premium</h2>
+                      </div>
+                    </div>
+
+                    <div className="space-y-5">
+                      <div className="flex items-start gap-3">
+                        <Calendar className="w-5 h-5 text-gray-400 mt-0.5 flex-shrink-0" />
+                        <div className="flex-1">
+                          <div className="text-xs text-gray-500 mb-1 uppercase tracking-wide">Số ngày premium còn lại</div>
+                          <div className="text-sm font-semibold text-amber-600">{vipStatus.remaining_days} ngày</div>
+                        </div>
+                      </div>
+
+                      <div className="flex items-start gap-3">
+                        <Clock className="w-5 h-5 text-gray-400 mt-0.5 flex-shrink-0" />
+                        <div className="flex-1">
+                          <div className="text-xs text-gray-500 mb-1 uppercase tracking-wide">Ngày hết hạn</div>
+                          <div className="text-sm text-gray-900">{formatVipExpirationDate(vipStatus.vip_expires_at)}</div>
+                        </div>
+                      </div>
+                    </div>
+                  </>
+                ) : (
+                  <>
+                    <h2 className="text-xl font-bold mb-6 text-gray-900">Nâng cấp tài khoản</h2>
+                    <button
+                      onClick={() => router.push('/user/upgrade')}
+                      className="w-full flex items-center justify-center gap-3 px-3 py-3 rounded-lg bg-gradient-to-r from-teal-500 to-cyan-600 hover:from-teal-600 hover:to-cyan-700 text-white text-sm transition-colors border border-teal-400 font-medium"
+                    >
+                      <svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                        <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M5 3v4M3 5h4M6 17v4m-2-2h4m5-16l2.286 6.857L21 12l-5.714 2.143L13 21l-2.286-6.857L5 12l5.714-2.143L13 3z" />
+                      </svg>
+                      <span>Nâng cấp lên Premium</span>
+                    </button>
+                  </>
+                )}
+              </div>
+            )}
 
             {/* Personal Info Section */}
             <div className="border border-gray-200 rounded-lg p-6">

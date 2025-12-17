@@ -1,10 +1,12 @@
 'use client';
 
-import { useState } from 'react';
+import { useState, useEffect } from 'react';
 import { useForm } from 'react-hook-form';
-import { useRouter } from 'next/navigation';
+import { useRouter, useSearchParams } from 'next/navigation';
+import toast from 'react-hot-toast';
 import { loginUser } from '@/services/auth/authService';
 import { parseJwt } from '@/utils/jwt';
+import { PaymentService } from '@/services/payment/PaymentService';
 import Image from 'next/image';
 import { EyeIcon, EyeSlashIcon } from '@heroicons/react/24/outline';
 
@@ -19,6 +21,44 @@ export default function LoginForm() {
   const [isSuccess, setIsSuccess] = useState(false);
   const [showPassword, setShowPassword] = useState(false);
   const router = useRouter();
+  const searchParams = useSearchParams();
+
+  // Check payment status from query params
+  useEffect(() => {
+    const checkPaymentStatus = async () => {
+      const status = searchParams?.get('status');
+      const orderCode = searchParams?.get('orderCode');
+
+      console.log('checkPaymentStatus - status:', status, 'orderCode:', orderCode);
+
+      // Only proceed if both status and orderCode are present
+      if (status && orderCode) {
+        if (status === 'PAID') {
+          try {
+            console.log('Calling PaymentService.getPaymentStatus with orderCode:', orderCode);
+            const paymentStatus = await PaymentService.getPaymentStatus(orderCode);
+            console.log('Payment status:', paymentStatus);
+            // Show success toast notification
+            toast.success('Tài khoản đã được nâng cấp thành công, vui lòng đăng nhập lại để hệ thống tiến hành nâng cấp!', {
+              duration: 8000,
+              position: 'top-right',
+            });
+          } catch (err: any) {
+            console.error('Payment status check failed - Full error:', err);
+            console.error('Error message:', err?.message);
+            console.error('Error response:', err?.response);
+            // Optionally show error toast
+            toast.error(`Lỗi kiểm tra thanh toán: ${err?.message || 'Không xác định'}`, {
+              duration: 5000,
+              position: 'top-right',
+            });
+          }
+        }
+      }
+    };
+
+    checkPaymentStatus();
+  }, [searchParams]);
 
   const onSubmit = async (data: FormData) => {
     setServerError('');

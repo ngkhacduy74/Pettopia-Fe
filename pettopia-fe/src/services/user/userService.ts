@@ -97,3 +97,31 @@ export async function updateCustomerProfile(data: Record<string, any>) {
     throw new Error(errorMsg);
   }
 }
+
+/**
+ * Lấy thông tin VIP của customer hiện tại.
+ * GET: /customer/profile/vip-remaining-days
+ */
+export async function getVipStatus() {
+  try {
+    const url = `${API_URL}/profile/vip-remaining-days`;
+
+    const response = await axios.get(url, getAuthHeaders());
+
+    const respBody = response.data;
+    return respBody?.data ?? respBody;
+  } catch (error: any) {
+    const status = error.response?.status;
+    const respData = error.response?.data;
+    const errorMsg = respData?.message || respData || error.message || "Unknown error";
+
+    console.error(`getVipStatus failed status=${status}`, respData || error.message);
+
+    if (status === 404 || status === 401 || status === 403) {
+      console.warn("Không thể lấy thông tin VIP:", errorMsg);
+      return null;
+    }
+
+    throw new Error(errorMsg);
+  }
+}

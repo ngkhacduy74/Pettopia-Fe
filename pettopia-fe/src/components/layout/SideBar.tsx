@@ -3,6 +3,7 @@
 import { useState, useEffect, useRef, JSX } from 'react';
 import { parseJwt, isTokenExpired } from '@/utils/jwt';
 import { logoutUser } from '@/services/auth/authService';
+import { getVipStatus } from '@/services/user/userService';
 import Link from 'next/link';
 import { usePathname, useRouter } from 'next/navigation';
 import { getPetsByOwner, type PetDetailResponse } from '@/services/petcare/petService';
@@ -59,7 +60,9 @@ export default function UserNavbar({ setShowSearch, showSearch }: UserNavbarProp
   const [loadingPets, setLoadingPets] = useState(false);
   const [isSidebarCollapsed, setIsSidebarCollapsed] = useState(false);
   const [isUserMenuOpen, setIsUserMenuOpen] = useState(false);
-  const [hoveredTooltip, setHoveredTooltip] = useState<string | null>(null);
+  const [isVip, setIsVip] = useState(false);
+  const [vipLoading, setVipLoading] = useState(false);
+
 
   interface MenuItem {
     id: string;
@@ -215,6 +218,28 @@ export default function UserNavbar({ setShowSearch, showSearch }: UserNavbarProp
     }
   }, [userData?.userId]);
 
+  useEffect(() => {
+    const fetchVipStatus = async () => {
+      try {
+        setVipLoading(true);
+        const vipData = await getVipStatus();
+        if (vipData && vipData.is_vip) {
+          setIsVip(true);
+        }
+      } catch (error) {
+        console.error('Error fetching VIP status:', error);
+        setIsVip(false);
+      } finally {
+        setVipLoading(false);
+      }
+    };
+
+    const token = localStorage.getItem('authToken');
+    if (token) {
+      fetchVipStatus();
+    }
+  }, []);
+
   const getInitials = (name: string) => {
     const words = name.trim().split(' ');
     if (words.length >= 2) {
@@ -265,35 +290,6 @@ export default function UserNavbar({ setShowSearch, showSearch }: UserNavbarProp
     }, 500);
   };
 
-  // Tooltip component - uses button ref for positioning
-  const buttonRefs = useRef<{ [key: string]: HTMLButtonElement | null }>({});
-  const Tooltip = ({ id, text }: { id: string; text: string }) => {
-    const [position, setPosition] = useState({ top: 0, left: 0 });
-
-    useEffect(() => {
-      if (hoveredTooltip === id && buttonRefs.current[id]) {
-        const btn = buttonRefs.current[id];
-        const rect = btn.getBoundingClientRect();
-        setPosition({
-          top: rect.top + rect.height / 2,
-          left: rect.right + 12,
-        });
-      }
-    }, [hoveredTooltip, id]);
-
-    if (hoveredTooltip !== id) return null;
-    return (
-      <div className="fixed px-3 py-2 bg-gradient-to-r from-gray-900 to-gray-800 text-white text-sm rounded-lg whitespace-nowrap pointer-events-none z-[9999] shadow-xl animate-in fade-in duration-200 border border-gray-700"
-        style={{
-          top: `${position.top}px`,
-          left: `${position.left}px`,
-          transform: 'translateY(-50%)',
-        }}>
-        {text}
-        <div className="absolute right-full top-1/2 -translate-y-1/2 w-2 h-2 bg-gray-900 rotate-45" />
-      </div>
-    );
-  };
   return (
     <>
       {/* Sidebar */}
@@ -314,7 +310,9 @@ export default function UserNavbar({ setShowSearch, showSearch }: UserNavbarProp
                       <span className={`${pacifico.className} text-lg font-bold bg-gradient-to-r from-teal-600 to-cyan-600 bg-clip-text text-transparent truncate`}>
                         Pettopia
                       </span>
-
+                      {isVip && (
+                        <span className="text-xs font-bold text-amber-500 uppercase tracking-widest">PREMIUM</span>
+                      )}
                     </div>
                   </div>
                 </Link>
@@ -391,20 +389,16 @@ export default function UserNavbar({ setShowSearch, showSearch }: UserNavbarProp
                 <Link href="/user/pet/list">
                   <div className="relative overflow-visible">
                     <button
-                      ref={(el) => { if (el) buttonRefs.current['pet-list'] = el; }}
                       className={`w-full flex ${isSidebarCollapsed ? 'justify-center' : 'items-center'} gap-3 px-3 py-2 rounded-lg text-sm transition-colors cursor-pointer ${pathname === '/user/pet/list'
                         ? 'bg-gradient-to-r from-teal-500 to-cyan-600 text-white shadow-sm'
                         : 'text-gray-700 hover:bg-gray-100'
                       }`}
-                      onMouseEnter={() => setHoveredTooltip('pet-list')}
-                      onMouseLeave={() => setHoveredTooltip(null)}
                     >
                       <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 20 20" fill="currentColor" className="size-5 flex-shrink-0">
                         <path d="M10 9a3 3 0 100-6 3 3 0 000 6zM6 8a2 2 0 11-4 0 2 2 0 014 0zM1.49 15.326a.78.78 0 01-.358-.442 3 3 0 014.308-3.516 6.484 6.484 0 00-1.905 3.959c-.023.222-.014.442.025.654a4.97 4.97 0 01-2.07-.655zM16.44 15.98a4.97 4.97 0 002.07-.654.78.78 0 00.357-.442 3 3 0 00-4.308-3.517 6.484 6.484 0 011.907 3.96 2.32 2.32 0 01-.026.654zM18 8a2 2 0 11-4 0 2 2 0 014 0zM5.304 16.19a.844.844 0 01-.277-.71 5 5 0 019.947 0 .843.843 0 01-.277.71A6.975 6.975 0 0110 18a6.974 6.974 0 01-4.696-1.81z" />
                       </svg>
                       {!isSidebarCollapsed && <span>Danh sách thú cưng</span>}
                     </button>
-                    <Tooltip id="pet-list" text="Danh sách thú cưng" />
                   </div>
                 </Link>
 
@@ -414,15 +408,12 @@ export default function UserNavbar({ setShowSearch, showSearch }: UserNavbarProp
                       ${pathname === '/user/pet/new'
                         ? 'bg-gradient-to-r from-teal-500 to-cyan-600 text-white shadow-sm'
                         : 'hover:bg-gray-100 text-gray-700'}`}
-                      ref={(el) => { if (el) buttonRefs.current['pet-new'] = el; }}
-                      onMouseEnter={() => setHoveredTooltip('pet-new')}
-                      onMouseLeave={() => setHoveredTooltip(null)}>
+                    >
                       <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 20 20" fill="currentColor" className="size-5 flex-shrink-0">
                         <path d="M10.75 4.75a.75.75 0 00-1.5 0v4.5h-4.5a.75.75 0 000 1.5h4.5v4.5a.75.75 0 001.5 0v-4.5h4.5a.75.75 0 000-1.5h-4.5v-4.5z" />
                       </svg>
                       {!isSidebarCollapsed && <span>Đăng ký thú cưng mới</span>}
                     </button>
-                    <Tooltip id="pet-new" text="Đăng ký thú cưng mới" />
                   </div>
                 </Link>
               </div>
@@ -439,15 +430,12 @@ export default function UserNavbar({ setShowSearch, showSearch }: UserNavbarProp
                       ${pathname === '/user/community'
                         ? 'bg-gradient-to-r from-teal-500 to-teal-700 text-white shadow-sm'
                         : 'hover:bg-gray-100 text-gray-700'}`}
-                      ref={(el) => { if (el) buttonRefs.current['community'] = el; }}
-                      onMouseEnter={() => setHoveredTooltip('community')}
-                      onMouseLeave={() => setHoveredTooltip(null)}>
+                    >
                       <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 20 20" fill="currentColor" className="size-5 flex-shrink-0">
                         <path d="M10 9a3 3 0 100-6 3 3 0 000 6zM6 8a2 2 0 11-4 0 2 2 0 014 0zM1.49 15.326a.78.78 0 01-.358-.442 3 3 0 014.308-3.516 6.484 6.484 0 00-1.905 3.959c-.023.222-.014.442.025.654a4.97 4.97 0 01-2.07-.655zM16.44 15.98a4.97 4.97 0 002.07-.654.78.78 0 00.357-.442 3 3 0 00-4.308-3.517 6.484 6.484 0 011.907 3.96 2.32 2.32 0 01-.026.654zM18 8a2 2 0 11-4 0 2 2 0 014 0zM5.304 16.19a.844.844 0 01-.277-.71 5 5 0 019.947 0 .843.843 0 01-.277.71A6.975 6.975 0 0110 18a6.974 6.974 0 01-4.696-1.81z" />
                       </svg>
                       {!isSidebarCollapsed && <span>Cộng đồng Pettopia</span>}
                     </button>
-                    <Tooltip id="community" text="Cộng đồng Pettopia" />
                   </div>
                 </Link>
 
@@ -457,16 +445,13 @@ export default function UserNavbar({ setShowSearch, showSearch }: UserNavbarProp
                       ${pathname === '/user/community/manage'
                         ? 'bg-gradient-to-r from-teal-500 to-teal-700 text-white shadow-sm'
                         : 'hover:bg-gray-100 text-gray-700'}`}
-                      ref={(el) => { if (el) buttonRefs.current['manage-post'] = el; }}
-                      onMouseEnter={() => setHoveredTooltip('manage-post')}
-                      onMouseLeave={() => setHoveredTooltip(null)}>
+                    >
                       <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 20 20" fill="currentColor" className="size-5 flex-shrink-0">
                         <path d="M3 4a1 1 0 011-1h12a1 1 0 011 1v2a1 1 0 01-1 1H4a1 1 0 01-1-1V4zM3 8a1 1 0 011-1h12a1 1 0 011 1v8a1 1 0 01-1 1H4a1 1 0 01-1-1V8zM4 9v6h12V9H4z" />
                         <path d="M7 11h2v2H7v-2zm4 0h2v2h-2v-2zm4 0h2v2h-2v-2z" />
                       </svg>
                       {!isSidebarCollapsed && <span>Quản lý bài viết</span>}
                     </button>
-                    <Tooltip id="manage-post" text="Quản lý bài viết" />
                   </div>
                 </Link>
               </div>
@@ -483,15 +468,12 @@ export default function UserNavbar({ setShowSearch, showSearch }: UserNavbarProp
                       ${pathname === '/user/appointments/booking'
                         ? 'bg-gradient-to-r from-teal-500 to-indigo-600 text-white shadow-sm'
                         : 'hover:bg-gray-100 text-gray-700'}`}
-                      ref={(el) => { if (el) buttonRefs.current['booking'] = el; }}
-                      onMouseEnter={() => setHoveredTooltip('booking')}
-                      onMouseLeave={() => setHoveredTooltip(null)}>
+                    >
                       <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 20 20" fill="currentColor" className="size-5 flex-shrink-0">
                         <path fillRule="evenodd" d="M5.75 2a.75.75 0 01.75.75V4h7V2.75a.75.75 0 011.5 0V4h.25A2.75 2.75 0 0118 6.75v8.5A2.75 2.75 0 0115.25 18H4.75A2.75 2.75 0 012 15.25v-8.5A2.75 2.75 0 014.75 4H5V2.75A.75.75 0 015.75 2zm-1 5.5c-.69 0-1.25.56-1.25 1.25v6.5c0 .69.56 1.25 1.25 1.25h10.5c.69 0 1.25-.56 1.25-1.25v-6.5c0-.69-.56-1.25-1.25-1.25H4.75z" clipRule="evenodd" />
                       </svg>
                       {!isSidebarCollapsed && <span>Đặt lịch khám</span>}
                     </button>
-                    <Tooltip id="booking" text="Đặt lịch khám" />
                   </div>
                 </Link>
 
@@ -501,15 +483,12 @@ export default function UserNavbar({ setShowSearch, showSearch }: UserNavbarProp
                       ${pathname === '/user/appointments/list'
                         ? 'bg-gradient-to-r from-teal-500 to-indigo-600 text-white shadow-sm'
                         : 'hover:bg-gray-100 text-gray-700'}`}
-                      ref={(el) => { if (el) buttonRefs.current['appointments-list'] = el; }}
-                      onMouseEnter={() => setHoveredTooltip('appointments-list')}
-                      onMouseLeave={() => setHoveredTooltip(null)}>
+                    >
                       <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 20 20" fill="currentColor" className="size-5 flex-shrink-0">
                         <path d="M10.5 1.5H5.75A2.75 2.75 0 003 4.25v11A2.75 2.75 0 005.75 18h8.5A2.75 2.75 0 0117 15.25v-11A2.75 2.75 0 0114.25 1.5H10.5z" />
                       </svg>
                       {!isSidebarCollapsed && <span>Xem lịch khám</span>}
                     </button>
-                    <Tooltip id="appointments-list" text="Xem lịch khám" />
                   </div>
                 </Link>
 
@@ -519,77 +498,18 @@ export default function UserNavbar({ setShowSearch, showSearch }: UserNavbarProp
                       ${pathname === '/user/prescription'
                         ? 'bg-gradient-to-r from-teal-500 to-indigo-600 text-white shadow-sm'
                         : 'hover:bg-gray-100 text-gray-700'}`}
-                      ref={(el) => { if (el) buttonRefs.current['prescription'] = el; }}
-                      onMouseEnter={() => setHoveredTooltip('prescription')}
-                      onMouseLeave={() => setHoveredTooltip(null)}>
+                    >
                       <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 20 20" fill="currentColor" className="size-5 flex-shrink-0">
                         <path d="M9.653 16.915l-.005-.003-.019-.01a20.759 20.759 0 01-1.162-.682 22.045 22.045 0 01-2.582-1.9C4.045 12.733 2 10.352 2 7.5a4.5 4.5 0 018-2.828A4.5 4.5 0 0118 7.5c0 2.852-2.044 5.233-3.885 6.82a22.049 22.049 0 01-3.744 2.582l-.019.01-.005.003h-.002a.739.739 0 01-.69.001l-.002-.001z" />
                       </svg>
                       {!isSidebarCollapsed && <span>Lịch sử khám</span>}
                     </button>
-                    <Tooltip id="prescription" text="Lịch sử khám" />
                   </div>
                 </Link>
               </div>
             </div>
           </div>
         </nav>
-
-        {/* Recent Pets */}
-        {pets.length > 0 && (
-          <div>
-            {!isSidebarCollapsed && <div className="text-xs text-teal-600 font-semibold px-3 mb-2 uppercase tracking-wide">Thú cưng của tôi</div>}
-            {isSidebarCollapsed && <div className="h-px bg-gradient-to-r from-transparent via-teal-500 to-transparent mx-2 mb-2"></div>}
-            <div className={`${isSidebarCollapsed ? 'px-2' : ''} space-y-1`}>
-              {loadingPets ? (
-                <>
-                  <div className="px-3 py-2"><div className="flex items-center gap-3"><div className="w-6 h-6 rounded-full bg-gray-200 animate-pulse"></div>{!isSidebarCollapsed && <div className="h-4 bg-gray-200 rounded w-20 animate-pulse"></div>}</div></div>
-                  <div className="px-3 py-2"><div className="flex items-center gap-3"><div className="w-6 h-6 rounded-full bg-gray-200 animate-pulse"></div>{!isSidebarCollapsed && <div className="h-4 bg-gray-200 rounded w-20 animate-pulse"></div>}</div></div>
-                </>
-              ) : pets.length > 0 ? (
-                <>
-                  {pets.map((pet) => (
-                    <Link key={pet.id} href={`/user/pet/${pet.id}`}>
-                      <button className={`w-full flex ${isSidebarCollapsed ? 'justify-center' : 'items-center'} gap-3 px-3 py-2 rounded-lg text-sm transition-colors cursor-pointer
-                        ${pathname === `/user/pet/${pet.id}`
-                          ? 'bg-gradient-to-r from-teal-400 to-orange-500 text-white shadow-sm'
-                          : 'hover:bg-teal-50 text-gray-700'}`}>
-                        {pet.image || pet.imageUrl || pet.photo || pet.avatar_url ? (
-                          <img src={pet.image || pet.imageUrl || pet.photo || pet.avatar_url} alt={pet.name} className="w-6 h-6 rounded-full object-cover border border-teal-200" />
-                        ) : (
-                          <div className="w-6 h-6 rounded-full bg-gradient-to-br from-teal-400 to-orange-500 flex items-center justify-center text-xs">
-                            {getPetIcon(pet.species || pet.type)}
-                          </div>
-                        )}
-                        {!isSidebarCollapsed && <span className="truncate">{pet.name}</span>}
-                      </button>
-                    </Link>
-                  ))}
-                  {pets.length >= 5 && !isSidebarCollapsed && (
-                    <Link href="/user/pet/list">
-                      <button className="w-full flex items-center gap-3 px-3 py-2 rounded-lg hover:bg-teal-50 text-teal-600 text-sm transition-colors font-medium">
-                        <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 20 20" fill="currentColor" className="size-5">
-                          <path d="M10.75 4.75a.75.75 0 00-1.5 0v4.5h-4.5a.75.75 0 000 1.5h4.5v4.5a.75.75 0 001.5 0v-4.5h4.5a.75.75 0 000-1.5h-4.5v-4.5z" />
-                        </svg>
-                        <span>Xem tất cả</span>
-                      </button>
-                    </Link>
-                  )}
-                </>
-              ) : (
-                !isSidebarCollapsed && (
-                  <div className="px-3 py-4 text-center">
-                    <div className="text-2xl mb-2">🐾</div>
-                    <p className="text-xs text-gray-500 mb-2">Chưa có thú cưng</p>
-                    <Link href="/user/pet/new">
-                      <button className="text-xs text-teal-600 hover:text-teal-700 font-medium">+ Thêm thú cưng</button>
-                    </Link>
-                  </div>
-                )
-              )}
-            </div>
-          </div>
-        )}
 
         {/* Bottom Section */}
         <div className="border-t border-gray-200 p-3 space-y-2">
@@ -651,13 +571,18 @@ export default function UserNavbar({ setShowSearch, showSearch }: UserNavbarProp
           {/* Upgrade Button */}
           {!isSidebarCollapsed && (
             <button
-              onClick={() => router.push('/user/upgrade')}
-              className="w-full flex items-center gap-3 px-3 py-2 rounded-lg bg-gradient-to-r from-teal-50 to-cyan-50 hover:from-teal-100 hover:to-cyan-100 text-teal-700 text-sm transition-colors border border-teal-300 font-medium"
+              onClick={() => !isVip && router.push('/user/upgrade')}
+              disabled={isVip}
+              className={`w-full flex items-center gap-3 px-3 py-2 rounded-lg text-sm transition-colors border font-medium ${
+                isVip
+                  ? 'bg-gradient-to-r from-amber-50 to-yellow-50 text-amber-700 border-amber-300 cursor-not-allowed opacity-75'
+                  : 'bg-gradient-to-r from-teal-50 to-cyan-50 hover:from-teal-100 hover:to-cyan-100 text-teal-700 border-teal-300 cursor-pointer'
+              }`}
             >
               <svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                 <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M5 3v4M3 5h4M6 17v4m-2-2h4m5-16l2.286 6.857L21 12l-5.714 2.143L13 21l-2.286-6.857L5 12l5.714-2.143L13 3z" />
               </svg>
-              <span>Nâng cấp</span>
+              <span>{isVip ? 'Premium' : 'Nâng cấp'}</span>
             </button>
           )}
         </div>
