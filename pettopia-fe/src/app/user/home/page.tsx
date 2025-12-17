@@ -1,6 +1,5 @@
 'use client'
 import React, { useState, useEffect, useMemo, useCallback, memo, useRef } from 'react';
-import Chat from '@/components/Chat';
 import Link from "next/link";
 import PetCards from '@/components/NumberofPet';
 import { getAppointments } from '@/services/petcare/petService';
@@ -492,7 +491,6 @@ const PetCardsSection = memo(function PetCardsSection({
 });
 
 export default function PetCareApp() {
-  const [showChat, setShowChat] = useState(false);
   const [userId, setUserId] = useState<string | null>(null);
   const [hasPets, setHasPets] = useState<boolean>(false);
   const [petsLoading, setPetsLoading] = useState<boolean>(true);
@@ -544,13 +542,6 @@ export default function PetCareApp() {
     setRefreshKey(prev => prev + 1);
   }, []);
 
-  const chatSuggestions = useMemo(() => [
-    { icon: '🐾', text: 'Quản lí hồ sơ Pet', tag: 'New' },
-    { icon: '📝', text: 'Viết nhật ký cho pet' },
-    { icon: '📊', text: 'Xem báo cáo sức khỏe' },
-    { icon: '✅', text: 'Tạo nhắc nhở khám định kỳ', tag: 'New' }
-  ], []);
-
   return (
     <div className="max-w-6xl mx-auto p-12">
       {/* Header */}
@@ -582,13 +573,6 @@ export default function PetCareApp() {
 
       {/* Quick Actions */}
       <QuickActions />
-
-      {/* Chat Widget và Button */}
-      <ChatWidget
-        showChat={showChat}
-        setShowChat={setShowChat}
-        chatSuggestions={chatSuggestions}
-      />
     </div>
   );
 }

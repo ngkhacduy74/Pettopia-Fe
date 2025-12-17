@@ -284,142 +284,6 @@ export default function UserPetPage() {
                         </div>
                     </section>
 
-                    <section ref={servicesRef} className="mb-20">
-                        <h2 className="text-3xl font-bold text-gray-900 mb-8 text-center">Hồ sơ bệnh án</h2>
-                        
-                        {loading ? (
-                            <div className="text-center py-12">
-                                <div className="inline-block w-12 h-12 border-4 border-teal-600 border-t-transparent rounded-full animate-spin mb-4"></div>
-                                <p className="text-gray-600">Đang tải hồ sơ bệnh án...</p>
-                            </div>
-                        ) : medicalRecords.length > 0 ? (
-                            <div className="space-y-6">
-                                {medicalRecords.map((item, index) => (
-                                    <motion.div
-                                        key={item.appointmentId}
-                                        initial={{ y: 50, opacity: 0 }}
-                                        whileInView={{ y: 0, opacity: 1 }}
-                                        viewport={{ once: true, amount: 0.3 }}
-                                        transition={{ duration: 0.6, delay: index * 0.1 }}
-                                        className="bg-white rounded-2xl p-6 shadow-lg border border-teal-100 hover:shadow-xl transition"
-                                    >
-                                        <div className="flex items-center justify-between mb-4 pb-4 border-b border-gray-200">
-                                            <div className="flex items-center gap-3">
-                                                <div className="w-12 h-12 bg-gradient-to-br from-teal-100 to-cyan-100 rounded-full flex items-center justify-center">
-                                                    <svg className="w-6 h-6 text-teal-600" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                                                        <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M9 12h6m-6 4h6m2 5H7a2 2 0 01-2-2V5a2 2 0 012-2h5.586a1 1 0 01.707.293l5.414 5.414a1 1 0 01.293.707V19a2 2 0 01-2 2z" />
-                                                    </svg>
-                                                </div>
-                                                <div>
-                                                    <h3 className="text-lg font-bold text-gray-900">Lần khám: {formatDate(item.appointmentDate)}</h3>
-                                                    <p className="text-sm text-gray-600">Mã lịch hẹn: {item.appointmentId.slice(0, 8)}...</p>
-                                                </div>
-                                            </div>
-                                            <div className="flex items-center gap-3">
-                                                <Link 
-                                                    href={`/user/appointments/${item.appointmentId}/medical-record`}
-                                                    className="text-teal-600 hover:text-teal-700 text-sm font-medium flex items-center gap-1"
-                                                >
-                                                    Xem hồ sơ bệnh án
-                                                    <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                                                        <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M9 12h6m-6 4h6m2 5H7a2 2 0 01-2-2V5a2 2 0 012-2h5.586a1 1 0 01.707.293l5.414 5.414a1 1 0 01.293.707V19a2 2 0 01-2 2z" />
-                                                    </svg>
-                                                </Link>
-                                                <Link 
-                                                    href={`/user/appointments/${item.appointmentId}`}
-                                                    className="text-gray-600 hover:text-gray-700 text-sm font-medium flex items-center gap-1"
-                                                >
-                                                    Xem lịch hẹn
-                                                    <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                                                        <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M9 5l7 7-7 7" />
-                                                    </svg>
-                                                </Link>
-                                            </div>
-                                        </div>
-                                        
-                                        <div className="grid md:grid-cols-2 gap-4">
-                                            {item.record.symptoms && (
-                                                <div>
-                                                    <h4 className="text-sm font-semibold text-gray-700 mb-2">Triệu chứng:</h4>
-                                                    <p className="text-sm text-gray-800 bg-gray-50 p-3 rounded-lg border border-gray-200 whitespace-pre-wrap">
-                                                        {item.record.symptoms}
-                                                    </p>
-                                                </div>
-                                            )}
-                                            
-                                            {item.record.diagnosis && (
-                                                <div>
-                                                    <h4 className="text-sm font-semibold text-gray-700 mb-2">Chẩn đoán:</h4>
-                                                    <p className="text-sm text-gray-800 bg-gray-50 p-3 rounded-lg border border-gray-200 whitespace-pre-wrap">
-                                                        {item.record.diagnosis}
-                                                    </p>
-                                                </div>
-                                            )}
-                                            
-                                            {item.record.prescription && (
-                                                <div>
-                                                    <h4 className="text-sm font-semibold text-gray-700 mb-2">Đơn thuốc:</h4>
-                                                    <p className="text-sm text-gray-800 bg-gray-50 p-3 rounded-lg border border-gray-200 whitespace-pre-wrap">
-                                                        {item.record.prescription}
-                                                    </p>
-                                                </div>
-                                            )}
-                                            
-                                            {item.record.notes && (
-                                                <div>
-                                                    <h4 className="text-sm font-semibold text-gray-700 mb-2">Ghi chú:</h4>
-                                                    <p className="text-sm text-gray-800 bg-gray-50 p-3 rounded-lg border border-gray-200 whitespace-pre-wrap">
-                                                        {item.record.notes}
-                                                    </p>
-                                                </div>
-                                            )}
-                                        </div>
-                                    </motion.div>
-                                ))}
-                            </div>
-                        ) : (
-                            <div className="bg-white rounded-2xl p-12 shadow-lg border border-teal-100 text-center">
-                                <svg className="w-16 h-16 text-gray-400 mx-auto mb-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                                    <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M9 12h6m-6 4h6m2 5H7a2 2 0 01-2-2V5a2 2 0 012-2h5.586a1 1 0 01.707.293l5.414 5.414a1 1 0 01.293.707V19a2 2 0 01-2 2z" />
-                                </svg>
-                                <h3 className="text-xl font-semibold text-gray-900 mb-2">Chưa có hồ sơ bệnh án</h3>
-                                <p className="text-gray-600">Hồ sơ bệnh án sẽ được hiển thị sau khi các lịch hẹn được hoàn thành.</p>
-                            </div>
-                        )}
-                    </section>
-
-                    {/* <section className="mb-20">
-                        <h2 className="text-3xl font-bold text-gray-900 mb-8 text-center">Lịch hẹn sắp tới</h2>
-                        <div className="bg-white rounded-2xl p-8 shadow-lg border border-teal-100">
-                        
-                            {upcomingAppointments.length > 0 ? (
-                                <div className="space-y-4">
-                                    <h3 className="text-xl font-semibold text-gray-900 mb-4">Lịch đã đặt</h3>
-                                    {upcomingAppointments.map((apt) => (
-                                        <div key={apt.appointment_id ?? apt.id ?? apt._id} className="flex items-center justify-between p-4 bg-teal-50 rounded-lg">
-                                            <div className="flex items-center gap-4">
-                                                <div className="w-12 h-12 bg-teal-600 rounded-full flex items-center justify-center">
-                                                    <svg className="w-6 h-6 text-white" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                                                        <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M8 7V3m8 4V3m-9 8h10M5 21h14a2 2 0 002-2V7a2 2 0 00-2-2H5a2 2 0 00-2 2v12a2 2 0 002 2z" />
-                                                    </svg>
-                                                </div>
-                                                <div>
-                                                    <h4 className="font-semibold text-gray-900">{apt.service ?? apt.title ?? 'Dịch vụ'}</h4>
-                                                    <p className="text-sm text-gray-600">{new Date(apt.checkout_time ?? apt.date ?? apt.time).toLocaleDateString('vi-VN', { year: 'numeric', month: 'long', day: 'numeric', hour: '2-digit', minute: '2-digit' })}</p>
-                                                </div>
-                                            </div>
-                                            <span className="px-3 py-1 bg-yellow-100 text-yellow-800 rounded-full text-sm font-medium">{apt.status}</span>
-                                        </div>
-                                    ))}
-                                </div>
-                            ) : (
-                                <div className="text-center pt-4">
-                                    <p className="text-gray-600">Chưa có lịch hẹn</p>
-                                </div>
-                            )}
-                        </div>
-                    </section> */}
-
                     <section className="mb-20">
                         <h2 className="text-3xl font-bold text-gray-900 mb-8 text-center">Thông tin chi tiết</h2>
                         <div className="bg-white rounded-2xl p-8 shadow-lg border border-teal-100">
@@ -576,6 +440,144 @@ export default function UserPetPage() {
                             )}
                         </div>
                     </section>
+
+                    <section ref={servicesRef} className="mb-20">
+                        <h2 className="text-3xl font-bold text-gray-900 mb-8 text-center">Hồ sơ bệnh án</h2>
+                        
+                        {loading ? (
+                            <div className="text-center py-12">
+                                <div className="inline-block w-12 h-12 border-4 border-teal-600 border-t-transparent rounded-full animate-spin mb-4"></div>
+                                <p className="text-gray-600">Đang tải hồ sơ bệnh án...</p>
+                            </div>
+                        ) : medicalRecords.length > 0 ? (
+                            <div className="space-y-6">
+                                {medicalRecords.map((item, index) => (
+                                    <motion.div
+                                        key={item.appointmentId}
+                                        initial={{ y: 50, opacity: 0 }}
+                                        whileInView={{ y: 0, opacity: 1 }}
+                                        viewport={{ once: true, amount: 0.3 }}
+                                        transition={{ duration: 0.6, delay: index * 0.1 }}
+                                        className="bg-white rounded-2xl p-6 shadow-lg border border-teal-100 hover:shadow-xl transition"
+                                    >
+                                        <div className="flex items-center justify-between mb-4 pb-4 border-b border-gray-200">
+                                            <div className="flex items-center gap-3">
+                                                <div className="w-12 h-12 bg-gradient-to-br from-teal-100 to-cyan-100 rounded-full flex items-center justify-center">
+                                                    <svg className="w-6 h-6 text-teal-600" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                                        <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M9 12h6m-6 4h6m2 5H7a2 2 0 01-2-2V5a2 2 0 012-2h5.586a1 1 0 01.707.293l5.414 5.414a1 1 0 01.293.707V19a2 2 0 01-2 2z" />
+                                                    </svg>
+                                                </div>
+                                                <div>
+                                                    <h3 className="text-lg font-bold text-gray-900">Lần khám: {formatDate(item.appointmentDate)}</h3>
+                                                    <p className="text-sm text-gray-600">Mã lịch hẹn: {item.appointmentId.slice(0, 8)}...</p>
+                                                </div>
+                                            </div>
+                                            <div className="flex items-center gap-3">
+                                                <Link 
+                                                    href={`/user/appointments/${item.appointmentId}/medical-record`}
+                                                    className="text-teal-600 hover:text-teal-700 text-sm font-medium flex items-center gap-1"
+                                                >
+                                                    Xem hồ sơ bệnh án
+                                                    <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                                        <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M9 12h6m-6 4h6m2 5H7a2 2 0 01-2-2V5a2 2 0 012-2h5.586a1 1 0 01.707.293l5.414 5.414a1 1 0 01.293.707V19a2 2 0 01-2 2z" />
+                                                    </svg>
+                                                </Link>
+                                                <Link 
+                                                    href={`/user/appointments/${item.appointmentId}`}
+                                                    className="text-gray-600 hover:text-gray-700 text-sm font-medium flex items-center gap-1"
+                                                >
+                                                    Xem lịch hẹn
+                                                    <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                                        <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M9 5l7 7-7 7" />
+                                                    </svg>
+                                                </Link>
+                                            </div>
+                                        </div>
+                                        
+                                        <div className="grid md:grid-cols-2 gap-4">
+                                            {item.record.symptoms && (
+                                                <div>
+                                                    <h4 className="text-sm font-semibold text-gray-700 mb-2">Triệu chứng:</h4>
+                                                    <p className="text-sm text-gray-800 bg-gray-50 p-3 rounded-lg border border-gray-200 whitespace-pre-wrap">
+                                                        {item.record.symptoms}
+                                                    </p>
+                                                </div>
+                                            )}
+                                            
+                                            {item.record.diagnosis && (
+                                                <div>
+                                                    <h4 className="text-sm font-semibold text-gray-700 mb-2">Chẩn đoán:</h4>
+                                                    <p className="text-sm text-gray-800 bg-gray-50 p-3 rounded-lg border border-gray-200 whitespace-pre-wrap">
+                                                        {item.record.diagnosis}
+                                                    </p>
+                                                </div>
+                                            )}
+                                            
+                                            {item.record.prescription && (
+                                                <div>
+                                                    <h4 className="text-sm font-semibold text-gray-700 mb-2">Đơn thuốc:</h4>
+                                                    <p className="text-sm text-gray-800 bg-gray-50 p-3 rounded-lg border border-gray-200 whitespace-pre-wrap">
+                                                        {item.record.prescription}
+                                                    </p>
+                                                </div>
+                                            )}
+                                            
+                                            {item.record.notes && (
+                                                <div>
+                                                    <h4 className="text-sm font-semibold text-gray-700 mb-2">Ghi chú:</h4>
+                                                    <p className="text-sm text-gray-800 bg-gray-50 p-3 rounded-lg border border-gray-200 whitespace-pre-wrap">
+                                                        {item.record.notes}
+                                                    </p>
+                                                </div>
+                                            )}
+                                        </div>
+                                    </motion.div>
+                                ))}
+                            </div>
+                        ) : (
+                            <div className="bg-white rounded-2xl p-12 shadow-lg border border-teal-100 text-center">
+                                <svg className="w-16 h-16 text-gray-400 mx-auto mb-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                    <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M9 12h6m-6 4h6m2 5H7a2 2 0 01-2-2V5a2 2 0 012-2h5.586a1 1 0 01.707.293l5.414 5.414a1 1 0 01.293.707V19a2 2 0 01-2 2z" />
+                                </svg>
+                                <h3 className="text-xl font-semibold text-gray-900 mb-2">Chưa có hồ sơ bệnh án</h3>
+                                <p className="text-gray-600">Hồ sơ bệnh án sẽ được hiển thị sau khi các lịch hẹn được hoàn thành.</p>
+                            </div>
+                        )}
+                    </section>
+
+                    {/* <section className="mb-20">
+                        <h2 className="text-3xl font-bold text-gray-900 mb-8 text-center">Lịch hẹn sắp tới</h2>
+                        <div className="bg-white rounded-2xl p-8 shadow-lg border border-teal-100">
+                        
+                            {upcomingAppointments.length > 0 ? (
+                                <div className="space-y-4">
+                                    <h3 className="text-xl font-semibold text-gray-900 mb-4">Lịch đã đặt</h3>
+                                    {upcomingAppointments.map((apt) => (
+                                        <div key={apt.appointment_id ?? apt.id ?? apt._id} className="flex items-center justify-between p-4 bg-teal-50 rounded-lg">
+                                            <div className="flex items-center gap-4">
+                                                <div className="w-12 h-12 bg-teal-600 rounded-full flex items-center justify-center">
+                                                    <svg className="w-6 h-6 text-white" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                                        <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M8 7V3m8 4V3m-9 8h10M5 21h14a2 2 0 002-2V7a2 2 0 00-2-2H5a2 2 0 00-2 2v12a2 2 0 002 2z" />
+                                                    </svg>
+                                                </div>
+                                                <div>
+                                                    <h4 className="font-semibold text-gray-900">{apt.service ?? apt.title ?? 'Dịch vụ'}</h4>
+                                                    <p className="text-sm text-gray-600">{new Date(apt.checkout_time ?? apt.date ?? apt.time).toLocaleDateString('vi-VN', { year: 'numeric', month: 'long', day: 'numeric', hour: '2-digit', minute: '2-digit' })}</p>
+                                                </div>
+                                            </div>
+                                            <span className="px-3 py-1 bg-yellow-100 text-yellow-800 rounded-full text-sm font-medium">{apt.status}</span>
+                                        </div>
+                                    ))}
+                                </div>
+                            ) : (
+                                <div className="text-center pt-4">
+                                    <p className="text-gray-600">Chưa có lịch hẹn</p>
+                                </div>
+                            )}
+                        </div>
+                    </section> */}
+
+                    
         </div>
     );
 }
