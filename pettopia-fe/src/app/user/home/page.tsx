@@ -241,42 +241,6 @@ const AppointmentTimeline = memo(function AppointmentTimeline() {
   );
 });
 
-// Tách Chat widget và button thành component riêng để tránh re-render
-const ChatWidget = memo(function ChatWidget({
-  showChat,
-  setShowChat,
-  chatSuggestions
-}: {
-  showChat: boolean;
-  setShowChat: (v: boolean) => void;
-  chatSuggestions: Array<{ icon: string; text: string; tag?: string }>;
-}) {
-  return (
-    <>
-      {/* Chat Widget */}
-      <Chat
-        showChat={showChat}
-        setShowChat={setShowChat}
-        chatSuggestions={chatSuggestions}
-      />
-
-      {/* Chat Button */}
-      <button
-        onClick={() => setShowChat(true)}
-        className={`fixed bottom-4 right-4 w-15 h-15 sm:w-16 sm:h-16 sm:bottom-6 sm:right-6 bg-gradient-to-br from-teal-500 to-cyan-700 rounded-full shadow-lg flex items-center justify-center text-xl sm:text-2xl hover:scale-110 transition-all duration-200 z-40 hover:shadow-xl group ${showChat ? 'opacity-0 pointer-events-none' : 'opacity-100'}`}
-        aria-label="Mở chat"
-      >
-        <span className="group-hover:hidden">
-          <img src="/sampleimg/AiCat-static.gif" alt="Chat Icon" className="w-full h-full object-cover" />
-        </span>
-        <span className="hidden group-hover:inline">
-          <img src="/sampleimg/AiCat.gif" alt="Chat Icon" className="w-full h-full object-cover" />
-        </span>
-      </button>
-    </>
-  );
-});
-
 // Tách Pet Registration Banner thành component riêng
 const PetRegistrationBanner = memo(function PetRegistrationBanner() {
   return (
