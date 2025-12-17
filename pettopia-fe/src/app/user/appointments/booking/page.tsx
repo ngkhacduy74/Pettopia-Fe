@@ -13,7 +13,7 @@ import {
   type Service,
   type Shift,
   type PetDetailResponse,
-  type ClinicRating,
+  type ClinicRatingStats,
 } from '@/services/petcare/petService';
 
 type Pet = PetDetailResponse;
@@ -58,7 +58,7 @@ export default function AppointmentBooking() {
   // Clinic detail modal
   const [showClinicDetail, setShowClinicDetail] = useState(false);
   const [selectedClinicForDetail, setSelectedClinicForDetail] = useState<Clinic | null>(null);
-  const [clinicRatings, setClinicRatings] = useState<ClinicRating[]>([]);
+  const [clinicRatingStats, setClinicRatingStats] = useState<ClinicRatingStats | null>(null);
   const [ratingsLoading, setRatingsLoading] = useState(false);
 
   // Load clinics
@@ -303,11 +303,11 @@ export default function AppointmentBooking() {
     setShowClinicDetail(true);
     setRatingsLoading(true);
     try {
-      const ratings = await getClinicRating(clinic.id);
-      setClinicRatings(ratings);
+      const stats = await getClinicRating(clinic.id);
+      setClinicRatingStats(stats);
     } catch (err) {
-      console.error('Error loading clinic ratings:', err);
-      setClinicRatings([]);
+      console.error('Error loading clinic rating stats:', err);
+      setClinicRatingStats(null);
     } finally {
       setRatingsLoading(false);
     }
@@ -316,7 +316,7 @@ export default function AppointmentBooking() {
   const closeClinicDetail = () => {
     setShowClinicDetail(false);
     setSelectedClinicForDetail(null);
-    setClinicRatings([]);
+    setClinicRatingStats(null);
   };
 
   return (
@@ -791,45 +791,43 @@ export default function AppointmentBooking() {
 
               {/* Đánh giá */}
               <div>
-                <h4 className="text-xl font-bold mb-4">Đánh giá từ khách hàng</h4>
+                <h4 className="text-xl font-bold mb-4">Thống kê đánh giá</h4>
                 {ratingsLoading ? (
                   <div className="text-center py-8">
                     <div className="inline-block animate-spin rounded-full h-8 w-8 border-b-4 border-teal-600"></div>
-                    <p className="mt-2 text-gray-600">Đang tải đánh giá...</p>
+                    <p className="mt-2 text-gray-600">Đang tải thống kê...</p>
                   </div>
-                ) : clinicRatings.length === 0 ? (
+                ) : !clinicRatingStats ? (
                   <p className="text-gray-500 italic">Chưa có đánh giá nào</p>
                 ) : (
-                  <div className="space-y-4 max-h-96 overflow-y-auto">
-                    {clinicRatings.map((rating) => (
-                      <div key={rating.id} className="bg-gray-50 rounded-xl p-4">
-                        <div className="flex items-center gap-2 mb-2">
-                          <div className="flex">
-                            {[1, 2, 3, 4, 5].map((star) => (
-                              <svg
-                                key={star}
-                                className={`w-5 h-5 ${star <= rating.star ? 'text-yellow-400' : 'text-gray-300'}`}
-                                fill="currentColor"
-                                viewBox="0 0 20 20"
-                              >
-                                <path d="M9.049 2.927c.3-.921 1.603-.921 1.902 0l1.07 3.292a1 1 0 00.95.69h3.462c.969 0 1.371 1.24.588 1.81l-2.8 2.034a1 1 0 00-.364 1.118l1.07 3.292c.3.921-.755 1.688-1.54 1.118l-2.8-2.034a1 1 0 00-1.175 0l-2.8 2.034c-.784.57-1.838-.197-1.539-1.118l1.07-3.292a1 1 0 00-.364-1.118L2.98 8.72c-.783-.57-.38-1.81.588-1.81h3.461a1 1 0 00.951-.69l1.07-3.292z" />
-                              </svg>
-                            ))}
-                          </div>
-                          <span className="text-sm text-gray-600">
-                            {new Date(rating.createdAt).toLocaleDateString('vi-VN')}
-                          </span>
+                  <div className="bg-gradient-to-br from-teal-50 to-teal-100 rounded-xl p-6">
+                    <div className="text-center mb-4">
+                      <div className="flex items-center justify-center gap-2 mb-3">
+                        <div className="flex">
+                          {[1, 2, 3, 4, 5].map((star) => (
+                            <svg
+                              key={star}
+                              className={`w-8 h-8 ${star <= Math.round(clinicRatingStats.average_stars) ? 'text-yellow-400' : 'text-gray-300'}`}
+                              fill="currentColor"
+                              viewBox="0 0 20 20"
+                            >
+                              <path d="M9.049 2.927c.3-.921 1.603-.921 1.902 0l1.07 3.292a1 1 0 00.95.69h3.462c.969 0 1.371 1.24.588 1.81l-2.8 2.034a1 1 0 00-.364 1.118l1.07 3.292c.3.921-.755 1.688-1.54 1.118l-2.8-2.034a1 1 0 00-1.175 0l-2.8 2.034c-.784.57-1.838-.197-1.539-1.118l1.07-3.292a1 1 0 00-.364-1.118L2.98 8.72c-.783-.57-.38-1.81.588-1.81h3.461a1 1 0 00.951-.69l1.07-3.292z" />
+                            </svg>
+                          ))}
                         </div>
-                        {rating.notes && (
-                          <p className="text-gray-700 text-sm mb-2">{rating.notes}</p>
-                        )}
-                        {rating.service_ids && rating.service_ids.length > 0 && (
-                          <div className="text-xs text-gray-500">
-                            Dịch vụ: {rating.service_ids.join(', ')}
-                          </div>
-                        )}
+                        <span className="text-3xl font-bold text-teal-700">
+                          {clinicRatingStats.average_stars.toFixed(1)}
+                        </span>
                       </div>
-                    ))}
+                      <p className="text-lg font-semibold text-gray-700">
+                        {clinicRatingStats.total_ratings} {clinicRatingStats.total_ratings === 1 ? 'đánh giá' : 'đánh giá'}
+                      </p>
+                    </div>
+                    <div className="mt-4 pt-4 border-t border-teal-200">
+                      <p className="text-sm text-gray-600 text-center">
+                        Dựa trên {clinicRatingStats.total_ratings} {clinicRatingStats.total_ratings === 1 ? 'đánh giá' : 'đánh giá'} từ khách hàng
+                      </p>
+                    </div>
                   </div>
                 )}
               </div>

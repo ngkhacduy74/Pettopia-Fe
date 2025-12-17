@@ -449,41 +449,75 @@ export interface RatingPayload {
   service_ids: string[];
 }
 
-export async function rateAppointment(appointmentId: string, payload: RatingPayload) {
-  try {
-    const url = `${process.env.NEXT_PUBLIC_PETTOPIA_API_URL}/api/v1/healthcare/appointments/${encodeURIComponent(appointmentId)}/rating`;
-    const response = await axios.post(url, payload, authHeaders());
-    return response.data;
-  } catch (error) {
-    logAxiosError('rateAppointment', error);
-    throw error;
-  }
-}
-
-// ================ GET CLINIC RATING ================
-export interface ClinicRating {
+export interface AppointmentRating {
   id: string;
-  clinic_id: string;
   appointment_id: string;
+  clinic_id: string;
   user_id: string;
   star: number;
-  notes: string;
+  notes?: string;
   service_ids: string[];
   createdAt: string;
   updatedAt: string;
   [key: string]: any;
 }
 
+export interface AppointmentRatingResponse {
+  status: string;
+  message?: string;
+  data: AppointmentRating;
+}
+
+export async function getAppointmentRating(appointmentId: string): Promise<AppointmentRating | null> {
+  try {
+    const url = `${process.env.NEXT_PUBLIC_PETTOPIA_API_URL}/healthcare/appointments/${encodeURIComponent(appointmentId)}/rating`;
+    const response = await axios.get<AppointmentRatingResponse>(url, authHeaders());
+    return response.data?.data || null;
+  } catch (error: any) {
+    // Nếu không tìm thấy rating (404), trả về null
+    if (error?.response?.status === 404) {
+      return null;
+    }
+    logAxiosError('getAppointmentRating', error);
+    throw error;
+  }
+}
+
+export async function rateAppointment(appointmentId: string, payload: RatingPayload) {
+  try {
+    const url = `${process.env.NEXT_PUBLIC_PETTOPIA_API_URL}/healthcare/appointments/${encodeURIComponent(appointmentId)}/rating`;
+    const response = await axios.post(url, payload, authHeaders());
+    return response.data;
+  } catch (error: any) {
+    logAxiosError('rateAppointment', error);
+    // Xử lý lỗi từ backend
+    if (error?.response?.status === 400) {
+      const message = error?.response?.data?.message || 'Lịch hẹn này đã được đánh giá trước đó';
+      const customError = new Error(message);
+      (customError as any).status = 400;
+      throw customError;
+    }
+    throw error;
+  }
+}
+
+// ================ GET CLINIC RATING STATS ================
+export interface ClinicRatingStats {
+  clinic_id: string;
+  average_stars: number;
+  total_ratings: number;
+}
+
 export interface ClinicRatingResponse {
   status: string;
   message?: string;
-  data: ClinicRating[];
+  data: ClinicRatingStats;
 }
 
-export async function getClinicRating(clinicId: string): Promise<ClinicRating[]> {
+export async function getClinicRating(clinicId: string): Promise<ClinicRatingStats> {
   try {
-    const url = `${process.env.NEXT_PUBLIC_PETTOPIA_API_URL}/api/v1/healthcare/clinic/${encodeURIComponent(clinicId)}/rating`;
-    const response = await axios.get(url, authHeaders());
+    const url = `${process.env.NEXT_PUBLIC_PETTOPIA_API_URL}/healthcare/clinics/${encodeURIComponent(clinicId)}/rating`;
+    const response = await axios.get<ClinicRatingResponse>(url, authHeaders());
     return response.data?.data || response.data;
   } catch (error) {
     logAxiosError('getClinicRating', error);

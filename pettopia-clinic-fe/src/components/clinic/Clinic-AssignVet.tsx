@@ -1,8 +1,6 @@
-
 import { useState, useEffect, useMemo } from 'react';
 import {
     Search,
-    CheckCircle,
     Clock,
     Calendar,
     User,
@@ -14,15 +12,16 @@ import {
     Filter,
     RefreshCw,
     AlertCircle,
+    Stethoscope,
     Sun,
     Sunset,
     Moon,
 } from 'lucide-react';
-import { getAppointments, updateAppointmentStatus, getAppointmentDetail } from '@/services/partner/clinicService';
+import { getAppointments, getAppointmentDetail, assignVetToAppointment } from '@/services/partner/clinicService';
 import { getCustomerById } from '@/services/customer/customerService';
+import { getClinicVets, ClinicMembersResponse, VetMember } from '@/services/partner/veterianrianService';
 import { useToast } from '@/contexts/ToastContext';
 
-// Interfaces
 interface AppointmentData {
     id?: string;
     _id?: string;
@@ -66,7 +65,7 @@ interface AppointmentDetail {
     }>;
 }
 
-export default function CheckInPage() {
+export default function AssignVetPage() {
     const [appointments, setAppointments] = useState<AppointmentData[]>([]);
     const [loading, setLoading] = useState(false);
     const [error, setError] = useState<string | null>(null);
@@ -74,24 +73,25 @@ export default function CheckInPage() {
     const [selectedAppointment, setSelectedAppointment] = useState<AppointmentDetail | null>(null);
     const [showDetailModal, setShowDetailModal] = useState(false);
     const [loadingDetail, setLoadingDetail] = useState(false);
-    const [checkingIn, setCheckingIn] = useState(false);
+    const [assigningVet, setAssigningVet] = useState(false);
     const [filterShift, setFilterShift] = useState<'all' | 'morning' | 'afternoon' | 'evening'>('all');
     const [showFilters, setShowFilters] = useState(false);
+    const [clinicVets, setClinicVets] = useState<VetMember[]>([]);
+    const [loadingVets, setLoadingVets] = useState(false);
+    const [selectedVetId, setSelectedVetId] = useState<string>('');
     const { showSuccess, showError } = useToast();
 
-    // Load danh sách lịch hẹn đã xác nhận trong ngày
-    const loadTodayAppointments = async () => {
+    // Load danh sách lịch hẹn đã check-in (có thể trong ngày hoặc toàn bộ, tùy backend)
+    const loadCheckedInAppointments = async () => {
         setLoading(true);
         setError(null);
         try {
             const response = await getAppointments(1, 1000);
             if (response.status === 'success' && response.data) {
-                // Enrich appointments với customer info
                 const enrichedAppointments = await Promise.all(
                     response.data.map(async (apt: AppointmentData) => {
                         const enriched: AppointmentData = { ...apt };
 
-                        // Lấy customer name nếu có customer_id hoặc user_id
                         const customerId = apt.customer || apt.user_id;
                         if (customerId) {
                             try {
@@ -114,23 +114,18 @@ export default function CheckInPage() {
                     })
                 );
 
-                // Lọc chỉ lấy lịch hẹn hôm nay và status Confirmed (chưa check-in)
-                const today = new Date().toLocaleDateString('sv-SE', { timeZone: 'Asia/Ho_Chi_Minh' });
-                const todayConfirmed = enrichedAppointments.filter((apt: AppointmentData) => {
-                    try {
-                        const aptDate = new Date(apt.date).toLocaleDateString('sv-SE', { timeZone: 'Asia/Ho_Chi_Minh' });
-                        // Chỉ hiển thị appointments chưa check-in (status = Confirmed)
-                        return aptDate === today && apt.status === 'Confirmed';
-                    } catch {
-                        return false;
-                    }
+                // Chỉ lấy các lịch hẹn đã check-in
+                const checkedIn = enrichedAppointments.filter((apt: AppointmentData) => {
+                    const status = apt.status?.toLowerCase();
+                    return status === 'checked_in' || status === 'checked-in';
                 });
-                setAppointments(todayConfirmed);
+
+                setAppointments(checkedIn);
             } else {
                 setAppointments([]);
             }
         } catch (err: any) {
-            setError(err?.message || 'Không thể tải danh sách lịch hẹn');
+            setError(err?.message || 'Không thể tải danh sách lịch hẹn đã check-in');
             setAppointments([]);
         } finally {
             setLoading(false);
@@ -138,19 +133,35 @@ export default function CheckInPage() {
     };
 
     useEffect(() => {
-        loadTodayAppointments();
+        loadCheckedInAppointments();
+
+        const loadVets = async () => {
+            try {
+                setLoadingVets(true);
+                const response: ClinicMembersResponse = await getClinicVets();
+                if (response.data?.members) {
+                    setClinicVets(response.data.members);
+                } else {
+                    setClinicVets([]);
+                }
+            } catch (err) {
+                console.error('Không thể tải danh sách bác sĩ để assign:', err);
+                setClinicVets([]);
+            } finally {
+                setLoadingVets(false);
+            }
+        };
+
+        loadVets();
     }, []);
 
-    // Lọc appointments theo search và filter
     const filteredAppointments = useMemo(() => {
         let filtered = [...appointments];
 
-        // Filter by shift
         if (filterShift !== 'all') {
             filtered = filtered.filter(apt => apt.shift?.toLowerCase() === filterShift);
         }
 
-        // Search filter
         if (searchQuery.trim()) {
             const query = searchQuery.trim().toLowerCase();
             filtered = filtered.filter(apt => {
@@ -164,7 +175,6 @@ export default function CheckInPage() {
             });
         }
 
-        // Sort by shift: morning -> afternoon -> evening
         const shiftOrder = { morning: 1, afternoon: 2, evening: 3 };
         filtered.sort((a, b) => {
             const orderA = shiftOrder[a.shift?.toLowerCase() as keyof typeof shiftOrder] || 999;
@@ -175,7 +185,6 @@ export default function CheckInPage() {
         return filtered;
     }, [appointments, searchQuery, filterShift]);
 
-    // Helper functions
     const getShiftLabel = (shift: string) => {
         switch (shift?.toLowerCase()) {
             case 'morning': return 'Sáng';
@@ -220,16 +229,15 @@ export default function CheckInPage() {
         }
     };
 
-    // Load chi tiết appointment
     const handleViewDetail = async (appointmentId: string) => {
         setLoadingDetail(true);
         setShowDetailModal(true);
         setError(null);
+        setSelectedVetId('');
         try {
             const response = await getAppointmentDetail(appointmentId);
             if (response.status === 'success' && response.data) {
                 const detail = response.data as any;
-                // Đảm bảo luôn có id
                 if (detail._id && !detail.id) {
                     detail.id = detail._id;
                 }
@@ -243,57 +251,44 @@ export default function CheckInPage() {
         }
     };
 
-    // Check-in khách hàng
-    const handleCheckIn = async (appointmentId: string) => {
-        if (!confirm('Xác nhận khách hàng đã đến và check-in?')) return;
+    const handleAssignVet = async (appointmentId: string) => {
+        if (!selectedVetId) {
+            showError('Vui lòng chọn bác sĩ trước khi gán.');
+            return;
+        }
 
-        setCheckingIn(true);
+        if (!confirm('Xác nhận gán bác sĩ cho lịch hẹn này?')) return;
+
+        setAssigningVet(true);
         setError(null);
 
         try {
-            // Cập nhật trạng thái lịch hẹn thành Checked_In
-            console.log('Đang cập nhật status appointment:', appointmentId, '-> Checked_In');
-            await updateAppointmentStatus(appointmentId, 'Checked_In', 'Khách hàng đã check-in tại quầy lễ tân');
-            console.log('Đã cập nhật status thành công');
-            
-            // Reload danh sách để cập nhật UI
-            await loadTodayAppointments();
-            
-            // Đóng modal và reset state
+            await assignVetToAppointment(appointmentId, selectedVetId);
+
+            await loadCheckedInAppointments();
+
             setShowDetailModal(false);
             setSelectedAppointment(null);
-            
-            // Hiển thị thông báo thành công
-            showSuccess('Check-in thành công! Khách hàng đã được xác nhận có mặt.');
+            setSelectedVetId('');
+
+            showSuccess('Gán bác sĩ cho lịch hẹn thành công!');
         } catch (err: any) {
-            console.error('Lỗi khi check-in:', err);
-            const errorMsg = err?.response?.data?.message || err?.message || 'Có lỗi xảy ra khi check-in';
+            console.error('Lỗi khi gán bác sĩ:', err);
+            const errorMsg = err?.response?.data?.message || err?.message || 'Có lỗi xảy ra khi gán bác sĩ';
             setError(errorMsg);
             showError(errorMsg);
         } finally {
-            setCheckingIn(false);
+            setAssigningVet(false);
         }
     };
 
     return (
         <div className="min-h-screen p-4 md:p-6">
             <div className="max-w-7xl mx-auto">
-                {/* Header */}
                 <div className="mb-6">
                     <div className="flex items-center justify-between mb-4">
-                        <div>
-                            <h1 className="text-gray-600 mt-2">
-                                {new Date().toLocaleDateString('vi-VN', {
-                                    timeZone: 'Asia/Ho_Chi_Minh',
-                                    weekday: 'long',
-                                    day: 'numeric',
-                                    month: 'long',
-                                    year: 'numeric'
-                                })}
-                            </h1>
-                        </div>
                         <button
-                            onClick={loadTodayAppointments}
+                            onClick={loadCheckedInAppointments}
                             disabled={loading}
                             className="px-4 py-2 bg-teal-600 text-white rounded-lg hover:bg-teal-700 transition flex items-center gap-2 disabled:opacity-50"
                         >
@@ -302,7 +297,6 @@ export default function CheckInPage() {
                         </button>
                     </div>
 
-                    {/* Error Alert */}
                     {error && (
                         <div className="mb-4 rounded-lg bg-red-50 border border-red-200 p-4">
                             <div className="flex items-start">
@@ -320,10 +314,9 @@ export default function CheckInPage() {
                         </div>
                     )}
 
-                    {/* Stats */}
-                    <div className="grid grid-cols-2 md:grid-cols-4 gap-4">
+                    <div className="grid grid-cols-2 md:grid-cols-4 gap-4 mb-4">
                         <div className="bg-blue-50 rounded-lg p-4 border border-blue-200">
-                            <p className="text-sm text-blue-600 font-medium">Tổng lịch hẹn</p>
+                            <p className="text-sm text-blue-600 font-medium">Tổng lịch đã check-in</p>
                             <p className="text-2xl font-bold text-blue-900">{appointments.length}</p>
                         </div>
                         <div className="bg-amber-50 rounded-lg p-4 border border-amber-200">
@@ -347,10 +340,8 @@ export default function CheckInPage() {
                     </div>
                 </div>
 
-                {/* Search & Filters */}
                 <div className="p-3 mb-3">
                     <div className="flex flex-col md:flex-row gap-4">
-                        {/* Search */}
                         <div className="flex-1">
                             <div className="relative">
                                 <Search className="absolute left-3 top-1/2 transform -translate-y-1/2 text-gray-400" size={20} />
@@ -364,12 +355,11 @@ export default function CheckInPage() {
                             </div>
                         </div>
 
-                        {/* Filter Button */}
                         <button
                             onClick={() => setShowFilters(!showFilters)}
                             className={`px-4 py-3 rounded-lg border transition flex items-center gap-2 ${showFilters
-                                    ? 'bg-teal-600 text-white border-teal-600'
-                                    : ' text-gray-700 border-gray-300 hover:bg-gray-50'
+                                ? 'bg-teal-600 text-white border-teal-600'
+                                : ' text-gray-700 border-gray-300 hover:bg-gray-50'
                                 }`}
                         >
                             <Filter size={20} />
@@ -377,7 +367,6 @@ export default function CheckInPage() {
                         </button>
                     </div>
 
-                    {/* Filter Options */}
                     {showFilters && (
                         <div className="mt-4 pt-4 border-t border-gray-200">
                             <div className="flex flex-wrap gap-2">
@@ -391,8 +380,8 @@ export default function CheckInPage() {
                                         key={option.value}
                                         onClick={() => setFilterShift(option.value as any)}
                                         className={`px-4 py-2 rounded-lg border transition ${filterShift === option.value
-                                                ? 'bg-teal-600 text-white border-teal-600'
-                                                : 'bg-white text-gray-700 border-gray-300 hover:bg-gray-50'
+                                            ? 'bg-teal-600 text-white border-teal-600'
+                                            : 'bg-white text-gray-700 border-gray-300 hover:bg-gray-50'
                                             }`}
                                     >
                                         {option.label}
@@ -402,7 +391,6 @@ export default function CheckInPage() {
                         </div>
                     )}
 
-                    {/* Active Filters Display */}
                     {(searchQuery || filterShift !== 'all') && (
                         <div className="mt-4 pt-4 border-t border-gray-200">
                             <div className="flex items-center gap-2 text-sm text-gray-600">
@@ -428,7 +416,6 @@ export default function CheckInPage() {
                     )}
                 </div>
 
-                {/* Appointments List */}
                 <div className="bg-white rounded-xl shadow-sm border border-gray-200 overflow-hidden">
                     {loading ? (
                         <div className="flex items-center justify-center py-12">
@@ -440,7 +427,7 @@ export default function CheckInPage() {
                             <Clock className="mx-auto h-12 w-12 text-gray-400 mb-4" />
                             <p className="text-gray-600">
                                 {appointments.length === 0
-                                    ? 'Không có lịch hẹn nào hôm nay'
+                                    ? 'Không có lịch hẹn đã check-in'
                                     : 'Không tìm thấy lịch hẹn phù hợp'}
                             </p>
                         </div>
@@ -458,6 +445,10 @@ export default function CheckInPage() {
                                                 <span className={`px-2 py-1 rounded-full text-xs font-medium border ${getShiftColor(apt.shift)} flex items-center gap-1`}>
                                                     {getShiftIcon(apt.shift)}
                                                     {getShiftLabel(apt.shift)}
+                                                </span>
+                                                <span className="text-xs text-gray-500 flex items-center gap-1">
+                                                    <Calendar size={14} />
+                                                    {formatDate(apt.date)} lúc {formatTime(apt.date)}
                                                 </span>
                                             </div>
 
@@ -498,20 +489,18 @@ export default function CheckInPage() {
                     )}
                 </div>
 
-                {/* Results Count */}
                 {!loading && filteredAppointments.length > 0 && (
                     <div className="mt-4 text-center text-sm text-gray-600">
-                        Hiển thị <strong>{filteredAppointments.length}</strong> / <strong>{appointments.length}</strong> lịch hẹn
+                        Hiển thị <strong>{filteredAppointments.length}</strong> / <strong>{appointments.length}</strong> lịch hẹn đã check-in
                     </div>
                 )}
             </div>
 
-            {/* Detail Modal */}
             {showDetailModal && (
                 <div className="fixed inset-0 bg-black/60 backdrop-blur-sm flex items-center justify-center z-50 p-4">
                     <div className="bg-white rounded-xl shadow-xl max-w-3xl w-full max-h-[90vh] overflow-y-auto">
                         <div className="sticky top-0 bg-white border-b border-gray-200 p-6 flex items-center justify-between">
-                            <h3 className="text-2xl font-bold text-gray-900">Chi tiết lịch hẹn</h3>
+                            <h3 className="text-2xl font-bold text-gray-900">Chi tiết lịch hẹn & gán bác sĩ</h3>
                             <button
                                 onClick={() => {
                                     setShowDetailModal(false);
@@ -531,7 +520,6 @@ export default function CheckInPage() {
                                 </div>
                             ) : selectedAppointment ? (
                                 <div className="space-y-6">
-                                    {/* Thông tin khách hàng */}
                                     <div className="bg-gray-50 rounded-lg p-4">
                                         <h4 className="font-semibold text-gray-900 mb-3">Thông tin khách hàng</h4>
                                         <div className="grid grid-cols-2 gap-4">
@@ -546,7 +534,6 @@ export default function CheckInPage() {
                                         </div>
                                     </div>
 
-                                    {/* Thông tin thú cưng */}
                                     {selectedAppointment.pet_infos && selectedAppointment.pet_infos.length > 0 && (
                                         <div className="bg-gray-50 rounded-lg p-4">
                                             <h4 className="font-semibold text-gray-900 mb-3">Thú cưng</h4>
@@ -577,7 +564,46 @@ export default function CheckInPage() {
                                         </div>
                                     )}
 
-                                    {/* Dịch vụ */}
+                                    <div className="bg-gray-50 rounded-lg p-4">
+                                        <div className="flex items-center justify-between mb-3">
+                                            <h4 className="font-semibold text-gray-900 flex items-center gap-2">
+                                                <Stethoscope className="text-teal-600" size={18} />
+                                                Chọn bác sĩ phụ trách
+                                            </h4>
+                                            {loadingVets && (
+                                                <span className="text-xs text-gray-500 flex items-center gap-1">
+                                                    <Loader2 className="animate-spin" size={14} />
+                                                    Đang tải danh sách bác sĩ...
+                                                </span>
+                                            )}
+                                        </div>
+                                        {clinicVets.length === 0 && !loadingVets ? (
+                                            <p className="text-sm text-gray-500">
+                                                Chưa có bác sĩ nào trong phòng khám hoặc không thể tải danh sách bác sĩ.
+                                            </p>
+                                        ) : (
+                                            <div className="space-y-2">
+                                                <select
+                                                    value={selectedVetId}
+                                                    onChange={(e) => setSelectedVetId(e.target.value)}
+                                                    className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-teal-500 text-sm"
+                                                >
+                                                    <option value="">-- Chọn bác sĩ --</option>
+                                                    {clinicVets.map((vet) => (
+                                                        <option key={vet.member_id} value={vet.member_id}>
+                                                            {vet.fullname || `Vet ${vet.member_id.slice(0, 8)}`} - {vet.specialty || 'Chưa cập nhật chuyên khoa'}
+                                                        </option>
+                                                    ))}
+                                                </select>
+                                                {selectedVetId && (
+                                                    <p className="text-xs text-gray-500">
+                                                        Bác sĩ được chọn sẽ phụ trách lịch hẹn này.
+                                                    </p>
+                                                )}
+                                            </div>
+                                        )}
+                                    </div>
+
                                     {selectedAppointment.service_infos && selectedAppointment.service_infos.length > 0 && (
                                         <div className="bg-gray-50 rounded-lg p-4">
                                             <h4 className="font-semibold text-gray-900 mb-3">Dịch vụ</h4>
@@ -597,37 +623,27 @@ export default function CheckInPage() {
                                         </div>
                                     )}
 
-                                    {/* Nút Check-in */}
                                     <button
                                         onClick={() => {
                                             const appointmentId = selectedAppointment.id || (selectedAppointment as any)._id;
                                             if (appointmentId) {
-                                                handleCheckIn(appointmentId);
+                                                handleAssignVet(appointmentId);
                                             } else {
                                                 showError('Không tìm thấy ID lịch hẹn');
                                             }
                                         }}
-                                        disabled={checkingIn || selectedAppointment.status === 'Checked_In' || selectedAppointment.status === 'checked_in'}
-                                        className={`w-full px-6 py-4 rounded-lg transition font-semibold flex items-center justify-center gap-2 text-lg ${
-                                            selectedAppointment.status === 'Checked_In' || selectedAppointment.status === 'checked_in'
-                                                ? 'bg-gray-300 text-gray-500 cursor-not-allowed'
-                                                : 'bg-teal-600 text-white hover:bg-teal-700 disabled:opacity-50'
-                                        }`}
+                                        disabled={assigningVet}
+                                        className="w-full px-6 py-4 rounded-lg transition font-semibold flex items-center justify-center gap-2 text-lg bg-teal-600 text-white hover:bg-teal-700 disabled:opacity-50"
                                     >
-                                        {checkingIn ? (
+                                        {assigningVet ? (
                                             <>
                                                 <Loader2 className="animate-spin" size={24} />
-                                                Đang xử lý...
-                                            </>
-                                        ) : selectedAppointment.status === 'Checked_In' || selectedAppointment.status === 'checked_in' ? (
-                                            <>
-                                                <CheckCircle size={24} />
-                                                Đã check-in
+                                                Đang gán bác sĩ...
                                             </>
                                         ) : (
                                             <>
-                                                <CheckCircle size={24} />
-                                                Xác nhận Check-in
+                                                <Stethoscope size={24} />
+                                                Xác nhận gán bác sĩ
                                             </>
                                         )}
                                     </button>
@@ -640,3 +656,5 @@ export default function CheckInPage() {
         </div>
     );
 }
+
+

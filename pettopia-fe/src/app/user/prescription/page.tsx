@@ -2,7 +2,7 @@
 
 import React, { useState, useEffect } from 'react';
 import Link from 'next/link';
-import { getAppointments, rateAppointment, getAppointmentDetail, type Appointment, type AppointmentsResponse, type RatingPayload, type AppointmentDetail } from '@/services/petcare/petService';
+import { getAppointments, rateAppointment, getAppointmentDetail, getAppointmentRating, type Appointment, type AppointmentsResponse, type RatingPayload, type AppointmentDetail, type AppointmentRating } from '@/services/petcare/petService';
 
 export default function PrescriptionHistoryPage() {
   const [appointments, setAppointments] = useState<Appointment[]>([]);
@@ -17,6 +17,7 @@ export default function PrescriptionHistoryPage() {
   const [ratingNotes, setRatingNotes] = useState('');
   const [ratingSubmitting, setRatingSubmitting] = useState(false);
   const [serviceDetails, setServiceDetails] = useState<Record<string, { name: string; description?: string }>>({});
+  const [appointmentRatings, setAppointmentRatings] = useState<Record<string, AppointmentRating>>({});
 
   useEffect(() => {
     const fetchAppointments = async () => {
@@ -38,6 +39,25 @@ export default function PrescriptionHistoryPage() {
         });
 
         setAppointments(historyAppointments);
+
+        // Load ratings cho các appointments đã hoàn thành
+        const ratingsMap: Record<string, AppointmentRating> = {};
+        const ratingPromises = historyAppointments
+          .filter(apt => apt.status === 'Completed')
+          .map(async (apt) => {
+            try {
+              const rating = await getAppointmentRating(apt.id);
+              if (rating) {
+                ratingsMap[apt.id] = rating;
+              }
+            } catch (err) {
+              // Bỏ qua lỗi, có thể appointment chưa có rating
+              console.log(`No rating found for appointment ${apt.id}`);
+            }
+          });
+        
+        await Promise.all(ratingPromises);
+        setAppointmentRatings(ratingsMap);
       } catch (err: any) {
         setError(err?.response?.data?.message || 'Không thể tải lịch sử khám.');
         console.error('Error fetching appointments:', err);
@@ -113,6 +133,12 @@ export default function PrescriptionHistoryPage() {
 
   // Rating functions
   const openRatingModal = async (appointment: Appointment) => {
+    // Kiểm tra xem appointment đã được đánh giá chưa
+    if (appointmentRatings[appointment.id]) {
+      alert('Lịch hẹn này đã được đánh giá trước đó. Bạn không thể đánh giá lại.');
+      return;
+    }
+
     setSelectedAppointmentForRating(appointment);
     setRatingStars({});
     setRatingNotes('');
@@ -184,11 +210,46 @@ export default function PrescriptionHistoryPage() {
 
       await rateAppointment(selectedAppointmentForRating.id, payload);
 
+      // Cập nhật rating vào state
+      const newRating: AppointmentRating = {
+        id: '',
+        appointment_id: selectedAppointmentForRating.id,
+        clinic_id: selectedAppointmentForRating.clinic_id,
+        user_id: selectedAppointmentForRating.user_id,
+        star: payload.star,
+        notes: payload.notes,
+        service_ids: payload.service_ids,
+        createdAt: new Date().toISOString(),
+        updatedAt: new Date().toISOString(),
+      };
+      setAppointmentRatings(prev => ({
+        ...prev,
+        [selectedAppointmentForRating.id]: newRating
+      }));
+
       alert('Cảm ơn bạn đã đánh giá!');
       closeRatingModal();
     } catch (err: any) {
       console.error('Error submitting rating:', err);
-      alert('Có lỗi xảy ra khi gửi đánh giá. Vui lòng thử lại.');
+      // Xử lý lỗi cụ thể từ backend
+      const errorMessage = err?.message || err?.response?.data?.message || 'Có lỗi xảy ra khi gửi đánh giá. Vui lòng thử lại.';
+      
+      if (err?.status === 400 || err?.response?.status === 400) {
+        // Nếu đã được đánh giá, reload lại rating để cập nhật UI
+        try {
+          const existingRating = await getAppointmentRating(selectedAppointmentForRating.id);
+          if (existingRating) {
+            setAppointmentRatings(prev => ({
+              ...prev,
+              [selectedAppointmentForRating.id]: existingRating
+            }));
+          }
+        } catch (reloadErr) {
+          console.error('Error reloading rating:', reloadErr);
+        }
+      }
+      
+      alert(errorMessage);
     } finally {
       setRatingSubmitting(false);
     }
@@ -329,12 +390,23 @@ export default function PrescriptionHistoryPage() {
                     <div className="flex items-center gap-3">
                       {appointment.status === 'Completed' && (
                         <>
-                          <button
-                            onClick={() => openRatingModal(appointment)}
-                            className="px-4 py-2 bg-yellow-500 text-white rounded-lg hover:bg-yellow-600 transition text-sm font-medium"
-                          >
-                            Đánh giá
-                          </button>
+                          {appointmentRatings[appointment.id] ? (
+                            <div className="flex items-center gap-2 px-4 py-2 bg-green-50 border border-green-200 rounded-lg">
+                              <svg className="w-5 h-5 text-green-600" fill="currentColor" viewBox="0 0 20 20">
+                                <path d="M9.049 2.927c.3-.921 1.603-.921 1.902 0l1.07 3.292a1 1 0 00.95.69h3.462c.969 0 1.371 1.24.588 1.81l-2.8 2.034a1 1 0 00-.364 1.118l1.07 3.292c.3.921-.755 1.688-1.54 1.118l-2.8-2.034a1 1 0 00-1.175 0l-2.8 2.034c-.784.57-1.838-.197-1.539-1.118l1.07-3.292a1 1 0 00-.364-1.118L2.98 8.72c-.783-.57-.38-1.81.588-1.81h3.461a1 1 0 00.951-.69l1.07-3.292z" />
+                              </svg>
+                              <span className="text-sm font-medium text-green-700">
+                                Đã đánh giá ({appointmentRatings[appointment.id].star} sao)
+                              </span>
+                            </div>
+                          ) : (
+                            <button
+                              onClick={() => openRatingModal(appointment)}
+                              className="px-4 py-2 bg-yellow-500 text-white rounded-lg hover:bg-yellow-600 transition text-sm font-medium"
+                            >
+                              Đánh giá
+                            </button>
+                          )}
                           <Link
                             href={`/user/appointments/${appointment.id}/medical-record`}
                             className="px-4 py-2 bg-teal-600 text-white rounded-lg hover:bg-teal-700 transition text-sm font-medium"
