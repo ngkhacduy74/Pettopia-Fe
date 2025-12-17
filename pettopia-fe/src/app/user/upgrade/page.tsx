@@ -98,7 +98,7 @@ export default function UpgradePage() {
     <div className="min-h-screen bg-gradient-to-br from-gray-50 to-gray-100">
       {/* Header */}
       <div className="relative">
-        <div className="absolute inset-0 bg-gradient-to-r from-teal-600 to-cyan-600 opacity-5" />
+        <div className="absolute inset-0 " />
         <div className="relative max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-12 sm:py-16">
           <div className="text-center">
             <h1 className="text-4xl sm:text-5xl font-bold text-gray-900 mb-4">
@@ -112,7 +112,7 @@ export default function UpgradePage() {
       </div>
 
       {/* Plans Grid */}
-      <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-12">
+      <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-12 ">
         <div className="grid md:grid-cols-3 gap-8 lg:gap-8">
           {plans.map((plan) => (
             <div
@@ -307,14 +307,9 @@ export default function UpgradePage() {
           <h2 className="text-3xl font-bold text-gray-900 mb-4">
             Bắt đầu hành trình chăm sóc tốt hơn ngay hôm nay
           </h2>
-          <p className="text-lg text-gray-600 mb-8">
+          <p className="text-lg text-gray-600 mb-3">
             Hàng ngàn chủ thú cưng đã tin tưởng Pettopia
           </p>
-          <Link href="/user/home">
-            <button className="px-8 py-3 bg-teal-600 text-white rounded-lg font-semibold hover:bg-teal-700 transition-colors">
-              Quay lại trang chủ
-            </button>
-          </Link>
         </div>
       </div>
     </div>

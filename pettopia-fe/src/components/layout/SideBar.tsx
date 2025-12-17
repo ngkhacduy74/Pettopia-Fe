@@ -9,6 +9,7 @@ import { usePathname, useRouter } from 'next/navigation';
 import { getPetsByOwner, type PetDetailResponse } from '@/services/petcare/petService';
 import SearchModal, { type MenuItem } from '@/components/layout/SearchModal';
 import { Pacifico } from 'next/font/google';
+import { toast } from 'react-hot-toast';
 
 const pacifico = Pacifico({
   subsets: ['latin'],
@@ -77,7 +78,7 @@ export default function UserNavbar({ setShowSearch, showSearch }: UserNavbarProp
     {
       id: 'list',
       name: 'Danh sách thú cưng',
-      icon: <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 20 20" fill="currentColor" className="size-5"><path d="M10 9a3 3 0 100-6 3 3 0 000 6zM6 8a2 2 0 11-4 0 2 2 0 014 0zM1.49 15.326a.78.78 0 01-.358-.442 3 3 0 014.308-3.516 6.484 6.484 0 00-1.905 3.959c-.023.222-.014.442.025.654a4.97 4.97 0 01-2.07-.655zM16.44 15.98a4.97 4.97 0 002.07-.654.78.78 0 00.357-.442 3 3 0 00-4.308-3.517 6.484 6.484 0 011.907 3.96 2.32 2.32 0 01-.026.654zM18 8a2 2 0 11-4 0 2 2 0 014 0zM5.304 16.19a.844.844 0 01-.277-.71 5 5 0 019.947 0 .843.843 0 01-.277.71A6.975 6.975 0 0110 18a6.974 6.974 0 01-4.696-1.81z" /></svg>,
+      icon: <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="currentColor" className="size-5"><circle cx="6" cy="7" r="2.5"/><circle cx="18" cy="7" r="2.5"/><circle cx="4" cy="12" r="2.2"/><circle cx="20" cy="12" r="2.2"/><ellipse cx="12" cy="19" rx="3" ry="4"/></svg>,
       path: '/user/pet/list',
       category: 'Thú cưng',
       keywords: ['thú cưng', 'pet', 'danh sách', 'list', 'quản lý pet']
@@ -85,7 +86,7 @@ export default function UserNavbar({ setShowSearch, showSearch }: UserNavbarProp
     {
       id: 'register-pet',
       name: 'Đăng ký thú cưng mới',
-      icon: <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 20 20" fill="currentColor" className="size-5"><path d="M10.75 4.75a.75.75 0 00-1.5 0v4.5h-4.5a.75.75 0 000 1.5h4.5v4.5a.75.75 0 001.5 0v-4.5h4.5a.75.75 0 000-1.5h-4.5v-4.5z" /></svg>,
+      icon: <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" className="size-5"><circle cx="12" cy="12" r="9"/><path d="M12 8v8M8 12h8"/></svg>,
       path: '/user/pet/new',
       category: 'Thú cưng',
       keywords: ['đăng ký', 'thêm', 'register', 'add', 'pet mới', 'thú cưng mới']
@@ -93,7 +94,7 @@ export default function UserNavbar({ setShowSearch, showSearch }: UserNavbarProp
     {
       id: 'community',
       name: 'Cộng đồng Pettopia',
-      icon: <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 20 20" fill="currentColor" className="size-5"><path d="M10 9a3 3 0 100-6 3 3 0 000 6zM6 8a2 2 0 11-4 0 2 2 0 014 0zM1.49 15.326a.78.78 0 01-.358-.442 3 3 0 014.308-3.516 6.484 6.484 0 00-1.905 3.959c-.023.222-.014.442.025.654a4.97 4.97 0 01-2.07-.655zM16.44 15.98a4.97 4.97 0 002.07-.654.78.78 0 00.357-.442 3 3 0 00-4.308-3.517 6.484 6.484 0 011.907 3.96 2.32 2.32 0 01-.026.654zM18 8a2 2 0 11-4 0 2 2 0 014 0zM5.304 16.19a.844.844 0 01-.277-.71 5 5 0 019.947 0 .843.843 0 01-.277.71A6.975 6.975 0 0110 18a6.974 6.974 0 01-4.696-1.81z" /></svg>,
+      icon: <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" className="size-5"><path d="M17 21v-2a4 4 0 0 0-4-4H5a4 4 0 0 0-4 4v2"/><circle cx="9" cy="7" r="4"/><path d="M23 21v-2a4 4 0 0 0-3-3.87"/><path d="M16 3.13a4 4 0 0 1 0 7.75"/></svg>,
       path: '/user/community',
       category: 'Cộng đồng',
       keywords: ['cộng đồng', 'community', 'pettopia', 'social', 'bạn bè']
@@ -101,7 +102,7 @@ export default function UserNavbar({ setShowSearch, showSearch }: UserNavbarProp
     {
       id: 'manage',
       name: 'Quản lý bài viết',
-      icon: <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 20 20" fill="currentColor" className="size-5"><path d="M3 4a1 1 0 011-1h12a1 1 0 011 1v2a1 1 0 01-1 1H4a1 1 0 01-1-1V4zM3 8a1 1 0 011-1h12a1 1 0 011 1v8a1 1 0 01-1 1H4a1 1 0 01-1-1V8zM4 9v6h12V9H4z" /><path d="M7 11h2v2H7v-2zm4 0h2v2h-2v-2zm4 0h2v2h-2v-2z" /></svg>,
+      icon: <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" className="size-5"><path d="M13 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V9z"/><polyline points="13 2 13 9 20 9"/><line x1="9" y1="14" x2="15" y2="14"/><line x1="9" y1="18" x2="15" y2="18"/></svg>,
       path: '/user/community/manage',
       category: 'Cộng đồng',
       keywords: ['quản lý', 'bài viết', 'post', 'manage', 'nội dung', 'content']
@@ -109,7 +110,7 @@ export default function UserNavbar({ setShowSearch, showSearch }: UserNavbarProp
     {
       id: 'booking',
       name: 'Đặt lịch khám',
-      icon: <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 20 20" fill="currentColor" className="size-5"><path fillRule="evenodd" d="M5.75 2a.75.75 0 01.75.75V4h7V2.75a.75.75 0 011.5 0V4h.25A2.75 2.75 0 0118 6.75v8.5A2.75 2.75 0 0115.25 18H4.75A2.75 2.75 0 012 15.25v-8.5A2.75 2.75 0 014.75 4H5V2.75A.75.75 0 015.75 2zm-1 5.5c-.69 0-1.25.56-1.25 1.25v6.5c0 .69.56 1.25 1.25 1.25h10.5c.69 0 1.25-.56 1.25-1.25v-6.5c0-.69-.56-1.25-1.25-1.25H4.75z" clipRule="evenodd" /></svg>,
+      icon: <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" className="size-5"><rect x="3" y="4" width="18" height="18" rx="2" ry="2"/><line x1="16" y1="2" x2="16" y2="6"/><line x1="8" y1="2" x2="8" y2="6"/><line x1="3" y1="10" x2="21" y2="10"/></svg>,
       path: '/user/appointments/booking',
       category: 'Đặt lịch',
       keywords: ['lịch khám', 'booking', 'appointment', 'đặt lịch', 'khám bệnh', 'veterinary', 'bác sĩ thú y']
@@ -117,7 +118,7 @@ export default function UserNavbar({ setShowSearch, showSearch }: UserNavbarProp
     {
       id: 'view-appointments',
       name: 'Xem lịch khám',
-      icon: <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 20 20" fill="currentColor" className="size-5"><path d="M10.5 1.5H5.75A2.75 2.75 0 003 4.25v11A2.75 2.75 0 005.75 18h8.5A2.75 2.75 0 0117 15.25v-11A2.75 2.75 0 0114.25 1.5H10.5z" /></svg>,
+      icon: <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" className="size-5"><rect x="3" y="4" width="18" height="18" rx="2" ry="2"/><line x1="16" y1="2" x2="16" y2="6"/><line x1="8" y1="2" x2="8" y2="6"/><line x1="3" y1="10" x2="21" y2="10"/><path d="M12 14l2 2 4-4"/></svg>,
       path: '/user/appointments/list',
       category: 'Đặt lịch',
       keywords: ['xem', 'lịch khám', 'appointments', 'lịch hẹn', 'quản lý', 'lịch sử']
@@ -125,7 +126,7 @@ export default function UserNavbar({ setShowSearch, showSearch }: UserNavbarProp
     {
       id: 'prescription',
       name: 'Lịch sử khám',
-      icon: <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 20 20" fill="currentColor" className="size-5"><path d="M9.653 16.915l-.005-.003-.019-.01a20.759 20.759 0 01-1.162-.682 22.045 22.045 0 01-2.582-1.9C4.045 12.733 2 10.352 2 7.5a4.5 4.5 0 018-2.828A4.5 4.5 0 0118 7.5c0 2.852-2.044 5.233-3.885 6.82a22.049 22.049 0 01-3.744 2.582l-.019.01-.005.003h-.002a.739.739 0 01-.69.001l-.002-.001z" /></svg>,
+      icon: <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" className="size-5"><path d="M12 2C6.48 2 2 6.48 2 12s4.48 10 10 10 10-4.48 10-10S17.52 2 12 2z"/><path d="M12 6v6l4 2.5"/></svg>,
       path: '/user/prescription',
       category: 'Đặt lịch',
       keywords: ['lịch sử', 'prescription', 'medicine', 'thuốc', 'y tế']
@@ -394,9 +395,7 @@ export default function UserNavbar({ setShowSearch, showSearch }: UserNavbarProp
                         : 'text-gray-700 hover:bg-gray-100'
                       }`}
                     >
-                      <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 20 20" fill="currentColor" className="size-5 flex-shrink-0">
-                        <path d="M10 9a3 3 0 100-6 3 3 0 000 6zM6 8a2 2 0 11-4 0 2 2 0 014 0zM1.49 15.326a.78.78 0 01-.358-.442 3 3 0 014.308-3.516 6.484 6.484 0 00-1.905 3.959c-.023.222-.014.442.025.654a4.97 4.97 0 01-2.07-.655zM16.44 15.98a4.97 4.97 0 002.07-.654.78.78 0 00.357-.442 3 3 0 00-4.308-3.517 6.484 6.484 0 011.907 3.96 2.32 2.32 0 01-.026.654zM18 8a2 2 0 11-4 0 2 2 0 014 0zM5.304 16.19a.844.844 0 01-.277-.71 5 5 0 019.947 0 .843.843 0 01-.277.71A6.975 6.975 0 0110 18a6.974 6.974 0 01-4.696-1.81z" />
-                      </svg>
+                      🐾
                       {!isSidebarCollapsed && <span>Danh sách thú cưng</span>}
                     </button>
                   </div>
@@ -409,9 +408,7 @@ export default function UserNavbar({ setShowSearch, showSearch }: UserNavbarProp
                         ? 'bg-gradient-to-r from-teal-500 to-cyan-600 text-white shadow-sm'
                         : 'hover:bg-gray-100 text-gray-700'}`}
                     >
-                      <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 20 20" fill="currentColor" className="size-5 flex-shrink-0">
-                        <path d="M10.75 4.75a.75.75 0 00-1.5 0v4.5h-4.5a.75.75 0 000 1.5h4.5v4.5a.75.75 0 001.5 0v-4.5h4.5a.75.75 0 000-1.5h-4.5v-4.5z" />
-                      </svg>
+                      <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" className="size-5 flex-shrink-0"><circle cx="12" cy="12" r="9"/><path d="M12 8v8M8 12h8"/></svg>
                       {!isSidebarCollapsed && <span>Đăng ký thú cưng mới</span>}
                     </button>
                   </div>
@@ -431,9 +428,7 @@ export default function UserNavbar({ setShowSearch, showSearch }: UserNavbarProp
                         ? 'bg-gradient-to-r from-teal-500 to-teal-700 text-white shadow-sm'
                         : 'hover:bg-gray-100 text-gray-700'}`}
                     >
-                      <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 20 20" fill="currentColor" className="size-5 flex-shrink-0">
-                        <path d="M10 9a3 3 0 100-6 3 3 0 000 6zM6 8a2 2 0 11-4 0 2 2 0 014 0zM1.49 15.326a.78.78 0 01-.358-.442 3 3 0 014.308-3.516 6.484 6.484 0 00-1.905 3.959c-.023.222-.014.442.025.654a4.97 4.97 0 01-2.07-.655zM16.44 15.98a4.97 4.97 0 002.07-.654.78.78 0 00.357-.442 3 3 0 00-4.308-3.517 6.484 6.484 0 011.907 3.96 2.32 2.32 0 01-.026.654zM18 8a2 2 0 11-4 0 2 2 0 014 0zM5.304 16.19a.844.844 0 01-.277-.71 5 5 0 019.947 0 .843.843 0 01-.277.71A6.975 6.975 0 0110 18a6.974 6.974 0 01-4.696-1.81z" />
-                      </svg>
+                      <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" className="size-5 flex-shrink-0"><path d="M17 21v-2a4 4 0 0 0-4-4H5a4 4 0 0 0-4 4v2"/><circle cx="9" cy="7" r="4"/><path d="M23 21v-2a4 4 0 0 0-3-3.87"/><path d="M16 3.13a4 4 0 0 1 0 7.75"/></svg>
                       {!isSidebarCollapsed && <span>Cộng đồng Pettopia</span>}
                     </button>
                   </div>
@@ -446,10 +441,7 @@ export default function UserNavbar({ setShowSearch, showSearch }: UserNavbarProp
                         ? 'bg-gradient-to-r from-teal-500 to-teal-700 text-white shadow-sm'
                         : 'hover:bg-gray-100 text-gray-700'}`}
                     >
-                      <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 20 20" fill="currentColor" className="size-5 flex-shrink-0">
-                        <path d="M3 4a1 1 0 011-1h12a1 1 0 011 1v2a1 1 0 01-1 1H4a1 1 0 01-1-1V4zM3 8a1 1 0 011-1h12a1 1 0 011 1v8a1 1 0 01-1 1H4a1 1 0 01-1-1V8zM4 9v6h12V9H4z" />
-                        <path d="M7 11h2v2H7v-2zm4 0h2v2h-2v-2zm4 0h2v2h-2v-2z" />
-                      </svg>
+                      <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" className="size-5 flex-shrink-0"><path d="M13 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V9z"/><polyline points="13 2 13 9 20 9"/><line x1="9" y1="14" x2="15" y2="14"/><line x1="9" y1="18" x2="15" y2="18"/></svg>
                       {!isSidebarCollapsed && <span>Quản lý bài viết</span>}
                     </button>
                   </div>
@@ -469,9 +461,7 @@ export default function UserNavbar({ setShowSearch, showSearch }: UserNavbarProp
                         ? 'bg-gradient-to-r from-teal-500 to-indigo-600 text-white shadow-sm'
                         : 'hover:bg-gray-100 text-gray-700'}`}
                     >
-                      <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 20 20" fill="currentColor" className="size-5 flex-shrink-0">
-                        <path fillRule="evenodd" d="M5.75 2a.75.75 0 01.75.75V4h7V2.75a.75.75 0 011.5 0V4h.25A2.75 2.75 0 0118 6.75v8.5A2.75 2.75 0 0115.25 18H4.75A2.75 2.75 0 012 15.25v-8.5A2.75 2.75 0 014.75 4H5V2.75A.75.75 0 015.75 2zm-1 5.5c-.69 0-1.25.56-1.25 1.25v6.5c0 .69.56 1.25 1.25 1.25h10.5c.69 0 1.25-.56 1.25-1.25v-6.5c0-.69-.56-1.25-1.25-1.25H4.75z" clipRule="evenodd" />
-                      </svg>
+                      <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" className="size-5 flex-shrink-0"><rect x="3" y="4" width="18" height="18" rx="2" ry="2"/><line x1="16" y1="2" x2="16" y2="6"/><line x1="8" y1="2" x2="8" y2="6"/><line x1="3" y1="10" x2="21" y2="10"/></svg>
                       {!isSidebarCollapsed && <span>Đặt lịch khám</span>}
                     </button>
                   </div>
@@ -484,9 +474,7 @@ export default function UserNavbar({ setShowSearch, showSearch }: UserNavbarProp
                         ? 'bg-gradient-to-r from-teal-500 to-indigo-600 text-white shadow-sm'
                         : 'hover:bg-gray-100 text-gray-700'}`}
                     >
-                      <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 20 20" fill="currentColor" className="size-5 flex-shrink-0">
-                        <path d="M10.5 1.5H5.75A2.75 2.75 0 003 4.25v11A2.75 2.75 0 005.75 18h8.5A2.75 2.75 0 0117 15.25v-11A2.75 2.75 0 0114.25 1.5H10.5z" />
-                      </svg>
+                      <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" className="size-5 flex-shrink-0"><rect x="3" y="4" width="18" height="18" rx="2" ry="2"/><line x1="16" y1="2" x2="16" y2="6"/><line x1="8" y1="2" x2="8" y2="6"/><line x1="3" y1="10" x2="21" y2="10"/><path d="M12 14l2 2 4-4"/></svg>
                       {!isSidebarCollapsed && <span>Xem lịch khám</span>}
                     </button>
                   </div>
@@ -499,9 +487,7 @@ export default function UserNavbar({ setShowSearch, showSearch }: UserNavbarProp
                         ? 'bg-gradient-to-r from-teal-500 to-indigo-600 text-white shadow-sm'
                         : 'hover:bg-gray-100 text-gray-700'}`}
                     >
-                      <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 20 20" fill="currentColor" className="size-5 flex-shrink-0">
-                        <path d="M9.653 16.915l-.005-.003-.019-.01a20.759 20.759 0 01-1.162-.682 22.045 22.045 0 01-2.582-1.9C4.045 12.733 2 10.352 2 7.5a4.5 4.5 0 018-2.828A4.5 4.5 0 0118 7.5c0 2.852-2.044 5.233-3.885 6.82a22.049 22.049 0 01-3.744 2.582l-.019.01-.005.003h-.002a.739.739 0 01-.69.001l-.002-.001z" />
-                      </svg>
+                      <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" className="size-5 flex-shrink-0"><path d="M12 2C6.48 2 2 6.48 2 12s4.48 10 10 10 10-4.48 10-10S17.52 2 12 2z"/><path d="M12 6v6l4 2.5"/></svg>
                       {!isSidebarCollapsed && <span>Lịch sử khám</span>}
                     </button>
                   </div>
@@ -625,7 +611,7 @@ export default function UserNavbar({ setShowSearch, showSearch }: UserNavbarProp
                       <p className="font-medium text-gray-900">Thông báo Email</p>
                       <p className="text-sm text-gray-500">Nhận cập nhật về thú cưng của bạn</p>
                     </div>
-                    <input type="checkbox" defaultChecked className="w-5 h-5 text-teal-600" />
+                    <input type="checkbox" defaultChecked className="w-5 h-5 text-teal-600" onChange={() => toast('Chức năng này đang phát triển', { duration: 2000, position: 'top-right' })} />
                   </div>
 
                   <div className="flex items-center justify-between p-4 bg-gray-50 rounded-lg">
@@ -633,7 +619,7 @@ export default function UserNavbar({ setShowSearch, showSearch }: UserNavbarProp
                       <p className="font-medium text-gray-900">Thông báo đẩy</p>
                       <p className="text-sm text-gray-500">Nhận thông báo trên thiết bị</p>
                     </div>
-                    <input type="checkbox" className="w-5 h-5 text-teal-600" />
+                    <input type="checkbox" className="w-5 h-5 text-teal-600" onChange={() => toast('Chức năng này đang phát triển', { duration: 2000, position: 'top-right' })} />
                   </div>
                 </div>
               </div>
@@ -646,7 +632,7 @@ export default function UserNavbar({ setShowSearch, showSearch }: UserNavbarProp
                       <p className="font-medium text-gray-900">Chế độ tối</p>
                       <p className="text-sm text-gray-500">Chuyển sang giao diện tối</p>
                     </div>
-                    <input type="checkbox" className="w-5 h-5 text-teal-600" />
+                    <input type="checkbox" className="w-5 h-5 text-teal-600" onChange={() => toast('Chức năng này đang phát triển', { duration: 2000, position: 'top-right' })} />
                   </div>
                 </div>
               </div>
@@ -659,7 +645,7 @@ export default function UserNavbar({ setShowSearch, showSearch }: UserNavbarProp
                       <p className="font-medium text-gray-900">Hiển thị hồ sơ công khai</p>
                       <p className="text-sm text-gray-500">Cho phép người khác xem hồ sơ</p>
                     </div>
-                    <input type="checkbox" defaultChecked className="w-5 h-5 text-teal-600" />
+                    <input type="checkbox" defaultChecked className="w-5 h-5 text-teal-600" onChange={() => toast('Chức năng này đang phát triển', { duration: 2000, position: 'top-right' })} />
                   </div>
                 </div>
               </div>
@@ -674,8 +660,10 @@ export default function UserNavbar({ setShowSearch, showSearch }: UserNavbarProp
               </button>
               <button
                 onClick={() => {
-                  alert('Đã lưu cài đặt!');
-                  setIsSettingsModalOpen(false);
+                  toast('Chức năng này đang phát triển', { duration: 3000, position: 'top-right' });
+                  setTimeout(() => {
+                    setIsSettingsModalOpen(false);
+                  }, 3000);
                 }}
                 className="px-6 py-2 bg-teal-600 text-white rounded-lg hover:bg-teal-700 transition-colors"
               >

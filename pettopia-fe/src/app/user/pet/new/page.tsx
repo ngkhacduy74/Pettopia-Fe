@@ -4,8 +4,9 @@ import { useEffect } from 'react';
 import { useRouter } from 'next/navigation';
 import Link from 'next/link';
 import { motion } from 'framer-motion';
-import { createPet } from '@/services/petcare/petService';
-import { getCustomerProfile } from '@/services/user/userService';
+import { createPet, getPetsByOwner } from '@/services/petcare/petService';
+import { getCustomerProfile, getVipStatus } from '@/services/user/userService';
+import { toast } from 'react-hot-toast';
 
 export default function RegisterPetPage() {
     const router = useRouter();
@@ -17,6 +18,8 @@ export default function RegisterPetPage() {
     const [avatarFile, setAvatarFile] = useState<File | null>(null);
     const [avatarPreview, setAvatarPreview] = useState<string>('');
     const [errors, setErrors] = useState<Record<string, string>>({});
+    const [petCount, setPetCount] = useState(0);
+    const [isVip, setIsVip] = useState(false);
     const [petForm, setPetForm] = useState({
         name: '',
         species: '',
@@ -132,6 +135,12 @@ export default function RegisterPetPage() {
         setServerError('');
         setErrors({});
 
+        // Check pet limit
+        if (!isVip && petCount >= 3) {
+            toast.error('Bạn đã đạt giới hạn 3 thú cưng. Nâng cấp VIP để thêm nhiều hơn!', { duration: 3000 });
+            return;
+        }
+
         // Validate form
         const newErrors: Record<string, string> = {};
 
@@ -146,6 +155,13 @@ export default function RegisterPetPage() {
 
         if (!petForm.species) {
             newErrors.species = 'Vui lòng chọn loại thú cưng';
+        }
+
+        // If there are validation errors, show toast
+        if (Object.keys(newErrors).length > 0) {
+            toast.error('Vui lòng điền đầy đủ các trường bắt buộc', { duration: 2000 });
+            setErrors(newErrors);
+            return;
         }
 
         // Optional field validations
@@ -191,7 +207,7 @@ export default function RegisterPetPage() {
         // If there are validation errors, show them and stop
         if (Object.keys(newErrors).length > 0) {
             setErrors(newErrors);
-            setServerError('Vui lòng kiểm tra lại thông tin đã nhập');
+            toast.error('Vui lòng kiểm tra lại thông tin đã nhập', { duration: 2000 });
             // Scroll to first error
             const firstErrorField = Object.keys(newErrors)[0];
             const element = document.getElementById(`pet-${firstErrorField}`);
@@ -248,17 +264,17 @@ export default function RegisterPetPage() {
 
             const res = await createPet(payload);
 
-            // ✅ CHỈ THÀNH CÔNG MỚI ALERT + REDIRECT
-            if (res?.message) {  // res?.message để tránh crash nếu res null
-                alert(res.message);  // hoặc dùng toast đẹp hơn
-                router.push('/user/home');  // thành công → về home
-                return;  // quan trọng: thoát hàm, không chạy xuống catch
+            // ✅ CHỈ THÀNH CÔNG MỚI TOAST + REDIRECT
+            if (res?.message) {
+                toast.success(res.message, { duration: 2000 });
+                setTimeout(() => {
+                    router.push('/user/home');
+                }, 2000);
+                return;
             } else {
-                // Server trả 200 nhưng không có message → coi như lỗi
                 throw new Error('Tạo pet thành công nhưng không có thông báo');
             }
         } catch (err: any) {
-            // ✅ THẤT BẠI: KHÔNG REDIRECT, CHỈ HIỆN LỖI
             console.error('Create pet error:', err?.response || err);
 
             let errorMessage = 'Có lỗi xảy ra khi tạo thú cưng. Vui lòng thử lại.';
@@ -293,6 +309,7 @@ export default function RegisterPetPage() {
                 errorMessage = err.message;
             }
 
+            toast.error(errorMessage, { duration: 3000 });
             setServerError(errorMessage);
             
             // Set field-specific errors if available
@@ -316,19 +333,18 @@ export default function RegisterPetPage() {
         }
     };
 
-    // Trong RegisterPetPage: lấy thông tin khách hàng hiện tại từ /customer/profile
+    // Lấy thông tin khách hàng, số lượng pet, và VIP status khi component mount
     useEffect(() => {
         const fetchUserData = async () => {
             try {
                 const token = typeof window !== 'undefined' ? localStorage.getItem('authToken') : null;
                 if (!token) {
                     console.warn('Missing auth token, redirecting to login');
-                    // router.push('/login');
                     return;
                 }
 
+                // Lấy thông tin khách hàng
                 const data = await getCustomerProfile();
-
                 if (!data) {
                     console.warn('Không thể tải thông tin khách hàng');
                     return;
@@ -354,6 +370,28 @@ export default function RegisterPetPage() {
                     district: data.address?.district || '',
                     ward: data.address?.ward || ''
                 }));
+
+                // Lấy số lượng pet hiện tại
+                try {
+                    const pets = await getPetsByOwner(resolvedUserId);
+                    setPetCount(pets.length);
+                } catch (petError) {
+                    console.error('Error fetching pet count:', petError);
+                    setPetCount(0);
+                }
+
+                // Lấy VIP status
+                try {
+                    const vipData = await getVipStatus();
+                    if (vipData && vipData.is_vip) {
+                        setIsVip(true);
+                    } else {
+                        setIsVip(false);
+                    }
+                } catch (vipError) {
+                    console.error('Error fetching VIP status:', vipError);
+                    setIsVip(false);
+                }
             } catch (error) {
                 console.error('Error fetching user data:', error);
             }
@@ -364,21 +402,40 @@ export default function RegisterPetPage() {
 
     return (
         <div className="max-w-7xl mx-auto px-11 py-8">
-                    {/* Hero Section */}
-                    <div className="mb-6">
-                        <Link href="/user/pet/list" className="inline-flex items-center gap-2 text-teal-600 hover:text-teal-700 transition-colors mb-4">
-                            <svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M15 19l-7-7 7-7" />
-                            </svg>
-                            <span className="font-medium">Quay lại trang chủ</span>
-                        </Link>
-                    </div>
+
 
                     {/* Form */}
                     <form onSubmit={handleSubmitPet} className="bg-white rounded-xl shadow-lg border border-gray-200 overflow-hidden">
                         <div className="bg-gradient-to-r from-teal-600 to-cyan-600 p-4 text-white">
-                            <h2 className="text-xl font-bold">Thông tin đăng kí thú cưng</h2>
+                            <div className="flex items-center justify-between">
+                                <h2 className="text-xl font-bold">Thông tin đăng kí thú cưng</h2>
+                                <div className="text-sm">
+                                    Số pet hiện tại: <span className="font-bold">{petCount}</span>/{isVip ? '∞' : '3'}
+                                </div>
+                            </div>
                         </div>
+
+                        {/* Notification when pet limit reached */}
+                        {!isVip && petCount >= 3 && (
+                            <div className="bg-amber-50 border-l-4 border-amber-400 p-4 m-6 rounded-r-lg flex items-center justify-between">
+                                <div className="flex items-start gap-3">
+                                    <svg className="w-5 h-5 text-amber-600 mt-0.5 flex-shrink-0" fill="currentColor" viewBox="0 0 20 20">
+                                        <path fillRule="evenodd" d="M8.257 3.099c.765-1.36 2.722-1.36 3.486 0l5.58 9.92c.75 1.334-.213 2.98-1.742 2.98H4.42c-1.53 0-2.493-1.646-1.743-2.98l5.58-9.92zM11 13a1 1 0 11-2 0 1 1 0 012 0zm-1-8a1 1 0 00-1 1v3a1 1 0 002 0V6a1 1 0 00-1-1z" clipRule="evenodd" />
+                                    </svg>
+                                    <div>
+                                        <p className="text-amber-800 font-medium">Giới hạn đạt tối đa</p>
+                                        <p className="text-amber-700 text-sm mt-1">Số lượng thú cưng đăng ký đạt giới hạn, vui lòng nâng cấp tài khoản để có thể đăng ký thêm!</p>
+                                    </div>
+                                </div>
+                                <button
+                                    type="button"
+                                    onClick={() => router.push('/user/upgrade')}
+                                    className="ml-4 px-4 py-2 bg-amber-600 text-white rounded-lg hover:bg-amber-700 transition-colors font-medium whitespace-nowrap flex-shrink-0"
+                                >
+                                    Nâng cấp
+                                </button>
+                            </div>
+                        )}
 
                         <div className="p-6">
                             <div className="grid grid-cols-2 gap-8">
@@ -641,51 +698,7 @@ export default function RegisterPetPage() {
                                         )}
                                     </div>
 
-                                    {/* Địa chỉ */}
-                                    <div className="pt-4 border-t border-gray-200">
-                                        <h3 className="text-sm font-semibold text-gray-900 mb-3">Địa chỉ</h3>
-                                        <div className="space-y-4">
-                                            <div>
-                                                <label htmlFor="addr-city" className="block text-sm font-medium text-gray-700 mb-1">
-                                                    Thành phố
-                                                </label>
-                                                <input
-                                                    id="addr-city"
-                                                    type="text"
-                                                    placeholder="VD: Hà Nội"
-                                                    className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-teal-500 focus:border-transparent outline-none"
-                                                    value={petForm.city}
-                                                    onChange={(e) => handleInputChange('city', e.target.value)}
-                                                />
-                                            </div>
-                                            <div>
-                                                <label htmlFor="addr-district" className="block text-sm font-medium text-gray-700 mb-1">
-                                                    Quận/Huyện
-                                                </label>
-                                                <input
-                                                    id="addr-district"
-                                                    type="text"
-                                                    placeholder="VD: Cầu Giấy"
-                                                    className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-teal-500 focus:border-transparent outline-none"
-                                                    value={petForm.district}
-                                                    onChange={(e) => handleInputChange('district', e.target.value)}
-                                                />
-                                            </div>
-                                            <div>
-                                                <label htmlFor="addr-ward" className="block text-sm font-medium text-gray-700 mb-1">
-                                                    Phường/Xã
-                                                </label>
-                                                <input
-                                                    id="addr-ward"
-                                                    type="text"
-                                                    placeholder="VD: Dịch Vọng"
-                                                    className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-teal-500 focus:border-transparent outline-none"
-                                                    value={petForm.ward}
-                                                    onChange={(e) => handleInputChange('ward', e.target.value)}
-                                                />
-                                            </div>
-                                        </div>
-                                    </div>
+
                                 </div>
                                 {/* Kết thúc grid hai cột */}
                             </div>
