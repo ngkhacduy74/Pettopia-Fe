@@ -471,18 +471,110 @@ class CommunicationService {
 
   /**
    * Parse tags from API format
+   * Handles various formats: plain strings, JSON strings, nested JSON
    */
-  parseTags(tags: string[]): string[] {
+  parseTags(tags: any): string[] {
     if (!tags || tags.length === 0) return [];
-    try {
-      return tags.map(tag => {
-        if (typeof tag === 'string' && tag.startsWith('[')) {
-          return JSON.parse(tag);
+
+    // Helper to decode HTML entities (simple version, handles common cases)
+    const decodeHtml = (str: string): string => {
+      return str
+        .replace(/&QUOT;/gi, '"')
+        .replace(/&quot;/g, '"')
+        .replace(/&#39;/g, "'")
+        .replace(/&amp;/g, '&')
+        .replace(/&lt;/g, '<')
+        .replace(/&gt;/g, '>');
+    };
+
+    // Helper to clean and normalize tag string
+    const cleanTag = (tag: string): string => {
+      let cleaned = tag.trim();
+      // Remove surrounding quotes if present
+      if ((cleaned.startsWith('"') && cleaned.endsWith('"')) || 
+          (cleaned.startsWith("'") && cleaned.endsWith("'"))) {
+        cleaned = cleaned.slice(1, -1);
+      }
+      // Decode HTML entities
+      cleaned = decodeHtml(cleaned);
+      return cleaned.trim();
+    };
+
+    // Helper to recursively parse nested JSON strings
+    const parseRecursive = (value: any): string[] => {
+      if (!value) return [];
+      
+      // If it's already an array, process each item
+      if (Array.isArray(value)) {
+        return value.flatMap(item => parseRecursive(item));
+      }
+      
+      // If it's a string, try to parse it
+      if (typeof value === 'string') {
+        const trimmed = value.trim();
+        if (!trimmed) return [];
+        
+        // Clean HTML entities first
+        let cleaned = decodeHtml(trimmed);
+        
+        // Try to parse as JSON (could be nested JSON strings)
+        if (cleaned.startsWith('[') || cleaned.startsWith('"')) {
+          try {
+            // Try parsing multiple times for deeply nested JSON strings
+            let parsed = cleaned;
+            let depth = 0;
+            while ((parsed.startsWith('[') || parsed.startsWith('"')) && depth < 5) {
+              try {
+                const result = JSON.parse(parsed);
+                if (typeof result === 'string' && (result.startsWith('[') || result.startsWith('"'))) {
+                  parsed = result;
+                  depth++;
+                } else {
+                  return parseRecursive(result);
+                }
+              } catch {
+                break;
+              }
+            }
+            // If we still have a string, clean it and return
+            if (typeof parsed === 'string') {
+              const finalTag = cleanTag(parsed);
+              return finalTag ? [finalTag] : [];
+            }
+            return parseRecursive(parsed);
+          } catch {
+            // If parse fails, return cleaned string
+            const finalTag = cleanTag(trimmed);
+            return finalTag ? [finalTag] : [];
+          }
         }
-        return tag;
-      }).flat();
-    } catch {
-      return tags;
+        
+        // Plain string, just clean it
+        const finalTag = cleanTag(trimmed);
+        return finalTag ? [finalTag] : [];
+      }
+      
+      return [];
+    };
+
+    try {
+      const result = parseRecursive(tags);
+      // Remove duplicates and empty strings, normalize
+      const normalized = result
+        .filter(tag => tag && tag.trim())
+        .map(tag => cleanTag(tag))
+        .filter(tag => tag);
+      return [...new Set(normalized)];
+    } catch (error) {
+      console.warn('Error parsing tags:', error);
+      // Fallback: try to extract plain strings
+      if (Array.isArray(tags)) {
+        return tags
+          .filter(t => typeof t === 'string' && t.trim())
+          .map(t => cleanTag(t))
+          .filter(t => t);
+      }
+      return [];
     }
   }
 

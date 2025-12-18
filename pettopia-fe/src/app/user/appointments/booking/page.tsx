@@ -482,12 +482,12 @@ export default function AppointmentBooking() {
               ) : pets.length === 0 ? (
                 <div className="text-center py-12">
                   <p className="text-gray-600 mb-4">Bạn chưa có thú cưng nào trong hệ thống</p>
-                  <button
+                  {/* <button
                     onClick={handleSkipPet}
                     className="px-6 py-3 bg-gray-100 hover:bg-gray-200 rounded-lg font-medium transition"
                   >
                     Tiếp tục không chọn thú cưng
-                  </button>
+                  </button> */}
                 </div>
               ) : (
                 <>
@@ -519,12 +519,12 @@ export default function AppointmentBooking() {
                   </div>
                   
                   <div className="mt-8 text-center">
-                    <button
+                    {/* <button
                       onClick={handleSkipPet}
                       className={`px-6 py-3 rounded-lg font-medium transition ${skipPetSelection ? 'bg-teal-600 text-white' : 'bg-gray-100 hover:bg-gray-200'}`}
                     >
                       {skipPetSelection ? 'Đã bỏ qua chọn thú cưng' : 'Không chọn thú cưng'}
-                    </button>
+                    </button> */}
                   </div>
                 </>
               )}

@@ -274,7 +274,7 @@ export default function UserProfilePage() {
                 </button>
                 <button 
                   onClick={() => router.push('/user/change-password')}
-                  className="px-6 py-2.5 border-2 text-gray-900 font-medium rounded-lg hover:bg-blue-600 hover:text-white transition-colors flex items-center gap-2"
+                  className="px-6 py-2.5 border-2 text-gray-900 font-medium rounded-lg hover:bg-teal-600 hover:text-white transition-colors flex items-center gap-2"
                 >
                   <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                     <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M15 7a2 2 0 012 2m4 0a6 6 0 01-7.743 5.743L11 17H9v2H7v2H4a1 1 0 01-1-1v-2.586a1 1 0 01.293-.707l5.964-5.964A6 6 0 1121 9z" />
@@ -288,7 +288,7 @@ export default function UserProfilePage() {
             <div className="border-b border-gray-200">
               <div className="flex gap-8 overflow-x-auto">
                 <button className="pb-4 border-b-2 border-gray-900 font-medium text-gray-900 whitespace-nowrap">Tổng quan</button>
-                <button className="pb-4 text-gray-600 hover:text-gray-900 whitespace-nowrap">Hoạt động</button>
+                <button className="pb-4 text-gray-600 hover:text-gray-900 whitespace-nowrap">Hoạt động </button>
                 <button className="pb-4 text-gray-600 hover:text-gray-900 whitespace-nowrap">Bài viết</button>
                 <button className="pb-4 text-gray-600 hover:text-gray-900 whitespace-nowrap">Ảnh</button>
               </div>
@@ -297,14 +297,14 @@ export default function UserProfilePage() {
             {/* Content Area */}
             <div className="mt-8 space-y-6">
               <div className="border border-gray-200 rounded-lg p-6">
-                <h3 className="text-lg font-bold text-gray-900 mb-4">Giới thiệu</h3>
+                <h3 className="text-lg font-bold text-gray-900 mb-4">Các tính năng hoạt động đang phát triển</h3>
                 <p className="text-gray-600 leading-relaxed">
-                  Chào mừng bạn đến với trang cá nhân của tôi. Tôi đam mê công nghệ và luôn tìm kiếm những điều mới mẻ để học hỏi và phát triển bản thân.
+                  Trang hồ sơ người dùng hiện đang trong quá trình phát triển. Các tính năng như bài viết, ảnh và hoạt động sẽ sớm được cập nhật. Vui lòng quay lại sau để trải nghiệm đầy đủ các chức năng của trang hồ sơ.
                 </p>
               </div>
 
               <div className="border border-gray-200 rounded-lg p-6">
-                <h3 className="text-lg font-bold text-gray-900 mb-4">Hoạt động gần đây</h3>
+                <h3 className="text-lg font-bold text-gray-900 mb-4">Hoạt động gần đây - Đang phát triển</h3>
                 <div className="space-y-4">
                   <div className="flex gap-4 pb-4 border-b border-gray-100">
                     <div className="w-10 h-10 rounded-full bg-gray-200 flex-shrink-0"></div>

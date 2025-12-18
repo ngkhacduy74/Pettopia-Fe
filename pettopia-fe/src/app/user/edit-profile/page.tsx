@@ -431,9 +431,23 @@ export default function EditProfilePage() {
       return;
     }
 
+    if (formData.fullname.trim().length > 20) {
+      setError('Họ và tên không được quá 20 ký tự');
+      return;
+    }
+
     if (!formData.email.trim()) {
       setError('Email không được để trống');
       return;
+    }
+
+    if (formData.dob) {
+      const selectedDate = new Date(formData.dob);
+      const today = new Date();
+      if (selectedDate > today) {
+        setError('Ngày sinh không được ở tương lai');
+        return;
+      }
     }
 
     try {
@@ -546,15 +560,21 @@ export default function EditProfilePage() {
             <label htmlFor="fullname" className="block text-sm font-semibold text-gray-900 mb-2">
               Họ và tên <span className="text-red-500">*</span>
             </label>
-            <input
-              type="text"
-              id="fullname"
-              name="fullname"
-              value={formData.fullname}
-              onChange={handleInputChange}
-              placeholder="Nhập họ và tên"
-              className="w-full px-4 py-2.5 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-teal-500 focus:border-transparent"
-            />
+            <div className="relative">
+              <input
+                type="text"
+                id="fullname"
+                name="fullname"
+                value={formData.fullname}
+                onChange={handleInputChange}
+                placeholder="Nhập họ và tên"
+                maxLength={20}
+                className="w-full px-4 py-2.5 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-teal-500 focus:border-transparent"
+              />
+              <span className="absolute right-3 top-2.5 text-xs text-gray-500">
+                {formData.fullname.length}/20
+              </span>
+            </div>
           </div>
 
           {/* Email */}
@@ -569,8 +589,10 @@ export default function EditProfilePage() {
               value={formData.email}
               onChange={handleInputChange}
               placeholder="Nhập email"
-              className="w-full px-4 py-2.5 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-teal-500 focus:border-transparent"
+              readOnly={true}
+              className="w-full px-4 py-2.5 border border-gray-300 rounded-lg bg-gray-100 cursor-not-allowed"
             />
+            <p className="text-xs text-gray-500 mt-1">Email không thể chỉnh sửa</p>
           </div>
 
           {/* Phone */}

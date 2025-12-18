@@ -191,8 +191,8 @@ export default function RegisterPetPage() {
             newErrors.breed = 'Tên giống không được quá 50 ký tự';
         }
 
-        if (petForm.color && petForm.color.length > 50) {
-            newErrors.color = 'Màu sắc không được quá 50 ký tự';
+        if (petForm.color && petForm.color.length > 25) {
+            newErrors.color = 'Màu sắc không quá 25 kí tự';
         }
 
         // Avatar validation

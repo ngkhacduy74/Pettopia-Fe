@@ -86,7 +86,7 @@ export default function ClinicShift() {
 
   const [form, setForm] = useState<ClinicShift>({
     shift: 'Morning',
-    max_slot: 20,
+    max_slot: 50,
     start_time: '07:00',
     end_time: '12:00',
   });
@@ -180,6 +180,11 @@ export default function ClinicShift() {
       return;
     }
 
+    if (form.max_slot > 50) {
+      setError('Số slot tối đa không được vượt quá 50');
+      return;
+    }
+
     const timeError = validateShiftTime(form.shift, form.start_time, form.end_time);
     if (timeError) {
       setError(timeError);
@@ -249,7 +254,7 @@ export default function ClinicShift() {
   function resetForm() {
     setForm({
       shift: 'Morning',
-      max_slot: 20,
+      max_slot: 50,
       start_time: '07:00',
       end_time: '12:00',
     });
@@ -497,10 +502,10 @@ export default function ClinicShift() {
                   <input
                     type="number"
                     min={1}
-                    max={999}
+                    max={50}
                     className="w-full rounded-xl border border-gray-300 px-4 py-3.5 focus:border-teal-500 focus:ring-4 focus:ring-teal-500/20 transition"
                     value={form.max_slot}
-                    onChange={(e) => setForm({ ...form, max_slot: Number(e.target.value) || 1 })}
+                    onChange={(e) => setForm({ ...form, max_slot: Math.min(50, Number(e.target.value) || 1) })}
                   />
                 </div>
 
