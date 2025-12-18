@@ -22,24 +22,28 @@ export default function ChangePasswordPage() {
   const [showNewPassword, setShowNewPassword] = useState(false);
   const [showReEnterPassword, setShowReEnterPassword] = useState(false);
   const [loading, setLoading] = useState(false);
-  const [passwordMatch, setPasswordMatch] = useState(true);
+  const [fieldErrors, setFieldErrors] = useState<{ [key: string]: string }>({});
 
-  const validatePassword = (password: string): PasswordValidation => {
-    return {
-      minLength: password.length >= 6,
-      hasUpperCase: /[A-Z]/.test(password),
-      hasLowerCase: /[a-z]/.test(password),
-      hasNumber: /\d/.test(password),
-      hasSpecialChar: /[!@#$%^&*()_+\-=\[\]{};':"\\|,.<>\/?]/.test(password),
-    };
-  };
-
-  const validation = validatePassword(newPassword);
-  const isPasswordValid = Object.values(validation).every(v => v);
-
-  const handleReEnterChange = (value: string) => {
-    setReEnterPassword(value);
-    setPasswordMatch(value === newPassword);
+  const validatePassword = (password: string): string | null => {
+    if (!password) {
+      return 'Vui lòng nhập mật khẩu mới';
+    }
+    if (password.length < 6) {
+      return 'Mật khẩu phải dài ít nhất 6 ký tự';
+    }
+    if (!/[A-Z]/.test(password)) {
+      return 'Mật khẩu cần ít nhất 1 ký tự viết hoa (A-Z)';
+    }
+    if (!/[a-z]/.test(password)) {
+      return 'Mật khẩu cần ít nhất 1 ký tự thường (a-z)';
+    }
+    if (!/\d/.test(password)) {
+      return 'Mật khẩu cần ít nhất 1 số (0-9)';
+    }
+    if (!/[!@#$%^&*()_+\-=\[\]{};':"\\|,.<>\/?]/.test(password)) {
+      return 'Mật khẩu cần ít nhất 1 ký tự đặc biệt (!@#$%^&*)';
+    }
+    return null;
   };
 
   const handlePastePrevent = (e: React.ClipboardEvent) => {
@@ -52,47 +56,41 @@ export default function ChangePasswordPage() {
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
+    const errors: { [key: string]: string } = {};
 
     // Validation
     if (!oldPassword) {
-      toast.error('Vui lòng nhập mật khẩu cũ', {
-        duration: 3000,
-        position: 'top-right',
-      });
-      return;
+      errors.oldPassword = 'Vui lòng nhập mật khẩu cũ';
     }
 
     if (!newPassword) {
-      toast.error('Vui lòng nhập mật khẩu mới', {
-        duration: 3000,
-        position: 'top-right',
-      });
-      return;
-    }
-
-    if (!isPasswordValid) {
-      toast.error('Mật khẩu không đáp ứng các yêu cầu', {
-        duration: 3000,
-        position: 'top-right',
-      });
-      return;
+      errors.newPassword = 'Vui lòng nhập mật khẩu mới';
+    } else {
+      const passwordError = validatePassword(newPassword);
+      if (passwordError) {
+        errors.newPassword = passwordError;
+      }
     }
 
     if (!reEnterPassword) {
-      toast.error('Vui lòng nhập lại mật khẩu mới', {
-        duration: 3000,
-        position: 'top-right',
+      errors.reEnterPassword = 'Vui lòng nhập lại mật khẩu mới';
+    } else if (reEnterPassword !== newPassword) {
+      errors.reEnterPassword = 'Mật khẩu nhập lại không khớp';
+    }
+
+    // If there are validation errors, show them and stop
+    if (Object.keys(errors).length > 0) {
+      setFieldErrors(errors);
+      Object.values(errors).forEach((error) => {
+        toast.error(error, {
+          duration: 3000,
+          position: 'top-right',
+        });
       });
       return;
     }
 
-    if (!passwordMatch) {
-      toast.error('Mật khẩu nhập lại không khớp', {
-        duration: 3000,
-        position: 'top-right',
-      });
-      return;
-    }
+    setFieldErrors({});
 
     try {
       setLoading(true);
@@ -132,7 +130,7 @@ export default function ChangePasswordPage() {
 
   return (
     <div className="min-h-screen bg-gradient-to-br from-teal-50 to-cyan-50 py-12 px-4 sm:px-6 lg:px-8">
-      <div className="max-w-6xl mx-auto">
+      <div className="max-w-2xl mx-auto">
         {/* Header */}
         <div className="mb-8">
           <h1 className="text-3xl font-bold text-teal-900 mb-2">Đổi mật khẩu</h1>
@@ -140,8 +138,8 @@ export default function ChangePasswordPage() {
         </div>
 
         {/* Main Content */}
-        <div className="grid grid-cols-1 lg:grid-cols-2 gap-8">
-          {/* Left Column - Form */}
+        <div className="grid grid-cols-1 gap-8">
+          {/* Form */}
           <div className="bg-white/40 backdrop-blur-sm rounded-lg shadow-lg p-8 border border-white/60">
             <form onSubmit={handleSubmit} className="space-y-6">
               {/* Old Password */}
@@ -155,7 +153,11 @@ export default function ChangePasswordPage() {
                     type={showOldPassword ? 'text' : 'password'}
                     value={oldPassword}
                     onChange={(e) => setOldPassword(e.target.value)}
-                    className="w-full px-4 py-2.5 bg-white/60 border border-teal-200 rounded-lg text-teal-900 placeholder:text-teal-600 focus:bg-white focus:border-teal-500 focus:ring-2 focus:ring-teal-100 focus:outline-none transition-all text-sm"
+                    className={`w-full px-4 py-2.5 bg-white/60 border rounded-lg text-teal-900 placeholder:text-teal-600 focus:bg-white focus:ring-2 focus:outline-none transition-all text-sm ${
+                      fieldErrors.oldPassword
+                        ? 'border-red-500 focus:border-red-500 focus:ring-red-100'
+                        : 'border-teal-200 focus:border-teal-500 focus:ring-teal-100'
+                    }`}
                     placeholder="Nhập mật khẩu cũ"
                   />
                   <button
@@ -190,7 +192,11 @@ export default function ChangePasswordPage() {
                     type={showNewPassword ? 'text' : 'password'}
                     value={newPassword}
                     onChange={(e) => setNewPassword(e.target.value)}
-                    className="w-full px-4 py-2.5 bg-white/60 border border-teal-200 rounded-lg text-teal-900 placeholder:text-teal-600 focus:bg-white focus:border-teal-500 focus:ring-2 focus:ring-teal-100 focus:outline-none transition-all text-sm"
+                    className={`w-full px-4 py-2.5 bg-white/60 border rounded-lg text-teal-900 placeholder:text-teal-600 focus:bg-white focus:ring-2 focus:outline-none transition-all text-sm ${
+                      fieldErrors.newPassword
+                        ? 'border-red-500 focus:border-red-500 focus:ring-red-100'
+                        : 'border-teal-200 focus:border-teal-500 focus:ring-teal-100'
+                    }`}
                     placeholder="Nhập mật khẩu mới"
                   />
                   <button
@@ -224,10 +230,10 @@ export default function ChangePasswordPage() {
                     id="reEnterPassword"
                     type={showReEnterPassword ? 'text' : 'password'}
                     value={reEnterPassword}
-                    onChange={(e) => handleReEnterChange(e.target.value)}
+                    onChange={(e) => setReEnterPassword(e.target.value)}
                     onPaste={handlePastePrevent}
                     className={`w-full px-4 py-2.5 bg-white/60 border rounded-lg text-teal-900 placeholder:text-teal-600 focus:bg-white focus:ring-2 focus:outline-none transition-all text-sm ${
-                      reEnterPassword && !passwordMatch
+                      fieldErrors.reEnterPassword
                         ? 'border-red-500 focus:border-red-500 focus:ring-red-100'
                         : 'border-teal-200 focus:border-teal-500 focus:ring-teal-100'
                     }`}
@@ -252,11 +258,6 @@ export default function ChangePasswordPage() {
                     )}
                   </button>
                 </div>
-                {reEnterPassword && !passwordMatch && (
-                  <p className="text-xs text-red-500 mt-1.5 flex items-center gap-1">
-                    <span>●</span> Mật khẩu không khớp
-                  </p>
-                )}
               </div>
 
               {/* Buttons */}
@@ -270,149 +271,13 @@ export default function ChangePasswordPage() {
                 </button>
                 <button
                   type="submit"
-                  disabled={loading || !isPasswordValid || !passwordMatch || !oldPassword || !reEnterPassword}
+                  disabled={loading || !oldPassword || !newPassword || !reEnterPassword}
                   className="flex-1 px-6 py-2.5 bg-teal-600 text-white font-medium rounded-lg hover:bg-teal-700 transition-colors disabled:opacity-50 disabled:cursor-not-allowed"
                 >
                   {loading ? 'Đang xử lý...' : 'Đổi mật khẩu'}
                 </button>
               </div>
             </form>
-          </div>
-
-          {/* Right Column - Validation */}
-          <div className="bg-white/40 backdrop-blur-sm rounded-lg shadow-lg p-8 border border-white/60">
-            <h2 className="text-lg font-bold text-teal-900 mb-6">Yêu cầu mật khẩu</h2>
-            <div className="space-y-4">
-              {/* Min Length */}
-              <div
-                className={`flex items-center gap-3 p-4 rounded-lg transition-all ${
-                  validation.minLength
-                    ? 'bg-emerald-50 text-emerald-700'
-                    : 'bg-gray-50 text-gray-500'
-                }`}
-              >
-                <div
-                  className={`flex-shrink-0 w-5 h-5 rounded-full flex items-center justify-center transition-all ${
-                    validation.minLength
-                      ? 'bg-emerald-500 text-white'
-                      : 'bg-gray-300 text-gray-500'
-                  }`}
-                >
-                  {validation.minLength ? (
-                    <svg className="w-3 h-3" fill="currentColor" viewBox="0 0 20 20">
-                      <path fillRule="evenodd" d="M16.707 5.293a1 1 0 010 1.414l-8 8a1 1 0 01-1.414 0l-4-4a1 1 0 011.414-1.414L8 12.586l7.293-7.293a1 1 0 011.414 0z" clipRule="evenodd" />
-                    </svg>
-                  ) : (
-                    '●'
-                  )}
-                </div>
-                <span className="text-sm font-medium">Ít nhất 6 ký tự</span>
-              </div>
-
-              {/* Uppercase */}
-              <div
-                className={`flex items-center gap-3 p-4 rounded-lg transition-all ${
-                  validation.hasUpperCase
-                    ? 'bg-emerald-50 text-emerald-700'
-                    : 'bg-gray-50 text-gray-500'
-                }`}
-              >
-                <div
-                  className={`flex-shrink-0 w-5 h-5 rounded-full flex items-center justify-center transition-all ${
-                    validation.hasUpperCase
-                      ? 'bg-emerald-500 text-white'
-                      : 'bg-gray-300 text-gray-500'
-                  }`}
-                >
-                  {validation.hasUpperCase ? (
-                    <svg className="w-3 h-3" fill="currentColor" viewBox="0 0 20 20">
-                      <path fillRule="evenodd" d="M16.707 5.293a1 1 0 010 1.414l-8 8a1 1 0 01-1.414 0l-4-4a1 1 0 011.414-1.414L8 12.586l7.293-7.293a1 1 0 011.414 0z" clipRule="evenodd" />
-                    </svg>
-                  ) : (
-                    '●'
-                  )}
-                </div>
-                <span className="text-sm font-medium">1 ký tự viết hoa (A-Z)</span>
-              </div>
-
-              {/* Lowercase */}
-              <div
-                className={`flex items-center gap-3 p-4 rounded-lg transition-all ${
-                  validation.hasLowerCase
-                    ? 'bg-emerald-50 text-emerald-700'
-                    : 'bg-gray-50 text-gray-500'
-                }`}
-              >
-                <div
-                  className={`flex-shrink-0 w-5 h-5 rounded-full flex items-center justify-center transition-all ${
-                    validation.hasLowerCase
-                      ? 'bg-emerald-500 text-white'
-                      : 'bg-gray-300 text-gray-500'
-                  }`}
-                >
-                  {validation.hasLowerCase ? (
-                    <svg className="w-3 h-3" fill="currentColor" viewBox="0 0 20 20">
-                      <path fillRule="evenodd" d="M16.707 5.293a1 1 0 010 1.414l-8 8a1 1 0 01-1.414 0l-4-4a1 1 0 011.414-1.414L8 12.586l7.293-7.293a1 1 0 011.414 0z" clipRule="evenodd" />
-                    </svg>
-                  ) : (
-                    '●'
-                  )}
-                </div>
-                <span className="text-sm font-medium">1 ký tự thường (a-z)</span>
-              </div>
-
-              {/* Number */}
-              <div
-                className={`flex items-center gap-3 p-4 rounded-lg transition-all ${
-                  validation.hasNumber
-                    ? 'bg-emerald-50 text-emerald-700'
-                    : 'bg-gray-50 text-gray-500'
-                }`}
-              >
-                <div
-                  className={`flex-shrink-0 w-5 h-5 rounded-full flex items-center justify-center transition-all ${
-                    validation.hasNumber
-                      ? 'bg-emerald-500 text-white'
-                      : 'bg-gray-300 text-gray-500'
-                  }`}
-                >
-                  {validation.hasNumber ? (
-                    <svg className="w-3 h-3" fill="currentColor" viewBox="0 0 20 20">
-                      <path fillRule="evenodd" d="M16.707 5.293a1 1 0 010 1.414l-8 8a1 1 0 01-1.414 0l-4-4a1 1 0 011.414-1.414L8 12.586l7.293-7.293a1 1 0 011.414 0z" clipRule="evenodd" />
-                    </svg>
-                  ) : (
-                    '●'
-                  )}
-                </div>
-                <span className="text-sm font-medium">1 số (0-9)</span>
-              </div>
-
-              {/* Special Character */}
-              <div
-                className={`flex items-center gap-3 p-4 rounded-lg transition-all ${
-                  validation.hasSpecialChar
-                    ? 'bg-emerald-50 text-emerald-700'
-                    : 'bg-gray-50 text-gray-500'
-                }`}
-              >
-                <div
-                  className={`flex-shrink-0 w-5 h-5 rounded-full flex items-center justify-center transition-all ${
-                    validation.hasSpecialChar
-                      ? 'bg-emerald-500 text-white'
-                      : 'bg-gray-300 text-gray-500'
-                  }`}
-                >
-                  {validation.hasSpecialChar ? (
-                    <svg className="w-3 h-3" fill="currentColor" viewBox="0 0 20 20">
-                      <path fillRule="evenodd" d="M16.707 5.293a1 1 0 010 1.414l-8 8a1 1 0 01-1.414 0l-4-4a1 1 0 011.414-1.414L8 12.586l7.293-7.293a1 1 0 011.414 0z" clipRule="evenodd" />
-                    </svg>
-                  ) : (
-                    '●'
-                  )}
-                </div>
-                <span className="text-sm font-medium">1 ký tự đặc biệt (!@#$%...)</span>
-              </div>
-            </div>
           </div>
         </div>
       </div>
