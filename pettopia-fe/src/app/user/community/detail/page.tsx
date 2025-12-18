@@ -2,6 +2,7 @@
 
 import React, { useEffect, useMemo, useState } from "react";
 import { useRouter, useSearchParams } from "next/navigation";
+import { useToast } from "@/contexts/ToastContext";
 import { communicationService, Post, Comment } from "@/services/communication/communicationService";
 import { parseJwt } from "@/utils/jwt";
 
@@ -13,6 +14,7 @@ interface LightboxState {
 export default function PostDetailPage() {
   const searchParams = useSearchParams();
   const router = useRouter();
+  const { showInfo, showError } = useToast();
   const postId = searchParams.get("id");
 
   const [post, setPost] = useState<Post | null>(null);
@@ -116,7 +118,7 @@ export default function PostDetailPage() {
   const handleToggleLike = async () => {
     if (!postId) return;
     if (!currentUserId) {
-      alert("Bạn cần đăng nhập để thích bài viết.");
+      showInfo("Bạn cần đăng nhập để thích bài viết.", 5000);
       return;
     }
     try {
@@ -145,7 +147,7 @@ export default function PostDetailPage() {
         const detail = await communicationService.getPostDetail(postId);
         setPost(detail);
       } catch { }
-      alert(e?.message || "Không thể cập nhật lượt thích.");
+      showError(e?.message || "Không thể cập nhật lượt thích.", 5000);
     } finally {
       setLiking(false);
     }
@@ -156,11 +158,11 @@ export default function PostDetailPage() {
     const content = commentInput.trim();
     if (!content) return;
     if (content.length > 200) {
-      alert("Bình luận không được vượt quá số ký tự.");
+      showError("Bình luận không được vượt quá số ký tự.", 5000);
       return;
     }
     if (!currentUserId) {
-      alert("Bạn cần đăng nhập để bình luận.");
+      showInfo("Bạn cần đăng nhập để bình luận.", 5000);
       return;
     }
     try {
@@ -175,7 +177,7 @@ export default function PostDetailPage() {
       setPost(detail);
     } catch (e: any) {
       console.error("Create comment error:", e);
-      alert(e?.message || "Không thể gửi bình luận.");
+      showError(e?.message || "Không thể gửi bình luận.", 5000);
     } finally {
       setSubmittingComment(false);
     }
@@ -313,7 +315,7 @@ export default function PostDetailPage() {
                           });
                         } else {
                           navigator.clipboard.writeText(window.location.href);
-                          alert('Đã copy link!');
+                          showInfo('Đã copy link!', 5000);
                         }
                       }}
                       className="text-gray-600 hover:text-gray-900 transition-colors"

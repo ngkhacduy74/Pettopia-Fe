@@ -1,5 +1,6 @@
 'use client'
 import React, { useState, useEffect } from 'react'
+import { useToast } from '@/contexts/ToastContext';
 import { getVeterinarianForms, VeterinarianForm, updateVeterinarianFormStatus } from '@/services/partner/veterianrianService';
 import { getCustomerById } from '@/services/customer/customerService';
 
@@ -16,6 +17,7 @@ interface RequestTableProps {
 }
 
 export default function VetFormDetail({ title }: RequestTableProps) {
+  const { showSuccess, showError } = useToast();
   const [selectedForm, setSelectedForm] = useState<VetFormData | null>(null);
   const [forms, setForms] = useState<VetFormData[]>([]);
   const [currentPage, setCurrentPage] = useState(1);
@@ -92,11 +94,11 @@ export default function VetFormDetail({ title }: RequestTableProps) {
     try {
       await updateVeterinarianFormStatus(selectedForm.id, newStatus, notes[newStatus]);
       setSelectedForm({ ...selectedForm, status: newStatus });
-      alert(`Đã ${newStatus === 'approved' ? 'duyệt' : newStatus === 'rejected' ? 'từ chối' : 'chuyển trạng thái'} thành công!`);
+      showSuccess(`Đã ${newStatus === 'approved' ? 'duyệt' : newStatus === 'rejected' ? 'từ chối' : 'chuyển trạng thái'} thành công!`, 5000);
       fetchForms();
     } catch (error: any) {
       console.error('Error updating status:', error);
-      alert(error.message || 'Cập nhật thất bại');
+      showError(error.message || 'Cập nhật thất bại', 5000);
     }
   };
 

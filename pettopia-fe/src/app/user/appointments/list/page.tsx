@@ -3,6 +3,7 @@
 import React, { useState, useEffect } from 'react';
 import type { Appointment, AppointmentsResponse } from '@/services/petcare/petService';
 import { getAppointments, updateAppointmentStatus } from '@/services/petcare/petService';
+import { useToast } from '@/contexts/ToastContext';
 import Link from 'next/link';
 import axios from 'axios';
 
@@ -45,6 +46,7 @@ const CANCEL_REASONS = [
 ];
 
 const ViewAppointmentsPage = () => {
+  const { showError, showSuccess } = useToast();
   const [currentDate, setCurrentDate] = useState(new Date());
   const [selectedDate, setSelectedDate] = useState<Date | null>(null);
   const [appointments, setAppointments] = useState<Appointment[]>([]);
@@ -219,7 +221,7 @@ const ViewAppointmentsPage = () => {
 
     const finalReason = cancelReason.trim() || selectedReason;
     if (!finalReason) {
-      alert('Vui lòng chọn hoặc nhập lý do hủy.');
+      showError('Vui lòng chọn hoặc nhập lý do hủy.', 5000);
       return;
     }
 
@@ -233,11 +235,11 @@ const ViewAppointmentsPage = () => {
       setSelectedAppointmentId(null);
       setCancelReason('');
       setSelectedReason('');
-      alert('Hủy lịch hẹn thành công!');
+      showSuccess('Hủy lịch hẹn thành công!', 5000);
     } catch (err: any) {
       console.error('Error cancelling appointment:', err);
       const errorMessage = err?.response?.data?.message || err?.message || 'Hủy lịch thất bại. Vui lòng thử lại.';
-      alert(errorMessage);
+      showError(errorMessage, 5000);
     } finally {
       setIsCancelling(false);
     }

@@ -6,6 +6,7 @@ import { ChevronDownIcon, EyeIcon, EyeSlashIcon } from '@heroicons/react/24/outl
 import axios from 'axios';
 import { parseJwt, isTokenExpired } from '@/utils/jwt';
 import { useRouter } from 'next/navigation';
+import { useToast } from '@/contexts/ToastContext';
 import { registerClinic } from '@/services/partner/clinicService';
 
 interface ClinicFormData {
@@ -77,6 +78,7 @@ export default function ClinicCreateForm() {
   const [apiError, setApiError] = useState(false);
   const [serverError, setServerError] = useState('');
   const router = useRouter();
+  const { showSuccess, showError } = useToast();
 
   const selectedCity = watch('city');
   const selectedDistrict = watch('district');
@@ -228,7 +230,7 @@ export default function ClinicCreateForm() {
       };
 
       await registerClinic(formattedData);
-      alert('Đăng ký phòng khám thành công!');
+      showSuccess('Đăng ký phòng khám thành công!', 5000);
       router.push('/user/waitting');
     } catch (error: any) {
       setServerError(error.response?.data?.message || 'Đăng ký thất bại. Vui lòng thử lại.');

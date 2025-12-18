@@ -4,6 +4,7 @@ import { useState } from 'react';
 import { useForm, useFieldArray, Controller } from 'react-hook-form';
 import { ChevronDownIcon } from '@heroicons/react/24/outline';
 import { useRouter } from 'next/navigation';
+import { useToast } from '@/contexts/ToastContext';
 import { submitVeterinarianData } from '@/services/partner/veterianrianService';
 
 interface Certification {
@@ -70,6 +71,7 @@ export default function VetCreateForm() {
 
   const router = useRouter();
   const [serverError, setServerError] = useState('');
+  const { showSuccess, showError } = useToast();
 
   const onSubmit = async (data: VetFormData) => {
     try {
@@ -92,7 +94,7 @@ export default function VetCreateForm() {
 
       // Fix lỗi dòng 88
       await submitVeterinarianData(formattedData);
-      alert('Thông tin bác sĩ thú y đã được gửi thành công!');
+      showSuccess('Thông tin bác sĩ thú y đã được gửi thành công!', 5000);
       router.push('/user/waitting');
     } catch (error: any) {
       setServerError(error.response?.data?.message || 'Gửi thất bại. Vui lòng thử lại.');

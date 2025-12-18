@@ -1,5 +1,6 @@
 'use client'
 import React, { useState } from 'react';
+import { useToast } from '@/contexts/ToastContext';
 import {
   XMarkIcon,
   EnvelopeIcon,
@@ -16,6 +17,7 @@ export default function InviteMemberModal({
   isOpen,
   onClose,
 }: InviteMemberModalProps) {
+  const { showError } = useToast();
   const [inviteEmails, setInviteEmails] = useState('');
   const [inviteRole, setInviteRole] = useState('');
   const [isLoading, setIsLoading] = useState(false);
@@ -28,7 +30,7 @@ export default function InviteMemberModal({
       setInviteRole('');
       onClose();
     } catch (error: any) {
-      alert(`Lỗi: ${error.response?.data?.message || error.message}`);
+      showError(`Lỗi: ${error.response?.data?.message || error.message}`, 5000);
     } finally {
       setIsLoading(false);
     }

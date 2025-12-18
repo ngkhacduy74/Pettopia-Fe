@@ -129,7 +129,6 @@ export default function Layout({
                   </button>
                   <button
                     onClick={() => {
-                      alert('Settings saved!');
                       setIsSettingsModalOpen(false);
                     }}
                     className="px-6 py-2 bg-teal-600 text-white rounded-lg hover:bg-teal-700 transition-colors"

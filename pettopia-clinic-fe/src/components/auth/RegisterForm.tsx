@@ -3,6 +3,7 @@
 import { useState, useEffect } from "react";
 import { useForm } from "react-hook-form";
 import { useRouter } from "next/navigation";
+import { useToast } from "@/contexts/ToastContext";
 import { createUser } from "@/services/auth/authService";
 import Image from "next/image";
 import axios from "axios";
@@ -59,6 +60,7 @@ export default function RegisterForm() {
   const [isLoadingWards, setIsLoadingWards] = useState(false);
   const [apiError, setApiError] = useState(false);
   const router = useRouter();
+  const { showSuccess } = useToast();
   const [confirmPassword, setConfirmPassword] = useState("");
   const [passwordError, setPasswordError] = useState("");
   const [showPassword, setShowPassword] = useState(false);
@@ -214,7 +216,7 @@ export default function RegisterForm() {
       console.log("Dữ liệu gửi đi:", formattedData);
 
       await createUser(formattedData);
-      alert("Đăng ký thành công!");
+      showSuccess("Đăng ký thành công!", 5000);
       router.push("/auth/login");
     } catch (err: any) {
       console.error("Lỗi khi đăng ký:", err);

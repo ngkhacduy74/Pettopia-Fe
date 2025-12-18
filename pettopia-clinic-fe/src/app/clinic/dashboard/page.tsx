@@ -2,6 +2,7 @@
 'use client'
 import React, { useState, useEffect } from 'react';
 import Link from 'next/link';
+import { useToast } from '@/contexts/ToastContext';
 import Dashboard from '@/components/common/Dashboard';
 import InviteMemberModal from '@/components/clinic/InviteMemberModal';
 import InviteMemberButton from '@/components/clinic/InviteMemberButton';
@@ -16,6 +17,7 @@ import {
 } from '@heroicons/react/24/outline';
 
 export default function ClinicDashboardPage() {
+  const { showSuccess } = useToast();
   const [selectedPeriod, setSelectedPeriod] = useState<'week' | 'month' | 'year'>('month');
   const [clinicId, setClinicId] = useState<string | null>(null);
 
@@ -33,7 +35,7 @@ export default function ClinicDashboardPage() {
   // Xử lý gửi lời mời
   const handleInvite = async (email: string, role: string) => {
     const response = await sendInvitation(email, role);
-    alert(`Đã gửi lời mời đến: ${email}`);
+    showSuccess(`Đã gửi lời mời đến: ${email}`, 5000);
   };
 
   // Dữ liệu dashboard

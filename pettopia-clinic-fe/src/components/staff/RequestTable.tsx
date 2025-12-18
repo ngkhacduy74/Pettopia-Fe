@@ -1,6 +1,7 @@
 'use client'
 import React, { useState, useEffect } from 'react';
 import { useRouter } from 'next/navigation';
+import { useToast } from '@/contexts/ToastContext';
 import { ClinicFormData, getClinicForms, updateClinicFormStatus } from '@/services/partner/clinicService';
 
 interface RequestTableProps {
@@ -9,6 +10,7 @@ interface RequestTableProps {
 
 export default function RequestTable({ title }: RequestTableProps) {
   const router = useRouter();
+  const { showError } = useToast();
   const [dropdownRow, setDropdownRow] = useState<number | null>(null);
   const [forms, setForms] = useState<ClinicFormData[]>([]);
   const [currentPage, setCurrentPage] = useState(1);
@@ -65,7 +67,7 @@ export default function RequestTable({ title }: RequestTableProps) {
       await fetchForms();
     } catch (error) {
       console.error('Error updating clinic form status:', error);
-      alert('Có lỗi xảy ra khi cập nhật trạng thái');
+      showError('Có lỗi xảy ra khi cập nhật trạng thái', 5000);
     }
   };
 
