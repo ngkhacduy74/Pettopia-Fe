@@ -203,7 +203,7 @@ export default function PrescriptionHistoryPage() {
       setRatingSubmitting(true);
 
       const payload: RatingPayload = {
-        stars: Math.max(...Object.values(ratingStars)), // Use highest rating as overall
+        star: Math.max(...Object.values(ratingStars)), // Use highest rating as overall
         notes: ratingNotes.trim(),
         service_ids: ratedServices
       };
@@ -216,7 +216,7 @@ export default function PrescriptionHistoryPage() {
         appointment_id: selectedAppointmentForRating.id,
         clinic_id: selectedAppointmentForRating.clinic_id,
         user_id: selectedAppointmentForRating.user_id,
-        stars: payload.stars,
+        star: payload.star,
         notes: payload.notes,
         service_ids: payload.service_ids,
         createdAt: new Date().toISOString(),
@@ -396,7 +396,7 @@ export default function PrescriptionHistoryPage() {
                                 <path d="M9.049 2.927c.3-.921 1.603-.921 1.902 0l1.07 3.292a1 1 0 00.95.69h3.462c.969 0 1.371 1.24.588 1.81l-2.8 2.034a1 1 0 00-.364 1.118l1.07 3.292c.3.921-.755 1.688-1.54 1.118l-2.8-2.034a1 1 0 00-1.175 0l-2.8 2.034c-.784.57-1.838-.197-1.539-1.118l1.07-3.292a1 1 0 00-.364-1.118L2.98 8.72c-.783-.57-.38-1.81.588-1.81h3.461a1 1 0 00.951-.69l1.07-3.292z" />
                               </svg>
                               <span className="text-sm font-medium text-green-700">
-                                Đã đánh giá ({appointmentRatings[appointment.id].stars} sao)
+                                Đã đánh giá ({appointmentRatings[appointment.id].star} sao)
                               </span>
                             </div>
                           ) : (
