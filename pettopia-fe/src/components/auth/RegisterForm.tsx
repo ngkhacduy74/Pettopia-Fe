@@ -69,22 +69,28 @@ export default function RegisterForm() {
     if (!password) {
       return "Vui lòng nhập mật khẩu";
     }
-    if (password.length <= 6) {
-      return "Mật khẩu phải dài hơn 6 ký tự";
-    }
-    if (!/[A-Z]/.test(password)) {
-      return "Mật khẩu cần ít nhất 1 chữ viết hoa (A-Z)";
-    }
-    if (!/[a-z]/.test(password)) {
-      return "Mật khẩu cần ít nhất 1 chữ viết thường (a-z)";
+    if (password.length < 8) {
+      return "Mật khẩu phải có ít nhất 8 ký tự";
     }
     if (!/[0-9]/.test(password)) {
       return "Mật khẩu cần ít nhất 1 số (0-9)";
     }
-    if (!/[!@#$%^&*()_+\-=\[\]{};':"\\|,.<>\/?]/.test(password)) {
+    if (!/[!@#$%^&*]/.test(password)) {
       return "Mật khẩu cần ít nhất 1 ký tự đặc biệt (!@#$%^&*)";
     }
     return true;
+  };
+
+  // Validation function for email
+  const validateEmail = (email: string): boolean => {
+    const emailRegex = /^[\w-.]+@([\w-]+\.)+[\w-]{2,4}$/;
+    return emailRegex.test(email);
+  };
+
+  // Validation function for phone
+  const validatePhone = (phone: string): boolean => {
+    const phoneRegex = /^(0|\+84)\d{9}$/;
+    return phoneRegex.test(phone);
   };
 
   const selectedCity = watch("city");
@@ -320,11 +326,14 @@ export default function RegisterForm() {
                 </label>
                 <input
                   id="fullname"
-                  {...register("fullname", { required: true })}
+                  {...register("fullname", {
+                    required: "Vui lòng nhập họ và tên",
+                    minLength: { value: 2, message: "Họ tên phải ít nhất 2 ký tự" },
+                  })}
                   className="block w-full px-4 py-2.5 bg-gray-50 border border-gray-200 rounded-lg text-gray-900 placeholder:text-gray-400 focus:bg-white focus:border-teal-500 focus:ring-2 focus:ring-teal-100 focus:outline-none transition-all text-sm"
                   placeholder="Nhập họ và tên"
                 />
-                {errors.fullname && <p className="text-xs text-red-500 mt-1.5 flex items-center gap-1"><span>●</span> Vui lòng nhập họ và tên</p>}
+                {errors.fullname && <p className="text-xs text-red-500 mt-1.5 flex items-center gap-1"><span>●</span> {errors.fullname.message}</p>}
               </div>
 
               <div>
@@ -333,11 +342,14 @@ export default function RegisterForm() {
                 </label>
                 <input
                   id="username"
-                  {...register("username", { required: true })}
+                  {...register("username", {
+                    required: "Vui lòng nhập tên đăng nhập",
+                    minLength: { value: 3, message: "Tên đăng nhập phải ít nhất 3 ký tự" },
+                  })}
                   className="block w-full px-4 py-2.5 bg-gray-50 border border-gray-200 rounded-lg text-gray-900 placeholder:text-gray-400 focus:bg-white focus:border-teal-500 focus:ring-2 focus:ring-teal-100 focus:outline-none transition-all text-sm"
                   placeholder="Nhập tên đăng nhập"
                 />
-                {errors.username && <p className="text-xs text-red-500 mt-1.5 flex items-center gap-1"><span>●</span> Vui lòng nhập tên đăng nhập</p>}
+                {errors.username && <p className="text-xs text-red-500 mt-1.5 flex items-center gap-1"><span>●</span> {errors.username.message}</p>}
               </div>
             </div>
 
@@ -350,11 +362,14 @@ export default function RegisterForm() {
                 <input
                   id="email"
                   type="email"
-                  {...register("email", { required: true, pattern: /^\S+@\S+$/i })}
+                  {...register("email", {
+                    required: true,
+                    validate: (value) => validateEmail(value) || "Email không hợp lệ",
+                  })}
                   className="block w-full px-4 py-2.5 bg-gray-50 border border-gray-200 rounded-lg text-gray-900 placeholder:text-gray-400 focus:bg-white focus:border-teal-500 focus:ring-2 focus:ring-teal-100 focus:outline-none transition-all text-sm"
                   placeholder="email@example.com"
                 />
-                {errors.email && <p className="text-xs text-red-500 mt-1.5 flex items-center gap-1"><span>●</span> Vui lòng nhập email hợp lệ</p>}
+                {errors.email && <p className="text-xs text-red-500 mt-1.5 flex items-center gap-1"><span>●</span> {errors.email.message || "Vui lòng nhập email hợp lệ"}</p>}
               </div>
 
               <div>
@@ -363,11 +378,14 @@ export default function RegisterForm() {
                 </label>
                 <input
                   id="phone"
-                  {...register("phone", { required: true })}
+                  {...register("phone", {
+                    required: true,
+                    validate: (value) => validatePhone(value) || "Số điện thoại phải đúng định dạng của Việt Nam (0xxxxxxxxx hoặc +84xxxxxxxxx)",
+                  })}
                   className="block w-full px-4 py-2.5 bg-gray-50 border border-gray-200 rounded-lg text-gray-900 placeholder:text-gray-400 focus:bg-white focus:border-teal-500 focus:ring-2 focus:ring-teal-100 focus:outline-none transition-all text-sm"
                   placeholder="0123456789"
                 />
-                {errors.phone && <p className="text-xs text-red-500 mt-1.5 flex items-center gap-1"><span>●</span> Vui lòng nhập số điện thoại</p>}
+                {errors.phone && <p className="text-xs text-red-500 mt-1.5 flex items-center gap-1"><span>●</span> {errors.phone.message || "Vui lòng nhập số điện thoại"}</p>}
               </div>
             </div>
 
@@ -380,10 +398,19 @@ export default function RegisterForm() {
                 <input
                   id="dob"
                   type="date"
-                  {...register("dob", { required: true })}
+                  {...register("dob", {
+                    required: "Vui lòng chọn ngày sinh",
+                    validate: (value) => {
+                      if (!value) return "Vui lòng chọn ngày sinh";
+                      const age = new Date().getFullYear() - new Date(value).getFullYear();
+                      if (age < 18) return "Bạn phải từ 18 tuổi trở lên";
+                      if (age > 120) return "Ngày sinh không hợp lệ";
+                      return true;
+                    },
+                  })}
                   className="block w-full px-4 py-2.5 bg-gray-50 border border-gray-200 rounded-lg text-gray-900 focus:bg-white focus:border-teal-500 focus:ring-2 focus:ring-teal-100 focus:outline-none transition-all text-sm"
                 />
-                {errors.dob && <p className="text-xs text-red-500 mt-1.5 flex items-center gap-1"><span>●</span> Vui lòng chọn ngày sinh</p>}
+                {errors.dob && <p className="text-xs text-red-500 mt-1.5 flex items-center gap-1"><span>●</span> {errors.dob.message}</p>}
               </div>
 
               <div>
@@ -392,7 +419,7 @@ export default function RegisterForm() {
                 </label>
                 <select
                   id="gender"
-                  {...register("gender", { required: true })}
+                  {...register("gender", { required: "Vui lòng chọn giới tính" })}
                   className="block w-full px-4 py-2.5 bg-gray-50 border border-gray-200 rounded-lg text-gray-900 focus:bg-white focus:border-teal-500 focus:ring-2 focus:ring-teal-100 focus:outline-none transition-all text-sm"
                 >
                   <option value="">Chọn giới tính</option>
@@ -400,7 +427,7 @@ export default function RegisterForm() {
                   <option value="female">Nữ</option>
                   <option value="other">Khác</option>
                 </select>
-                {errors.gender && <p className="text-xs text-red-500 mt-1.5 flex items-center gap-1"><span>●</span> Vui lòng chọn giới tính</p>}
+                {errors.gender && <p className="text-xs text-red-500 mt-1.5 flex items-center gap-1"><span>●</span> {errors.gender.message}</p>}
               </div>
             </div>
 
@@ -412,7 +439,7 @@ export default function RegisterForm() {
                 </label>
                 <select
                   id="city"
-                  {...register("city", { required: true })}
+                  {...register("city", { required: "Vui lòng chọn tỉnh/thành phố" })}
                   className="block w-full px-4 py-2.5 bg-gray-50 border border-gray-200 rounded-lg text-gray-900 focus:bg-white focus:border-teal-500 focus:ring-2 focus:ring-teal-100 focus:outline-none transition-all text-sm"
                   disabled={isLoadingProvinces}
                 >
@@ -425,7 +452,7 @@ export default function RegisterForm() {
                     </option>
                   ))}
                 </select>
-                {errors.city && <p className="text-xs text-red-500 mt-1.5 flex items-center gap-1"><span>●</span> Vui lòng chọn tỉnh/thành phố</p>}
+                {errors.city && <p className="text-xs text-red-500 mt-1.5 flex items-center gap-1"><span>●</span> {errors.city.message}</p>}
               </div>
 
               {selectedCity && (
@@ -435,7 +462,7 @@ export default function RegisterForm() {
                   </label>
                   <select
                     id="district"
-                    {...register("district", { required: true })}
+                    {...register("district", { required: "Vui lòng chọn quận/huyện" })}
                     className="block w-full px-4 py-2.5 bg-gray-50 border border-gray-200 rounded-lg text-gray-900 focus:bg-white focus:border-teal-500 focus:ring-2 focus:ring-teal-100 focus:outline-none transition-all text-sm"
                     disabled={isLoadingDistricts}
                   >
@@ -448,7 +475,7 @@ export default function RegisterForm() {
                       </option>
                     ))}
                   </select>
-                  {errors.district && <p className="text-xs text-red-500 mt-1.5 flex items-center gap-1"><span>●</span> Vui lòng chọn quận/huyện</p>}
+                  {errors.district && <p className="text-xs text-red-500 mt-1.5 flex items-center gap-1"><span>●</span> {errors.district.message}</p>}
                 </div>
               )}
             </div>
@@ -462,7 +489,7 @@ export default function RegisterForm() {
                   </label>
                   <select
                     id="ward"
-                    {...register("ward", { required: true })}
+                    {...register("ward", { required: "Vui lòng chọn phường/xã" })}
                     className="block w-full px-4 py-2.5 bg-gray-50 border border-gray-200 rounded-lg text-gray-900 focus:bg-white focus:border-teal-500 focus:ring-2 focus:ring-teal-100 focus:outline-none transition-all text-sm"
                     disabled={isLoadingWards}
                   >
@@ -475,7 +502,7 @@ export default function RegisterForm() {
                       </option>
                     ))}
                   </select>
-                  {errors.ward && <p className="text-xs text-red-500 mt-1.5 flex items-center gap-1"><span>●</span> Vui lòng chọn phường/xã</p>}
+                  {errors.ward && <p className="text-xs text-red-500 mt-1.5 flex items-center gap-1"><span>●</span> {errors.ward.message}</p>}
                 </div>
 
                 {watch("ward") && (
@@ -485,11 +512,14 @@ export default function RegisterForm() {
                     </label>
                     <input
                       id="description"
-                      {...register("description", { required: true })}
+                      {...register("description", {
+                        required: "Vui lòng nhập địa chỉ chi tiết",
+                        minLength: { value: 5, message: "Địa chỉ phải ít nhất 5 ký tự" },
+                      })}
                       className="block w-full px-4 py-2.5 bg-gray-50 border border-gray-200 rounded-lg text-gray-900 placeholder:text-gray-400 focus:bg-white focus:border-teal-500 focus:ring-2 focus:ring-teal-100 focus:outline-none transition-all text-sm"
                       placeholder="Số nhà, đường..."
                     />
-                    {errors.description && <p className="text-xs text-red-500 mt-1.5 flex items-center gap-1"><span>●</span> Vui lòng nhập địa chỉ chi tiết</p>}
+                    {errors.description && <p className="text-xs text-red-500 mt-1.5 flex items-center gap-1"><span>●</span> {errors.description.message}</p>}
                   </div>
                 )}
               </div>
