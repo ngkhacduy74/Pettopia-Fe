@@ -17,12 +17,13 @@ interface RequestTableProps {
 }
 
 export default function VetFormDetail({ title }: RequestTableProps) {
-  const { showSuccess, showError } = useToast();
+  const { showSuccess, showError, showInfo } = useToast();
   const [selectedForm, setSelectedForm] = useState<VetFormData | null>(null);
   const [forms, setForms] = useState<VetFormData[]>([]);
   const [currentPage, setCurrentPage] = useState(1);
   const [totalPages, setTotalPages] = useState(1);
   const [isLoading, setIsLoading] = useState(true);
+  const [isUpdating, setIsUpdating] = useState(false);
   const [limit] = useState(10);
   const [searchQuery, setSearchQuery] = useState('');
   const [filterStatus, setFilterStatus] = useState('all');
@@ -92,13 +93,18 @@ export default function VetFormDetail({ title }: RequestTableProps) {
     };
 
     try {
+      setIsUpdating(true);
+      const statusText = newStatus === 'approved' ? 'phê duyệt' : 'từ chối';
+      showInfo(`Đang ${statusText} hồ sơ...`);
+      
       await updateVeterinarianFormStatus(selectedForm.id, newStatus, notes[newStatus]);
       setSelectedForm({ ...selectedForm, status: newStatus });
-      showSuccess(`Đã ${newStatus === 'approved' ? 'duyệt' : newStatus === 'rejected' ? 'từ chối' : 'chuyển trạng thái'} thành công!`, 5000);
+      showSuccess(`Đã ${newStatus === 'approved' ? 'duyệt' : 'từ chối'} thành công!`, 5000);
       fetchForms();
     } catch (error: any) {
       console.error('Error updating status:', error);
       showError(error.message || 'Cập nhật thất bại', 5000);
+      setIsUpdating(false);
     }
   };
 
@@ -288,9 +294,6 @@ export default function VetFormDetail({ title }: RequestTableProps) {
                     </div>
                   </div>
                 )}
-
-          
-             
               </div>
 
               <div className="border-t border-gray-200 px-12 py-4 bg-gray-50 text-center text-xs text-gray-500">
@@ -300,39 +303,49 @@ export default function VetFormDetail({ title }: RequestTableProps) {
           </div>
 
           {/* Action Buttons */}
-          <div className="mt-8 flex flex-wrap gap-3 print:hidden">
-            <button
-              onClick={() => updateStatus('pending')}
-              className="flex-1 min-w-[140px] bg-teal-600 hover:bg-teal-700 text-white font-medium py-3 px-6 rounded-lg transition-all duration-200 flex items-center justify-center space-x-2 shadow-md hover:shadow-lg"
-            >
-              <svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M12 8v4l3 3m6-3a9 9 0 11-18 0 9 9 0 0118 0z" />
-              </svg>
-              <span>Đang xử lý</span>
-            </button>
+          {selectedForm.status === 'pending' && (
+            <div className="mt-8 flex flex-wrap gap-3 print:hidden">
+              <button
+                onClick={() => updateStatus('approved')}
+                disabled={isUpdating}
+                className="flex-1 min-w-[140px] bg-green-600 hover:bg-green-700 disabled:opacity-50 disabled:cursor-not-allowed text-white font-medium py-3 px-6 rounded-lg transition-all duration-200 flex items-center justify-center space-x-2 shadow-md hover:shadow-lg"
+              >
+                {isUpdating ? (
+                  <>
+                    <div className="animate-spin rounded-full h-5 w-5 border-b-2 border-white mr-2"></div>
+                    <span>Đang xử lý...</span>
+                  </>
+                ) : (
+                  <>
+                    <svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                      <path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M5 13l4 4L19 7" />
+                    </svg>
+                    <span>Phê duyệt</span>
+                  </>
+                )}
+              </button>
 
-            <button
-              onClick={() => updateStatus('approved')}
-              className="flex-1 min-w-[140px] bg-green-600 hover:bg-green-700 text-white font-medium py-3 px-6 rounded-lg transition-all duration-200 flex items-center justify-center space-x-2 shadow-md hover:shadow-lg"
-            >
-              <svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M5 13l4 4L19 7" />
-              </svg>
-              <span>Phê duyệt</span>
-            </button>
-
-            <button
-              onClick={() => updateStatus('rejected')}
-              className="flex-1 min-w-[140px] bg-red-600 hover:bg-red-700 text-white font-medium py-3 px-6 rounded-lg transition-all duration-200 flex items-center justify-center space-x-2 shadow-md hover:shadow-lg"
-            >
-              <svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M6 18L18 6M6 6l12 12" />
-              </svg>
-              <span>Từ chối</span>
-            </button>
-
-    
-          </div>
+              <button
+                onClick={() => updateStatus('rejected')}
+                disabled={isUpdating}
+                className="flex-1 min-w-[140px] bg-red-600 hover:bg-red-700 disabled:opacity-50 disabled:cursor-not-allowed text-white font-medium py-3 px-6 rounded-lg transition-all duration-200 flex items-center justify-center space-x-2 shadow-md hover:shadow-lg"
+              >
+                {isUpdating ? (
+                  <>
+                    <div className="animate-spin rounded-full h-5 w-5 border-b-2 border-white mr-2"></div>
+                    <span>Đang xử lý...</span>
+                  </>
+                ) : (
+                  <>
+                    <svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                      <path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M6 18L18 6M6 6l12 12" />
+                    </svg>
+                    <span>Từ chối</span>
+                  </>
+                )}
+              </button>
+            </div>
+          )}
         </div>
 
         <style jsx>{`

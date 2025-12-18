@@ -8,13 +8,14 @@ interface RequestTableProps {
 }
 
 export default function RequestTable({ title }: RequestTableProps) {
-    const { showError } = useToast();
+    const { showError, showInfo, showSuccess } = useToast();
     const [selectedForm, setSelectedForm] = useState<ClinicFormData | null>(null);
     const [dropdownRow, setDropdownRow] = useState<number | null>(null);
     const [forms, setForms] = useState<ClinicFormData[]>([]);
     const [currentPage, setCurrentPage] = useState(1);
     const [totalPages, setTotalPages] = useState(1);
     const [isLoading, setIsLoading] = useState(true);
+    const [isUpdating, setIsUpdating] = useState(false);
     const [limit] = useState(10);
     const [searchQuery, setSearchQuery] = useState('');
     const [filterStatus, setFilterStatus] = useState('all');
@@ -60,12 +61,18 @@ export default function RequestTable({ title }: RequestTableProps) {
         if (!selectedForm) return;
 
         try {
+            setIsUpdating(true);
+            const statusText = newStatus === 'approved' ? 'phê duyệt' : 'từ chối';
+            showInfo(`Đang ${statusText} hồ sơ...`);
+            
             await updateClinicFormStatus(selectedForm.id, newStatus);
             await fetchForms();
             setSelectedForm({ ...selectedForm, status: newStatus });
+            showSuccess(`Đã ${newStatus === 'approved' ? 'duyệt' : 'từ chối'} thành công!`, 5000);
         } catch (error) {
             console.error('Error updating clinic form status:', error);
             showError('Có lỗi xảy ra khi cập nhật trạng thái', 5000);
+            setIsUpdating(false);
         }
     };
 
@@ -238,8 +245,6 @@ export default function RequestTable({ title }: RequestTableProps) {
                                         </div>
                                     </div>
                                 )}
-
-                                
                             </div>
 
                             {/* Footer */}
@@ -250,36 +255,48 @@ export default function RequestTable({ title }: RequestTableProps) {
                     </div>
 
                     {/* Action Buttons - Bottom */}
-                    <div className="mt-8 flex flex-wrap gap-3 print:hidden">
-                        <button
-                            className="flex-1 min-w-[140px] bg-teal-600 hover:bg-teal-700 text-white font-medium py-3 px-6 rounded-lg transition-all duration-200 flex items-center justify-center space-x-2 shadow-md hover:shadow-lg"
-                            onClick={() => updateStatus('pending')}
-                        >
-                            <svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M12 8v4l3 3m6-3a9 9 0 11-18 0 9 9 0 0118 0z" />
-                            </svg>
-                            <span>Đang xử lý</span>
-                        </button>
-                        <button
-                            className="flex-1 min-w-[140px] bg-green-600 hover:bg-green-700 text-white font-medium py-3 px-6 rounded-lg transition-all duration-200 flex items-center justify-center space-x-2 shadow-md hover:shadow-lg"
-                            onClick={() => updateStatus('approved')}
-                        >
-                            <svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M5 13l4 4L19 7" />
-                            </svg>
-                            <span>Phê duyệt</span>
-                        </button>
-                        <button
-                            className="flex-1 min-w-[140px] bg-red-600 hover:bg-red-700 text-white font-medium py-3 px-6 rounded-lg transition-all duration-200 flex items-center justify-center space-x-2 shadow-md hover:shadow-lg"
-                            onClick={() => updateStatus('rejected')}
-                        >
-                            <svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M6 18L18 6M6 6l12 12" />
-                            </svg>
-                            <span>Từ chối</span>
-                        </button>
-                                 
-                    </div>
+                    {selectedForm.status === 'pending' && (
+                        <div className="mt-8 flex flex-wrap gap-3 print:hidden">
+                            <button
+                                className="flex-1 min-w-[140px] bg-green-600 hover:bg-green-700 disabled:opacity-50 disabled:cursor-not-allowed text-white font-medium py-3 px-6 rounded-lg transition-all duration-200 flex items-center justify-center space-x-2 shadow-md hover:shadow-lg"
+                                onClick={() => updateStatus('approved')}
+                                disabled={isUpdating}
+                            >
+                                {isUpdating ? (
+                                    <>
+                                        <div className="animate-spin rounded-full h-5 w-5 border-b-2 border-white mr-2"></div>
+                                        <span>Đang xử lý...</span>
+                                    </>
+                                ) : (
+                                    <>
+                                        <svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                            <path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M5 13l4 4L19 7" />
+                                        </svg>
+                                        <span>Phê duyệt</span>
+                                    </>
+                                )}
+                            </button>
+                            <button
+                                className="flex-1 min-w-[140px] bg-red-600 hover:bg-red-700 disabled:opacity-50 disabled:cursor-not-allowed text-white font-medium py-3 px-6 rounded-lg transition-all duration-200 flex items-center justify-center space-x-2 shadow-md hover:shadow-lg"
+                                onClick={() => updateStatus('rejected')}
+                                disabled={isUpdating}
+                            >
+                                {isUpdating ? (
+                                    <>
+                                        <div className="animate-spin rounded-full h-5 w-5 border-b-2 border-white mr-2"></div>
+                                        <span>Đang xử lý...</span>
+                                    </>
+                                ) : (
+                                    <>
+                                        <svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                            <path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M6 18L18 6M6 6l12 12" />
+                                        </svg>
+                                        <span>Từ chối</span>
+                                    </>
+                                )}
+                            </button>
+                        </div>
+                    )}
                 </div>
 
                 <style jsx>{`
@@ -308,7 +325,6 @@ export default function RequestTable({ title }: RequestTableProps) {
                                 <h1 className="text-3xl font-bold bg-gradient-to-r from-teal-500 to-teal-600 bg-clip-text text-transparent">{title}</h1>
                                 <p className="text-gray-600 mt-2">Quản lý đăng ký và phê duyệt phòng khám</p>
                             </div>
-                            
                         </div>
 
                         {/* Search and Filter */}
