@@ -431,8 +431,19 @@ export default function EditProfilePage() {
       return;
     }
 
-    if (formData.fullname.trim().length > 20) {
-      setError('Họ và tên không được quá 20 ký tự');
+    if (formData.fullname.trim().length < 7) {
+      setError('Họ và tên phải có ít nhất 7 ký tự');
+      return;
+    }
+
+    if (formData.fullname.trim().length > 50) {
+      setError('Họ và tên không được quá 50 ký tự');
+      return;
+    }
+
+    // Check for numbers and special characters
+    if (!/^[a-zA-ZÀ-ỿ\s]+$/.test(formData.fullname)) {
+      setError('Họ và tên chỉ chứa chữ cái và khoảng trắng');
       return;
     }
 
@@ -568,13 +579,14 @@ export default function EditProfilePage() {
                 value={formData.fullname}
                 onChange={handleInputChange}
                 placeholder="Nhập họ và tên"
-                maxLength={20}
+                maxLength={50}
                 className="w-full px-4 py-2.5 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-teal-500 focus:border-transparent"
               />
               <span className="absolute right-3 top-2.5 text-xs text-gray-500">
-                {formData.fullname.length}/20
+                {formData.fullname.length}/50
               </span>
             </div>
+            <p className="text-xs text-gray-400 mt-1">7-50 ký tự, chỉ chữ cái và khoảng trắng</p>
           </div>
 
           {/* Email */}
@@ -607,8 +619,10 @@ export default function EditProfilePage() {
               value={formData.phone}
               onChange={handleInputChange}
               placeholder="Nhập số điện thoại"
-              className="w-full px-4 py-2.5 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-teal-500 focus:border-transparent"
+              readOnly={true}
+              className="w-full px-4 py-2.5 border border-gray-300 rounded-lg bg-gray-100 cursor-not-allowed"
             />
+            <p className="text-xs text-gray-500 mt-1">Số điện thoại không thể chỉnh sửa</p>
           </div>
 
           {/* Date of Birth */}
