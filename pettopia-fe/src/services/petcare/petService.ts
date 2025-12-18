@@ -444,7 +444,7 @@ export async function bookAppointment(payload: BookingPayload) {
 
 // ================ APPOINTMENT RATING ================
 export interface RatingPayload {
-  star: number;
+  stars: number;
   notes: string;
   service_ids: string[];
 }
@@ -454,7 +454,7 @@ export interface AppointmentRating {
   appointment_id: string;
   clinic_id: string;
   user_id: string;
-  star: number;
+  stars: number;
   notes?: string;
   service_ids: string[];
   createdAt: string;

@@ -1,6 +1,7 @@
 'use client'
 import React, { useMemo, useState, useEffect } from 'react';
 import { useRouter } from 'next/navigation';
+import { toast } from 'react-hot-toast';
 import { communicationService } from '@/services/communication/communicationService';
 import { parseJwt } from '@/utils/jwt';
 
@@ -30,13 +31,13 @@ export default function CreatePostPage() {
   const tags: Tag[] = [
     { id: 'thongbao', name: 'Thông báo', color: 'bg-blue-100 text-blue-600' },
     { id: 'gopy', name: 'Góp ý', color: 'bg-orange-100 text-orange-600' },
-    { id: 'tintuc', name: 'Tin tức iNet', color: 'bg-cyan-100 text-cyan-600' },
+    { id: 'tintuc', name: 'Tin tức', color: 'bg-cyan-100 text-cyan-600' },
     { id: 'review', name: 'Review sản phẩm', color: 'bg-purple-100 text-purple-600' },
     { id: 'chiase', name: 'Chia sẻ kiến thức', color: 'bg-green-100 text-green-600' },
-    { id: 'tuvan', name: 'Tư vấn cấu hình', color: 'bg-pink-100 text-pink-600' }
+    { id: 'tuvan', name: 'Tư vấn sản phẩm', color: 'bg-pink-100 text-pink-600' }
   ];
 
-  const MAX_IMAGES = 3;
+  const MAX_IMAGES = 1;
   const MAX_FILE_SIZE = 1 * 1024 * 1024; // 1MB
   const VALID_TYPES = ['image/jpeg', 'image/jpg', 'image/png', 'image/gif', 'image/webp'];
 
@@ -75,7 +76,7 @@ export default function CreatePostPage() {
     });
 
     if (uploadErrors.length > 0) {
-      alert('Lỗi tải ảnh:\n\n' + uploadErrors.join('\n'));
+      toast.error('Lỗi tải ảnh:\n\n' + uploadErrors.join('\n'), { duration: 3000 });
     }
 
     if (newFiles.length + newFiles.length > MAX_IMAGES) {
@@ -136,6 +137,7 @@ export default function CreatePostPage() {
     const validationErrors = validateForm();
     if (Object.keys(validationErrors).length > 0) {
       setErrors(validationErrors);
+      toast.error('Vui lòng điền đầy đủ các trường bắt buộc', { duration: 2000 });
       window.scrollTo({ top: 0, behavior: 'smooth' });
       return;
     }
@@ -153,10 +155,12 @@ export default function CreatePostPage() {
         imageFiles,
       });
 
-      alert('Đăng bài thành công!');
-      router.push('/user/community');
+      toast.success('Đăng bài thành công!', { duration: 2000 });
+      setTimeout(() => {
+        router.push('/user/community');
+      }, 2000);
     } catch (e: any) {
-      alert(e?.message || 'Đăng bài thất bại, vui lòng thử lại');
+      toast.error(e?.message || 'Đăng bài thất bại, vui lòng thử lại', { duration: 3000 });
     } finally {
       setSubmitting(false);
     }
@@ -164,6 +168,20 @@ export default function CreatePostPage() {
 
   return (
     <>
+      {/* Loading Overlay - Fixed to cover entire viewport */}
+      {submitting && (
+        <div className="fixed inset-0 bg-opacity-5 backdrop-blur-sm flex items-center justify-center z-50">
+          <div className="bg-white rounded-xl shadow-2xl p-8 flex flex-col items-center gap-4 min-w-[300px] max-w-[400px]">
+            <div className="relative w-16 h-16">
+              <div className="absolute inset-0 border-4 border-teal-200 rounded-full"></div>
+              <div className="absolute inset-0 border-4 border-teal-600 rounded-full border-t-transparent animate-spin"></div>
+            </div>
+            <p className="text-lg font-semibold text-gray-700">Đang đăng bài...</p>
+            <p className="text-sm text-gray-500 text-center">Vui lòng đợi trong giây lát</p>
+          </div>
+        </div>
+      )}
+
       {/* Header */}
       <div className="bg-gradient-to-r from-teal-50 to-white border-b border-teal-200 shadow-sm">
         <div className="max-w-4xl mx-auto px-6 py-8">
@@ -178,13 +196,13 @@ export default function CreatePostPage() {
             </h1>
           </div>
           <p className="text-gray-600 ml-14">
-            Chia sẻ suy nghĩ, góp ý hoặc kiến thức với cộng đồng iNet
+            Chia sẻ suy nghĩ, góp ý hoặc kiến thức với cộng đồng
           </p>
         </div>
       </div>
 
       <div className="max-w-4xl mx-auto px-6 py-10">
-        <div className="space-y-8">
+        <div className={`space-y-8 ${submitting ? 'pointer-events-none opacity-70' : ''}`}>
 
           {/* Tag */}
           <div className={`bg-white rounded-xl shadow-sm border p-6 ${errors.tag ? 'border-red-300 ring-2 ring-red-200' : 'border-teal-100'}`}>
@@ -259,13 +277,13 @@ export default function CreatePostPage() {
           <div className="bg-white rounded-xl shadow-sm border border-teal-100 p-6">
             <div className="flex items-center justify-between mb-4">
               <label className="text-sm font-semibold text-gray-900">
-                Hình ảnh <span className="font-normal text-gray-500">(Tối đa 3 ảnh, mỗi ảnh ≤ 1MB)</span>
+                Hình ảnh <span className="font-normal text-gray-500">(Tối đa 1 ảnh, mỗi ảnh ≤ 1MB)</span>
               </label>
-              <span className="text-sm text-gray-600">{imageFiles.length}/3</span>
+              <span className="text-sm text-gray-600">{imageFiles.length}/1</span>
             </div>
 
             <div className={`border-2 border-dashed rounded-lg p-8 text-center transition ${
-              imageFiles.length >= 3 ? 'border-gray-300 bg-gray-50' : 'border-gray-300 hover:border-teal-400'
+              imageFiles.length >= 1 ? 'border-gray-300 bg-gray-50' : 'border-gray-300 hover:border-teal-400'
             }`}>
               <input
                 type="file"
@@ -278,20 +296,20 @@ export default function CreatePostPage() {
               />
               <label 
                 htmlFor="image-upload"
-                className={`block cursor-pointer ${imageFiles.length >= 3 ? 'opacity-50 cursor-not-allowed' : ''}`}
+                className={`block cursor-pointer ${imageFiles.length >= 1 ? 'opacity-50 cursor-not-allowed' : ''}`}
               >
                 <svg className="w-12 h-12 text-gray-400 mx-auto mb-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                   <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M4 16l4.586-4.586a2 2 0 012.828 0L16 16m-2-2l1.586-1.586a2 2 0 012.828 0L20 14m-6-6h.01M6 20h12a2 2 0 002-2V6a2 2 0 00-2-2H6a2 2 0 00-2 2v12a2 2 0 002 2z" />
                 </svg>
                 <p className="text-gray-600">
-                  {imageFiles.length >= 3 ? 'Đã đủ 3 ảnh' : 'Click để chọn ảnh'}
+                  {imageFiles.length >= 1 ? 'Đã đủ 1 ảnh' : 'Click để chọn ảnh'}
                 </p>
                 <p className="text-xs text-gray-500 mt-1">JPG, PNG, GIF, WebP - Tối đa 1MB/ảnh</p>
               </label>
             </div>
 
             {imagePreviews.length > 0 && (
-              <div className="grid grid-cols-3 gap-4 mt-6">
+              <div className="grid grid-cols-1 gap-4 mt-6">
                 {imagePreviews.map((src, idx) => (
                   <div key={idx} className="relative group">
                     <img src={src} alt="" className="w-full h-40 object-cover rounded-lg shadow" />
