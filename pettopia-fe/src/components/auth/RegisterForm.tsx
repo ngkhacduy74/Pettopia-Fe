@@ -4,6 +4,7 @@ import { useState, useEffect } from "react";
 import { useForm } from "react-hook-form";
 import { useRouter } from "next/navigation";
 import { createUser } from "@/services/auth/authService";
+import { useToast } from "@/contexts/ToastContext";
 import Image from "next/image";
 import axios from "axios";
 import { EyeIcon, EyeSlashIcon } from "@heroicons/react/24/outline";
@@ -56,9 +57,11 @@ export default function RegisterForm() {
   const [isLoadingProvinces, setIsLoadingProvinces] = useState(false);
   const [isLoadingDistricts, setIsLoadingDistricts] = useState(false);
   const [isLoadingWards, setIsLoadingWards] = useState(false);
+  const [isSubmitting, setIsSubmitting] = useState(false);
   const [apiError, setApiError] = useState(false);
   const [isSuccess, setIsSuccess] = useState(false);
   const router = useRouter();
+  const { showSuccess, showError, showInfo } = useToast();
   const [confirmPassword, setConfirmPassword] = useState("");
   const [passwordError, setPasswordError] = useState("");
   const [showPassword, setShowPassword] = useState(false);
@@ -223,6 +226,10 @@ export default function RegisterForm() {
         return;
       }
 
+      // ===== BẮT ĐẦU SUBMIT - HIỂN THỊ TOAST LOADING =====
+      setIsSubmitting(true);
+      showInfo("Đang tạo tài khoản của bạn...");
+
       const formattedData = {
         fullname: data.fullname,
         username: data.username,
@@ -240,13 +247,18 @@ export default function RegisterForm() {
       };
 
       await createUser(formattedData);
+      setIsSubmitting(false);
       setIsSuccess(true);
+      showSuccess("Đăng ký thành công! Đang chuyển hướng...", 2000);
       setTimeout(() => {
         router.push("/auth/login");
       }, 2000);
     } catch (err: any) {
+      setIsSubmitting(false);
       console.error("Lỗi khi đăng ký:", err);
-      setServerError(err.response?.data?.message || "Đăng ký thất bại. Vui lòng thử lại!");
+      const errorMsg = err.response?.data?.message || "Đăng ký thất bại. Vui lòng thử lại!";
+      setServerError(errorMsg);
+      showError(errorMsg, 5000);
     }
   };
 
@@ -583,8 +595,9 @@ export default function RegisterForm() {
             <button
               type="button"
               onClick={handleSubmit(onSubmit)}
-              className="w-full bg-teal-500 hover:bg-teal-600 text-white font-semibold py-2.5 rounded-lg transition-all duration-200 shadow-md hover:shadow-lg transform hover:-translate-y-0.5 text-sm disabled:bg-gray-300 disabled:cursor-not-allowed disabled:transform-none"
+              className="w-full bg-teal-500 hover:bg-teal-600 text-white font-semibold py-2.5 rounded-lg transition-all duration-200 shadow-md hover:shadow-lg transform hover:-translate-y-0.5 text-sm disabled:bg-gray-300 disabled:cursor-not-allowed disabled:transform-none flex items-center justify-center gap-2"
               disabled={
+                isSubmitting ||
                 isLoadingProvinces ||
                 isLoadingDistricts ||
                 isLoadingWards ||
@@ -593,7 +606,17 @@ export default function RegisterForm() {
                 (!!selectedDistrict && wards.length === 0)
               }
             >
-              Đăng ký
+              {isSubmitting ? (
+                <>
+                  <svg className="animate-spin h-5 w-5" xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24">
+                    <circle className="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" strokeWidth="4"></circle>
+                    <path className="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4zm2 5.291A7.962 7.962 0 014 12H0c0 3.042 1.135 5.824 3 7.938l3-2.647z"></path>
+                  </svg>
+                  <span>Đang xử lý...</span>
+                </>
+              ) : (
+                "Đăng ký"
+              )}
             </button>
           </div>
 
