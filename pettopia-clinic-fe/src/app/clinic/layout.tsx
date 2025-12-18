@@ -2,21 +2,22 @@
 
 import { useState } from 'react';
 import Sidebar from '@/components/common/Sidebar';
+import { SidebarProvider, useSidebar } from '@/contexts/SidebarContext';
 import { ToastProvider } from '@/contexts/ToastContext';
 
-export default function Layout({
+function ClinicLayoutContent({
   children,
 }: {
   children: React.ReactNode;
 }) {
   const [showSearch, setShowSearch] = useState(false);
   const [isMenuOpen, setIsMenuOpen] = useState(false);
-  const [isSettingsModalOpen, setIsSettingsModalOpen] = useState(false); // ✅ Thêm state modal
+  const [isSettingsModalOpen, setIsSettingsModalOpen] = useState(false);
+  const { isSidebarCollapsed } = useSidebar(); // ✅ Thêm state modal
 
   return (
-    <ToastProvider>
-      <section>
-        <div className="flex h-screen bg-gradient-to-b from-teal-50 to-white text-gray-900 relative">
+    <section>
+      <div className="flex h-screen bg-gradient-to-b from-teal-50 to-white text-gray-900 relative">
 
         {/* Sidebar */}
         <Sidebar
@@ -36,7 +37,7 @@ export default function Layout({
         </button>
 
         {/* Nội dung chính */}
-        <main className="flex-1 overflow-y-auto ml-0 md:ml-[16rem] p-10 md:p-12 bg-gradient-to-b from-teal-50 to-white transition-all duration-300">
+        <main className={`flex-1 overflow-y-auto ${isSidebarCollapsed ? 'md:ml-20' : 'md:ml-64'} p-10 md:p-12 bg-gradient-to-b from-teal-50 to-white transition-all duration-300`}>
           {children}
         </main>
 
@@ -142,6 +143,19 @@ export default function Layout({
         )}
       </div>
     </section>
-    </ToastProvider>
+  );
+}
+
+export default function Layout({
+  children,
+}: {
+  children: React.ReactNode;
+}) {
+  return (
+    <SidebarProvider>
+      <ToastProvider>
+        <ClinicLayoutContent>{children}</ClinicLayoutContent>
+      </ToastProvider>
+    </SidebarProvider>
   );
 }
