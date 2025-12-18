@@ -246,41 +246,15 @@ export default function UserProfilePage() {
             {/* Navigation Tabs */}
             <div className="border-b border-gray-200">
               <div className="flex gap-8 overflow-x-auto">
-                <button className="pb-4 border-b-2 border-gray-900 font-medium text-gray-900 whitespace-nowrap">Tổng quan</button>
-                <button className="pb-4 text-gray-600 hover:text-gray-900 whitespace-nowrap">Hoạt động</button>
-                <button className="pb-4 text-gray-600 hover:text-gray-900 whitespace-nowrap">Bài viết</button>
-                <button className="pb-4 text-gray-600 hover:text-gray-900 whitespace-nowrap">Ảnh</button>
+
               </div>
             </div>
 
             {/* Content Area */}
             <div className="mt-8 space-y-6">
-              <div className="border border-gray-200 rounded-lg p-6">
-                <h3 className="text-lg font-bold text-gray-900 mb-4">Giới thiệu</h3>
-                <p className="text-gray-600 leading-relaxed">
-                  Chào mừng bạn đến với trang cá nhân của tôi. Tôi đam mê công nghệ và luôn tìm kiếm những điều mới mẻ để học hỏi và phát triển bản thân.
-                </p>
-              </div>
+             
 
-              <div className="border border-gray-200 rounded-lg p-6">
-                <h3 className="text-lg font-bold text-gray-900 mb-4">Hoạt động gần đây</h3>
-                <div className="space-y-4">
-                  <div className="flex gap-4 pb-4 border-b border-gray-100">
-                    <div className="w-10 h-10 rounded-full bg-gray-200 flex-shrink-0"></div>
-                    <div className="flex-1">
-                      <p className="text-sm text-gray-600 mb-1">Đã cập nhật thông tin cá nhân</p>
-                      <p className="text-xs text-gray-400">2 ngày trước</p>
-                    </div>
-                  </div>
-                  <div className="flex gap-4 pb-4 border-b border-gray-100">
-                    <div className="w-10 h-10 rounded-full bg-gray-200 flex-shrink-0"></div>
-                    <div className="flex-1">
-                      <p className="text-sm text-gray-600 mb-1">Đã thêm ảnh đại diện mới</p>
-                      <p className="text-xs text-gray-400">1 tuần trước</p>
-                    </div>
-                  </div>
-                </div>
-              </div>
+        
             </div>
           </div>
 

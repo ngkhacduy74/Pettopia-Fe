@@ -89,7 +89,7 @@ export default function RequestTable({ title }: RequestTableProps) {
     // Detail Page View - Application Form Style
     if (selectedForm) {
         return (
-            <div className="min-h-screen bg-gray-100 py-8">
+            <div >
                 <div className="max-w-4xl mx-auto px-4">
                     {/* Back Button */}
                     <button
@@ -99,7 +99,7 @@ export default function RequestTable({ title }: RequestTableProps) {
                         <svg className="w-5 h-5 mr-2" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                             <path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M10 19l-7-7m0 0l7-7m-7 7h18" />
                         </svg>
-                        <span className="font-medium">Quay lại danh sách</span>
+                        <span className="font-medium ">Quay lại danh sách</span>
                     </button>
 
                     {/* Application Form Paper */}
@@ -239,35 +239,11 @@ export default function RequestTable({ title }: RequestTableProps) {
                                     </div>
                                 )}
 
-                                {/* Signature Section */}
-                                <div className="pt-16 pb-8">
-                                    <div className="grid grid-cols-2 gap-12">
-                                        <div>
-                                            <p className="text-center text-sm font-semibold text-gray-700 mb-24">
-                                                Người nộp đơn
-                                            </p>
-                                            <div className="border-t-2 border-gray-400 pt-2">
-                                                <p className="text-center font-semibold text-gray-900">{selectedForm.representative.name}</p>
-                                            </div>
-                                        </div>
-
-                                        <div>
-                                            <p className="text-center text-sm font-semibold text-gray-700">
-                                                Ngày {new Date().getDate()} tháng {new Date().getMonth() + 1} năm {new Date().getFullYear()}
-                                            </p>
-                                            <p className="text-center text-sm font-semibold text-gray-700 mb-20">
-                                                Người xét duyệt
-                                            </p>
-                                            <div className="border-t-2 border-gray-400 pt-2">
-                                                <p className="text-center font-semibold text-gray-900">(Ký và ghi rõ họ tên)</p>
-                                            </div>
-                                        </div>
-                                    </div>
-                                </div>
+                                
                             </div>
 
                             {/* Footer */}
-                            <div className="border-t border-gray-200 px-12 py-4 bg-gray-50 text-center text-xs text-gray-500">
+                            <div className="border-t border-gray-200 px-12 py-4 text-center text-xs text-gray-500">
                                 <p>Đơn này có giá trị kể từ ngày được phê duyệt • ID: {selectedForm.id}</p>
                             </div>
                         </div>
@@ -276,7 +252,7 @@ export default function RequestTable({ title }: RequestTableProps) {
                     {/* Action Buttons - Bottom */}
                     <div className="mt-8 flex flex-wrap gap-3 print:hidden">
                         <button
-                            className="flex-1 min-w-[140px] bg-teal-500 hover:bg-teal-600 text-white font-medium py-3 px-6 rounded-lg transition-all duration-200 flex items-center justify-center space-x-2 shadow-md hover:shadow-lg"
+                            className="flex-1 min-w-[140px] bg-teal-600 hover:bg-teal-700 text-white font-medium py-3 px-6 rounded-lg transition-all duration-200 flex items-center justify-center space-x-2 shadow-md hover:shadow-lg"
                             onClick={() => updateStatus('pending')}
                         >
                             <svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
@@ -285,7 +261,7 @@ export default function RequestTable({ title }: RequestTableProps) {
                             <span>Đang xử lý</span>
                         </button>
                         <button
-                            className="flex-1 min-w-[140px] bg-green-500 hover:bg-green-600 text-white font-medium py-3 px-6 rounded-lg transition-all duration-200 flex items-center justify-center space-x-2 shadow-md hover:shadow-lg"
+                            className="flex-1 min-w-[140px] bg-green-600 hover:bg-green-700 text-white font-medium py-3 px-6 rounded-lg transition-all duration-200 flex items-center justify-center space-x-2 shadow-md hover:shadow-lg"
                             onClick={() => updateStatus('approved')}
                         >
                             <svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
@@ -294,7 +270,7 @@ export default function RequestTable({ title }: RequestTableProps) {
                             <span>Phê duyệt</span>
                         </button>
                         <button
-                            className="flex-1 min-w-[140px] bg-red-500 hover:bg-red-600 text-white font-medium py-3 px-6 rounded-lg transition-all duration-200 flex items-center justify-center space-x-2 shadow-md hover:shadow-lg"
+                            className="flex-1 min-w-[140px] bg-red-600 hover:bg-red-700 text-white font-medium py-3 px-6 rounded-lg transition-all duration-200 flex items-center justify-center space-x-2 shadow-md hover:shadow-lg"
                             onClick={() => updateStatus('rejected')}
                         >
                             <svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
@@ -302,15 +278,7 @@ export default function RequestTable({ title }: RequestTableProps) {
                             </svg>
                             <span>Từ chối</span>
                         </button>
-                        <button
-                            className="flex-1 min-w-[140px] bg-indigo-600 hover:bg-indigo-700 text-white font-medium py-3 px-6 rounded-lg transition-all duration-200 flex items-center justify-center space-x-2 shadow-md hover:shadow-lg"
-                            onClick={() => window.print()}
-                        >
-                            <svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M17 17h2a2 2 0 002-2v-4a2 2 0 00-2-2H5a2 2 0 00-2 2v4a2 2 0 002 2h2m2 4h6a2 2 0 002-2v-4a2 2 0 00-2-2H9a2 2 0 00-2 2v4a2 2 0 002 2zm8-12V5a2 2 0 00-2-2H9a2 2 0 00-2 2v4h10z" />
-                            </svg>
-                            <span>In đơn</span>
-                        </button>
+                                 
                     </div>
                 </div>
 

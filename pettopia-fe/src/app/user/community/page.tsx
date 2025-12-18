@@ -17,7 +17,18 @@ const SearchIcon = ({ size = 18, className = '', ...props }: { size?: number; cl
     <path d="m21 21-5.197-5.197m0 0A7.5 7.5 0 1 0 5.196 5.196a7.5 7.5 0 0 0 10.607 10.607Z" />
   </svg>
 );
-
+const TAG_DISPLAY_MAP: Record<string, string> = {
+  thongbao: 'Thông báo',
+  gopy: 'Góp ý',
+  tintuc: 'Tin tức iNet',
+  review: 'Review sản phẩm',
+  chiase: 'Chia sẻ kiến thức',
+  tuvan: 'Tư vấn cấu hình',
+  // Thêm các tag khác nếu có
+};
+const getTagDisplayName = (tagId: string): string => {
+  return TAG_DISPLAY_MAP[tagId.toLowerCase()] || tagId;
+};
 export default function CommunityPage() {
   const router = useRouter();
   const [posts, setPosts] = useState<any[]>([]);
@@ -174,7 +185,7 @@ export default function CommunityPage() {
                           {/* Category Tag */}
                           {tag && (
                             <span className={`inline-block px-3 py-1.5 rounded-lg text-xs font-bold mb-3 w-fit border ${getCategoryColor(tag)} uppercase tracking-wide`}>
-                              {tag}
+                              {getTagDisplayName(tag)}
                             </span>
                           )}
 
@@ -219,24 +230,42 @@ export default function CommunityPage() {
           {/* Sidebar - Right aligned */}
           <div className="lg:col-span-4">
             <div className="sticky top-24 space-y-6">
-              {/* Tags */}
-              <div className="bg-white rounded-2xl p-6 shadow-sm border border-gray-100">
-                <h3 className="text-lg font-bold text-gray-900 mb-5 flex items-center gap-2">
-       
-                  <span>Tags phổ biến</span>
-                </h3>
-                <div className="flex flex-wrap gap-2">
-                  {Array.from(new Set(posts.flatMap(p => p.tags || []))).slice(0, 15).map((tag) => (
-                    <button
-                      key={tag}
-                      onClick={() => setSearchQuery(tag)}
-                      className="px-4 py-2 bg-gray-50 hover:bg-teal-50 border border-gray-200 hover:border-teal-300 hover:text-teal-700 text-gray-700 text-sm rounded-full transition-all font-medium hover:shadow-sm"
-                    >
-                      #{tag}
-                    </button>
-                  ))}
-                </div>
-              </div>
+             {/* Tags */}
+<div className="bg-white rounded-2xl p-6 shadow-sm border border-gray-100">
+  <h3 className="text-lg font-bold text-gray-900 mb-5 flex items-center gap-2">
+    <span>Tags phổ biến</span>
+  </h3>
+  <div className="flex flex-wrap gap-2">
+    {/* Nút "Tất cả" - luôn hiển thị đầu tiên */}
+    <button
+      onClick={() => setSearchQuery('')} // Reset search → hiển thị tất cả
+      className={`px-4 py-2 rounded-full text-sm font-medium transition-all hover:shadow-sm ${
+        searchQuery === ''
+          ? 'bg-teal-600 text-white border border-teal-600 shadow-md'
+          : 'bg-gray-50 hover:bg-teal-50 border border-gray-200 hover:border-teal-300 text-gray-700 hover:text-teal-700'
+      }`}
+    >
+      Tất cả
+    </button>
+
+    {/* Các tag khác */}
+    {Array.from(new Set(posts.flatMap(p => p.tags || [])))
+      .slice(0, 15)
+      .map((tag) => (
+        <button
+          key={tag}
+          onClick={() => setSearchQuery(tag)} // Tìm theo tag id
+          className={`px-4 py-2 rounded-full text-sm font-medium transition-all hover:shadow-sm ${
+            searchQuery === tag
+              ? 'bg-teal-600 text-white border border-teal-600 shadow-md'
+              : 'bg-gray-50 hover:bg-teal-50 border border-gray-200 hover:border-teal-300 text-gray-700 hover:text-teal-700'
+          }`}
+        >
+          #{getTagDisplayName(tag)}
+        </button>
+      ))}
+      </div>
+        </div>
 
               {/* Stats Card */}
               <div className="bg-gradient-to-br from-teal-50 to-blue-50 rounded-2xl p-6 border border-teal-100">

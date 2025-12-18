@@ -289,14 +289,16 @@ const RecentlyVisited = memo(function RecentlyVisited() {
       title: 'Hồ sơ thú cưng',
       image: 'https://images.unsplash.com/photo-1450778869180-41d0601e046e?w=400&h=200&fit=crop',
       time: '1w ago',
-      icon: '🐾'
+      icon: '🐾',
+      href: '/user/pet/list', // giống mục "Danh sách thú cưng" ở sidebar
     },
     {
       id: 2,
       title: 'Lịch khám sắp tới',
       image: 'https://images.unsplash.com/photo-1628009368231-7bb7cfcb0def?w=400&h=200&fit=crop',
       time: '2d ago',
-      icon: '📅'
+      icon: '📅',
+      href: '/user/appointments/list', // giống mục "Xem lịch khám" ở sidebar
     },
     {
       id: 3,
@@ -304,22 +306,25 @@ const RecentlyVisited = memo(function RecentlyVisited() {
       image: 'https://images.unsplash.com/photo-1514888286974-6c03e2ca1dba?q=80&w=1443&auto=format&fit=crop&ixlib=rb-4.1.0&ixid=M3wxMjA3fDB8MHxwaG90by1wYWdlfHx8fGVufDB8fHx8fA%3D%3D',
       time: '1d ago',
       icon: '📝',
-      color: 'from-teal-600 to-cyan-600'
+      color: 'from-teal-600 to-cyan-600',
+      href: '/user/prescription', // giống mục "Lịch sử khám" ở sidebar
     },
     {
       id: 4,
       title: 'Community',
       image: 'https://images.unsplash.com/photo-1601758228041-f3b2795255f1?w=400&h=200&fit=crop',
       time: '3h ago',
-      icon: '💬'
+      icon: '💬',
+      href: '/user/community', // giống mục "Cộng đồng Pettopia" ở sidebar
     },
     {
       id: 5,
-      title: 'Dịch vụ ký gửi',
+      title: 'Dịch vụ kí gửi - Đang phát triển',
       image: 'https://images.unsplash.com/photo-1548620848-d375c7919ea2?q=80&w=1469&auto=format&fit=crop&ixlib=rb-4.1.0&ixid=M3wxMjA3fDB8MHxwaG90by1wYWdlfHx8fGVufDB8fHx8fA%3D%3D',
       time: '1w ago',
       icon: '🏨',
-      color: 'from-teal-500 to-cyan-500'
+      color: 'from-teal-500 to-cyan-500',
+      // Chưa có route tương ứng trong sidebar, nên tạm thời để không link
     }
   ], []);
 
@@ -329,36 +334,45 @@ const RecentlyVisited = memo(function RecentlyVisited() {
         <svg className="w-5 h-5 text-teal-600" fill="none" stroke="currentColor" viewBox="0 0 24 24">
           <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 8v4l3 3m6-3a9 9 0 11-18 0 9 9 0 0118 0z" />
         </svg>
-        <h2 className="text-2xl font-bold text-gray-900">Truy cập gần đây</h2>
+        <h2 className="text-2xl font-bold text-gray-900">Chức năng</h2>
       </div>
 
       <div className="grid grid-cols-5 gap-4">
-        {recentItems.map((item) => (
-          <div
-            key={item.id}
-            className="group cursor-pointer"
-            onMouseEnter={() => setHoveredCard(item.id)}
-            onMouseLeave={() => setHoveredCard(null)}
-          >
-            <div className={`rounded-xl overflow-hidden mb-3 aspect-video transition-all duration-300 shadow-md hover:shadow-xl ${hoveredCard === item.id ? 'scale-105' : ''}`}>
-              {item.image ? (
-                <div
-                  className="w-full h-full bg-cover bg-center"
-                  style={{ backgroundImage: `url(${item.image})` }}
-                />
-              ) : (
-                <div className={`w-full h-full bg-gradient-to-br ${item.color} flex items-center justify-center`}>
-                  <span className="text-4xl">{item.icon}</span>
-                </div>
-              )}
+        {recentItems.map((item) => {
+          const CardContent = (
+            <div
+              className="group cursor-pointer"
+              onMouseEnter={() => setHoveredCard(item.id)}
+              onMouseLeave={() => setHoveredCard(null)}
+            >
+              <div className={`rounded-xl overflow-hidden mb-3 aspect-video transition-all duration-300 shadow-md hover:shadow-xl ${hoveredCard === item.id ? 'scale-105' : ''}`}>
+                {item.image ? (
+                  <div
+                    className="w-full h-full bg-cover bg-center"
+                    style={{ backgroundImage: `url(${item.image})` }}
+                  />
+                ) : (
+                  <div className={`w-full h-full bg-gradient-to-br ${item.color} flex items-center justify-center`}>
+                    <span className="text-4xl">{item.icon}</span>
+                  </div>
+                )}
+              </div>
+              <h3 className="font-semibold text-sm mb-1 text-gray-900">{item.title}</h3>
+              <div className="flex items-center gap-2 text-xs text-gray-500">
+                <div className="w-4 h-4 bg-teal-100 rounded-full" />
+                <span>{item.time}</span>
+              </div>
             </div>
-            <h3 className="font-semibold text-sm mb-1 text-gray-900">{item.title}</h3>
-            <div className="flex items-center gap-2 text-xs text-gray-500">
-              <div className="w-4 h-4 bg-teal-100 rounded-full" />
-              <span>{item.time}</span>
-            </div>
-          </div>
-        ))}
+          );
+
+          return item.href ? (
+            <Link key={item.id} href={item.href}>
+              {CardContent}
+            </Link>
+          ) : (
+            <div key={item.id}>{CardContent}</div>
+          );
+        })}
       </div>
     </div>
   );

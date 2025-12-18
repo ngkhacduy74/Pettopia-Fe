@@ -5,11 +5,24 @@ import { useRouter, useSearchParams } from "next/navigation";
 import { useToast } from "@/contexts/ToastContext";
 import { communicationService, Post, Comment } from "@/services/communication/communicationService";
 import { parseJwt } from "@/utils/jwt";
+import { get } from "http";
 
 interface LightboxState {
   isOpen: boolean;
   currentIndex: number;
 }
+const TAG_DISPLAY_MAP: Record<string, string> = {
+  thongbao: 'Thông báo',
+  gopy: 'Góp ý',
+  tintuc: 'Tin tức iNet',
+  review: 'Review sản phẩm',
+  chiase: 'Chia sẻ kiến thức',
+  tuvan: 'Tư vấn cấu hình',
+  // Thêm các tag khác nếu có
+};
+const getTagDisplayName = (tagId: string): string => {
+  return TAG_DISPLAY_MAP[tagId.toLowerCase()] || tagId;
+};
 
 export default function PostDetailPage() {
   const searchParams = useSearchParams();
@@ -242,18 +255,29 @@ export default function PostDetailPage() {
   if (!post) return null;
 
   return (
-    <div className="min-h-screen">
+    <div>
       <div className="container mx-auto px-4 py-6 max-w-6xl">
         {/* Back Button */}
         <button
           onClick={() => router.back()}
-          className="mb-4 flex items-center gap-2 text-gray-600 hover:text-gray-900 transition-colors"
+          className="mb-4 flex items-center gap-2 text-gray-600 hover:text-gray-900 transition-colors cursor-pointer"
         >
-          <svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-            <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M15 19l-7-7 7-7" />
+          <svg
+            className="w-5 h-5"
+            fill="none"
+            stroke="currentColor"
+            viewBox="0 0 24 24"
+          >
+            <path
+              strokeLinecap="round"
+              strokeLinejoin="round"
+              strokeWidth={2}
+              d="M15 19l-7-7 7-7"
+            />
           </svg>
           <span className="font-medium">Quay lại</span>
         </button>
+
         <div className="flex flex-col lg:flex-row gap-4">
           {/* Main Content Area */}
           <main className="flex-1 min-w-0 lg:max-w-3xl">
@@ -338,7 +362,7 @@ export default function PostDetailPage() {
                   <div className="flex flex-wrap gap-2 mb-3">
                     {parsedTags.map((tag, idx) => (
                       <span key={idx} className="text-xs bg-gray-100 text-gray-700 px-2.5 py-1 rounded-full">
-                        #{tag}
+                        #{getTagDisplayName(tag)}
                       </span>
                     ))}
                   </div>
@@ -372,8 +396,8 @@ export default function PostDetailPage() {
                     onClick={handleToggleLike}
                     disabled={liking}
                     className={`flex-1 flex items-center justify-center gap-2 py-2.5 rounded-lg transition-colors ${isLikedByCurrentUser
-                        ? 'text-blue-600 hover:bg-blue-50'
-                        : 'text-gray-600 hover:bg-gray-100'
+                      ? 'text-blue-600 hover:bg-blue-50'
+                      : 'text-gray-600 hover:bg-gray-100'
                       } disabled:opacity-60 font-semibold text-sm`}
                   >
                     <svg
@@ -477,7 +501,7 @@ export default function PostDetailPage() {
                   )}
                 </div>
               </div>
-              </div>
+            </div>
           </main>
 
           {/* Right Sidebar - Related Posts */}
