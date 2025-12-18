@@ -1,8 +1,15 @@
 'use client';
 
 import { useState } from 'react';
-import Sidebar from '@/components/common/Sidebar';
+import dynamic from 'next/dynamic';
 import { ToastProvider } from '@/contexts/ToastContext';
+
+const Sidebar = dynamic(() => import('@/components/common/Sidebar'), {
+  loading: () => (
+    <div className="w-64 bg-gray-200 animate-pulse md:flex hidden flex-col" />
+  ),
+  ssr: true,
+});
 
 export default function Layout({
   children,
