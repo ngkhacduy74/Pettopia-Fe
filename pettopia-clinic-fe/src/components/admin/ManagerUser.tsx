@@ -15,7 +15,7 @@ export default function RequestTable({ title }: RequestTableProps) {
   const [totalPages, setTotalPages] = useState(1);
   const [isLoading, setIsLoading] = useState(true);
   const [limit] = useState(10);
-  
+
   const [showRegisterModal, setShowRegisterModal] = useState(false);
 
   // Filter states
@@ -24,19 +24,19 @@ export default function RequestTable({ title }: RequestTableProps) {
   const [filterRewardPoint, setFilterRewardPoint] = useState('');
   const [filterStatus, setFilterStatus] = useState('');
   const [filterRole, setFilterRole] = useState('');
-  
+
   // Debounce timer ref
   const debounceTimer = useRef<NodeJS.Timeout | null>(null);
 
   useEffect(() => {
     // Reset page to 1 when filters change
     setCurrentPage(1);
-    
+
     // Clear previous timer
     if (debounceTimer.current) {
       clearTimeout(debounceTimer.current);
     }
-    
+
     // Set new timer to fetch after 500ms of inactivity
     debounceTimer.current = setTimeout(() => {
       fetchForms();
@@ -56,26 +56,26 @@ export default function RequestTable({ title }: RequestTableProps) {
   const fetchForms = async () => {
     try {
       setIsLoading(true);
-      
+
       // Build filters object
       const filters: any = {};
-      
+
       if (filterCustomer.trim()) {
         filters.fullname = filterCustomer;
       }
-      
+
       if (filterContact.trim()) {
         filters.email_address = filterContact;
       }
-      
+
       if (filterRewardPoint.trim()) {
         filters.reward_point = parseInt(filterRewardPoint);
       }
-      
+
       if (filterStatus) {
         filters.is_active = filterStatus === 'active' ? true : false;
       }
-      
+
       if (filterRole) {
         filters.role = filterRole;
       }
@@ -129,102 +129,104 @@ export default function RequestTable({ title }: RequestTableProps) {
         {/* Table Card */}
         <div className="bg-white rounded-xl shadow-sm border border-gray-200 overflow-hidden">
           <div className="overflow-x-auto">
-            {isLoading ? (
-              <div className="flex items-center justify-center py-16">
-                <div className="animate-spin rounded-full h-12 w-12 border-b-2 border-indigo-600"></div>
-              </div>
-            ) : (
-              <>
-              <table className="min-w-full divide-y divide-gray-200">
-                <thead className="bg-gray-50">
+            <table className="min-w-full divide-y divide-gray-200">
+              <thead className="bg-gray-50 sticky top-0 z-10">
+                <tr>
+                  <th scope="col" className="px-6 py-4 text-left text-xs font-semibold text-gray-600 uppercase tracking-wider">
+                    Khách hàng
+                  </th>
+                  <th scope="col" className="px-6 py-4 text-left text-xs font-semibold text-gray-600 uppercase tracking-wider">
+                    Liên hệ
+                  </th>
+                  <th scope="col" className="px-3 py-4 text-center text-xs font-semibold text-gray-600 uppercase tracking-wider w-20">
+                    Điểm uy tín
+                  </th>
+                  <th scope="col" className="px-6 py-4 text-left text-xs font-semibold text-gray-600 uppercase tracking-wider">
+                    Trạng thái
+                  </th>
+                  <th scope="col" className="px-6 py-4 text-left text-xs font-semibold text-gray-600 uppercase tracking-wider">
+                    Quyền
+                  </th>
+                </tr>
+                <tr className="bg-white border-b border-gray-200 sticky top-14 z-10">
+                  <td className="px-6 py-3">
+                    <input
+                      type="text"
+                      placeholder="Tìm kiếm..."
+                      value={filterCustomer}
+                      onChange={(e) => setFilterCustomer(e.target.value)}
+                      className="w-full px-3 py-1.5 border border-gray-300 rounded text-sm focus:outline-none focus:ring-1 focus:ring-indigo-500"
+                    />
+                  </td>
+                  <td className="px-6 py-3">
+                    <input
+                      type="text"
+                      placeholder="Tìm kiếm..."
+                      value={filterContact}
+                      onChange={(e) => setFilterContact(e.target.value)}
+                      className="w-full px-3 py-1.5 border border-gray-300 rounded text-sm focus:outline-none focus:ring-1 focus:ring-indigo-500"
+                    />
+                  </td>
+                  <td className="px-3 py-3">
+                    <input
+                      type="text"
+                      placeholder="Tìm kiếm..."
+                      value={filterRewardPoint}
+                      onChange={(e) => setFilterRewardPoint(e.target.value)}
+                      className="w-full px-3 py-1.5 border border-gray-300 rounded text-sm focus:outline-none focus:ring-1 focus:ring-indigo-500"
+                    />
+                  </td>
+                  <td className="px-6 py-3">
+                    <select
+                      value={filterStatus}
+                      onChange={(e) => setFilterStatus(e.target.value)}
+                      className="w-full px-3 py-1.5 border border-gray-300 rounded text-sm focus:outline-none focus:ring-1 focus:ring-indigo-500"
+                    >
+                      <option value="">Tất cả</option>
+                      <option value="active">Đã kích hoạt</option>
+                      <option value="inactive">Đã bị đình chỉ</option>
+                    </select>
+                  </td>
+                  <td className="px-6 py-3">
+                    <select
+                      value={filterRole}
+                      onChange={(e) => setFilterRole(e.target.value)}
+                      className="w-full px-3 py-1.5 border border-gray-300 rounded text-sm focus:outline-none focus:ring-1 focus:ring-indigo-500"
+                    >
+                      <option value="">Tất cả</option>
+                      <option value="Admin">Admin</option>
+                      <option value="Staff">Staff</option>
+                      <option value="Clinic">Clinic</option>
+                      <option value="Vet">Vet</option>
+                      <option value="User">User</option>
+                    </select>
+                  </td>
+                </tr>
+              </thead>
+              <tbody className="bg-white divide-y divide-gray-200">
+                {isLoading ? (
                   <tr>
-                    <th scope="col" className="px-6 py-4 text-left text-xs font-semibold text-gray-600 uppercase tracking-wider">
-                      Khách hàng
-                    </th>
-                    <th scope="col" className="px-6 py-4 text-left text-xs font-semibold text-gray-600 uppercase tracking-wider">
-                      Liên hệ
-                    </th>
-                    <th scope="col" className="px-3 py-4 text-center text-xs font-semibold text-gray-600 uppercase tracking-wider w-20">
-                      Điểm uy tín
-                    </th>
-                    <th scope="col" className="px-6 py-4 text-left text-xs font-semibold text-gray-600 uppercase tracking-wider">
-                      Trạng thái
-                    </th>
-                    <th scope="col" className="px-6 py-4 text-left text-xs font-semibold text-gray-600 uppercase tracking-wider">
-                      Quyền
-                    </th>
-                  </tr>
-                  <tr className="bg-white border-b border-gray-200">
-                    <td className="px-6 py-3">
-                      <input
-                        type="text"
-                        placeholder="Tìm kiếm..."
-                        value={filterCustomer}
-                        onChange={(e) => setFilterCustomer(e.target.value)}
-                        className="w-full px-3 py-1.5 border border-gray-300 rounded text-sm focus:outline-none focus:ring-1 focus:ring-indigo-500"
-                      />
-                    </td>
-                    <td className="px-6 py-3">
-                      <input
-                        type="text"
-                        placeholder="Tìm kiếm..."
-                        value={filterContact}
-                        onChange={(e) => setFilterContact(e.target.value)}
-                        className="w-full px-3 py-1.5 border border-gray-300 rounded text-sm focus:outline-none focus:ring-1 focus:ring-indigo-500"
-                      />
-                    </td>
-                    <td className="px-3 py-3">
-                      <input
-                        type="text"
-                        placeholder="Tìm kiếm..."
-                        value={filterRewardPoint}
-                        onChange={(e) => setFilterRewardPoint(e.target.value)}
-                        className="w-full px-3 py-1.5 border border-gray-300 rounded text-sm focus:outline-none focus:ring-1 focus:ring-indigo-500"
-                      />
-                    </td>
-                    <td className="px-6 py-3">
-                      <select 
-                        value={filterStatus}
-                        onChange={(e) => setFilterStatus(e.target.value)}
-                        className="w-full px-3 py-1.5 border border-gray-300 rounded text-sm focus:outline-none focus:ring-1 focus:ring-indigo-500"
-                      >
-                        <option value="">Tất cả</option>
-                        <option value="active">Đã kích hoạt</option>
-                        <option value="inactive">Đã bị đình chỉ</option>
-                      </select>
-                    </td>
-                    <td className="px-6 py-3">
-                      <select 
-                        value={filterRole}
-                        onChange={(e) => setFilterRole(e.target.value)}
-                        className="w-full px-3 py-1.5 border border-gray-300 rounded text-sm focus:outline-none focus:ring-1 focus:ring-indigo-500"
-                      >
-                        <option value="">Tất cả</option>
-                        <option value="Admin">Admin</option>
-                        <option value="Staff">Staff</option>
-                        <option value="Clinic">Clinic</option>
-                        <option value="Vet">Vet</option>
-                        <option value="User">User</option>
-                      </select>
+                    <td colSpan={5} className="px-6 py-16">
+                      <div className="flex items-center justify-center">
+                        <div className="animate-spin rounded-full h-12 w-12 border-b-2 border-indigo-600"></div>
+                      </div>
                     </td>
                   </tr>
-                </thead>
-                <tbody className="bg-white divide-y divide-gray-200">
-                  {forms.length === 0 ? (
-                    <tr>
-                      <td colSpan={5} className="px-6 py-16">
-                        <div className="flex flex-col items-center justify-center text-gray-500">
-                          <svg className="w-16 h-16 mb-4 text-gray-300" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                            <path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M20 13V6a2 2 0 00-2-2H6a2 2 0 00-2 2v7m16 0v5a2 2 0 01-2 2H6a2 2 0 01-2-2v-5m16 0h-2.586a1 1 0 00-.707.293l-2.414 2.414a1 1 0 01-.707.293h-3.172a1 1 0 01-.707-.293l-2.414-2.414A1 1 0 006.586 13H4" />
-                          </svg>
-                          <p className="text-lg font-medium">Không tìm thấy kết quả</p>
-                          <p className="text-sm mt-1">Thử điều chỉnh bộ lọc của bạn</p>
-                        </div>
-                      </td>
-                    </tr>
-                  ) : (
-                    forms.map((form: any, index: any) => (
-                      <tr
+                ) : forms.length === 0 ? (
+                  <tr>
+                    <td colSpan={5} className="px-6 py-16">
+                      <div className="flex flex-col items-center justify-center text-gray-500">
+                        <svg className="w-16 h-16 mb-4 text-gray-300" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                          <path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M20 13V6a2 2 0 00-2-2H6a2 2 0 00-2 2v7m16 0v5a2 2 0 01-2 2H6a2 2 0 01-2-2v-5m16 0h-2.586a1 1 0 00-.707.293l-2.414 2.414a1 1 0 01-.707.293h-3.172a1 1 0 01-.707-.293l-2.414-2.414A1 1 0 006.586 13H4" />
+                        </svg>
+                        <p className="text-lg font-medium">Không tìm thấy kết quả</p>
+                        <p className="text-sm mt-1">Thử điều chỉnh bộ lọc của bạn</p>
+                      </div>
+                    </td>
+                  </tr>
+                ) : (
+                  forms.map((form: any, index: any) => (
+                    <tr
                       key={form.id}
                       className="hover:bg-gray-50 transition-colors duration-150 cursor-pointer group"
                       onClick={() => openDetailPage(form)}
@@ -264,7 +266,7 @@ export default function RequestTable({ title }: RequestTableProps) {
                           className={`px-3 py-1 inline-flex text-xs leading-5 font-semibold rounded-full ${form.is_active
                             ? 'bg-green-100 text-green-800'
                             : 'bg-red-100 text-red-800'
-                          }`}
+                            }`}
                         >
                           {form.is_active ? 'Đã kích hoạt' : 'Đã bị đình chỉ'}
                         </span>
@@ -283,12 +285,11 @@ export default function RequestTable({ title }: RequestTableProps) {
                         </div>
                       </td>
                     </tr>
-                    ))
-                  )}
-                </tbody>
-              </table>
-              </>
-            )}
+                  ))
+                )}
+              </tbody>
+            </table>
+
           </div>
 
           {/* Pagination */}
@@ -333,7 +334,7 @@ export default function RequestTable({ title }: RequestTableProps) {
                           className={`relative inline-flex items-center px-4 py-2 border text-sm font-medium transition-all ${currentPage === pageNumber
                             ? 'z-10 bg-indigo-600 border-indigo-600 text-white shadow-md'
                             : 'bg-white border-gray-300 text-gray-700 hover:bg-gray-50'
-                          }`}
+                            }`}
                         >
                           {pageNumber}
                         </button>
@@ -374,7 +375,6 @@ export default function RequestTable({ title }: RequestTableProps) {
                 <path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M6 18L18 6M6 6l12 12" />
               </svg>
             </button>
-
             <div className="p-8">
               <h2 className="text-2xl font-bold text-gray-800 mb-6">Thêm người dùng mới</h2>
               <Register />
