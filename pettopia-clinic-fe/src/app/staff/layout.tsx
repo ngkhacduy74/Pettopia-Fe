@@ -2,18 +2,15 @@
 
 import { useState } from 'react';
 import Sidebar from '@/components/common/Sidebar';
-import { SidebarProvider, useSidebar } from '@/contexts/SidebarContext';
-import { ToastProvider } from '@/contexts/ToastContext';
 
-function StaffLayoutContent({
+export default function Layout({
   children,
 }: {
   children: React.ReactNode;
 }) {
   const [showSearch, setShowSearch] = useState(false);
   const [isMenuOpen, setIsMenuOpen] = useState(false);
-  const [isSettingsModalOpen, setIsSettingsModalOpen] = useState(false);
-  const { isSidebarCollapsed } = useSidebar();
+  const [isSettingsModalOpen, setIsSettingsModalOpen] = useState(false); // ✅ Thêm state modal
 
   return (
     <section>
@@ -37,7 +34,7 @@ function StaffLayoutContent({
         </button>
 
         {/* Nội dung chính */}
-        <main className={`flex-1 overflow-y-auto ${isSidebarCollapsed ? 'md:ml-20' : 'md:ml-64'} p-10 md:p-12 bg-gradient-to-b from-teal-50 to-white transition-all duration-300`}>
+        <main className="flex-1 overflow-y-auto ml-0 md:ml-[16rem] p-10 md:p-12 bg-gradient-to-b from-teal-50 to-white transition-all duration-300">
           {children}
         </main>
 
@@ -143,19 +140,5 @@ function StaffLayoutContent({
         )}
       </div>
     </section>
-  );
-}
-
-export default function Layout({
-  children,
-}: {
-  children: React.ReactNode;
-}) {
-  return (
-    <SidebarProvider>
-      <ToastProvider>
-        <StaffLayoutContent>{children}</StaffLayoutContent>
-      </ToastProvider>
-    </SidebarProvider>
   );
 }
