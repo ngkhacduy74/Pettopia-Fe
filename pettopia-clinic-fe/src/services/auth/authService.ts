@@ -100,6 +100,36 @@ export const createUser = async (userData: {
   }
 };
 
+export const changePassword = async (changePasswordData: {
+  oldPassword: string;
+  newPassword: string;
+}) => {
+  try {
+    const authToken = localStorage.getItem('authToken');
+    
+    if (!authToken) {
+      throw new Error('Token not found');
+    }
+
+    const response = await axios.post(
+      'http://localhost:3333/api/v1/auth/change-password',
+      changePasswordData,
+      {
+        headers: {
+          'Content-Type': 'application/json',
+          token: authToken,
+        },
+      }
+    );
+    
+    console.log("Mật khẩu đã được đổi thành công");
+    return response.data;
+  } catch (error) {
+    console.error("Lỗi khi đổi mật khẩu:", error);
+    throw error;
+  }
+};
+
 /**
  * XÓA HOÀN TOÀN MỌI DỮ LIỆU ĐĂNG NHẬP & SESSION
  * - localStorage: authToken, userRole, userRoles, refreshToken, userId, chatMessages, v.v...
