@@ -8,6 +8,7 @@ import { parseJwt, isTokenExpired } from '@/utils/jwt';
 import { useRouter } from 'next/navigation';
 import { useToast } from '@/contexts/ToastContext';
 import { registerClinic } from '@/services/partner/clinicService';
+import { getCustomerData } from '@/services/customer/customerService';
 
 interface ClinicFormData {
   clinic_name: string;
@@ -19,6 +20,8 @@ interface ClinicFormData {
   ward: string;
   address_detail: string;
   representative_name: string;
+  representative_email: string;
+  representative_phone: string;
   identify_number: string;
   responsible_licenses: string;
   license_issued_date: string;
@@ -62,6 +65,8 @@ export default function ClinicCreateForm() {
       ward: '',
       address_detail: '',
       representative_name: '',
+      representative_email: '',
+      representative_phone: '',
       identify_number: '',
       responsible_licenses: '',
       license_issued_date: '',
@@ -209,6 +214,23 @@ export default function ClinicCreateForm() {
         return;
       }
 
+      // === KIỂM TRA EMAIL ĐÃ TỒN TẠI TRONG HỆ THỐNG ===
+      try {
+        const customerResponse = await getCustomerData(1, 10, {
+          email_address: data.email_address,
+        });
+
+        // Nếu API trả về dữ liệu (người dùng đã tồn tại)
+        if (customerResponse?.data && customerResponse.data.length > 0) {
+          showError('Email này đã được sử dụng bởi một người dùng khác. Vui lòng sử dụng email khác.', 5000);
+          return;
+        }
+      } catch (error: any) {
+        // Nếu có lỗi từ API kiểm tra customer, vẫn có thể tiếp tục
+        // nhưng log lỗi để debug
+        console.warn('Lỗi khi kiểm tra email customer:', error);
+      }
+
       const formattedData = {
         user_id: decoded.id,
         clinic_name: data.clinic_name,
@@ -223,6 +245,8 @@ export default function ClinicCreateForm() {
         },
         representative: {
           name: data.representative_name,
+          email: { email_address: data.representative_email },
+          phone: { phone_number: data.representative_phone },
           identify_number: data.identify_number,
           responsible_licenses: data.responsible_licenses.split(',').map(s => s.trim()).filter(Boolean),
           license_issued_date: data.license_issued_date || '',
@@ -405,6 +429,35 @@ export default function ClinicCreateForm() {
             className="w-full px-3 py-2 border border-gray-300 rounded-md focus:ring-teal-500 focus:border-teal-500"
           />
           {errors.representative_name && <p className="mt-1 text-xs text-red-600">{errors.representative_name.message}</p>}
+        </div>
+
+        {/* Representative Email */}
+        <div>
+          <label className="block text-sm font-medium text-gray-700 mb-1">Email người đại diện</label>
+          <input
+            {...register('representative_email', {
+              required: 'Vui lòng nhập email người đại diện',
+              pattern: { value: /^[A-Za-z0-9._%+-]+@[A-Za-z0-9.-]+\.[A-Za-z]{2,}$/, message: 'Email không hợp lệ' },
+            })}
+            type="email"
+            placeholder="representative@example.com"
+            className="w-full px-3 py-2 border border-gray-300 rounded-md focus:ring-teal-500 focus:border-teal-500"
+          />
+          {errors.representative_email && <p className="mt-1 text-xs text-red-600">{errors.representative_email.message}</p>}
+        </div>
+
+        {/* Representative Phone */}
+        <div>
+          <label className="block text-sm font-medium text-gray-700 mb-1">Số điện thoại người đại diện</label>
+          <input
+            {...register('representative_phone', {
+              required: 'Vui lòng nhập số điện thoại người đại diện',
+              pattern: { value: /^(?:\+84|0)(3[2-9]|5[6|8|9]|7[0|6-9]|8[1-9]|9[0-9])[0-9]{7}$/, message: 'Số điện thoại không hợp lệ' },
+            })}
+            placeholder="+84901234567"
+            className="w-full px-3 py-2 border border-gray-300 rounded-md focus:ring-teal-500 focus:border-teal-500"
+          />
+          {errors.representative_phone && <p className="mt-1 text-xs text-red-600">{errors.representative_phone.message}</p>}
         </div>
 
         {/* Identify Number */}
