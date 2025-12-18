@@ -123,7 +123,7 @@ export default function VetFormDetail({ title }: RequestTableProps) {
   if (selectedForm) {
     const user = selectedForm.user;
     return (
-      <div className="min-h-screen bg-gray-100 py-8">
+      <div >
         <div className="max-w-4xl mx-auto px-4">
           {/* Back Button */}
           <button
@@ -289,26 +289,8 @@ export default function VetFormDetail({ title }: RequestTableProps) {
                   </div>
                 )}
 
-                {/* Chữ ký */}
-                <div className="pt-16 pb-8">
-                  <div className="grid grid-cols-2 gap-12">
-                    <div>
-                      <p className="text-center text-sm font-semibold text-gray-700 mb-24">Người nộp đơn</p>
-                      <div className="border-t-2 border-gray-400 pt-2">
-                        <p className="text-center font-semibold text-gray-900">{user?.fullname || 'N/A'}</p>
-                      </div>
-                    </div>
-                    <div>
-                      <p className="text-center text-sm font-semibold text-gray-700">
-                        Ngày {new Date(selectedForm.createdAt).getDate()} tháng {new Date(selectedForm.createdAt).getMonth() + 1} năm {new Date(selectedForm.createdAt).getFullYear()}
-                      </p>
-                      <p className="text-center text-sm font-semibold text-gray-700 mb-20">Người xét duyệt</p>
-                      <div className="border-t-2 border-gray-400 pt-2">
-                        <p className="text-center font-semibold text-gray-900">(Ký và ghi rõ họ tên)</p>
-                      </div>
-                    </div>
-                  </div>
-                </div>
+          
+             
               </div>
 
               <div className="border-t border-gray-200 px-12 py-4 bg-gray-50 text-center text-xs text-gray-500">
@@ -321,7 +303,7 @@ export default function VetFormDetail({ title }: RequestTableProps) {
           <div className="mt-8 flex flex-wrap gap-3 print:hidden">
             <button
               onClick={() => updateStatus('pending')}
-              className="flex-1 min-w-[140px] bg-teal-500 hover:bg-teal-600 text-white font-medium py-3 px-6 rounded-lg transition-all duration-200 flex items-center justify-center space-x-2 shadow-md hover:shadow-lg"
+              className="flex-1 min-w-[140px] bg-teal-600 hover:bg-teal-700 text-white font-medium py-3 px-6 rounded-lg transition-all duration-200 flex items-center justify-center space-x-2 shadow-md hover:shadow-lg"
             >
               <svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                 <path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M12 8v4l3 3m6-3a9 9 0 11-18 0 9 9 0 0118 0z" />
@@ -331,7 +313,7 @@ export default function VetFormDetail({ title }: RequestTableProps) {
 
             <button
               onClick={() => updateStatus('approved')}
-              className="flex-1 min-w-[140px] bg-green-500 hover:bg-green-600 text-white font-medium py-3 px-6 rounded-lg transition-all duration-200 flex items-center justify-center space-x-2 shadow-md hover:shadow-lg"
+              className="flex-1 min-w-[140px] bg-green-600 hover:bg-green-700 text-white font-medium py-3 px-6 rounded-lg transition-all duration-200 flex items-center justify-center space-x-2 shadow-md hover:shadow-lg"
             >
               <svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                 <path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M5 13l4 4L19 7" />
@@ -341,7 +323,7 @@ export default function VetFormDetail({ title }: RequestTableProps) {
 
             <button
               onClick={() => updateStatus('rejected')}
-              className="flex-1 min-w-[140px] bg-red-500 hover:bg-red-600 text-white font-medium py-3 px-6 rounded-lg transition-all duration-200 flex items-center justify-center space-x-2 shadow-md hover:shadow-lg"
+              className="flex-1 min-w-[140px] bg-red-600 hover:bg-red-700 text-white font-medium py-3 px-6 rounded-lg transition-all duration-200 flex items-center justify-center space-x-2 shadow-md hover:shadow-lg"
             >
               <svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                 <path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M6 18L18 6M6 6l12 12" />
@@ -349,15 +331,7 @@ export default function VetFormDetail({ title }: RequestTableProps) {
               <span>Từ chối</span>
             </button>
 
-            <button
-              onClick={() => window.print()}
-              className="flex-1 min-w-[140px] bg-indigo-600 hover:bg-indigo-700 text-white font-medium py-3 px-6 rounded-lg transition-all duration-200 flex items-center justify-center space-x-2 shadow-md hover:shadow-lg"
-            >
-              <svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M17 17h2a2 2 0 002-2v-4a2 2 0 00-2-2H5a2 2 0 00-2 2v4a2 2 0 002 2h2m2 4h6a2 2 0 002-2v-4a2 2 0 00-2-2H9a2 2 0 00-2 2v4a2 2 0 002 2zm8-12V5a2 2 0 00-2-2H9a2 2 0 00-2 2v4h10z" />
-              </svg>
-              <span>In đơn</span>
-            </button>
+    
           </div>
         </div>
 
@@ -373,7 +347,7 @@ export default function VetFormDetail({ title }: RequestTableProps) {
 
   // === DANH SÁCH HỒ SƠ ===
   return (
-    <div className="min-h-screen bg-gray-50">
+    <div >
       <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-8">
         {/* Header */}
         <div className="bg-white rounded-xl shadow-sm border border-gray-200 mb-6">

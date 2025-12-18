@@ -5,21 +5,10 @@ import { useParams, useRouter } from 'next/navigation';
 import Link from 'next/link';
 import {
   getAppointmentDetail,
-  updateAppointmentStatus,
   getAppointmentMedicalRecord,
   type AppointmentDetail,
   type MedicalRecord,
 } from '@/services/petcare/petService';
-
-// Predefined cancel reasons
-const CANCEL_REASONS = [
-  'Không có thời gian điều trị',
-  'Vị trí phòng khám xa quá',
-  'Tình hình sức khỏe thú cưng đã cải thiện',
-  'Sai thông tin thú cưng cần điều trị',
-  'Thay đổi ý định',
-  'Lý do khác',
-];
 
 export default function AppointmentDetailPage() {
   const params = useParams();
@@ -31,12 +20,6 @@ export default function AppointmentDetailPage() {
   const [error, setError] = useState<string | null>(null);
   const [medicalRecord, setMedicalRecord] = useState<MedicalRecord | null>(null);
   const [loadingMedicalRecord, setLoadingMedicalRecord] = useState(false);
-
-  // New states for cancel modal
-  const [showCancelModal, setShowCancelModal] = useState(false);
-  const [selectedReason, setSelectedReason] = useState('');
-  const [cancelReason, setCancelReason] = useState('');
-  const [isCancelling, setIsCancelling] = useState(false);
 
   useEffect(() => {
     if (!appointmentId) return;
@@ -78,45 +61,6 @@ export default function AppointmentDetailPage() {
 
     fetchAppointment();
   }, [appointmentId]);
-
-  // When predefined reason changes, update the textarea
-  const handleReasonSelect = (reason: string) => {
-    setSelectedReason(reason);
-    if (reason !== 'Lý do khác') {
-      setCancelReason(reason);
-    } else {
-      setCancelReason('');
-    }
-  };
-
-  // Confirm cancel handler (reason required)
-  const handleConfirmCancel = async () => {
-    if (!appointmentId) return;
-    
-    const finalReason = cancelReason.trim() || selectedReason;
-    if (!finalReason) {
-      alert('Vui lòng chọn hoặc nhập lý do hủy.');
-      return;
-    }
-
-    try {
-      setIsCancelling(true);
-      await updateAppointmentStatus(appointmentId, 'Cancelled', finalReason.trim());
-      // Refresh appointment data from server to get updated status
-      const updatedData = await getAppointmentDetail(appointmentId);
-      setAppointment(updatedData);
-      setShowCancelModal(false);
-      setCancelReason('');
-      setSelectedReason('');
-      alert('Hủy lịch hẹn thành công!');
-    } catch (err: any) {
-      console.error('Error cancelling appointment:', err);
-      const errorMessage = err?.response?.data?.message || err?.message || 'Hủy lịch thất bại. Vui lòng thử lại.';
-      alert(errorMessage);
-    } finally {
-      setIsCancelling(false);
-    }
-  };
 
   const formatDate = (dateString?: string) => {
     if (!dateString) return 'Chưa rõ';
@@ -385,101 +329,9 @@ export default function AppointmentDetailPage() {
             >
               Quay lại
             </Link>
-
-            {/* action: show cancel modal when appointment not yet cancelled/completed */}
-            {appointment && appointment.status !== 'Cancelled' && appointment.status !== 'Completed' && (
-              <button
-                onClick={() => setShowCancelModal(true)}
-                className="px-6 py-3 bg-red-500 text-white rounded-lg hover:bg-red-600 transition font-medium"
-              >
-                Hủy lịch hẹn
-              </button>
-            )}
           </div>
         </div>
       </div>
-
-      {/* Cancel Modal */}
-      {showCancelModal && (
-        <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/50 p-4">
-          <div className="bg-white rounded-2xl max-w-lg w-full p-6 shadow-lg max-h-[90vh] overflow-y-auto">
-            <h3 className="text-lg font-bold mb-2">Xác nhận hủy lịch</h3>
-            <p className="text-sm text-gray-600 mb-4">
-              Vui lòng chọn hoặc nhập lý do hủy để chúng tôi lưu lại và thông báo cho phòng khám. Các lý do này giúp chúng tôi và phòng khám cải thiện dịch vụ trong tương lai.
-            </p>
-
-            {/* Predefined reasons */}
-            <div className="mb-4">
-              <label className="text-sm font-medium text-gray-700 mb-2 block">Chọn lý do hủy:</label>
-              <div className="space-y-2">
-                {CANCEL_REASONS.map((reason) => (
-                  <button
-                    key={reason}
-                    onClick={() => handleReasonSelect(reason)}
-                    className={`w-full text-left px-4 py-3 rounded-lg border-2 transition ${
-                      selectedReason === reason
-                        ? 'border-teal-600 bg-teal-50 text-teal-900'
-                        : 'border-gray-200 bg-white hover:border-gray-300'
-                    }`}
-                  >
-                    <div className="flex items-center gap-3">
-                      <div className={`w-5 h-5 rounded border-2 flex items-center justify-center ${
-                        selectedReason === reason ? 'border-teal-600 bg-teal-600' : 'border-gray-300'
-                      }`}>
-                        {selectedReason === reason && (
-                          <svg className="w-3 h-3 text-white" fill="currentColor" viewBox="0 0 20 20">
-                            <path fillRule="evenodd" d="M16.707 5.293a1 1 0 010 1.414l-8 8a1 1 0 01-1.414 0l-4-4a1 1 0 011.414-1.414L8 12.586l7.293-7.293a1 1 0 011.414 0z" clipRule="evenodd" />
-                          </svg>
-                        )}
-                      </div>
-                      <span>{reason}</span>
-                    </div>
-                  </button>
-                ))}
-              </div>
-            </div>
-
-            {/* Custom reason textarea (show when "Lý do khác" selected) */}
-            {selectedReason === 'Lý do khác' && (
-              <div className="mb-4">
-                <label className="text-sm font-medium text-gray-700 mb-2 block">Nhập lý do khác:</label>
-                <textarea
-                  value={cancelReason}
-                  onChange={(e) => setCancelReason(e.target.value)}
-                  placeholder="Vui lòng mô tả lý do hủy của bạn..."
-                  className="w-full min-h-[100px] p-3 border border-gray-200 rounded-lg focus:outline-none focus:ring-2 focus:ring-teal-500 resize-y"
-                />
-              </div>
-            )}
-
-            {/* Action buttons */}
-            <div className="flex justify-end gap-3 pt-4 border-t">
-              <button
-                onClick={() => {
-                  setShowCancelModal(false);
-                  setCancelReason('');
-                  setSelectedReason('');
-                }}
-                disabled={isCancelling}
-                className="px-4 py-2 rounded-lg bg-gray-100 hover:bg-gray-200 disabled:opacity-50 disabled:cursor-not-allowed transition"
-              >
-                Đóng
-              </button>
-              <button
-                onClick={handleConfirmCancel}
-                disabled={isCancelling || !selectedReason || (selectedReason === 'Lý do khác' && !cancelReason.trim())}
-                className={`px-4 py-2 rounded-lg text-white font-medium transition ${
-                  isCancelling || !selectedReason || (selectedReason === 'Lý do khác' && !cancelReason.trim())
-                    ? 'bg-gray-400 cursor-not-allowed'
-                    : 'bg-red-600 hover:bg-red-700'
-                }`}
-              >
-                {isCancelling ? 'Đang hủy...' : 'Xác nhận hủy'}
-              </button>
-            </div>
-          </div>
-        </div>
-      )}
     </div>
   );
 }

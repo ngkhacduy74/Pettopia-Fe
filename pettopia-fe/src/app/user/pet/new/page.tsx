@@ -1,5 +1,5 @@
 'use client'
-import React, { useState } from 'react';
+import React, { useState, useRef } from 'react';
 import { useEffect } from 'react';
 import { useRouter } from 'next/navigation';
 import Link from 'next/link';
@@ -10,6 +10,7 @@ import { toast } from 'react-hot-toast';
 
 export default function RegisterPetPage() {
     const router = useRouter();
+    const fileInputRef = useRef<HTMLInputElement>(null);
     
     const [isSubmitting, setIsSubmitting] = useState(false);
     const [serverError, setServerError] = useState('');
@@ -77,18 +78,29 @@ export default function RegisterPetPage() {
         if (file) {
             // Validate file type
             if (!file.type.startsWith('image/')) {
-                alert('Vui lòng chọn file ảnh hợp lệ');
+                toast.error('Vui lòng chọn file ảnh hợp lệ', { duration: 2000 });
+                // Reset file input to prevent file from being uploaded
+                if (fileInputRef.current) {
+                    fileInputRef.current.value = '';
+                }
+                setAvatarFile(null);
+                setAvatarPreview('');
                 return;
             }
             
-            // Validate file size (max 2MB - đồng bộ với thông báo bên dưới)
+            // Validate file size (max 5MB)
             if (file.size > 5 * 1024 * 1024) {
-                alert('Kích thước file không được vượt quá 5MB');
+                toast.error('Kích thước file không được vượt quá 5MB', { duration: 2000 });
+                // Reset file input to prevent file from being uploaded
+                if (fileInputRef.current) {
+                    fileInputRef.current.value = '';
+                }
+                setAvatarFile(null);
+                setAvatarPreview('');
                 return;
             }
 
-            setAvatarFile(file);
-            // Lưu file để gửi lên backend dạng multipart giống trang community
+            // File is valid, proceed with setting it
             setAvatarFile(file);
             
             // Tạo preview (base64) chỉ để hiển thị UI
@@ -264,8 +276,14 @@ export default function RegisterPetPage() {
 
             const res = await createPet(payload);
 
+            // Kiểm tra nếu response có lỗi (status error hoặc có field error)
+            if (res?.status === 'error' || res?.error) {
+                const errorMessage = res?.message || res?.error || 'Có lỗi xảy ra khi tạo thú cưng. Vui lòng thử lại.';
+                throw new Error(errorMessage);
+            }
+
             // ✅ CHỈ THÀNH CÔNG MỚI TOAST + REDIRECT
-            if (res?.message) {
+            if (res?.message && !res?.error && res?.status !== 'error') {
                 toast.success(res.message, { duration: 2000 });
                 setTimeout(() => {
                     router.push('/user/home');
@@ -280,6 +298,7 @@ export default function RegisterPetPage() {
             let errorMessage = 'Có lỗi xảy ra khi tạo thú cưng. Vui lòng thử lại.';
             let errorDetails: string[] = [];
 
+            // Nếu là lỗi từ axios (có response.data)
             if (err?.response?.data) {
                 const errorData = err.response.data;
                 
@@ -306,6 +325,7 @@ export default function RegisterPetPage() {
                     errorMessage = errorData.error;
                 }
             } else if (err?.message) {
+                // Nếu là lỗi từ throw new Error
                 errorMessage = err.message;
             }
 
@@ -401,11 +421,24 @@ export default function RegisterPetPage() {
     }, []);
 
     return (
-        <div className="max-w-7xl mx-auto px-11 py-8">
+        <>
+            {/* Loading Overlay - Fixed to cover entire viewport */}
+            {isSubmitting && (
+              <div className="fixed inset-0 bg-opacity-5 backdrop-blur-sm flex items-center justify-center z-50">
+                    <div className="bg-white rounded-xl shadow-2xl p-8 flex flex-col items-center gap-4 min-w-[300px] max-w-[400px]">
+                        <div className="relative w-16 h-16">
+                            <div className="absolute inset-0 border-4 border-teal-200 rounded-full"></div>
+                            <div className="absolute inset-0 border-4 border-teal-600 rounded-full border-t-transparent animate-spin"></div>
+                        </div>
+                        <p className="text-lg font-semibold text-gray-700">Đang tạo thú cưng...</p>
+                        <p className="text-sm text-gray-500 text-center">Vui lòng đợi trong giây lát</p>
+                    </div>
+                </div>
+            )}
 
-
+            <div className="max-w-7xl mx-auto px-11 py-8">
                     {/* Form */}
-                    <form onSubmit={handleSubmitPet} className="bg-white rounded-xl shadow-lg border border-gray-200 overflow-hidden">
+                    <form onSubmit={handleSubmitPet} className={`bg-white rounded-xl shadow-lg border border-gray-200 overflow-hidden relative ${isSubmitting ? 'pointer-events-none opacity-70' : ''}`}>
                         <div className="bg-gradient-to-r from-teal-600 to-cyan-600 p-4 text-white">
                             <div className="flex items-center justify-between">
                                 <h2 className="text-xl font-bold">Thông tin đăng kí thú cưng</h2>
@@ -642,6 +675,7 @@ export default function RegisterPetPage() {
                                         {avatarUploadMethod === 'file' && (
                                             <div className="space-y-3">
                                                 <input
+                                                    ref={fileInputRef}
                                                     type="file"
                                                     accept="image/*"
                                                     onChange={handleFileUpload}
@@ -902,7 +936,7 @@ export default function RegisterPetPage() {
                                                 <svg className="w-4 h-4" fill="currentColor" viewBox="0 0 20 20">
                                                     <path fillRule="evenodd" d="M18 10a8 8 0 11-16 0 8 8 0 0116 0zm-7-4a1 1 0 11-2 0 1 1 0 012 0zM9 9a1 1 0 000 2v3a1 1 0 001 1h1a1 1 0 100-2v-3a1 1 0 00-1-1H9z" clipRule="evenodd"/>
                                                 </svg>
-                                                <span>Ảnh của bạn có thể quá dung lượng. Vui lòng chọn ảnh dưới 5MB hoặc thử một ảnh khác.</span>
+                                                <span>Ảnh của bạn có thể quá dung lượng. Hoặc thiếu trường bắt buộc.</span>
                                             </div>
                                         </div>
                                     </div>
@@ -922,16 +956,23 @@ export default function RegisterPetPage() {
                                 <button
                                     type="submit"
                                     disabled={isSubmitting}
-                                    className={`flex-1 px-4 py-2.5 text-white rounded-lg transition-all font-medium ${isSubmitting
+                                    className={`flex-1 px-4 py-2.5 text-white rounded-lg transition-all font-medium flex items-center justify-center gap-2 ${isSubmitting
                                         ? 'bg-gray-400 cursor-not-allowed'
                                         : 'bg-gradient-to-r from-teal-600 to-cyan-600 hover:from-teal-700 hover:to-cyan-700'
                                         }`}
                                 >
+                                    {isSubmitting && (
+                                        <svg className="animate-spin h-5 w-5 text-white" xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24">
+                                            <circle className="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" strokeWidth="4"></circle>
+                                            <path className="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4zm2 5.291A7.962 7.962 0 014 12H0c0 3.042 1.135 5.824 3 7.938l3-2.647z"></path>
+                                        </svg>
+                                    )}
                                     {isSubmitting ? 'Đang xử lý...' : 'Đăng ký thú cưng'}
                                 </button>
                             </div>
                         </div>
                     </form>
-        </div>
+            </div>
+        </>
     );
 }
