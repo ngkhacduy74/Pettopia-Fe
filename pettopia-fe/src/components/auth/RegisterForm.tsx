@@ -340,7 +340,9 @@ export default function RegisterForm() {
                   id="fullname"
                   {...register("fullname", {
                     required: "Vui lòng nhập họ và tên",
-                    minLength: { value: 2, message: "Họ tên phải ít nhất 2 ký tự" },
+                    minLength: { value: 7, message: "Họ tên phải ít nhất 7 ký tự" },
+                    maxLength: { value: 50, message: "Họ tên không được vượt quá 50 ký tự" },
+                    pattern: { value: /^[a-zA-ZÀ-ỿ\s]+$/, message: "Họ tên chỉ chứa chữ cái và khoảng trắng" },
                   })}
                   className="block w-full px-4 py-2.5 bg-gray-50 border border-gray-200 rounded-lg text-gray-900 placeholder:text-gray-400 focus:bg-white focus:border-teal-500 focus:ring-2 focus:ring-teal-100 focus:outline-none transition-all text-sm"
                   placeholder="Nhập họ và tên"
