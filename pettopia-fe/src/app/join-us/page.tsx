@@ -38,7 +38,7 @@ export default function JoinUsPage() {
 
                 {/* CTA Button - Minimal & Elegant */}
                 <Link
-                    href="/auth/register"
+                    href="https://pettopia-fe.onrender.com/auth/login"
                     className="inline-flex items-center gap-2 bg-gradient-to-r from-teal-500 to-cyan-500 text-white font-semibold text-lg px-8 py-3.5 rounded-full
                                transition-all duration-300 hover:from-teal-600 hover:to-cyan-600
                                focus:outline-none focus:ring-4 focus:ring-cyan-400 focus:ring-opacity-50"
