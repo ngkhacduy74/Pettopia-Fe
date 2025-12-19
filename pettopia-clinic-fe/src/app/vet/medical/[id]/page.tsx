@@ -108,14 +108,18 @@ export default function VetMedicalRecordDetailPage() {
     try {
       const data = await getVetPetDetail(petId);
       setPetDetail(data);
-      setMedicalRecords(data.medical_records || []);
+
+      // Fetch medical records separately to ensure we get the latest history
+      const medicalRecordsResponse = await getPetMedicalRecords(petId);
+      const records = medicalRecordsResponse.data || [];
+      setMedicalRecords(records);
 
       // Lấy medical record ID từ appointment detail (pet_infos[0].medical_records[0])
       const medicalRecordId = appointmentDetail?.pet_infos?.[0]?.medical_records?.[0];
       
       if (medicalRecordId) {
-        // Tìm medical record trong pet detail bằng ID
-        const recordForAppointment = data.medical_records?.find(
+        // Tìm medical record trong records bằng ID
+        const recordForAppointment = records.find(
           (mr) => mr.medicalRecord?.id === medicalRecordId || mr.medicalRecord?._id === medicalRecordId
         );
 
@@ -132,7 +136,7 @@ export default function VetMedicalRecordDetailPage() {
           setMedications(recordForAppointment.medications || []);
         } else {
           // Fallback: tìm theo appointment_id nếu không tìm thấy bằng ID
-          const recordByAppointmentId = data.medical_records?.find(
+          const recordByAppointmentId = records.find(
             (mr) => mr.medicalRecord?.appointment_id === appointmentId
           );
           
@@ -158,7 +162,7 @@ export default function VetMedicalRecordDetailPage() {
         }
       } else {
         // Fallback: tìm theo appointment_id nếu không có medical_records trong pet_infos
-        const recordForAppointment = data.medical_records?.find(
+        const recordForAppointment = records.find(
           (mr) => mr.medicalRecord?.appointment_id === appointmentId
         );
 
@@ -307,7 +311,7 @@ export default function VetMedicalRecordDetailPage() {
       await completeAppointment(appointmentId);
       showSuccess('Hoàn thành lịch hẹn thành công!');
       // Có thể redirect hoặc refresh trang
-      router.push('/vet/schedule'); // Quay về trang lịch trình
+      router.push('/vet/patients'); // Quay về trang lịch trình
     } catch (error: any) {
       console.error('Lỗi khi hoàn thành lịch hẹn:', error);
       showError(error?.response?.data?.message || 'Không thể hoàn thành lịch hẹn');
