@@ -62,7 +62,7 @@ export default function LoginForm() {
             } else if (userRole.includes('Clinic')) {
               router.push('/clinic/dashboard');
             } else if (userRole.includes('Vet')) {
-              router.push('/vet/main');
+              router.push('/vet/patients');
             } else if (userRole.includes('User')) {
               router.push('/user/submit-vet-certificate');
             } else {

@@ -82,7 +82,7 @@ export default function RoleSwitcher({
       Admin: '/admin/dashboard',
       Staff: '/staff/dashboard',
       Clinic: '/clinic/dashboard',
-      Vet: '/vet/main',
+      Vet: '/vet/patients',
       User: '/user/dashboard',
     };
     window.location.href = roleLinks[role] || '#';

@@ -12,6 +12,7 @@ import {
   UserCircleIcon,
   UserGroupIcon,
   QuestionMarkCircleIcon,
+  LockClosedIcon,
 } from '@heroicons/react/24/outline';
 import { usePathname } from 'next/navigation';
 import { parseJwt, isTokenExpired } from '@/utils/jwt';
@@ -129,7 +130,6 @@ export default function Sidebar({
       { label: 'Lịch sử khám', href: '/clinic/medical', icon: <QuestionMarkCircleIcon className="w-5 h-5" /> },
     ],
     Vet: [
-      { label: 'Trang chính', href: '/vet/main', icon: <HomeIcon className="w-5 h-5" /> },
       { label: 'Hồ sơ bệnh án', href: '/vet/patients', icon: <ClipboardDocumentListIcon className="w-5 h-5" /> },
        { label: 'Lịch sử khám', href: '/vet/schedule', icon: <ClipboardDocumentListIcon className="w-5 h-5" /> },
 
@@ -265,6 +265,18 @@ export default function Sidebar({
               >
                 <UserCircleIcon className="w-5 h-5 text-teal-600 flex-shrink-0" />
                 <span className="text-gray-900 font-medium">Hồ sơ</span>
+              </button>
+
+              {/* Change Password */}
+              <button
+                onClick={() => {
+                  setIsDropdownOpen(false);
+                  router.push('/change-password');
+                }}
+                className="w-full flex items-center gap-3 px-4 py-3 hover:bg-teal-50 rounded-lg transition-colors text-left text-sm"
+              >
+                <LockClosedIcon className="w-5 h-5 text-teal-600 flex-shrink-0" />
+                <span className="text-gray-900 font-medium">Đổi mật khẩu</span>
               </button>
 
               {/* Role Switcher */}
