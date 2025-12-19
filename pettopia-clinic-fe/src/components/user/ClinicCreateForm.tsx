@@ -283,6 +283,7 @@ export default function ClinicCreateForm() {
             {...register('clinic_name', {
               required: 'Vui lòng nhập tên phòng khám',
               minLength: { value: 3, message: 'Tối thiểu 3 ký tự' },
+              maxLength: { value: 20, message: 'Tối đa 20 ký tự' },
             })}
             placeholder="PetCare Clinic"
             className="w-full px-3 py-2 border border-gray-300 rounded-md focus:ring-teal-500 focus:border-teal-500 transition"

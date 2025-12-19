@@ -287,18 +287,8 @@ export default function ClinicService() {
                         className="hover:bg-gray-50 transition"
                       >
                         <td className="px-6 py-4">
-                          <div
-                            className="text-sm font-medium text-gray-900 relative inline-block cursor-help"
-                            onMouseEnter={() => setHoveredService(String(serviceKey))}
-                            onMouseLeave={() => setHoveredService(null)}
-                          >
+                          <div className="text-sm font-medium text-gray-900">
                             {s.name}
-                            {s.description && hoveredService === String(serviceKey) && (
-                              <div className="absolute z-50 left-0 top-full mt-2 w-64 bg-gray-900 text-white text-xs rounded-lg shadow-lg p-3 whitespace-normal">
-                                <div className="absolute -top-1 left-4 w-2 h-2 bg-gray-900 transform rotate-45"></div>
-                                {s.description}
-                              </div>
-                            )}
                           </div>
                         </td>
                         <td className="px-6 py-4 whitespace-nowrap text-right">
