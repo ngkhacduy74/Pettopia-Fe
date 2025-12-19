@@ -53,7 +53,7 @@ export default function InviteAcceptedClient({ params }: Props) {
       await acceptInvitation(inviteId);
       showSuccess('Đã chấp nhận lời mời tham gia bệnh viện');
       setTimeout(() => {
-        router.push('/vet/main');
+        router.push('/vet/patients');
       }, 1500);
     } catch (error: any) {
       const message = error?.response?.data?.message || 'Không thể chấp nhận lời mời. Vui lòng thử lại sau.';
@@ -73,7 +73,7 @@ export default function InviteAcceptedClient({ params }: Props) {
       await declineInvitation(inviteId);
       showSuccess('Bạn đã từ chối lời mời này');
       setTimeout(() => {
-        router.push('/vet/main');
+        router.push('/vet/patients');
       }, 1500);
     } catch (error: any) {
       const message = error?.response?.data?.message || 'Không thể từ chối lời mời. Vui lòng thử lại sau.';
