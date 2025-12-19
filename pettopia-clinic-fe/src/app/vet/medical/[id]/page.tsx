@@ -307,7 +307,7 @@ export default function VetMedicalRecordDetailPage() {
       await completeAppointment(appointmentId);
       showSuccess('Hoàn thành lịch hẹn thành công!');
       // Có thể redirect hoặc refresh trang
-      router.push('/vet/schedule'); // Quay về trang lịch trình
+      router.push('/vet/patients'); // Quay về trang lịch trình
     } catch (error: any) {
       console.error('Lỗi khi hoàn thành lịch hẹn:', error);
       showError(error?.response?.data?.message || 'Không thể hoàn thành lịch hẹn');
