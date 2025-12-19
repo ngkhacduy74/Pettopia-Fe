@@ -152,8 +152,9 @@ export default function EditPetForm() {
           <form onSubmit={handleSubmitPet} className="space-y-6">
             <div className="grid grid-cols-2 gap-6 ">
               <div>
-                <label className="block text-sm font-medium mb-1">Tên thú cưng</label>
+                <label htmlFor="pet-name" className="block text-sm font-medium mb-1">Tên thú cưng</label>
                 <input
+                  id="pet-name"
                   type="text"
                   className="w-full border rounded-lg px-3 py-2 focus:ring-2 focus:ring-teal-500"
                   value={petForm.name}
@@ -163,8 +164,9 @@ export default function EditPetForm() {
               </div>
 
               <div>
-                <label className="block text-sm font-medium mb-1">Loại thú cưng</label>
+                <label htmlFor="pet-species" className="block text-sm font-medium mb-1">Loại thú cưng</label>
                 <select
+                  id="pet-species"
                   className="w-full border rounded-lg px-3 py-2 focus:ring-2 focus:ring-teal-500"
                   value={petForm.species}
                   onChange={(e) => handleInputChange('species', e.target.value)}
@@ -180,8 +182,9 @@ export default function EditPetForm() {
               </div>
 
               <div>
-                <label className="block text-sm font-medium mb-1">Giống</label>
+                <label htmlFor="pet-breed" className="block text-sm font-medium mb-1">Giống</label>
                 <input
+                  id="pet-breed"
                   type="text"
                   className="w-full border rounded-lg px-3 py-2 focus:ring-2 focus:ring-teal-500"
                   value={petForm.breed}
@@ -190,8 +193,9 @@ export default function EditPetForm() {
               </div>
 
               <div>
-                <label className="block text-sm font-medium mb-1">Màu sắc</label>
+                <label htmlFor="pet-color" className="block text-sm font-medium mb-1">Màu sắc</label>
                 <input
+                  id="pet-color"
                   type="text"
                   className="w-full border rounded-lg px-3 py-2 focus:ring-2 focus:ring-teal-500"
                   value={petForm.color}
@@ -200,8 +204,9 @@ export default function EditPetForm() {
               </div>
 
               <div>
-                <label className="block text-sm font-medium mb-1">Cân nặng (kg)</label>
+                <label htmlFor="pet-weight" className="block text-sm font-medium mb-1">Cân nặng (kg)</label>
                 <input
+                  id="pet-weight"
                   type="number"
                   step="0.1"
                   className="w-full border rounded-lg px-3 py-2 focus:ring-2 focus:ring-teal-500"
@@ -211,8 +216,9 @@ export default function EditPetForm() {
               </div>
 
               <div>
-                <label className="block text-sm font-medium mb-1">Ngày sinh</label>
+                <label htmlFor="pet-dob" className="block text-sm font-medium mb-1">Ngày sinh</label>
                 <input
+                  id="pet-dob"
                   type="date"
                   className="w-full border rounded-lg px-3 py-2 focus:ring-2 focus:ring-teal-500"
                   value={petForm.dateOfBirth}
