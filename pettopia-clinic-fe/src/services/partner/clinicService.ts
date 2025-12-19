@@ -201,7 +201,7 @@ export const updateClinicFormStatus = async (formId: string, status: string, not
   if (!token) throw new Error('No authentication token found');
 
   try {
-    const response = await axiosInstance.post(`/status/form/${formId}`, {
+    const response = await axiosInstance.post(`${API_URL}/status/${formId}`, {
       status,
       note: note || (status === 'approved' ? 'Phòng khám đủ điều kiện hoạt động' : 'Phòng khám không đủ điều kiện hoạt động')
     }, {
