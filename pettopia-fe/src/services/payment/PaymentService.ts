@@ -74,7 +74,7 @@ export const PaymentService = {
       throw new Error('Token not found');
     }
 
-    const statusUrl = `http://localhost:3333/api/v1/payments/${orderCode}/status`;
+    const statusUrl = `${API_URL}/payments/${orderCode}/status`;
     console.log('Fetching from:', statusUrl);
 
     try {

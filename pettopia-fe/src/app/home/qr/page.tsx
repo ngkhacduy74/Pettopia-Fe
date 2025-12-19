@@ -135,8 +135,7 @@ export default function QRScanPage() {
     try {
       setLoading(true);
       setError('');
-      // Gọi API endpoint: http://localhost:3333/api/v1/pet/{petId}/info
-      const apiUrl = `http://localhost:3333/api/v1/pet/${petId}/info`;
+      const apiUrl = `${process.env.NEXT_PUBLIC_PETTOPIA_API_URL}/pet/${petId}/info`;
       const response = await axios.get(apiUrl);
       const data = response.data;
       
