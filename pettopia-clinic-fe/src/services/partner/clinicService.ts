@@ -253,7 +253,7 @@ export const updateClinicService = async (serviceId: string, serviceData: any) =
   if (!token) throw new Error('No authentication token found');
 
   try {
-    const response = await axios.put(`${PARTNER_API_URL}/service/${serviceId}`, serviceData, {
+    const response = await axios.patch(`${PARTNER_API_URL}/service/${serviceId}`, serviceData, {
       headers: { 'token': token }
     });
     return response.data;

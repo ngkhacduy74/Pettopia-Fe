@@ -20,10 +20,12 @@ import {
   updateMedicalRecord,
   getVetPetDetail,
   getVetAppointmentDetail,
+  completeAppointment,
+  getPetMedicalRecords,
   type MedicalRecordPayload,
   type Medication,
   type VetPetDetail,
-  type VetPetMedicalRecord,
+  type PetMedicalRecordItem,
   type VetAppointmentDetail,
 } from '@/services/partner/veterianrianService';
 import { useToast } from '@/contexts/ToastContext';
@@ -39,12 +41,13 @@ export default function VetMedicalRecordDetailPage() {
 
   const [appointmentDetail, setAppointmentDetail] = useState<AppointmentDetail | null>(null);
   const [petDetail, setPetDetail] = useState<VetPetDetail | null>(null);
-  const [medicalRecords, setMedicalRecords] = useState<VetPetMedicalRecord[]>([]);
+  const [medicalRecords, setMedicalRecords] = useState<PetMedicalRecordItem[]>([]);
   const [loading, setLoading] = useState(true);
   const [saving, setSaving] = useState(false);
   const [existingRecord, setExistingRecord] = useState<any>(null);
   const [hasRecord, setHasRecord] = useState(false);
   const [showMedicalModal, setShowMedicalModal] = useState(false);
+  const [completing, setCompleting] = useState(false);
 
   // Form state
   const [symptoms, setSymptoms] = useState('');
@@ -56,6 +59,11 @@ export default function VetMedicalRecordDetailPage() {
   const [medName, setMedName] = useState('');
   const [medDosage, setMedDosage] = useState('');
   const [medInstructions, setMedInstructions] = useState('');
+
+  // Word count states
+  const [symptomsWordCount, setSymptomsWordCount] = useState(0);
+  const [diagnosisWordCount, setDiagnosisWordCount] = useState(0);
+  const [notesWordCount, setNotesWordCount] = useState(0);
 
   useEffect(() => {
     if (appointmentId) {
@@ -101,15 +109,19 @@ export default function VetMedicalRecordDetailPage() {
     try {
       const data = await getVetPetDetail(petId);
       setPetDetail(data);
-      setMedicalRecords(data.medical_records || []);
+
+      // Lấy lịch sử hồ sơ bệnh án riêng biệt
+      const medicalHistoryResponse = await getPetMedicalRecords(petId);
+      const medicalHistory = medicalHistoryResponse.data;
+      setMedicalRecords(medicalHistory);
 
       // Lấy medical record ID từ appointment detail (pet_infos[0].medical_records[0])
       const medicalRecordId = appointmentDetail?.pet_infos?.[0]?.medical_records?.[0];
       
       if (medicalRecordId) {
-        // Tìm medical record trong pet detail bằng ID
-        const recordForAppointment = data.medical_records?.find(
-          (mr) => mr.medicalRecord?.id === medicalRecordId || mr.medicalRecord?._id === medicalRecordId
+        // Tìm medical record trong lịch sử bằng ID
+        const recordForAppointment = medicalHistory?.find(
+          (mr) => mr.medicalRecord?.id === medicalRecordId
         );
 
         if (recordForAppointment?.medicalRecord) {
@@ -117,45 +129,11 @@ export default function VetMedicalRecordDetailPage() {
           setExistingRecord(record);
           setHasRecord(true);
           setSymptoms(record.symptoms || '');
+          setSymptomsWordCount((record.symptoms || '').trim().split(/\s+/).filter(word => word.length > 0).length);
           setDiagnosis(record.diagnosis || '');
+          setDiagnosisWordCount((record.diagnosis || '').trim().split(/\s+/).filter(word => word.length > 0).length);
           setNotes(record.notes || '');
-          setMedications(recordForAppointment.medications || []);
-        } else {
-          // Fallback: tìm theo appointment_id nếu không tìm thấy bằng ID
-          const recordByAppointmentId = data.medical_records?.find(
-            (mr) => mr.medicalRecord?.appointment_id === appointmentId
-          );
-          
-          if (recordByAppointmentId?.medicalRecord) {
-            const record = recordByAppointmentId.medicalRecord;
-            setExistingRecord(record);
-            setHasRecord(true);
-            setSymptoms(record.symptoms || '');
-            setDiagnosis(record.diagnosis || '');
-            setNotes(record.notes || '');
-            setMedications(recordByAppointmentId.medications || []);
-          } else {
-            setExistingRecord(null);
-            setHasRecord(false);
-            setSymptoms('');
-            setDiagnosis('');
-            setNotes('');
-            setMedications([]);
-          }
-        }
-      } else {
-        // Fallback: tìm theo appointment_id nếu không có medical_records trong pet_infos
-        const recordForAppointment = data.medical_records?.find(
-          (mr) => mr.medicalRecord?.appointment_id === appointmentId
-        );
-
-        if (recordForAppointment?.medicalRecord) {
-          const record = recordForAppointment.medicalRecord;
-          setExistingRecord(record);
-          setHasRecord(true);
-          setSymptoms(record.symptoms || '');
-          setDiagnosis(record.diagnosis || '');
-          setNotes(record.notes || '');
+          setNotesWordCount((record.notes || '').trim().split(/\s+/).filter(word => word.length > 0).length);
           setMedications(recordForAppointment.medications || []);
         } else {
           setExistingRecord(null);
@@ -165,6 +143,14 @@ export default function VetMedicalRecordDetailPage() {
           setNotes('');
           setMedications([]);
         }
+      } else {
+        // Không có medical_records trong pet_infos, set empty
+        setExistingRecord(null);
+        setHasRecord(false);
+        setSymptoms('');
+        setDiagnosis('');
+        setNotes('');
+        setMedications([]);
       }
     } catch (error: any) {
       console.error('Lỗi khi lấy chi tiết thú cưng:', error);
@@ -200,9 +186,55 @@ export default function VetMedicalRecordDetailPage() {
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
 
-    if (!symptoms.trim() || !diagnosis.trim()) {
-      showError('Vui lòng điền đầy đủ triệu chứng và chẩn đoán');
+    // Validation
+    if (!symptoms.trim()) {
+      showError('Triệu chứng không được để trống');
       return;
+    }
+
+    if (!diagnosis.trim()) {
+      showError('Chẩn đoán không được để trống');
+      return;
+    }
+
+    const symptomWords = symptoms.trim().split(/\s+/).filter(word => word.length > 0);
+    const diagnosisWords = diagnosis.trim().split(/\s+/).filter(word => word.length > 0);
+    const notesWords = notes.trim().split(/\s+/).filter(word => word.length > 0);
+
+    if (symptomWords.length > 50) {
+      showError('Triệu chứng không được vượt quá 50 từ');
+      return;
+    }
+
+    if (diagnosisWords.length > 50) {
+      showError('Chẩn đoán không được vượt quá 50 từ');
+      return;
+    }
+
+    if (notesWords.length > 50) {
+      showError('Ghi chú không được vượt quá 50 từ');
+      return;
+    }
+
+    if (medications.length === 0) {
+      showError('Đơn thuốc không được để trống');
+      return;
+    }
+
+    // Validate medications
+    for (const med of medications) {
+      if (med.medication_name.length > 20) {
+        showError('Tên thuốc không được vượt quá 20 ký tự');
+        return;
+      }
+      if (med.dosage.length > 20) {
+        showError('Liều lượng không được vượt quá 20 ký tự');
+        return;
+      }
+      if ((med.instructions || '').length > 20) {
+        showError('Hướng dẫn sử dụng không được vượt quá 20 ký tự');
+        return;
+      }
     }
 
     try {
@@ -220,13 +252,29 @@ export default function VetMedicalRecordDetailPage() {
       
       // Refresh để hiển thị record vừa tạo
       if (petDetail?.id) {
-        await fetchPetDetail(petDetail.id);
+        const updatedHistoryResponse = await getPetMedicalRecords(petDetail.id);
+        setMedicalRecords(updatedHistoryResponse.data);
       }
     } catch (error: any) {
       console.error('Lỗi khi tạo/cập nhật hồ sơ bệnh án:', error);
       showError(error?.response?.data?.message || 'Không thể tạo/cập nhật hồ sơ bệnh án');
     } finally {
       setSaving(false);
+    }
+  };
+
+  const handleCompleteAppointment = async () => {
+    try {
+      setCompleting(true);
+      await completeAppointment(appointmentId);
+      showSuccess('Hoàn thành lịch hẹn thành công!');
+      // Có thể redirect hoặc refresh trang
+      router.push('/vet/schedule'); // Quay về trang lịch trình
+    } catch (error: any) {
+      console.error('Lỗi khi hoàn thành lịch hẹn:', error);
+      showError(error?.response?.data?.message || 'Không thể hoàn thành lịch hẹn');
+    } finally {
+      setCompleting(false);
     }
   };
 
@@ -345,6 +393,30 @@ export default function VetMedicalRecordDetailPage() {
                 ))}
               </div>
             )}
+
+            {/* Nút hoàn thành lịch hẹn */}
+            <div className="pt-4 border-t border-gray-200">
+              <div className="flex justify-end">
+                <button
+                  type="button"
+                  onClick={handleCompleteAppointment}
+                  disabled={completing}
+                  className="inline-flex items-center gap-2 px-6 py-3 bg-green-600 text-white text-sm font-medium rounded-lg hover:bg-green-700 transition-colors disabled:opacity-50 disabled:cursor-not-allowed"
+                >
+                  {completing ? (
+                    <>
+                      <Loader2 className="animate-spin" size={16} />
+                      Đang hoàn thành...
+                    </>
+                  ) : (
+                    <>
+                      <ClipboardList size={16} />
+                      Hoàn thành lịch hẹn
+                    </>
+                  )}
+                </button>
+              </div>
+            </div>
           </div>
         </div>
 
@@ -384,7 +456,7 @@ export default function VetMedicalRecordDetailPage() {
                 <div className="space-y-3">
                   {medicalRecords.map((mr) => (
                     <div
-                      key={mr.medicalRecord.id || mr.medicalRecord._id}
+                      key={mr.medicalRecord.id}
                       className="border border-gray-100 rounded-lg p-3 bg-gray-50"
                     >
                       <div className="flex items-center justify-between mb-1">
@@ -465,12 +537,16 @@ export default function VetMedicalRecordDetailPage() {
                   </div>
                   <textarea
                     value={symptoms}
-                    onChange={(e) => setSymptoms(e.target.value)}
+                    onChange={(e) => {
+                      setSymptoms(e.target.value);
+                      const words = e.target.value.trim().split(/\s+/).filter(word => word.length > 0);
+                      setSymptomsWordCount(words.length);
+                    }}
                     className="w-full bg-gray-50 rounded-lg p-3 border border-gray-200 focus:outline-none focus:ring-2 focus:ring-teal-500 text-sm"
                     rows={4}
                     placeholder="Nhập triệu chứng của bệnh nhân..."
-                    required
                   />
+                  <p className="text-xs text-gray-500 mt-1">{symptomsWordCount}/50 từ</p>
                 </div>
 
                 {/* Chẩn Đoán */}
@@ -483,12 +559,16 @@ export default function VetMedicalRecordDetailPage() {
                   </div>
                   <textarea
                     value={diagnosis}
-                    onChange={(e) => setDiagnosis(e.target.value)}
+                    onChange={(e) => {
+                      setDiagnosis(e.target.value);
+                      const words = e.target.value.trim().split(/\s+/).filter(word => word.length > 0);
+                      setDiagnosisWordCount(words.length);
+                    }}
                     className="w-full bg-gray-50 rounded-lg p-3 border border-gray-200 focus:outline-none focus:ring-2 focus:ring-teal-500 text-sm"
                     rows={4}
                     placeholder="Nhập chẩn đoán..."
-                    required
                   />
+                  <p className="text-xs text-gray-500 mt-1">{diagnosisWordCount}/50 từ</p>
                 </div>
 
                 {/* Đơn Thuốc */}
@@ -497,7 +577,8 @@ export default function VetMedicalRecordDetailPage() {
                     <div className="w-9 h-9 bg-purple-100 rounded-lg flex items-center justify-center">
                       <Pill className="text-purple-600" size={18} />
                     </div>
-                    <h2 className="text-base font-semibold">Đơn Thuốc</h2>
+                    <h2 className="text-base font-semibold">Đơn Thuốc <span className="text-red-500">*</span></h2>
+                    <p className="text-xs text-gray-500 mt-1">Bắt buộc phải có ít nhất một loại thuốc</p>
                   </div>
 
                   {/* Form thêm thuốc */}
@@ -509,6 +590,7 @@ export default function VetMedicalRecordDetailPage() {
                         onChange={(e) => setMedName(e.target.value)}
                         placeholder="Tên thuốc"
                         className="px-3 py-2 border border-gray-200 rounded-lg focus:outline-none focus:ring-2 focus:ring-teal-500 text-sm"
+                        maxLength={20}
                       />
                       <input
                         type="text"
@@ -516,6 +598,7 @@ export default function VetMedicalRecordDetailPage() {
                         onChange={(e) => setMedDosage(e.target.value)}
                         placeholder="Liều lượng"
                         className="px-3 py-2 border border-gray-200 rounded-lg focus:outline-none focus:ring-2 focus:ring-teal-500 text-sm"
+                        maxLength={20}
                       />
                       <input
                         type="text"
@@ -523,6 +606,7 @@ export default function VetMedicalRecordDetailPage() {
                         onChange={(e) => setMedInstructions(e.target.value)}
                         placeholder="Hướng dẫn sử dụng"
                         className="px-3 py-2 border border-gray-200 rounded-lg focus:outline-none focus:ring-2 focus:ring-teal-500 text-sm"
+                        maxLength={20}
                       />
                     </div>
                     <button
@@ -582,11 +666,16 @@ export default function VetMedicalRecordDetailPage() {
                   </div>
                   <textarea
                     value={notes}
-                    onChange={(e) => setNotes(e.target.value)}
+                    onChange={(e) => {
+                      setNotes(e.target.value);
+                      const words = e.target.value.trim().split(/\s+/).filter(word => word.length > 0);
+                      setNotesWordCount(words.length);
+                    }}
                     className="w-full bg-gray-50 rounded-lg p-3 border border-gray-200 focus:outline-none focus:ring-2 focus:ring-teal-500 text-sm"
                     rows={3}
                     placeholder="Ghi chú thêm (tùy chọn)..."
                   />
+                  <p className="text-xs text-gray-500 mt-1">{notesWordCount}/50 từ</p>
                 </div>
 
                 {/* Submit Button */}

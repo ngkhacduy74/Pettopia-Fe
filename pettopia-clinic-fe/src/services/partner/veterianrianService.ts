@@ -327,6 +327,13 @@ export interface MedicalRecordPayload {
   medications?: Medication[];
 }
 
+export interface UpdateMedicalRecordPayload {
+  symptoms?: string;
+  diagnosis?: string;
+  notes?: string;
+  medications?: Medication[];
+}
+
 export interface MedicalRecordResponse {
   status: string;
   message: string;
@@ -334,10 +341,10 @@ export interface MedicalRecordResponse {
 }
 
 /**
- * Cập nhật hồ sơ bệnh án cho lịch hẹn
+ * Tạo hồ sơ bệnh án cho lịch hẹn
  * POST `${HEALTHCARE_API_URL}/appointments/{appointmentId}/medical-records`
  */
-export const updateMedicalRecord = async (
+export const createMedicalRecord = async (
   appointmentId: string,
   payload: MedicalRecordPayload
 ): Promise<MedicalRecordResponse> => {
@@ -347,6 +354,38 @@ export const updateMedicalRecord = async (
   try {
     const response = await axios.post(
       `${HEALTHCARE_API_URL}/appointments/${appointmentId}/medical-records`,
+      payload,
+      {
+        headers: {
+          'Content-Type': 'application/json',
+          token,
+        },
+      }
+    );
+    return response.data as MedicalRecordResponse;
+  } catch (error: any) {
+    console.error(
+      `Lỗi khi tạo hồ sơ bệnh án cho lịch hẹn (${appointmentId}):`,
+      error?.response?.data || error?.message || error
+    );
+    throw error;
+  }
+};
+
+/**
+ * Cập nhật hồ sơ bệnh án cho lịch hẹn
+ * PATCH `${HEALTHCARE_API_URL}/appointments/{appointmentId}/medical-record`
+ */
+export const updateMedicalRecord = async (
+  appointmentId: string,
+  payload: UpdateMedicalRecordPayload
+): Promise<MedicalRecordResponse> => {
+  const token = localStorage.getItem('authToken');
+  if (!token) throw new Error('No authentication token found');
+
+  try {
+    const response = await axios.patch(
+      `${HEALTHCARE_API_URL}/appointments/${appointmentId}/medical-record`,
       payload,
       {
         headers: {
@@ -448,6 +487,54 @@ export const getVetPetDetail = async (petId: string): Promise<VetPetDetail> => {
       `Lỗi khi lấy chi tiết thú cưng (pet ${petId}):`,
       error?.response?.data || error?.message || error
     );
+    throw error;
+  }
+};
+
+// --- Pet Medical Records ---
+export interface PetMedicalRecordItem {
+  medicalRecord: {
+    id: string;
+    createdAt: string;
+    updatedAt: string;
+    diagnosis: string;
+    notes?: string;
+    symptoms: string;
+  };
+  medications: {
+    _id: string;
+    medical_record_id: string;
+    medication_name: string;
+    dosage: string;
+    instructions?: string;
+    id: string;
+    __v: number;
+    createdAt: string;
+    updatedAt: string;
+  }[];
+}
+
+export interface PetMedicalRecordsResponse {
+  status: string;
+  message: string;
+  data: PetMedicalRecordItem[];
+}
+
+/**
+ * Lấy danh sách hồ sơ bệnh án của thú cưng
+ * GET `${HEALTHCARE_API_URL}/pets/{petId}/medical-records`
+ */
+export const getPetMedicalRecords = async (petId: string): Promise<PetMedicalRecordsResponse> => {
+  const token = localStorage.getItem('authToken');
+  if (!token) throw new Error('No authentication token found');
+
+  try {
+    const response = await axios.get(`${HEALTHCARE_API_URL}/pets/${petId}/medical-records`, {
+      headers: { token },
+    });
+    return response.data as PetMedicalRecordsResponse;
+  } catch (error: any) {
+    console.error(`Lỗi khi lấy hồ sơ bệnh án của thú cưng (${petId}):`, error?.response?.data || error?.message || error);
     throw error;
   }
 };
@@ -571,6 +658,29 @@ export const getVetAppointmentDetail = async (
       `Lỗi khi lấy chi tiết lịch hẹn (appointment ${appointmentId}):`,
       error?.response?.data || error?.message || error
     );
+    throw error;
+  }
+};
+
+/**
+ * Hoàn thành lịch hẹn
+ * POST `${HEALTHCARE_API_URL}/appointments/{appointmentId}/complete`
+ */
+export const completeAppointment = async (appointmentId: string) => {
+  const token = localStorage.getItem('authToken');
+  if (!token) throw new Error('No authentication token found');
+
+  try {
+    const response = await axios.post(
+      `${HEALTHCARE_API_URL}/appointments/${appointmentId}/complete`,
+      {},
+      {
+        headers: { token },
+      }
+    );
+    return response.data;
+  } catch (error: any) {
+    console.error(`Lỗi khi hoàn thành lịch hẹn (${appointmentId}):`, error?.response?.data || error?.message || error);
     throw error;
   }
 };

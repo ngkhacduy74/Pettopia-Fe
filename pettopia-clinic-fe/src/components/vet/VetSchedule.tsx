@@ -32,7 +32,7 @@ export default function VetSchedule({ status }: VetScheduleProps) {
   const [appointments, setAppointments] = useState<VetAppointment[]>([]);
   const [isLoading, setIsLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
-  const [selectedStatus, setSelectedStatus] = useState<AppointmentStatus | undefined>(status);
+  const [selectedStatus, setSelectedStatus] = useState<AppointmentStatus | undefined>('Completed');
   const { showError } = useToast();
 
   useEffect(() => {
@@ -82,31 +82,7 @@ export default function VetSchedule({ status }: VetScheduleProps) {
   return (
     <div className="w-full">
       {/* Filter Section */}
-      <div className="mb-6 flex gap-2 overflow-x-auto pb-2">
-        <button
-          onClick={() => setSelectedStatus(undefined)}
-          className={`px-4 py-2 rounded-lg font-medium whitespace-nowrap transition-colors ${
-            selectedStatus === undefined
-              ? 'bg-teal-600 text-white'
-              : 'bg-gray-100 text-gray-700 hover:bg-gray-200'
-          }`}
-        >
-          Tất cả
-        </button>
-        {Object.entries(STATUS_LABELS).map(([key, label]) => (
-          <button
-            key={key}
-            onClick={() => setSelectedStatus(key as AppointmentStatus)}
-            className={`px-4 py-2 rounded-lg font-medium whitespace-nowrap transition-colors ${
-              selectedStatus === key
-                ? 'bg-teal-600 text-white'
-                : 'bg-gray-100 text-gray-700 hover:bg-gray-200'
-            }`}
-          >
-            {label}
-          </button>
-        ))}
-      </div>
+    
 
       {/* Error Message */}
       {error && (
@@ -125,7 +101,7 @@ export default function VetSchedule({ status }: VetScheduleProps) {
           <Calendar className="w-12 h-12 text-gray-300 mx-auto mb-4" />
           <p className="text-gray-500 text-lg">Không có lịch hẹn nào</p>
           <p className="text-gray-400 text-sm mt-1">
-            {selectedStatus ? `Hiện không có lịch hẹn với trạng thái "${STATUS_LABELS[selectedStatus]}"` : 'Bạn chưa có lịch hẹn nào được phân công'}
+            Hiện không có lịch hẹn hoàn thành nào
           </p>
         </div>
       )}

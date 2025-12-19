@@ -131,6 +131,7 @@ export default function Sidebar({
     Vet: [
       { label: 'Trang chính', href: '/vet/main', icon: <HomeIcon className="w-5 h-5" /> },
       { label: 'Hồ sơ bệnh án', href: '/vet/patients', icon: <ClipboardDocumentListIcon className="w-5 h-5" /> },
+       { label: 'Lịch sử khám', href: '/vet/schedule', icon: <ClipboardDocumentListIcon className="w-5 h-5" /> },
 
     ],
     User: [
