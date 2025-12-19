@@ -112,7 +112,7 @@ export const changePassword = async (changePasswordData: {
     }
 
     const response = await axios.post(
-      `${API_URL}/auth/change-password`,
+      `${API_URL}/change-password`,
       changePasswordData,
       {
         headers: {
