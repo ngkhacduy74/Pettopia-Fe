@@ -5,12 +5,14 @@ import { Calendar, Clock, MapPin, AlertCircle, Loader } from 'lucide-react';
 import { getVetAppointments } from '@/services/partner/veterianrianService';
 import { VetAppointment } from '@/services/partner/veterianrianService';
 import { useToast } from '@/contexts/ToastContext';
+import Link from 'next/link';
 
-type AppointmentStatus = 'Pending' | 'Confirmed' | 'Checked_In' | 'Completed' | 'Cancelled';
+type AppointmentStatus = 'Pending' | 'Confirmed' | 'In_Progress' | 'Checked_In' | 'Completed' | 'Cancelled';
 
 const STATUS_COLORS: Record<AppointmentStatus, string> = {
   Pending: 'bg-yellow-100 text-yellow-800',
   Confirmed: 'bg-blue-100 text-blue-800',
+  In_Progress: 'bg-orange-100 text-orange-800',
   Checked_In: 'bg-green-100 text-green-800',
   Completed: 'bg-purple-100 text-purple-800',
   Cancelled: 'bg-red-100 text-red-800',
@@ -19,6 +21,7 @@ const STATUS_COLORS: Record<AppointmentStatus, string> = {
 const STATUS_LABELS: Record<AppointmentStatus, string> = {
   Pending: 'Đang chờ',
   Confirmed: 'Xác nhận',
+  In_Progress: 'Đang tiến hành',
   Checked_In: 'Đã check-in',
   Completed: 'Hoàn thành',
   Cancelled: 'Hủy',
@@ -32,7 +35,7 @@ export default function VetSchedule({ status }: VetScheduleProps) {
   const [appointments, setAppointments] = useState<VetAppointment[]>([]);
   const [isLoading, setIsLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
-  const [selectedStatus, setSelectedStatus] = useState<AppointmentStatus | undefined>('Completed');
+  const [selectedStatus, setSelectedStatus] = useState<AppointmentStatus | undefined>('In_Progress');
   const { showError } = useToast();
 
   useEffect(() => {
@@ -82,7 +85,18 @@ export default function VetSchedule({ status }: VetScheduleProps) {
   return (
     <div className="w-full">
       {/* Filter Section */}
-    
+      <div className="mb-6 flex gap-2 overflow-x-auto pb-2">
+        <button
+          onClick={() => setSelectedStatus('In_Progress')}
+          className={`px-4 py-2 rounded-lg font-medium whitespace-nowrap transition-colors ${
+            selectedStatus === 'In_Progress'
+              ? 'bg-teal-600 text-white'
+              : 'bg-gray-100 text-gray-700 hover:bg-gray-200'
+          }`}
+        >
+          Đang tiến hành
+        </button>
+      </div>
 
       {/* Error Message */}
       {error && (
@@ -101,7 +115,7 @@ export default function VetSchedule({ status }: VetScheduleProps) {
           <Calendar className="w-12 h-12 text-gray-300 mx-auto mb-4" />
           <p className="text-gray-500 text-lg">Không có lịch hẹn nào</p>
           <p className="text-gray-400 text-sm mt-1">
-            Hiện không có lịch hẹn hoàn thành nào
+            Hiện không có lịch hẹn đang tiến hành nào
           </p>
         </div>
       )}
@@ -109,10 +123,12 @@ export default function VetSchedule({ status }: VetScheduleProps) {
       {/* Appointments List */}
       <div className="space-y-4">
         {appointments.map((appointment) => (
-          <div
+          <Link
             key={appointment.id}
-            className="bg-white border border-gray-200 rounded-lg p-6 hover:shadow-lg transition-shadow"
+            href={`/vet/medical/${appointment.id}`}
+            className="block"
           >
+            <div className="bg-white border border-gray-200 rounded-lg p-6 hover:shadow-lg transition-shadow cursor-pointer">
             {/* Header with Status */}
             <div className="flex items-start justify-between mb-4">
               <div className="flex-1">
@@ -183,6 +199,7 @@ export default function VetSchedule({ status }: VetScheduleProps) {
               <span>Cập nhật: {new Date(appointment.updatedAt).toLocaleString('vi-VN')}</span>
             </div>
           </div>
+          </Link>
         ))}
       </div>
     </div>

@@ -493,25 +493,8 @@ export const getVetPetDetail = async (petId: string): Promise<VetPetDetail> => {
 
 // --- Pet Medical Records ---
 export interface PetMedicalRecordItem {
-  medicalRecord: {
-    id: string;
-    createdAt: string;
-    updatedAt: string;
-    diagnosis: string;
-    notes?: string;
-    symptoms: string;
-  };
-  medications: {
-    _id: string;
-    medical_record_id: string;
-    medication_name: string;
-    dosage: string;
-    instructions?: string;
-    id: string;
-    __v: number;
-    createdAt: string;
-    updatedAt: string;
-  }[];
+  medicalRecord: VetSideMedicalRecordDetail;
+  medications: VetSideMedicationDetail[];
 }
 
 export interface PetMedicalRecordsResponse {
