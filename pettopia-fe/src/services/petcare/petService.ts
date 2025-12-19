@@ -100,6 +100,7 @@ export interface PetDetailResponse {
     weight?: number;
     dateOfBirth?: string;
     avatar_url?: string;
+    qr_code_url?: string;
     owner?: any;
     createdAt?: string;
     updatedAt?: string;
