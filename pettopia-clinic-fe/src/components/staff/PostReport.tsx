@@ -1,39 +1,10 @@
 'use client'
 import React, { useEffect, useState, useMemo } from 'react';
-import { 
-  AlertTriangle, Eye, EyeOff, MessageSquare, Heart, Flag, User, 
-  Calendar, Image, Search, X 
+import {
+    AlertTriangle, Eye, EyeOff, MessageSquare, Heart, Flag, User,
+    Calendar, Image, Search, X
 } from 'lucide-react';
-
-// API Configuration
-const API_BASE_URL = 'http://localhost:3000/api/v1/communication/staff/reported';
-const getToken = () => localStorage.getItem('authToken') || '';
-
-// API Services
-const getReportedPosts = async () => {
-    const response = await fetch(API_BASE_URL, {
-        method: 'GET',
-        headers: {
-            'Content-Type': 'application/json',
-            'token': getToken()
-        }
-    });
-    if (!response.ok) throw new Error('Không thể tải danh sách bài viết bị báo cáo');
-    return response.json();
-};
-
-const toggleHidePost = async (postId: string, isHidden: boolean) => {
-    const response = await fetch(`http://localhost:3000/api/v1/communication/${postId}/hide`, {
-        method: 'PATCH',
-        headers: {
-            'Content-Type': 'application/json',
-            'token': getToken()
-        },
-        body: JSON.stringify({ isHidden })
-    });
-    if (!response.ok) throw new Error(isHidden ? 'Không thể ẩn bài viết' : 'Không thể bỏ ẩn bài viết');
-    return response.json();
-};
+import { getReportedPosts, toggleHidePost } from '@/services/customer/post';
 
 interface Author {
     user_id: string;
@@ -202,11 +173,10 @@ export default function ReportedPostsManagement() {
                     <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4 mb-6">
                         <button
                             onClick={() => setFilterStatus('all')}
-                            className={`bg-white rounded-xl p-5 shadow-sm border-2 transition text-left ${
-                                filterStatus === 'all' 
-                                    ? 'border-blue-500 ring-2 ring-blue-200' 
+                            className={`bg-white rounded-xl p-5 shadow-sm border-2 transition text-left ${filterStatus === 'all'
+                                    ? 'border-blue-500 ring-2 ring-blue-200'
                                     : 'border-gray-200 hover:border-blue-300 hover:shadow-md'
-                            }`}
+                                }`}
                         >
                             <div className="flex items-center justify-between">
                                 <div>
@@ -218,14 +188,13 @@ export default function ReportedPostsManagement() {
                                 </div>
                             </div>
                         </button>
-                        
+
                         <button
                             onClick={() => setFilterStatus('hidden')}
-                            className={`bg-white rounded-xl p-5 shadow-sm border-2 transition text-left ${
-                                filterStatus === 'hidden' 
-                                    ? 'border-red-500 ring-2 ring-red-200' 
+                            className={`bg-white rounded-xl p-5 shadow-sm border-2 transition text-left ${filterStatus === 'hidden'
+                                    ? 'border-red-500 ring-2 ring-red-200'
                                     : 'border-gray-200 hover:border-red-300 hover:shadow-md'
-                            }`}
+                                }`}
                         >
                             <div className="flex items-center justify-between">
                                 <div>
@@ -237,14 +206,13 @@ export default function ReportedPostsManagement() {
                                 </div>
                             </div>
                         </button>
-                        
+
                         <button
                             onClick={() => setFilterStatus('visible')}
-                            className={`bg-white rounded-xl p-5 shadow-sm border-2 transition text-left ${
-                                filterStatus === 'visible' 
-                                    ? 'border-green-500 ring-2 ring-green-200' 
+                            className={`bg-white rounded-xl p-5 shadow-sm border-2 transition text-left ${filterStatus === 'visible'
+                                    ? 'border-green-500 ring-2 ring-green-200'
                                     : 'border-gray-200 hover:border-green-300 hover:shadow-md'
-                            }`}
+                                }`}
                         >
                             <div className="flex items-center justify-between">
                                 <div>
@@ -256,7 +224,7 @@ export default function ReportedPostsManagement() {
                                 </div>
                             </div>
                         </button>
-                        
+
                         <div className="bg-white rounded-xl p-5 shadow-sm border-2 border-gray-200">
                             <div className="flex items-center justify-between">
                                 <div>
@@ -402,12 +370,12 @@ export default function ReportedPostsManagement() {
                                 <X className="w-6 h-6" />
                             </button>
                         </div>
-                        
+
                         <div className="p-6 space-y-6">
                             <div className="bg-gray-50 rounded-xl p-5">
                                 <h3 className="text-lg font-semibold text-gray-900 mb-3">{selectedPost.title}</h3>
                                 <p className="text-gray-700 mb-4 whitespace-pre-wrap">{selectedPost.content}</p>
-                                
+
                                 {selectedPost.tags.length > 0 && (
                                     <div className="flex flex-wrap gap-2 mb-4">
                                         {selectedPost.tags.map((tag, idx) => (
@@ -417,7 +385,7 @@ export default function ReportedPostsManagement() {
                                         ))}
                                     </div>
                                 )}
-                                
+
                                 {selectedPost.images.length > 0 && (
                                     <div className="grid grid-cols-2 md:grid-cols-3 gap-3 mb-4">
                                         {selectedPost.images.map((img, idx) => (
@@ -425,7 +393,7 @@ export default function ReportedPostsManagement() {
                                         ))}
                                     </div>
                                 )}
-                                
+
                                 <div className="flex items-center gap-6 text-sm text-gray-600">
                                     <div className="flex items-center gap-2">
                                         <Heart className="w-4 h-4" />
@@ -479,7 +447,7 @@ export default function ReportedPostsManagement() {
                                 </div>
                             </div>
                         </div>
-                        
+
                         <div className="sticky bottom-0 bg-white border-t border-gray-200 px-6 py-4 flex justify-end gap-3">
                             <button
                                 onClick={closeDetailModal}
@@ -518,9 +486,8 @@ export default function ReportedPostsManagement() {
                 <div className="fixed inset-0 bg-black/50 flex items-center justify-center z-50 p-4">
                     <div className="bg-white rounded-2xl max-w-md w-full">
                         <div className="p-6">
-                            <div className={`w-12 h-12 rounded-full flex items-center justify-center mb-4 ${
-                                actionType === 'hide' ? 'bg-red-100' : 'bg-green-100'
-                            }`}>
+                            <div className={`w-12 h-12 rounded-full flex items-center justify-center mb-4 ${actionType === 'hide' ? 'bg-red-100' : 'bg-green-100'
+                                }`}>
                                 {actionType === 'hide' ? (
                                     <EyeOff className="w-6 h-6 text-red-600" />
                                 ) : (
@@ -531,23 +498,23 @@ export default function ReportedPostsManagement() {
                                 {actionType === 'hide' ? 'Xác nhận ẩn bài viết' : 'Xác nhận bỏ ẩn bài viết'}
                             </h3>
                             <p className="text-gray-600 mb-6">
-                                {actionType === 'hide' 
+                                {actionType === 'hide'
                                     ? 'Bài viết sẽ bị ẩn khỏi cộng đồng. Người dùng sẽ không thể xem được bài viết này nữa.'
                                     : 'Bài viết sẽ được hiển thị trở lại cho cộng đồng. Người dùng có thể xem và tương tác với bài viết này.'}
                             </p>
-                            
+
                             {error && (
                                 <div className="mb-4 p-3 bg-red-50 border border-red-200 rounded-lg text-sm text-red-800">
                                     {error}
                                 </div>
                             )}
-                            
+
                             <div className="bg-gray-50 rounded-lg p-4 mb-6">
                                 <p className="text-sm font-medium text-gray-900 mb-1">Bài viết:</p>
                                 <p className="text-sm text-gray-700 line-clamp-2">{selectedPost.title}</p>
                             </div>
                         </div>
-                        
+
                         <div className="border-t border-gray-200 px-6 py-4 flex justify-end gap-3">
                             <button
                                 onClick={closeActionModal}
@@ -559,11 +526,10 @@ export default function ReportedPostsManagement() {
                             <button
                                 onClick={handleAction}
                                 disabled={loading}
-                                className={`px-6 py-2.5 rounded-lg font-medium text-white transition disabled:opacity-50 disabled:cursor-not-allowed ${
-                                    actionType === 'hide'
+                                className={`px-6 py-2.5 rounded-lg font-medium text-white transition disabled:opacity-50 disabled:cursor-not-allowed ${actionType === 'hide'
                                         ? 'bg-red-600 hover:bg-red-700'
                                         : 'bg-green-600 hover:bg-green-700'
-                                }`}
+                                    }`}
                             >
                                 {loading ? 'Đang xử lý...' : (actionType === 'hide' ? 'Xác nhận ẩn' : 'Xác nhận bỏ ẩn')}
                             </button>

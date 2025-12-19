@@ -19,7 +19,7 @@ export default function InviteMemberModal({
 }: InviteMemberModalProps) {
   const { showError } = useToast();
   const [inviteEmails, setInviteEmails] = useState('');
-  const [inviteRole, setInviteRole] = useState('');
+  const [inviteRole, setInviteRole] = useState('vet');
   const [isLoading, setIsLoading] = useState(false);
 
   const handleInvite = async () => {
@@ -71,17 +71,14 @@ export default function InviteMemberModal({
             />
           </div>
 
-          {/* Chọn Role – 4 role bắt buộc */}
+          {/* Chọn Role – Chỉ bác sĩ thú y */}
           <div>
             <label className="block text-sm font-semibold text-gray-800 mb-3">
               Vai trò <span className="text-red-500">*</span>
             </label>
-            <div className="grid grid-cols-2 gap-3">
+            <div className="grid grid-cols-1 gap-3">
               {[
                 { value: 'vet', label: 'Bác sĩ thú y', emoji: 'Stethoscope' },
-                { value: 'staff', label: 'Nhân viên', emoji: 'Wrench' },
-                { value: 'receptionist', label: 'Lễ tân', emoji: 'Phone' },
-                { value: 'manager', label: 'Quản lý', emoji: 'Key' },
               ].map((role) => (
                 <label
                   key={role.value}

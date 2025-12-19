@@ -5,66 +5,10 @@ import jsQR from 'jsqr';
 import axios from 'axios';
 import { motion } from 'framer-motion';
 import Link from 'next/link';
+import Header from '@/components/layout/Header';
+import Footer from '@/components/layout/Footer';
 
-// Component Header giả lập
-function Header() {
-  return (
-    <header className="bg-white shadow-sm">
-      <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-4">
-        <div className="flex items-center justify-between">
-          <div className="flex items-center space-x-3">
-            <div className="w-10 h-10 bg-gradient-to-br from-teal-500 to-cyan-500 rounded-lg"></div>
-            <h1 className="text-2xl font-bold text-gray-900">Pettopia</h1>
-          </div>
-          <nav className="flex space-x-6">
-            <a href="/" className="text-gray-600 hover:text-teal-600">Trang chủ</a>
-            <a href="/services" className="text-gray-600 hover:text-teal-600">Dịch vụ</a>
-            <a href="/home/qr" className="text-teal-600 font-medium">Quét QR</a>
-          </nav>
-        </div>
-      </div>
-    </header>
-  );
-}
 
-// Component Footer giả lập
-function Footer() {
-  return (
-    <footer className="bg-gray-900 text-white py-12">
-      <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
-        <div className="grid md:grid-cols-4 gap-8">
-          <div>
-            <h3 className="text-xl font-bold mb-4">Pettopia</h3>
-            <p className="text-gray-400">Chăm sóc thú cưng tận tâm</p>
-          </div>
-          <div>
-            <h4 className="font-semibold mb-4">Liên hệ</h4>
-            <p className="text-gray-400 text-sm">Email: info@pettopia.vn</p>
-            <p className="text-gray-400 text-sm">Phone: 0900 000 000</p>
-          </div>
-          <div>
-            <h4 className="font-semibold mb-4">Dịch vụ</h4>
-            <ul className="text-gray-400 text-sm space-y-2">
-              <li>Khám tổng quát</li>
-              <li>Tiêm chủng</li>
-              <li>Phẫu thuật</li>
-            </ul>
-          </div>
-          <div>
-            <h4 className="font-semibold mb-4">Theo dõi</h4>
-            <div className="flex space-x-4">
-              <a href="#" className="text-gray-400 hover:text-white">Facebook</a>
-              <a href="#" className="text-gray-400 hover:text-white">Instagram</a>
-            </div>
-          </div>
-        </div>
-        <div className="border-t border-gray-800 mt-8 pt-8 text-center text-gray-400 text-sm">
-          © 2024 Pettopia. All rights reserved.
-        </div>
-      </div>
-    </footer>
-  );
-}
 
 interface PetInfo {
   id: string;
@@ -138,6 +82,8 @@ export default function QRScanPage() {
       const apiUrl = `${process.env.NEXT_PUBLIC_PETTOPIA_API_URL}/pet/${petId}/info`;
       const response = await axios.get(apiUrl);
       const data = response.data;
+      
+      console.log('API Response:', data); // Thêm log để kiểm tra dữ liệu trả về
       
       setPetInfo({
         id: data.id || petId,
@@ -287,8 +233,8 @@ export default function QRScanPage() {
   };
 
   return (
-    <div className="min-h-screen bg-gradient-to-b from-teal-50 to-white">
-      <Header />
+    <div className="bg-gradient-to-b from-teal-50 to-white">
+  
 
       <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-12">
         {/* Giải thích tính năng */}
@@ -302,7 +248,7 @@ export default function QRScanPage() {
               </div>
             </div>
             <div>
-              <h2 className="text-2xl font-bold mb-3">Căn Cước Thú Cưng Điện Tử</h2>
+              <h2 className="text-2xl font-bold mb-3 mb-8">Căn Cước Thú Cưng Điện Tử</h2>
               <p className="text-cyan-50 text-lg leading-relaxed">
                 Mỗi thú cưng đăng ký tại Pettopia đều có một mã QR duy nhất - giống như căn cước công dân cho thú cưng của bạn! 
                 Chỉ cần quét mã này, bạn có thể xem toàn bộ thông tin sức khỏe, lịch sử tiêm chủng, và các cuộc khám gần đây. 
@@ -503,7 +449,31 @@ export default function QRScanPage() {
                 {petInfo.medical_records && petInfo.medical_records.length > 0 && (
                   <div className="bg-amber-50 border border-amber-200 rounded-lg p-4">
                     <p className="text-sm text-gray-600 mb-2">Hồ sơ bệnh án</p>
-                    <p className="text-gray-900 text-sm">Có {petInfo.medical_records.length} hồ sơ bệnh án</p>
+                    <div className="space-y-2">
+                      {petInfo.medical_records.map((record, index) => (
+                        <div key={index} className="bg-white p-3 rounded border">
+                          {record.medicalRecord && (
+                            <>
+                              <p className="text-sm font-medium">Ngày tạo: {formatDate(record.medicalRecord.createdAt)}</p>
+                              {record.medicalRecord.symptoms && <p className="text-sm text-gray-600">Triệu chứng: {record.medicalRecord.symptoms}</p>}
+                              {record.medicalRecord.diagnosis && <p className="text-sm text-gray-600">Chẩn đoán: {record.medicalRecord.diagnosis}</p>}
+                              {record.medicalRecord.notes && <p className="text-sm text-gray-600">Ghi chú: {record.medicalRecord.notes}</p>}
+                            </>
+                          )}
+                          {record.medications && record.medications.length > 0 && (
+                            <div className="mt-2">
+                              <p className="text-sm font-medium text-gray-700">Thuốc:</p>
+                              {record.medications.map((med: any, medIndex: number) => (
+                                <div key={medIndex} className="text-sm text-gray-600 ml-2">
+                                  <p><strong>{med.medication_name}</strong> - Liều: {med.dosage}</p>
+                                  <p>Hướng dẫn: {med.instructions}</p>
+                                </div>
+                              ))}
+                            </div>
+                          )}
+                        </div>
+                      ))}
+                    </div>
                   </div>
                 )}
 

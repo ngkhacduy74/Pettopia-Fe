@@ -17,45 +17,45 @@ export interface Author {
 }
 
 export interface Post {
-    _id: string;
-    post_id: string;
+  _id: string;
+  post_id: string;
+  author: Author;
+  title: string;
+  content: string;
+  images: string[];
+  tags: string[];
+  isHidden: boolean;
+  likes: Array<{
+    user_id: string;
+    likedAt: string;
+  }>;
+  views: any[];
+  reports: any[];
+  likeCount: number;
+  viewCount: number;
+  reportCount: number;
+  commentCount: number;
+  comments: Array<{
+    comment_id: string;
     author: Author;
-    title: string;
     content: string;
-    images: string[];
-    tags: string[];
-    isHidden: boolean;
-    likes: Array<{
-        user_id: string;
-        likedAt: string;
-    }>;
-    views: any[];
+    likes: any[];
     reports: any[];
-    likeCount: number;
-    viewCount: number;
-    reportCount: number;
-    commentCount: number;
-    comments: Array<{
-        comment_id: string;
-        author: Author;
-        content: string;
-        likes: any[];
-        reports: any[];
-        isHidden: boolean;
-        isDeleted: boolean;
-        createdAt: string;
-    }>;
+    isHidden: boolean;
+    isDeleted: boolean;
     createdAt: string;
-    updatedAt: string;
+  }>;
+  createdAt: string;
+  updatedAt: string;
 }
 
 export interface CreatePostData {
   title: string;
   content: string;
   tags: string[];
-  images?: string[]; 
-  user_id?: string; 
-  imageFiles?: File[]; 
+  images?: string[];
+  user_id?: string;
+  imageFiles?: File[];
 }
 
 export interface UpdatePostData {
@@ -207,11 +207,11 @@ class CommunicationService {
    */
   async updatePost(postId: string, data: UpdatePostData): Promise<Post> {
     const formData = new FormData();
-    
+
     if (data.title) formData.append('title', data.title);
     if (data.content) formData.append('content', data.content);
     if (data.tags) formData.append('tags', JSON.stringify(data.tags));
-    
+
     if (data.images && data.images.length > 0) {
       // Nếu là File objects
       for (const image of data.images) {
@@ -365,16 +365,40 @@ class CommunicationService {
   // ==================== REPORT OPERATIONS ====================
 
   /**
-   * Report a post
-   */
-  async reportPost(postId: string, reason: string): Promise<{ message: string }> {
-    const response = await fetch(`${this.baseUrl}/report/${postId}`, {
+   
+Report a post
+ */
+  async reportPost(postId: string, reason: string): Promise<{ message: string; reportCount?: number }> 
+  {
+    const response = await fetch(`${this.baseUrl}/${postId}/report`, {
       method: 'POST',
-      headers: this.getHeaders(),
+      headers: this.getHeaders(), // Có 'Content-Type': 'application/json' và token
       body: JSON.stringify({ reason }),
     });
-    return this.handleResponse<{ message: string }>(response);
+
+    // Nếu response không ok → lấy message chi tiết từ backend
+    if (!response.ok) {
+      let errorMessage = 'You already reported this post';
+      try {
+        const errorData = await response.json();
+        // Backend thường trả về { message: "Bạn đã báo cáo bài viết này rồi" }
+        if (errorData.message) {
+          errorMessage = "You've already reported this post";
+        } else if (typeof errorData === 'string') {
+          errorMessage = errorData;
+        }
+      } catch {
+        // Nếu không parse được JSON thì giữ nguyên status text
+        errorMessage = response.statusText || errorMessage;
+      }
+      throw new Error(errorMessage);
+    }
+
+
+    // Thành công → parse JSON bình thường
+    return response.json();
   }
+
 
   // ==================== SEARCH & FILTER ====================
 
@@ -417,20 +441,20 @@ class CommunicationService {
       method: 'GET',
       headers: this.getHeaders(),
     });
-    
+
     const data = await this.handleResponse<Post[] | PostsEnvelope>(response);
     const normalized = this.extractPostsArray(data);
-    
+
     // Additional client-side filtering if needed
     return normalized
-        .filter(post => !post.isHidden)
-        .filter(post => {
-            const postDate = new Date(post.createdAt);
-            return postDate >= oneWeekAgo;
-        })
-        .sort((a, b) => b.likeCount - a.likeCount)
-        .slice(0, limit);
-}
+      .filter(post => !post.isHidden)
+      .filter(post => {
+        const postDate = new Date(post.createdAt);
+        return postDate >= oneWeekAgo;
+      })
+      .sort((a, b) => b.likeCount - a.likeCount)
+      .slice(0, limit);
+  }
 
   private extractPostsArray(response: Post[] | PostsEnvelope): Post[] {
     if (Array.isArray(response)) {
@@ -491,8 +515,8 @@ class CommunicationService {
     const cleanTag = (tag: string): string => {
       let cleaned = tag.trim();
       // Remove surrounding quotes if present
-      if ((cleaned.startsWith('"') && cleaned.endsWith('"')) || 
-          (cleaned.startsWith("'") && cleaned.endsWith("'"))) {
+      if ((cleaned.startsWith('"') && cleaned.endsWith('"')) ||
+        (cleaned.startsWith("'") && cleaned.endsWith("'"))) {
         cleaned = cleaned.slice(1, -1);
       }
       // Decode HTML entities
@@ -503,20 +527,20 @@ class CommunicationService {
     // Helper to recursively parse nested JSON strings
     const parseRecursive = (value: any): string[] => {
       if (!value) return [];
-      
+
       // If it's already an array, process each item
       if (Array.isArray(value)) {
         return value.flatMap(item => parseRecursive(item));
       }
-      
+
       // If it's a string, try to parse it
       if (typeof value === 'string') {
         const trimmed = value.trim();
         if (!trimmed) return [];
-        
+
         // Clean HTML entities first
         let cleaned = decodeHtml(trimmed);
-        
+
         // Try to parse as JSON (could be nested JSON strings)
         if (cleaned.startsWith('[') || cleaned.startsWith('"')) {
           try {
@@ -548,12 +572,12 @@ class CommunicationService {
             return finalTag ? [finalTag] : [];
           }
         }
-        
+
         // Plain string, just clean it
         const finalTag = cleanTag(trimmed);
         return finalTag ? [finalTag] : [];
       }
-      
+
       return [];
     };
 
@@ -591,7 +615,7 @@ class CommunicationService {
     const now = new Date();
     const d = new Date(date);
     const seconds = Math.floor((now.getTime() - d.getTime()) / 1000);
-    
+
     if (seconds < 60) return 'Vừa xong';
     const minutes = Math.floor(seconds / 60);
     if (minutes < 60) return `${minutes}m trước`;

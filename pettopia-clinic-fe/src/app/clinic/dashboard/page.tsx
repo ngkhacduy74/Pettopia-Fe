@@ -23,8 +23,6 @@ export default function ClinicDashboardPage() {
 
   // Modal state
   const [showInviteForm, setShowInviteForm] = useState(false);
-  const [inviteEmails, setInviteEmails] = useState('');
-  const [inviteRole, setInviteRole] = useState('');
 
   useEffect(() => {
     if (typeof window === 'undefined') return;

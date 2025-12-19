@@ -5,21 +5,21 @@ import { useRouter, useSearchParams } from "next/navigation";
 import { useToast } from "@/contexts/ToastContext";
 import { communicationService, Post, Comment } from "@/services/communication/communicationService";
 import { parseJwt } from "@/utils/jwt";
-import { get } from "http";
 
 interface LightboxState {
   isOpen: boolean;
   currentIndex: number;
 }
+
 const TAG_DISPLAY_MAP: Record<string, string> = {
-  thongbao: 'Thông báo',
-  gopy: 'Góp ý',
-  tintuc: 'Tin tức iNet',
-  review: 'Review sản phẩm',
-  chiase: 'Chia sẻ kiến thức',
-  tuvan: 'Tư vấn cấu hình',
-  // Thêm các tag khác nếu có
+  thongbao: "Thông báo",
+  gopy: "Góp ý",
+  tintuc: "Tin tức iNet",
+  review: "Review sản phẩm",
+  chiase: "Chia sẻ kiến thức",
+  tuvan: "Tư vấn cấu hình",
 };
+
 const getTagDisplayName = (tagId: string): string => {
   return TAG_DISPLAY_MAP[tagId.toLowerCase()] || tagId;
 };
@@ -39,6 +39,11 @@ export default function PostDetailPage() {
   const [lightbox, setLightbox] = useState<LightboxState>({ isOpen: false, currentIndex: 0 });
   const [relatedPosts, setRelatedPosts] = useState<Post[]>([]);
   const [loadingRelated, setLoadingRelated] = useState<boolean>(false);
+
+  // State cho báo cáo
+  const [showReportModal, setShowReportModal] = useState<boolean>(false);
+  const [reportReason, setReportReason] = useState<string>("");
+  const [reporting, setReporting] = useState<boolean>(false);
 
   const token = useMemo(() => (typeof window !== "undefined" ? localStorage.getItem("authToken") : null), []);
   const currentUserId = useMemo(() => {
@@ -100,26 +105,24 @@ export default function PostDetailPage() {
     if (!post || !currentUserId) return false;
     const anyLikes: any = post.likes as any;
     if (!Array.isArray(anyLikes)) return false;
-    return anyLikes.some((l: any) => (typeof l === 'string' ? l === currentUserId : l?.user_id === currentUserId));
+    return anyLikes.some((l: any) => (typeof l === "string" ? l === currentUserId : l?.user_id === currentUserId));
   }, [post, currentUserId]);
 
   const formatDate = (dateString: string) => {
     const date = new Date(dateString);
-    return date.toLocaleDateString('vi-VN', {
-      year: 'numeric',
-      month: 'short',
-      day: 'numeric',
-      hour: '2-digit',
-      minute: '2-digit'
+    return date.toLocaleDateString("vi-VN", {
+      year: "numeric",
+      month: "short",
+      day: "numeric",
+      hour: "2-digit",
+      minute: "2-digit",
     });
   };
 
   const getLikedUsersText = () => {
-    if (!post) return '';
+    if (!post) return "";
     const likesList = Array.isArray(post.likes)
-      ? post.likes.map((l: any) =>
-        typeof l === 'object' && l?.author?.fullname ? l.author.fullname : ''
-      ).filter(Boolean)
+      ? post.likes.map((l: any) => (typeof l === "object" && l?.author?.fullname ? l.author.fullname : "")).filter(Boolean)
       : [];
 
     if (likesList.length === 0) return `${post.likeCount} người`;
@@ -129,38 +132,30 @@ export default function PostDetailPage() {
   };
 
   const handleToggleLike = async () => {
-    if (!postId) return;
-    if (!currentUserId) {
-      showInfo("Bạn cần đăng nhập để thích bài viết.", 5000);
+    if (!postId || !currentUserId) {
+      if (!currentUserId) showInfo("Bạn cần đăng nhập để thích bài viết.", 5000);
       return;
     }
+    if (liking) return;
+
+    const wasLiked = isLikedByCurrentUser;
+
     try {
       setLiking(true);
-      setPost((prev) => {
-        if (!prev) return prev;
-        const liked = isLikedByCurrentUser;
-        const nextCount = liked ? Math.max(0, prev.likeCount - 1) : prev.likeCount + 1;
-        let nextLikes: any[] = Array.isArray(prev.likes) ? [...prev.likes] : [];
-        if (liked) {
-          nextLikes = nextLikes.filter((l: any) => (typeof l === 'string' ? l !== currentUserId : l?.user_id !== currentUserId));
-        } else {
-          nextLikes.push(currentUserId);
-        }
-        return { ...prev, likeCount: nextCount, likes: nextLikes as any } as Post;
-      });
-
-      if (isLikedByCurrentUser) {
+      if (wasLiked) {
         await communicationService.unlikePost(postId);
       } else {
         await communicationService.likePost(postId);
       }
+      const updatedPost = await communicationService.getPostDetail(postId);
+      setPost(updatedPost);
     } catch (e: any) {
       console.error("Toggle like error:", e);
-      try {
-        const detail = await communicationService.getPostDetail(postId);
-        setPost(detail);
-      } catch { }
       showError(e?.message || "Không thể cập nhật lượt thích.", 5000);
+      try {
+        const updatedPost = await communicationService.getPostDetail(postId);
+        setPost(updatedPost);
+      } catch {}
     } finally {
       setLiking(false);
     }
@@ -171,7 +166,7 @@ export default function PostDetailPage() {
     const content = commentInput.trim();
     if (!content) return;
     if (content.length > 200) {
-      showError("Bình luận không được vượt quá số ký tự.", 5000);
+      showError("Bình luận không được vượt quá 200 ký tự.", 5000);
       return;
     }
     if (!currentUserId) {
@@ -196,6 +191,34 @@ export default function PostDetailPage() {
     }
   };
 
+  const handleReport = async () => {
+    const reason = reportReason.trim();
+    if (!reason) {
+      showError("Vui lòng nhập lý do báo cáo.", 5000);
+      return;
+    }
+    if (!currentUserId) {
+      showInfo("Bạn cần đăng nhập để báo cáo.", 5000);
+      return;
+    }
+    try {
+      setReporting(true);
+      const response = await communicationService.reportPost(postId!, reason);
+      showInfo(response.message || "Đã báo cáo bài viết thành công.", 5000);
+      setShowReportModal(false);
+      setReportReason("");
+      const updatedPost = await communicationService.getPostDetail(postId!);
+      setPost(updatedPost);
+    } catch (e: any) {
+      let errorMessage = "Không thể báo cáo bài viết.";
+      if (e.message) errorMessage = e.message;
+      else if (e.response?.data?.message) errorMessage = e.response.data.message;
+      showError(errorMessage, 5000);
+    } finally {
+      setReporting(false);
+    }
+  };
+
   const openLightbox = (index: number) => {
     setLightbox({ isOpen: true, currentIndex: index });
   };
@@ -206,29 +229,29 @@ export default function PostDetailPage() {
 
   const goToPrevImage = () => {
     if (!post?.images) return;
-    setLightbox(prev => ({
+    setLightbox((prev) => ({
       ...prev,
-      currentIndex: prev.currentIndex > 0 ? prev.currentIndex - 1 : post.images!.length - 1
+      currentIndex: prev.currentIndex > 0 ? prev.currentIndex - 1 : post.images!.length - 1,
     }));
   };
 
   const goToNextImage = () => {
     if (!post?.images) return;
-    setLightbox(prev => ({
+    setLightbox((prev) => ({
       ...prev,
-      currentIndex: prev.currentIndex < post.images!.length - 1 ? prev.currentIndex + 1 : 0
+      currentIndex: prev.currentIndex < post.images!.length - 1 ? prev.currentIndex + 1 : 0,
     }));
   };
 
   useEffect(() => {
     const handleKeyDown = (e: KeyboardEvent) => {
       if (!lightbox.isOpen) return;
-      if (e.key === 'Escape') closeLightbox();
-      if (e.key === 'ArrowLeft') goToPrevImage();
-      if (e.key === 'ArrowRight') goToNextImage();
+      if (e.key === "Escape") closeLightbox();
+      if (e.key === "ArrowLeft") goToPrevImage();
+      if (e.key === "ArrowRight") goToNextImage();
     };
-    window.addEventListener('keydown', handleKeyDown);
-    return () => window.removeEventListener('keydown', handleKeyDown);
+    window.addEventListener("keydown", handleKeyDown);
+    return () => window.removeEventListener("keydown", handleKeyDown);
   }, [lightbox.isOpen, post?.images]);
 
   if (loading) {
@@ -257,51 +280,35 @@ export default function PostDetailPage() {
   return (
     <div>
       <div className="container mx-auto px-4 py-6 max-w-6xl">
-        {/* Back Button */}
         <button
           onClick={() => router.back()}
           className="mb-4 flex items-center gap-2 text-gray-600 hover:text-gray-900 transition-colors cursor-pointer"
         >
-          <svg
-            className="w-5 h-5"
-            fill="none"
-            stroke="currentColor"
-            viewBox="0 0 24 24"
-          >
-            <path
-              strokeLinecap="round"
-              strokeLinejoin="round"
-              strokeWidth={2}
-              d="M15 19l-7-7 7-7"
-            />
+          <svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+            <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M15 19l-7-7 7-7" />
           </svg>
           <span className="font-medium">Quay lại</span>
         </button>
 
         <div className="flex flex-col lg:flex-row gap-4">
-          {/* Main Content Area */}
           <main className="flex-1 min-w-0 lg:max-w-3xl">
-            {/* Post Card */}
             <div className="bg-white rounded-lg shadow border border-gray-200 overflow-hidden mb-4">
-              {/* Images at the top */}
               {post.images && post.images.length > 0 && (
-                <div>
-                  <div className={`grid gap-1 ${post.images.length === 1 ? 'grid-cols-1' : 'grid-cols-2'}`}>
-                    {post.images.map((img, i) => (
-                      <img
-                        key={i}
-                        src={img}
-                        alt={`image-${i}`}
-                        className="w-full object-cover cursor-pointer hover:opacity-95 transition-opacity"
-                        style={{ maxHeight: post.images!.length === 1 ? '500px' : '300px' }}
-                        onClick={() => openLightbox(i)}
-                      />
-                    ))}
-                  </div>
+                <div className={`grid gap-1 ${post.images.length === 1 ? "grid-cols-1" : "grid-cols-2"}`}>
+                  {post.images.map((img, i) => (
+                    <img
+                      key={i}
+                      src={img}
+                      alt={`image-${i}`}
+                      className="w-full object-cover cursor-pointer hover:opacity-95 transition-opacity"
+                      style={{ maxHeight: post.images!.length === 1 ? "500px" : "300px" }}
+                      onClick={() => openLightbox(i)}
+                    />
+                  ))}
                 </div>
               )}
 
-              {/* Header with author info and date */}
+              {/* Header */}
               <div className="px-4 pt-4 pb-3">
                 <div className="flex items-start justify-between">
                   <div className="flex gap-3">
@@ -314,7 +321,9 @@ export default function PostDetailPage() {
                       }}
                     />
                     <div>
-                      <h3 className="font-semibold text-gray-900 hover:text-blue-600 cursor-pointer">{post.author.fullname}</h3>
+                      <h3 className="font-semibold text-gray-900 hover:text-blue-600 cursor-pointer">
+                        {post.author.fullname}
+                      </h3>
                       <p className="text-xs text-gray-600">Member</p>
                       <p className="text-xs text-gray-500">{formatDate(post.createdAt)}</p>
                     </div>
@@ -326,26 +335,49 @@ export default function PostDetailPage() {
                         className="text-gray-600 hover:text-gray-900 transition-colors"
                       >
                         <svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                          <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M11 5H6a2 2 0 00-2 2v11a2 2 0 002 2h11a2 2 0 002-2v-5m-1.414-9.414a2 2 0 112.828 2.828L11.828 15H9v-2.828l8.586-8.586z" />
+                          <path
+                            strokeLinecap="round"
+                            strokeLinejoin="round"
+                            strokeWidth={2}
+                            d="M11 5H6a2 2 0 00-2 2v11a2 2 0 002 2h11a2 2 0 002-2v-5m-1.414-9.414a2 2 0 112.828 2.828L11.828 15H9v-2.828l8.586-8.586z"
+                          />
+                        </svg>
+                      </button>
+                    )}
+                    {currentUserId && currentUserId !== post.author.user_id && (
+                      <button
+                        onClick={() => setShowReportModal(true)}
+                        className="text-gray-600 hover:text-red-600 transition-colors"
+                        title="Báo cáo bài viết"
+                      >
+                        <svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                          <path
+                            strokeLinecap="round"
+                            strokeLinejoin="round"
+                            strokeWidth={2}
+                            d="M12 9v2m0 4h.01m-6.938 4h13.856c1.54 0 2.502-1.667 1.732-3L13.732 4c-.77-1.333-2.694-1.333-3.464 0L3.34 16c-.77 1.333.192 3 1.732 3z"
+                          />
                         </svg>
                       </button>
                     )}
                     <button
                       onClick={() => {
                         if (navigator.share) {
-                          navigator.share({
-                            title: post.title,
-                            url: window.location.href
-                          });
+                          navigator.share({ title: post.title, url: window.location.href });
                         } else {
                           navigator.clipboard.writeText(window.location.href);
-                          showInfo('Đã copy link!', 5000);
+                          showInfo("Đã copy link!", 5000);
                         }
                       }}
                       className="text-gray-600 hover:text-gray-900 transition-colors"
                     >
                       <svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                        <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M8.684 13.342C8.886 12.938 9 12.482 9 12c0-.482-.114-.938-.316-1.342m0 2.684a3 3 0 110-2.684m0 2.684l6.632 3.316m-6.632-6l6.632-3.316m0 0a3 3 0 105.367-2.684 3 3 0 00-5.367 2.684zm0 9.316a3 3 0 105.368 2.684 3 3 0 00-5.368-2.684z" />
+                        <path
+                          strokeLinecap="round"
+                          strokeLinejoin="round"
+                          strokeWidth={2}
+                          d="M8.684 13.342C8.886 12.938 9 12.482 9 12c0-.482-.114-.938-.316-1.342m0 2.684a3 3 0 110-2.684m0 2.684l6.632 3.316m-6.632-6l6.632-3.316m0 0a3 3 0 105.367-2.684 3 3 0 00-5.367 2.684zm0 9.316a3 3 0 105.368 2.684 3 3 0 00-5.368-2.684z"
+                        />
                       </svg>
                     </button>
                   </div>
@@ -354,10 +386,7 @@ export default function PostDetailPage() {
 
               {/* Post Content */}
               <div className="px-4 pb-2">
-                {/* Title */}
                 <h2 className="text-xl font-normal text-gray-900 mb-3 break-words">{post.title}</h2>
-
-                {/* Tags */}
                 {parsedTags.length > 0 && (
                   <div className="flex flex-wrap gap-2 mb-3">
                     {parsedTags.map((tag, idx) => (
@@ -367,16 +396,11 @@ export default function PostDetailPage() {
                     ))}
                   </div>
                 )}
-
-                {/* Content */}
-                <div className="text-gray-800 text-sm whitespace-pre-wrap leading-relaxed">
-                  {post.content}
-                </div>
+                <div className="text-gray-800 text-sm whitespace-pre-wrap leading-relaxed">{post.content}</div>
               </div>
 
               {/* Action buttons */}
               <div className="space-y-3">
-                {/* Hiển thị số lượt thích */}
                 {post.likeCount > 0 && (
                   <div className="flex items-center gap-2 px-4">
                     <div className="w-5 h-5 rounded-full bg-blue-500 flex items-center justify-center">
@@ -389,20 +413,17 @@ export default function PostDetailPage() {
                     </span>
                   </div>
                 )}
-
-                {/* Nút Thích */}
                 <div className="flex items-center justify-around py-1 border-t border-gray-200">
                   <button
                     onClick={handleToggleLike}
                     disabled={liking}
-                    className={`flex-1 flex items-center justify-center gap-2 py-2.5 rounded-lg transition-colors ${isLikedByCurrentUser
-                      ? 'text-blue-600 hover:bg-blue-50'
-                      : 'text-gray-600 hover:bg-gray-100'
-                      } disabled:opacity-60 font-semibold text-sm`}
+                    className={`flex-1 flex items-center justify-center gap-2 py-2.5 rounded-lg transition-colors ${
+                      isLikedByCurrentUser ? "text-blue-600 hover:bg-blue-50" : "text-gray-600 hover:bg-gray-100"
+                    } disabled:opacity-60 font-semibold text-sm`}
                   >
                     <svg
                       className="w-5 h-5"
-                      fill={isLikedByCurrentUser ? 'currentColor' : 'none'}
+                      fill={isLikedByCurrentUser ? "currentColor" : "none"}
                       stroke="currentColor"
                       strokeWidth={2}
                       viewBox="0 0 24 24"
@@ -413,14 +434,13 @@ export default function PostDetailPage() {
                         d="M14 9V5a3 3 0 00-3-3l-4 9v11h11.28a2 2 0 002-1.7l1.38-9a2 2 0 00-2-2.3zM7 22H4a2 2 0 01-2-2v-7a2 2 0 012-2h3"
                       />
                     </svg>
-                    <span>{isLikedByCurrentUser ? 'Đã thích' : 'Thích'}</span>
+                    <span>{isLikedByCurrentUser ? "Đã thích" : "Thích"}</span>
                   </button>
                 </div>
               </div>
 
               {/* Comments Section */}
               <div className="bg-white rounded-lg shadow border border-gray-200 overflow-hidden mb-4">
-                {/* Comment input */}
                 <div className="p-4 border-b border-gray-200">
                   <div className="flex gap-3">
                     <img
@@ -448,10 +468,11 @@ export default function PostDetailPage() {
                           <button
                             onClick={handleSubmitComment}
                             disabled={submittingComment || !commentInput.trim()}
-                            className={`px-4 py-1.5 rounded-full font-semibold text-sm transition-all ${submittingComment || !commentInput.trim()
-                              ? "bg-gray-200 text-gray-400 cursor-not-allowed"
-                              : "bg-blue-600 text-white hover:bg-blue-700"
-                              }`}
+                            className={`px-4 py-1.5 rounded-full font-semibold text-sm transition-all ${
+                              submittingComment || !commentInput.trim()
+                                ? "bg-gray-200 text-gray-400 cursor-not-allowed"
+                                : "bg-blue-600 text-white hover:bg-blue-700"
+                            }`}
                           >
                             {submittingComment ? "Đang gửi..." : "Đăng"}
                           </button>
@@ -461,35 +482,28 @@ export default function PostDetailPage() {
                   </div>
                 </div>
 
-                {/* Comments list */}
                 <div className="divide-y divide-gray-200">
                   {post.comments && post.comments.length > 0 ? (
                     post.comments.map((c) => (
                       <div key={c.comment_id} className="p-4 hover:bg-gray-50 transition-colors">
                         <div className="flex gap-3">
                           <img
-                            src={c.author?.avatar || `https://api.dicebear.com/7.x/avataaars/svg?seed=${c.author?.user_id || 'user'}`}
+                            src={c.author?.avatar || `https://api.dicebear.com/7.x/avataaars/svg?seed=${c.author?.user_id || "user"}`}
                             alt={c.author?.fullname || "user"}
                             className="w-10 h-10 rounded-full object-cover flex-shrink-0"
                             onError={(e) => {
-                              e.currentTarget.src = `https://api.dicebear.com/7.x/avataaars/svg?seed=${c.author?.user_id || 'user'}`;
+                              e.currentTarget.src = `https://api.dicebear.com/7.x/avataaars/svg?seed=${c.author?.user_id || "user"}`;
                             }}
                           />
                           <div className="flex-1 min-w-0">
-                            <div>
-                              <div className="flex items-baseline gap-2">
-                                <span className="font-semibold text-sm text-gray-900 hover:text-blue-600 cursor-pointer">
-                                  {c.author?.fullname || "Người dùng"}
-                                </span>
-                                <span className="text-xs text-gray-500">• {communicationService.formatTimeAgo(c.createdAt)}</span>
-                              </div>
-                              <p className="text-xs text-gray-600">Member</p>
+                            <div className="flex items-baseline gap-2">
+                              <span className="font-semibold text-sm text-gray-900 hover:text-blue-600 cursor-pointer">
+                                {c.author?.fullname || "Người dùng"}
+                              </span>
+                              <span className="text-xs text-gray-500">• {communicationService.formatTimeAgo(c.createdAt)}</span>
                             </div>
+                            <p className="text-xs text-gray-600">Member</p>
                             <p className="text-sm text-gray-800 mt-1 whitespace-pre-wrap leading-relaxed">{c.content}</p>
-
-                            {/* Comment actions */}
-                            <div className="flex items-center gap-4 mt-2 text-xs font-semibold text-gray-600">
-                            </div>
                           </div>
                         </div>
                       </div>
@@ -504,7 +518,6 @@ export default function PostDetailPage() {
             </div>
           </main>
 
-          {/* Right Sidebar - Related Posts */}
           <aside className="lg:w-80 flex-shrink-0">
             <div className="bg-white rounded-lg shadow border border-gray-200 overflow-hidden sticky top-6">
               <div className="p-4 border-b border-gray-200">
@@ -521,9 +534,7 @@ export default function PostDetailPage() {
                       onClick={() => router.push(`/user/community/detail?id=${relatedPost.post_id}`)}
                       className="p-4 hover:bg-gray-50 transition-colors cursor-pointer"
                     >
-                      <h4 className="font-semibold text-sm text-gray-900 mb-1 line-clamp-2">
-                        {relatedPost.title}
-                      </h4>
+                      <h4 className="font-semibold text-sm text-gray-900 mb-1 line-clamp-2">{relatedPost.title}</h4>
                       <p className="text-xs text-gray-500">{communicationService.formatTimeAgo(relatedPost.createdAt)}</p>
                     </div>
                   ))
@@ -535,7 +546,7 @@ export default function PostDetailPage() {
               {relatedPosts.length > 0 && (
                 <div className="p-4 border-t border-gray-200">
                   <button
-                    onClick={() => router.push('/user/community')}
+                    onClick={() => router.push("/user/community")}
                     className="w-full text-sm font-semibold text-gray-600 hover:text-blue-600 flex items-center justify-center gap-1 transition-colors"
                   >
                     <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
@@ -550,27 +561,19 @@ export default function PostDetailPage() {
         </div>
       </div>
 
-      {/* Lightbox Modal */}
+      {/* Lightbox */}
       {lightbox.isOpen && post.images && post.images.length > 0 && (
-        <div
-          className="fixed inset-0 z-50 bg-black bg-opacity-95 flex items-center justify-center"
-          onClick={closeLightbox}
-        >
-          {/* Close button */}
-          <button
-            onClick={closeLightbox}
-            className="absolute top-4 right-4 text-white hover:text-gray-300 transition-colors z-10"
-          >
+        <div className="fixed inset-0 z-50 bg-black bg-opacity-95 flex items-center justify-center" onClick={closeLightbox}>
+          <button onClick={closeLightbox} className="absolute top-4 right-4 text-white hover:text-gray-300 transition-colors z-10">
             <svg className="w-8 h-8" fill="none" stroke="currentColor" viewBox="0 0 24 24">
               <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M6 18L18 6M6 6l12 12" />
             </svg>
           </button>
 
-          {/* Image counter */}
           <div className="absolute top-4 left-1/2 transform -translate-x-1/2 text-white text-sm font-semibold bg-gray-800 bg-opacity-80 px-4 py-2 rounded-full">
             {lightbox.currentIndex + 1} / {post.images.length}
           </div>
-          {/* Previous button */}
+
           {post.images.length > 1 && (
             <button
               onClick={(e) => {
@@ -585,7 +588,6 @@ export default function PostDetailPage() {
             </button>
           )}
 
-          {/* Image */}
           <img
             src={post.images[lightbox.currentIndex]}
             alt={`Lightbox ${lightbox.currentIndex + 1}`}
@@ -593,7 +595,6 @@ export default function PostDetailPage() {
             onClick={(e) => e.stopPropagation()}
           />
 
-          {/* Next button */}
           {post.images.length > 1 && (
             <button
               onClick={(e) => {
@@ -607,6 +608,47 @@ export default function PostDetailPage() {
               </svg>
             </button>
           )}
+        </div>
+      )}
+
+      {/* Report Modal */}
+      {showReportModal && (
+        <div className="fixed inset-0 bg-black/5 backdrop-blur-sm flex items-center justify-center z-50 border" onClick={() => setShowReportModal(false)}>
+          <div
+            className="bg-white rounded-lg p-6 w-full max-w-md mx-4"
+            onClick={(e) => e.stopPropagation()}
+          >
+            <h3 className="text-lg font-bold text-gray-900 mb-4">Báo cáo bài viết</h3>
+            <p className="text-sm text-gray-600 mb-4">Vui lòng cho biết lý do báo cáo bài viết này.</p>
+            <textarea
+              value={reportReason}
+              onChange={(e) => setReportReason(e.target.value)}
+              placeholder="Ví dụ: spam, nội dung không phù hợp, vi phạm bản quyền..."
+              className="w-full h-32 p-3 border border-gray-300 rounded-lg resize-none focus:border-blue-500 focus:ring-1 focus:ring-blue-500 outline-none transition-colors text-sm"
+              maxLength={200}
+            />
+            <div className="flex justify-end gap-3 mt-4">
+              <button
+                onClick={() => {
+                  setShowReportModal(false);
+                  setReportReason("");
+                }}
+                disabled={reporting}
+                className="px-4 py-2 text-sm font-medium text-gray-600 bg-gray-100 rounded-lg hover:bg-gray-200 transition-colors"
+              >
+                Hủy
+              </button>
+              <button
+                onClick={handleReport}
+                disabled={reporting || !reportReason.trim()}
+                className={`px-4 py-2 text-sm font-medium text-white rounded-lg transition-colors ${
+                  reporting || !reportReason.trim() ? "bg-red-300 cursor-not-allowed" : "bg-red-600 hover:bg-red-700"
+                }`}
+              >
+                {reporting ? "Đang gửi..." : "Gửi báo cáo"}
+              </button>
+            </div>
+          </div>
         </div>
       )}
     </div>
