@@ -31,6 +31,7 @@ interface Pet {
   dateOfBirth?: string;
   age?: number;
   avatar_url?: string;
+  qr_code_url?: string;
   owner?: Owner;
   medical_record?: MedicalRecord;
 }
@@ -75,6 +76,7 @@ export default function UserPetPage() {
                     dateOfBirth: data.dateOfBirth ?? apiData.dob,
                     age: apiData.age,
                     avatar_url: data.avatar_url ?? apiData.avatar,
+                    qr_code_url: data.qr_code_url ?? apiData.qr_code_url,
                     owner: data.owner ?? apiData.owner_info ?? apiData.customer ?? null,
                     medical_record: apiData.medical_record ?? null
                 });
@@ -147,6 +149,14 @@ export default function UserPetPage() {
         }
     };
 
+    const formatGender = (gender?: string) => {
+        if (!gender) return 'Chưa rõ';
+        const genderLower = gender.toLowerCase();
+        if (genderLower === 'male' || genderLower === 'đực') return 'Đực';
+        if (genderLower === 'female' || genderLower === 'cái') return 'Cái';
+        return gender;
+    };
+
     if (loading) {
         return (
             <div className="flex h-screen items-center justify-center">
@@ -194,16 +204,20 @@ export default function UserPetPage() {
                                                         <img src="/sampleimg/logo-card.png" alt="Logo" className="h-8 mr-3" />
                                                         <div>
                                                             <h3 className="text-2xl font-bold mb-1 text-gray-900">PETTOPIA</h3>
-                                                            <p className="text-sm text-gray-700">Pet Identity Card</p>
+                                                            <p className="text-sm text-gray-700">Pet Identity Card • PetID: {petData.id.slice(0, 8)}</p>
                                                         </div>
                                                     </div>
-                                                    <div className="bg-white rounded-lg px-3 py-1 border border-gray-400">
-                                                        <p className="text-xs text-gray-700">ID: {petData.id.slice(0, 8)}</p>
-                                                    </div>
+                                                    {petData.qr_code_url && (
+                                                        <div className="w-12 h-12 bg-white rounded-lg flex items-center justify-center border border-gray-400 overflow-hidden">
+                                                            <img src={petData.qr_code_url} alt="QR Code" className="w-full h-full object-contain" />
+                                                        </div>
+                                                    )}
                                                 </div>
                                                 <div className="flex gap-6">
-                                                    <div className="w-24 h-24 bg-white rounded-xl flex items-center justify-center flex-shrink-0 border-2 border-gray-400 overflow-hidden">
-                                                        <img src={petData.avatar_url || '/sampleimg/default-pet.jpg'} alt={petData.name} className="w-full h-full object-cover" />
+                                                    <div className="flex flex-col items-center gap-2">
+                                                        <div className="w-24 h-24 bg-white rounded-xl flex items-center justify-center flex-shrink-0 border-2 border-gray-400 overflow-hidden">
+                                                            <img src={petData.avatar_url || '/sampleimg/default-pet.jpg'} alt={petData.name} className="w-full h-full object-cover" />
+                                                        </div>
                                                     </div>
                                                     <div className="flex-1 min-w-0">
                                                         <h4 className="text-3xl font-bold mb-4 text-gray-900 truncate">{petData.name}</h4>
@@ -218,7 +232,7 @@ export default function UserPetPage() {
                                                             </div>
                                                             <div>
                                                                 <p className="text-gray-700">Giới tính:</p>
-                                                                <p className="font-semibold text-gray-900 truncate">{petData.gender || 'Chưa rõ'}</p>
+                                                                <p className="font-semibold text-gray-900 truncate">{formatGender(petData.gender)}</p>
                                                             </div>
                                                             <div>
                                                                 <p className="text-gray-700">Ngày sinh:</p>
@@ -260,10 +274,7 @@ export default function UserPetPage() {
                                                         <span className="text-gray-700">Số điện thoại:</span>
                                                         <span className="font-semibold text-gray-900 truncate ml-2">{petData.owner?.phone || 'Chưa cập nhật'}</span>
                                                     </div>
-                                                    <div className="flex justify-between border-b-2 border-gray-400 pb-2">
-                                                        <span className="text-gray-700">Email:</span>
-                                                        <span className="font-semibold text-xs text-gray-900 truncate ml-2 break-all">{petData.owner?.email || 'Chưa cập nhật'}</span>
-                                                    </div>
+                                                
                                                     <div className="flex justify-between">
                                                         <span className="text-gray-700">Địa chỉ:</span>
                                                         <span className="font-semibold text-xs text-gray-900 truncate ml-2">
@@ -295,7 +306,7 @@ export default function UserPetPage() {
                                     <div className="min-w-0 flex-1">
                                         <h3 className="text-2xl font-bold text-gray-900 truncate">{petData.name}</h3>
                                         <p className="text-gray-600 truncate">
-                                            {petData.species || 'Chưa rõ'} • {petData.gender || 'Chưa rõ'} • {petData.age || 'Chưa rõ'} tuổi
+                                            {petData.species || 'Chưa rõ'} • {formatGender(petData.gender)} • {petData.age || 'Chưa rõ'} tuổi
                                         </p>
                                     </div>
                                 </div>
@@ -319,7 +330,7 @@ export default function UserPetPage() {
                                                 </div>
                                                 <div className="flex justify-between">
                                                     <span className="text-gray-600">Giới tính:</span>
-                                                    <span className="font-medium">{petData.gender || 'Chưa rõ'}</span>
+                                                    <span className="font-medium">{formatGender(petData.gender)}</span>
                                                 </div>
                                                 <div className="flex justify-between">
                                                     <span className="text-gray-600">Ngày sinh:</span>

@@ -76,10 +76,34 @@ export default function ClinicService() {
   }, [page, debouncedSearch]);
 
   async function handleSubmit() {
+    // Validate name
     if (!form.name.trim()) {
-      setError('Service name is required');
+      setError('Tên dịch vụ là bắt buộc');
       return;
     }
+    if (form.name.length < 2 || form.name.length > 100) {
+      setError('Tên dịch vụ phải có độ dài từ 2 đến 100 ký tự');
+      return;
+    }
+
+    // Validate description
+    if (form.description && form.description.length > 1000) {
+      setError('Mô tả dịch vụ không được vượt quá 1000 ký tự');
+      return;
+    }
+
+    // Validate price
+    if (form.price < 0 || form.price > 1000000000 || !Number.isInteger(form.price)) {
+      setError('Giá tiền phải là số nguyên dương từ 0 đến 1 tỷ VND');
+      return;
+    }
+
+    // Validate duration
+    if (form.duration < 1 || form.duration > 600 || !Number.isInteger(form.duration)) {
+      setError('Thời gian phải là số nguyên từ 1 đến 600 phút');
+      return;
+    }
+
     setLoading(true);
     setError(null);
     try {
@@ -447,7 +471,10 @@ export default function ClinicService() {
                     value={form.name}
                     onChange={(e) => setForm({ ...form, name: e.target.value })}
                     placeholder="VD: Khám tổng quát"
+                    maxLength={100}
+                    minLength={2}
                   />
+                  <div className="text-xs text-gray-500 mt-1">{form.name.length}/100 ký tự</div>
                 </div>
 
                 <div className="md:col-span-2">
@@ -460,7 +487,9 @@ export default function ClinicService() {
                     value={form.description}
                     onChange={(e) => setForm({ ...form, description: e.target.value })}
                     placeholder="Mô tả chi tiết về dịch vụ..."
+                    maxLength={1000}
                   />
+                  <div className="text-xs text-gray-500 mt-1">{form.description.length}/1000 ký tự</div>
                 </div>
 
                 <div>
@@ -474,7 +503,8 @@ export default function ClinicService() {
                       value={form.price}
                       onChange={(e) => setForm({ ...form, price: Number(e.target.value) })}
                       min={0}
-                      step={1000}
+                      max={1000000000}
+                      step={1}
                     />
                     <span className="absolute right-4 top-1/2 -translate-y-1/2 text-gray-400 text-sm">₫</span>
                   </div>
@@ -490,8 +520,9 @@ export default function ClinicService() {
                       className="w-full border border-gray-300 rounded-lg px-4 py-2.5 focus:ring-2 focus:ring-teal-500 focus:border-transparent transition"
                       value={form.duration}
                       onChange={(e) => setForm({ ...form, duration: Number(e.target.value) })}
-                      min={5}
-                      step={5}
+                      min={1}
+                      max={600}
+                      step={1}
                     />
                     <span className="absolute right-4 top-1/2 -translate-y-1/2 text-gray-400 text-sm">phút</span>
                   </div>
